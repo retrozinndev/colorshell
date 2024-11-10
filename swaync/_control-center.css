@@ -122,11 +122,9 @@
 }
 
 /* MPRIS */
-
 .widget-mpris {
     padding: 0px 0px;
     box-shadow: none;
-    border: .1em solid @color1;
 }
 
 .widget-mpris .widget-mpris-player {
