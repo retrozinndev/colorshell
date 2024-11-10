@@ -1,4 +1,5 @@
 Config (
+    show_results_immediately: true,
     allow_invalid: false,
-    max_entries: None 
+    max_entries: Some(6) 
 )

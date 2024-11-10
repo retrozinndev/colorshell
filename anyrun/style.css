@@ -1,10 +1,11 @@
 
-@import "_colors.css";
+@import "../../.cache/wal/colors-anyrun.css";
 
 * {
     border: none;
     box-shadow: none;
     outline: none;
+    color: @foreground;
 }
 
 *:hover {
@@ -15,15 +16,23 @@ window {
     background: transparent;
 }
 
+box#main {
+    background: @background;
+    border-radius: 16px;
+    box-shadow: 0 16px 22px 2px black;
+    padding: 0;
+    border: .5px solid @color1;
+}
+
 entry {
     padding: 6px;
     background: @background;
-    border-radius: 16px 16px 0 0;
-    border: 2px solid transparent;
+    border-radius: 16px;
+    margin: 8px;
 }
 
 entry:focus, entry:active {
-    border: 2px solid @color2;
+    box-shadow: inset 0 0 0 2px @color2;
 }
 
 entry:hover {
@@ -34,25 +43,30 @@ list {
     border-bottom-right-radius: 16px;
     border-bottom-left-radius: 16px;
     background: @background;
-    padding: 5px;
 }
 
 list > #match {
     font-weight: 600;
-    border-radius: 8px;
-    padding: 6px;
+    border-radius: 14px;
+    padding: 7px;
+    margin: 0 6px;
+    color: @foreground;
 }
 
 list > #match:hover {
     transition: 120ms linear;
-    background: shade(@background, .8);
+    background: shade(@color2, .8);
 }
 
 list > #match:selected,
 list > #match:active {
-    background: @active;
+    background: @color1;
 }
 
-box#main {
-    background: transparent;
+list > #match {
+    margin-bottom: 1px;
+}
+
+list > #match:last-child {
+    margin-bottom: 6px;
 }

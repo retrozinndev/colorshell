@@ -1,6 +1,0 @@
-
-@import "../../.cache/wal/colors-anyrun.css";
-
-@define-color highlight @color1;
-@define-color active shade(@highlight, .7);
-@define-color text @foreground;

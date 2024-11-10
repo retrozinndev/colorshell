@@ -13,7 +13,6 @@ Config (
 
     plugins: [
         "libapplications.so",
-        "libsymbols.so",
         "libshell.so"
     ],
 )

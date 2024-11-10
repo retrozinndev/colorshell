@@ -1,0 +1,4 @@
+Config (
+    prefix: ":",
+    shell: "bash"
+)
