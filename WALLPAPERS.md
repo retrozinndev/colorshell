@@ -10,9 +10,10 @@ the links down below.
 - [Wallpaper Cave](https://wallpapercave.com/bocchi-the-rock-wallpapers)
 - [Wallpaper Flare](https://www.wallpaperflare.com/search?wallpaper=BOCCHI+THE+ROCK%21)
 
-## Hatsune Miku Wallpaper
+## Vocaloid Wallpapers
 
-- [DeviantArt (nesyah)](https://www.deviantart.com/nesyah/art/Arch-linux-feat-Hatsune-Miku-858316759)
+- [Arch Miku (DeviantArt, nesyah)](https://www.deviantart.com/nesyah/art/Arch-linux-feat-Hatsune-Miku-858316759)
+- [Others (Alpha Coders)](https://alphacoders.com/vocaloid-wallpapers)
 
 ## Hypr-chan Wallpaper
 
