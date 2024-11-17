@@ -47,13 +47,13 @@
 }
 
 /* Notifications */
-widget #custom-notifications {
+#custom-notifications {
     font-size: 16px;
     padding-left: 12px;
-    padding-right: 14px;
+    padding-right: 13px;
 }
 
-widget #custom-notifications.cc-open {
+#custom-notifications.cc-open {
     background: @color1;
 }
 
