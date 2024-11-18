@@ -16,7 +16,7 @@ window#waybar {
 
 window#waybar > * {
     padding: 4px;
-    background: alpha(@background, .85);
+    background: alpha(@background, .78);
     margin-bottom: 4px;
     border-radius: 14px;
 }
@@ -35,7 +35,7 @@ widget > *:hover:not(#workspaces):not(#tray):not(#custom-media) {
     background: @color1;
 }
 
-widget label {
+label {
     font-size: .98em;
     font-weight: 500;
 }

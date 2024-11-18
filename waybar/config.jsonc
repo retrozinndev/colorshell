@@ -85,7 +85,7 @@
     },
 
     "custom/logo": {
-        "format": "", // Change to desired logo
+        "format": "", // Change to desired logo
         "tooltip": false,
         "escape": true,
         "on-click": "anyrun" // Change to desired action
