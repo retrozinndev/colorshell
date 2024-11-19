@@ -2,15 +2,15 @@
     "position": "top",
     "layer": "top",
     "spacing": 0, 
-    "margin": 6,
+    "margin": 0,
     "reload_style_on_change": true,
     "modules-left": [
         "custom/logo",
         "hyprland/workspaces"
     ],
     "modules-center": [
-        "hyprland/window",
         "clock",
+        "hyprland/window",
         "custom/media"
     ],
     "modules-right": [
@@ -128,7 +128,7 @@
     "clock": {
         "format": "{:L%A %d, %H:%M}",
         "format-alt": "{:%Y-%m-%d}",
-        "tooltip-format": "<tt>{calendar}</tt>"
+        "tooltip-format": "<big><tt>{calendar}</tt></big>"
     },
 
     "cpu": {

@@ -5,45 +5,55 @@
 * {
     color: @foreground;
     transition: 120ms ease-in;
+    font-family: "Noto Sans", "Font Awesome", sans-serif;
+    font-size: 12px;
 }
 
 window#waybar {
-    font-family: "Noto Sans", "Font Awesome", sans-serif;
-    font-size: 12px;
-    color: @foreground;
     background: transparent;
 }
 
-window#waybar > * {
-    padding: 4px;
+window#waybar > box {
+    margin: 6px 6px 0px 6px;
+}
+
+/* Styling modules-[left/center/right] */
+window#waybar > box > * {
+    padding: 5px;
     background: alpha(@background, .78);
     margin-bottom: 4px;
-    border-radius: 14px;
+    border-radius: 18px;
 }
 
-.module {
-    padding: 0 10px;
+/* Style all widgets */
+widget .module {
+    padding: 4px 10px;
     font-weight: 500;
-    margin: 0 1px;
-}
-
-widget > * {
+    margin: 0 2px;
     border-radius: 14px;
 }
 
-widget > *:hover:not(#workspaces):not(#tray):not(#custom-media) {
-    background: @color1;
-}
-
-label {
+widget .module label {
     font-size: .98em;
     font-weight: 500;
 }
 
+widget .module:hover:not(#workspaces):not(#tray):not(#custom-media) {
+    background: @color1;
+}
+
+window#waybar > box > * > widget:first-child .module {
+    margin-left: 0px;
+}
+
+window#waybar > box > * > widget:last-child .module {
+    margin-right: 0px;
+}
+
+
 menu {
-    background: @background;
+    background: transparent;
     border: none;
-    padding: 2px;
 }
 
 menu > separator {
@@ -71,14 +81,18 @@ menu > *:hover {
 }
 
 tooltip {
-    padding: 3px;
-    border-radius: 8px;
-    border-color: @color1;
-    background: @background;
+    all: unset;
+    padding: 10px;
 }
 
-tooltip > * {
-    padding: 0;
-    font-weight: 500;
-    font-size: .95em;
+tooltip > box {
+    border-radius: 12px;
+    border: 1px solid @color1;
+    background: @background;
+    box-shadow: 0 0 6px 1px alpha(@background, .5);
+}
+
+tooltip > box > label {
+    font-weight: 600;
+    font-size: 1em;
 }
