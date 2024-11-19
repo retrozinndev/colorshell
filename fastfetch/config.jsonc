@@ -9,6 +9,9 @@
     "type": "small",
     "width": 32
   },
+  "display": {
+    "separator": " "
+  },
   "general": {},
   "modules": [
     "title",
