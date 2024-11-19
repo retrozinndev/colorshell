@@ -55,6 +55,9 @@ Clean_local() {
         fi
     done
 
+    Send_log "info" "Cleaning wallpapers..."
+    rm -rf ./wallpapers
+
     echo "Done cleaning."
 }
 
@@ -69,7 +72,7 @@ Check_existance() {
 Update_local() {
     for dotsDir in ${HYPRLAND_DOTS_DIRS[@]}; do
         if [[ -d "$HOME/.config/$dotsDir" ]]; then 
-            echo "-> Trying to copy ${dotsDir^}..."
+            Send_log "info" "Trying to copy ${dotsDir^}..."
             cp -r $HOME/.config/$dotsDir ./$dotsDir
         else
             Send_log "warn" "Looks like the ~/.config/$dotsDir dir is in fault! Skipping it..."
