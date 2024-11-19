@@ -59,6 +59,9 @@ Having issues? Please create a [new Issue] here, I'll be happy to help you out!
 ## 📜 License
 This repo is licensed under the [MIT License].
 
+## 🌠 Stargazers Graph
+Thanks to everyone who starred my dotfiles! 💖
+[![Stargazers over time](https://starchart.cc/retrozinndev/Hyprland-Dots.svg?background=%2324292e&axis=%23fafbfc&line=%232dba4e)](https://starchart.cc/retrozinndev/Hyprland-Dots)
 
 <!-- References of other projects -->
 [pywal]: https://github.com/dylanaraps/pywal
