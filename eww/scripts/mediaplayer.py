@@ -133,7 +133,7 @@ class PlayerManager:
             "status": player.props.status.lower(),
             "title": player.get_title(),
             "artist": player.get_artist(),
-            "art": player.get_album_url(),
+            # "art": , somehow get album art metadata
             "player": player.props.player_name.lower()
         }
 
