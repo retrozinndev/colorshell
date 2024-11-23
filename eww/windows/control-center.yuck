@@ -1,0 +1,24 @@
+(defwindow control-center []
+    :monitor 0
+    :geometry (geometry :width "500px"
+                        :height "90%"
+                        :anchor "center right")
+    :stacking "overlay"
+    :exclusive false
+    :namespace "eww-cc"
+
+    (box
+        (toggles)
+    )
+)
+
+(defwidget toggles []
+    (box :class "row"
+        (button :onclick "notify-send 'stop internet!'"
+            (box
+                (label :class "title" :text "Internet >")
+                (label :class "extra" :text "Caique Wifi")
+            )
+        )
+    )
+)

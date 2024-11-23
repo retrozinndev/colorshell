@@ -1,0 +1,10 @@
+
+(defpoll windowInfo :interval "250ms"
+"sh ./scripts/get-window.sh")
+
+(defvar widget_window_visible true)
+
+(defwidget window []
+    (button :visible "${widget_window_visible}"
+    "${windowInfo}")
+)

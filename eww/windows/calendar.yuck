@@ -1,0 +1,22 @@
+(defwindow calendar
+    :monitor 0
+    :geometry (geometry :width 300
+                        :height 250
+                        :anchor "top center"
+    )
+    :stacking "fg"
+    :exclusive false
+    :namespace "eww-calendar"
+    (box
+        (cal)
+    )
+)
+
+(defwidget cal []
+    (box :class "widget-calendar"
+        (box :class "month-calendar"
+            (button :class "day"
+            1)
+        )
+    )
+)

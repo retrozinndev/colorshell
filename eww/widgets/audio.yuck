@@ -1,0 +1,11 @@
+
+(defpoll output_volume :interval "500ms"
+`echo "$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | sed -e 's/Volume: //' -e 's/^1\./1/' -e 's/^0.//' -e 's/^00/0/')%"`)
+
+(defwidget audio []
+    (eventbox
+        :onscroll `sh -c "SCROLL='{}'; source './scripts/volume.sh'; Update_volume"`
+
+        (button :class "audio" "󰕾 ${output_volume}")
+    )
+)

@@ -1,0 +1,11 @@
+
+* {
+    all: unset;
+    transition: 120ms linear;
+    font-size: 12px;
+}
+
+@import "../../.cache/wal/colors.scss";
+@import './styles/bar.scss';
+@import './styles/calendar.scss';
+@import './styles/control-center.scss';

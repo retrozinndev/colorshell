@@ -1,0 +1,9 @@
+.widget-calendar {
+    padding: 24px;
+    background: rgba($background, 0.6);
+    border-radius: 16px;
+
+    & > .title {
+        background: $color1;
+    }
+}
