@@ -3,6 +3,7 @@ My customized Hyprland dotfiles that I keep changing time to time!
 
 > [!warning]
 > This is a work in progress, it's still not ready to use.
+> Currently, I'm making the Eww configuration myself.
 
 ## 🎨 Colors
 All the colors are dynamically based on the current wallpaper! This is possible by using [pywal], a cli tool to generate colorschemes by using an image as a base.
