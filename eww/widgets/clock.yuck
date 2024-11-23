@@ -2,11 +2,9 @@
 (defpoll datetime :interval "10s"
 "date +'%A %d, %H:%M'")
 
-(defvar calendar_state "hidden")
-
 (defwidget clock []
     (box :class "clock"
-      (button :onclick "sh ./scripts/display-calendar.sh"
+      (button :onclick "eww open calendar --toggle"
       "${datetime}")
     )
 )
