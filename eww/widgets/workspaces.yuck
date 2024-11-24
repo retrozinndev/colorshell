@@ -1,15 +1,18 @@
 
-(deflisten json_workspaces
-    :initial "[{1: {}, 2:{}}]"
-`hyprctl -j workspaces`)
+(deflisten json_workspaces :initial '[{"id": "1"},{"id": "2"}]'
+`sh ./scripts/workspaces.sh`)
+
+(deflisten json_active_workspace :initial '{ "id": 1 }'
+`sh ./scripts/active-workspace.sh`)
 
 (defwidget workspaces [] 
-    (eventbox :onscroll "[[ {} =~ up ]] && hyprctl dispatch workspace e+1 || hyprctl dispatch workspace e-1"
+    (eventbox :onscroll "[[ {} == up ]] && hyprctl dispatch workspace e+1 || hyprctl dispatch workspace e-1"
       (box :class "workspaces"
-        (for i in json_workspaces 
-            (button :onclick "hyprctl dispatch workspace ${i}"
-            "${i[0].num}")
+        (for workspace in json_workspaces
+            (button :onclick "hyprctl dispatch workspace ${workspace.id}" 
+                    :class "${ json_active_workspace.id == workspace.id ? "active" : "default" }"
+            "${workspace.id}")
         )
       )
     )
-  )
+)

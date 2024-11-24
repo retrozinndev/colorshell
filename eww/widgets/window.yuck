@@ -1,10 +1,8 @@
 
-(defpoll windowInfo :interval "250ms"
-"sh ./scripts/get-window.sh")
-
-(defvar widget_window_visible true)
+(deflisten active_window :initial ""
+`sh -c 'source ./scripts/window.sh; get_active_window'`)
 
 (defwidget window []
-    (button :visible "${widget_window_visible}"
-    "${windowInfo}")
+    (button :visible { active_window.class == "null" ? false : true }
+    "${active_window.class}: ${active_window.title}")
 )

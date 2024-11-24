@@ -31,6 +31,7 @@
            :space-evenly false
         (clock)
         (window)
+        (media)
       )
       (box :class "widgets-right"
            :halign "end"

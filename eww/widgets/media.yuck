@@ -1,0 +1,21 @@
+
+(deflisten media :initial "{}"
+`python3 ./scripts/mediaplayer.py`)
+
+(defwidget media [] 
+    (box :class "mediaplayer"
+         :space-evenly false
+         :visible true
+
+      (label :text "${media.title} - ${media.artist}")
+      (button :class "previous"
+              :onclick "playerctl previous --player=${media.player}"
+      "󰒮")
+      (button :class "toggle play-pause"
+              :onclick "playerctl play-pause --player=${media.player}"
+      { media.status == "playing" ? "󰏤" : "󰐊" })
+      (button :class "next"
+              :onclick "playerctl next --player=${media.player}"
+      "󰒭")
+    )
+)
