@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-# This script is made by retrozinndev (João Dias), This script 
-# is licensed under the MIT License as in retrozinndev/Hyprland-Dots repository.
+# This script is made by retrozinndev (João Dias), It is licensed under
+# the MIT License as in retrozinndev/Hyprland-Dots repository.
 # GitHub: https://github.com/retrozinndev 
 # Dotfiles: https://github.com/retrozinndev/Hyprland-Dots
 
@@ -52,6 +52,11 @@ Reload_swaync() {
     swaync-client -rs
 }
 
+Reload_eww() {
+    echo "Reloading Eww..."
+    eww reload
+}
+
 # Prompt wallpapers via dmenu
 SET_WALLPAPER_NAME="$(ls $WALLPAPER_DIR | $WALLPAPER_SELECT_CMD)"
 SET_WALLPAPER_FULL="$WALLPAPER_DIR/$SET_WALLPAPER_NAME"
@@ -76,6 +81,7 @@ fi
 
 Hot_reload_wallpaper
 Reload_pywal
+Reload_eww
 Update_wallpaper_settings
 Reload_swaync
 
