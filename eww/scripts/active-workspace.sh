@@ -1,5 +1,7 @@
 #!/usr/bin/env
 
+hyprctl -j activeworkspace | jq -c
+
 handle() {
   case $1 in
     workspace*) hyprctl -j activeworkspace | jq -c ;;
