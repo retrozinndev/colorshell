@@ -1,24 +1,30 @@
+(include "./widgets/control-center/quickactions.yuck")
+
 (defwindow control-center []
     :monitor 0
     :geometry (geometry :width "500px"
-                        :height "90%"
+                        :height "95%"
                         :anchor "center right")
     :stacking "overlay"
     :exclusive false
     :namespace "eww-cc"
 
-    (box
-        (toggles)
+    (box :class "cc"
+         :orientation "vertical"
+        (quickactions)
+        (toggle-row)
     )
 )
 
-(defwidget toggles []
+(defwidget toggle-row []
     (box :class "row"
-        (button :onclick "notify-send 'stop internet!'"
-            (box
-                (label :class "title" :text "Internet >")
-                (label :class "extra" :text "Caique Wifi")
-            )
-        )
+         :space-evenly false
+
+        (button :class "network"
+        "󰤨 ")
+        (button :class "bluetooth"
+        "󰂯 ")
+        (button :class "dnd"
+        "󰒲 ")
     )
 )
