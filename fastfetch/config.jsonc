@@ -21,7 +21,7 @@
       "key": "󰌽 ",
       "shell": "/bin/sh",
       "param": "-c",
-      "text": "DISTRO_NAME=$(uname -n); echo \"${DISTRO_NAME^} $(uname -r)\"",
+      "text": "sh -c '. /etc/os-release; echo \"$PRETTY_NAME $(uname -r)\"'",
       "format": "{1}"
     },
     {
