@@ -1,9 +1,153 @@
 
-// window.control-center {}
-
 box.cc {
     margin: 16px;
     background: rgba($background, .85);
     border-radius: 16px;
     border: 2px solid darken($color: $color3, $amount: 20);
+    padding: 18px;
+}
+
+.quickactions {
+    margin-bottom: 10px;
+
+    & label {
+        &.hostname {
+            font-size: 13.3px;
+            font-weight: 700;
+            border-bottom: .5px solid rgba(darken($color: $foreground, $amount: 15), .5);
+            padding-bottom: 4px;
+        }
+
+        &.uptime {
+            font-size: 11.7px;
+            font-weight: 500;
+        }
+    }
+
+    .button-row {
+        margin: 7px 0;
+    }
+}
+
+.control-center .mediaplayer {
+    padding: 16px;
+    margin: 6px 0;
+    border-radius: 18px;
+
+    & > .album-image {
+        background-size: 100%;
+        background-repeat: no-repeat;
+        background-position: center 0;
+        margin-right: 12px;
+        border-radius: 11px;
+    }
+
+    & > .right {
+
+        & > .media-info { 
+            label {
+                font-family: "Cantarell", "Noto Sans CJK JP";
+            }
+
+            & label.title {
+                font-weight: 700;
+                font-size: 16px;
+                margin-bottom: 6px;
+            }
+
+            & label.artist {
+                font-weight: 600;
+                font-size: 12px;
+                margin-bottom: 12px;
+            }
+        }
+
+        & > .media-controls {
+            padding: 0px;
+
+            & > button {
+                padding: 4px 9px;
+
+                & > label {
+                    font-size: 13.3px;
+                }
+            }
+
+            & > button.repeat {
+                padding-right: 11px;
+            }
+        }
+    }
+
+    &.mediaplayer-album-bg {
+        box-shadow: inset 0 0 0 100px rgba($background, .6);
+        background-size: cover;
+    }
+}
+
+.cc-notifications {
+    & > .vertical-scroll {
+        .notifications {
+            box.notification {
+                background: darken($color: $color1, $amount: 10);
+                border-radius: 16px;
+                margin: 4px 0;
+
+                & > .top {
+                    border-top-left-radius: inherit;
+                    border-top-right-radius: inherit;
+                    background: darken($color: $color1, $amount: 5);
+                    border-bottom: .5px solid rgba(darken($color: $foreground, $amount: 15), .3);
+                    padding: 2px 6px;
+
+                    & > .app-info {
+                        & .app-icon {
+                            margin-right: 4px;
+                        }
+                        font-weight: 600;
+                    }
+                }
+
+                & .content {
+                    padding: 6px;
+                    padding-top: 0;
+
+                    & > .image {
+                        border-radius: 16px;
+                        margin-right: 6px;
+                        background-size: cover;
+                        background-repeat: no-repeat;
+                        background-position: center 0;
+                    }
+
+                    & .text {
+                        & label {
+                            font-family: "Cantarell", "Noto Sans CJK JP", "Noto Sans CJK KR";
+                        }
+
+                        & label.summary {
+                            font-weight: 600;
+                            font-size: 18px;
+                            margin-top: 6px;
+                        }
+
+                        & label.body {
+                            font-size: 13.1px;
+                            margin-bottom: 2px;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    & .bottom {
+        margin-top: 4px;
+
+        &.button-row {
+            & button.do-not-disturb {
+                padding-right: 12px;
+            }
+        }
+    }
 }

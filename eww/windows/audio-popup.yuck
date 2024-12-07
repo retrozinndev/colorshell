@@ -1,0 +1,33 @@
+(include "./widgets/audio-popup/output-slider.yuck")
+(include "./widgets/audio-popup/source-slider.yuck")
+
+(deflisten volume_json :initial `{ "output": 60, "source": 80 }`
+`sh ./scripts/get-volume-watch.sh`)
+
+(defwindow audio-popup []
+      :monitor 0
+      :namespace "eww-audio"
+      :geometry (geometry :anchor "top right"
+                          :width "300px"
+                          :height "120px")
+      :exclusive false
+      :stacking "fg"
+      :focusable false
+
+    (box :class "audio-popup"
+         :space-evenly false
+         :orientation "vertical"
+
+        (output-slider)
+        (source-slider)
+
+        (box :class "separator")
+
+        (box :class "vertical-button-row"
+            (button :class "more-settings"
+                    :onclick "eww close audio-popup; hyprctl dispatch exec pavucontrol"
+            (label :text "Show on Volume Control"
+                   :xalign 0))
+        )
+    )
+)

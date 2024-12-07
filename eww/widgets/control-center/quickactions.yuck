@@ -1,10 +1,37 @@
-(defpoll uptime_info :interval "25s"
-`echo "$(cat /etc/hostname), Uptime: $( uptime -p | sed -e 's/^up //')"`)
+(deflisten hostname :initial "GNU/Linux"
+`cat /etc/hostname`)
 
+(defpoll uptime_info :interval "50s"
+`uptime -p | sed -e 's/^up //'`)
 
 (defwidget quickactions []
-    (box :orientation "horizontal"
-        (label :xalign 0
-               :text "${uptime_info}")
+    (box :class "quickactions"
+         :orientation "horizontal"
+
+        (box :class "left"
+             :orientation "vertical"
+             :halign "start"
+
+            (label :xalign 0
+                   :text "  ${hostname}"
+                   :class "hostname")
+
+            (label :xalign 0
+                   :text "  ${uptime_info}"
+                   :class "uptime")
+        )
+
+        (box :orientation "horizontal"
+             :class "button-row"
+             :space-evenly false
+             :halign "end"
+             
+             (button :class "lock"
+                     :onclick "hyprctl dispatch exec hyprlock"
+             "󰌾")
+             (button :class "powermenu"
+                     :onclick "eww close-all; eww open powermenu"
+             "󰗽")
+        )
     )
 )

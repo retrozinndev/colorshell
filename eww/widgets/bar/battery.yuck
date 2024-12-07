@@ -1,0 +1,6 @@
+(defwidget battery [ ?device ]
+    (box :class "battery"
+         :visible { EWW_BATTERY != "" ? true : false }
+        (label :text "󰁹  ${EWW_BATTERY}%")
+    )
+)

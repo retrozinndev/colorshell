@@ -1,0 +1,65 @@
+
+(deflisten json_media_data :initial "{}"
+`python ./scripts/mediaplayer.py`)
+
+(defwidget mediaplayer [ album_background ]
+    (box :orientation "horizontal"
+         :space-evenly false 
+         :class "mediaplayer ${ album_background == true ? 'mediaplayer-album-bg' : '' }"
+         :style { album_background == true ? "background-image: image(url('${json_media_data.artUrl}'))" : "" }
+         :visible { json_media_data.title != "null" && json_media_data.artist != "null" ? true : false }
+
+        (box :class "album-image"
+             :width 98
+             :height 87
+             :style "background-image: image(url('${json_media_data.artUrl}'));"
+             :valign "center")
+
+        (box :orientation "vertical"
+             :space-evenly false
+             :class "right"
+             :halign "fill"
+
+            (box :class "media-info"
+                 :space-evenly false
+                 :halign "fill"
+                 :orientation "vertical"
+
+                (label :class "title"
+                       :text "${json_media_data.title}"
+                       :xalign 0
+                       :wrap false
+                       :hexpand true
+                       :show-truncated true)
+                (label :class "artist"
+                       :text "${json_media_data.artist}"
+                       :xalign 0
+                       :wrap false
+                       :hexpand true
+                       :show-truncated true)
+            )
+
+            (box :class "media-controls button-row"
+                 :orientation "horizontal"
+                 :space-evenly false
+                 :halign "start"
+
+                (button :class "shuffle"
+                        :onclick "playerctl --player=${json_media_data.player} shuffle Toggle"
+                "󰒝")
+                (button :class "previous"
+                        :onclick "playerctl --player=${json_media_data.player} previous"
+                "󰒮")
+                (button :class "play-pause"
+                        :onclick "playerctl --player=${json_media_data.player} play-pause"
+                { json_media_data.status == "playing" ? "󰏤" : "󰐊" })
+                (button :class "next"
+                        :onclick "playerctl --player=${json_media_data.player} next"
+                "󰒭")
+                (button :class "repeat"
+                        :onclick "" ; todo
+                "󰑖")
+            )
+        )
+    )
+)

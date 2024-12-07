@@ -1,0 +1,55 @@
+(include "widgets/control-center/notification.yuck")
+
+(deflisten json_notification_history :initial "{[]}"
+`python ./scripts/notification-watcher.py`)
+
+(defwidget notifications []
+    (box :class "cc-notifications"
+         :space-evenly false
+         :orientation "vertical"
+        
+        (scroll :class "vertical-scroll"
+                :hscroll false
+                :vscroll true
+                :height 400 ; Adjust according to your screen size
+                :vexpand true
+
+            (box :class "notifications"
+                 :orientation "vertical"
+                 :space-evenly false
+
+                (for notification in json_notification_history
+                    (notification :application_name "${notification.applicationName}"
+                                  :image "${notification.image}"
+                                  :summary "${notification.summary}"
+                                  :body "${notification.body}")
+                )
+
+                (box :class "empty-notifications"
+                     :visible { json_notification_history[0] == "null" ? true : false }
+                     :style "margin-top: 150px;"
+                     :space-evenly false
+                     :orientation "vertical"
+                     :halign "center"
+                    
+                    (label :class "bell-icon"
+                           :text "󱇦"
+                           :style "font-size: 96px")
+
+                    (label :text "You're done!"
+                           :style "margin-left: 12px;")
+                )
+            )
+        )
+
+        (box :class "bottom button-row"
+             :halign "end"
+             :space-evenly false
+            (button :class "do-not-disturb"
+            "󰒲")
+            (button :class "clear-all"
+                    :onclick "dunstctl history-clear"
+            "Clear all ")
+        )
+    )
+)

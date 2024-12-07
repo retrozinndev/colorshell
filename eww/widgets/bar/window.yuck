@@ -3,17 +3,25 @@
 `sh ./scripts/active-window.sh`)
 
 (defwidget window []
-    (eventbox
-        (box :class "window"
-                :visible { active_window.class == "null" ? false : true }
-                :vexpand false
-                :space-evenly false
-                :orientation { active_window.title == "" ? "horizontal" : "vertical" }
+    (box :class "window"
+            :visible { active_window.class == "null" ? false : true }
+            :vexpand false
+            :space-evenly false
+            :orientation "horizontal"
+
+        (image :class "icon"
+               :icon "${active_window.initialClass}"
+               :icon-size "toolbar")
+
+        (box :class "info"
+             :orientation { active_window.title == "" ? "horizontal" : "vertical" }
+             :space-evenly false
             (label :class "window-class"
                    :text "${active_window.class}")
             (label :class "window-title"
                    :text "${active_window.title}"
-                   :visible { active_window.title != "" ? true : false })
+                   :visible { active_window.title != "" ? true : false }
+                   :limit-width 45)
         )
     )
 )

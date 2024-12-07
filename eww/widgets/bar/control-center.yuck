@@ -1,0 +1,7 @@
+
+(defwidget control-center-toggle []
+    (box :class "control-center-toggle"
+      (button :onclick "eww open --toggle control-center" 
+      " ")
+    )
+)

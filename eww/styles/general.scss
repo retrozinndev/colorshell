@@ -1,0 +1,129 @@
+* {
+    all: unset;
+    transition: 120ms linear;
+    font-size: 12px;
+}
+
+label {
+    color: lighten($foreground, 15)
+}
+
+box.button-row {
+    padding: 2px;
+    $bg-color: darken($color: $foreground, $amount: 25);
+
+    & > button {
+        background: rgba($bg-color, .7);
+        border-radius: 1px;
+        margin: 0 1px;
+
+        &:first-child {
+            border-top-left-radius: 8px;
+            border-bottom-left-radius: 8px;
+        }
+
+        &:last-child {
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+
+        &:hover {
+            background: rgba($bg-color, 1);
+        }
+    }
+}
+
+box.vertical-button-row {
+    padding: 2px;
+    $bg-color: darken($color: $foreground, $amount: 25);
+
+    & > button {
+        background: rgba($bg-color, .7);
+        border-radius: 2px;
+        margin: 0 1px;
+
+        &:first-child {
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+
+        &:last-child {
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+
+        &:hover {
+            background: rgba($bg-color, 1);
+        }
+    }
+}
+
+button {
+    padding: 6px 10px;
+    border-radius: 12px;
+    background: none;
+}
+
+button:hover {
+    background: darken($color: $color2, $amount: 5);
+}
+
+button:active {
+    background: darken($color: $color3, $amount: 10);
+}
+
+button label {
+    color: $foreground;
+}
+
+menu {
+    background: $background;
+    border-radius: 14px;
+    padding: 3px;
+
+    & > menuitem {
+        padding: 8px 24px;
+        border-radius: 5px;
+
+        &:hover {
+            background: $color1;
+        }
+
+        &:first-child {
+            border-top-left-radius: inherit;
+            border-top-right-radius: inherit;
+        }
+
+        &:last-child {
+            border-bottom-left-radius: inherit;
+            border-bottom-right-radius: inherit;
+        }
+
+        label {
+            font-weight: 600;
+            color: $foreground;
+        }
+    }
+
+    & > separator {
+        background: lighten($color: $background, $amount: 5);
+        margin: .5px 10px;
+        padding: 1px 0;
+        border-radius: 1px;
+    }
+}
+
+trough {
+    background: darken($color: $foreground, $amount: 25);
+    border-radius: 4px;
+}
+
+trough highlight {
+    background: $foreground;
+    padding: 10px;
+    border-radius: inherit;
+}
+
+scale {
+    padding: 10px;
+}

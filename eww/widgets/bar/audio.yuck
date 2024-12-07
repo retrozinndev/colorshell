@@ -1,10 +1,15 @@
 
-;(deflisten volume_out :initial '{ "volume": "100%" }'
-;`sh -c "source './scripts/volume.sh'; get_json_loop"`)
+(deflisten json_audio :initial `{ "output": 35, "source": 80 }`
+`sh ./scripts/get-volume-watch.sh`)
 
 (defwidget audio []
-    (eventbox
-        :onscroll `[[ {} == "up" ]]; sh -c "source './scripts/volume.sh'; increase_vol" || sh -c "source './scripts/volume.sh'; decrease_vol"`
-        (button "󰕾 ")
+    (eventbox :onclick "eww open --toggle audio-popup"
+              :class "audio-eventbox"
+        (box :class "audio"
+            (eventbox :onscroll `[ {} == "up" ] && wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ || wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-`
+                (label :text "${ json_audio.output != 0 ? '󰕾' : '󰝟' }  ${json_audio.output}%"))
+            (eventbox :onscroll `[ {} == "up" ] && wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%+ || wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%-`
+                (label :text "${ json_audio.source != 0 ? '󰍬' : '󰍭' }  ${json_audio.source}%"))
+        )
     )
 )

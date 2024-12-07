@@ -1,40 +1,48 @@
 
 (defvar media_reveal_controls false)
 
-(deflisten media :initial "{}"
+(deflisten json_media :initial "{}"
 `python3 ./scripts/mediaplayer.py`)
 
 (defwidget media [] 
     (eventbox :onhover "eww update media_reveal_controls=true"
               :onhoverlost "eww update media_reveal_controls=false"
-        (box :class "mediaplayer ${ media_reveal_controls ? 'revealed' : '' }"
-             :space-evenly false
-             :visible { media.title == "null" && media.artist == "null" ?
+              :visible { json_media.title == "null" && json_media.artist == "null" ?
                     false 
                 : 
-                    "${ active_window.class =~ media.player || active_window.title =~ media.title ? false : true }" 
+                    "${ active_window.class =~ json_media.player || active_window.title =~ json_media.title ? false : true }" 
                 }
+        (box :class "mediaplayer ${ media_reveal_controls ? 'revealed' : '' }"
+             :space-evenly false
 
-          (label :class "media-title" 
-                 :text "${media.title}")
-          (label :class "media-artist"
-                 :text "${media.artist}")
-          (revealer :class "media-controls-revealer"
-                    :reveal { media_reveal_controls ? true : false }
-                    :transition "slideright"
-                    :duration "180ms"
-              (box
-                  (button :class "previous"
-                          :onclick "playerctl previous --player=${media.player}"
-                  "󰒮")
-                  (button :class "toggle play-pause"
-                          :onclick "playerctl play-pause --player=${media.player}"
-                  { media.status == "playing" ? "󰏤" : "󰐊" })
-                  (button :class "next"
-                          :onclick "playerctl next --player=${media.player}"
-                  "󰒭")
-              )
-          )
+            (box :class "media"
+                 :space-evenly false
+                (label :class "player"
+                       :text { json_media.player == "spotify" ? " " : "󰎇 " })
+                (label :class "media-title" 
+                       :text "${json_media.title}"
+                       :limit-width 40)
+                (box :class "separator")
+                (label :class "media-artist"
+                       :text "${json_media.artist}"
+                       :limit-width 25)
+            )
+            (revealer :class "media-controls-revealer"
+                      :reveal { media_reveal_controls ? true : false }
+                      :transition "slideright"
+                      :duration "180ms"
+                (box :class "media-controls"
+                    (button :class "previous"
+                            :onclick "playerctl previous --player=${json_media.player}"
+                    "󰒮")
+                    (button :class "toggle play-pause"
+                            :onclick "playerctl play-pause --player=${json_media.player}"
+                    { json_media.status == "playing" ? "󰏤" : "󰐊" })
+                    (button :class "next"
+                            :onclick "playerctl next --player=${json_media.player}"
+                    "󰒭")
+                )
+            )
         )
     )
 )

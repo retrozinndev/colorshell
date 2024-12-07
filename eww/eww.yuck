@@ -1,54 +1,20 @@
 ; Windows
 (include "./windows/calendar.yuck")
 (include "./windows/control-center.yuck")
+(include "./windows/bar.yuck")
+(include "./windows/powermenu.yuck")
+(include "./windows/audio-popup.yuck")
 
-; Widgets
+; Bar widgets
 (include "./widgets/bar/workspaces.yuck")
 (include "./widgets/bar/clock.yuck")
-(include "./widgets/bar/notifications.yuck")
+(include "./widgets/bar/control-center.yuck")
 (include "./widgets/bar/audio.yuck")
 (include "./widgets/bar/media.yuck")
 (include "./widgets/bar/logo.yuck")
 (include "./widgets/bar/window.yuck")
 (include "./widgets/bar/network.yuck")
+(include "./widgets/bar/battery.yuck")
 
-(defwindow bar 
-    :monitor 0
-    :geometry (geometry :width "100%"
-                        :height "44px"
-                        :anchor "top center")
-    :stacking "fg"
-    :exclusive true
-    :namespace "eww-bar"
-    (centerbox :orientation "h"
-      (box :class "widgets-left"
-           :halign "start"
-           :space-evenly false
-        (logo)
-        (workspaces)
-      )
-      (box :class "widgets-center"
-           :halign "center"
-           :space-evenly false
-        (clock)
-        (window)
-        (media)
-      )
-      (box :class "widgets-right"
-           :halign "end"
-           :space-evenly false
-        (systray :spacing 5
-                 :orientation "h"
-                 :space-evenly false
-                 :icon-size 14
-                 :prepend-new true
-                 :class "systray"
-        )
-;        (audio)
-        (network)
-        (notifications)
-      )
-    )
-)
-
+; Control Center widgets
 

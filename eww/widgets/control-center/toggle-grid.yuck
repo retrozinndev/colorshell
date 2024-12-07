@@ -1,0 +1,37 @@
+(defwidget toggle-grid []
+    (box :class "toggle-grid"
+        (grid-toggle :class "network"
+                     :icon "󰈀"
+                     :header "Network"
+                     :active true ; This sets if toggle is enabled or not, put condition check here
+                     :body "Connected" ; Generally put state here
+                     :visible true
+                     :max-width 128
+                     :max-height 48
+                     :onclick "notify-send 'Network' 'toggle network with nmcli!'"
+        )
+    )
+)
+
+(defwidget grid-toggle [ class onclick active ?icon header body visible max-width max-height ]
+    (eventbox :visible "${visible}"
+              :onclick "${onclick}"
+              :class "${class} ${ active ? 'active' : '' }"
+        (box :class "toggle"
+             :space-evenly false
+             :orientation "horizontal"
+
+            (label :class "icon"
+                   :visible { icon != "" ? true : false } 
+                   :valign "center"
+            "${icon}")
+
+            (box :orientation "vertical"
+                (label :class "header"
+                "${header}")
+                (label :class "body"
+                "${body}")
+            )
+        )
+    )
+)

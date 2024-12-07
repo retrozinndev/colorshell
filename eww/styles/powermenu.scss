@@ -1,0 +1,19 @@
+
+.powermenu-container {
+    margin: 400px 100px;
+
+    & * {
+        outline: initial;
+    }
+    & > button {
+        padding: 96px;
+        & label {
+            font-size: 98px;
+        }
+    }
+
+    & button:hover,
+    & button:focus {
+        background: darken($color: $color2, $amount: 20);
+    }
+}

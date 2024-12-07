@@ -1,4 +1,4 @@
-(defpoll connection_status :interval "2s"
+(defpoll connection_status :interval "5s"
 `nmcli n c`)
 
 (defwidget network []

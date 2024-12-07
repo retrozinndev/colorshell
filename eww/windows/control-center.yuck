@@ -1,4 +1,7 @@
 (include "./widgets/control-center/quickactions.yuck")
+(include "./widgets/control-center/notifications.yuck")
+(include "./widgets/control-center/toggle-grid.yuck")
+(include "./widgets/control-center/mediaplayer.yuck")
 
 (defwindow control-center []
     :monitor 0
@@ -11,20 +14,10 @@
 
     (box :class "cc"
          :orientation "vertical"
-        (quickactions)
-        (toggle-row)
-    )
-)
-
-(defwidget toggle-row []
-    (box :class "row"
          :space-evenly false
-
-        (button :class "network"
-        "󰤨 ")
-        (button :class "bluetooth"
-        "󰂯 ")
-        (button :class "dnd"
-        "󰒲 ")
+        (quickactions)
+        (toggle-grid)
+        (mediaplayer :album_background true)
+        (notifications)
     )
 )

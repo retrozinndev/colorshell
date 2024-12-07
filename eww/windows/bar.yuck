@@ -1,0 +1,39 @@
+(defwindow bar 
+    :monitor 0
+    :geometry (geometry :width "100%"
+                        :height "44px"
+                        :anchor "top center")
+    :stacking "fg"
+    :exclusive true
+    :namespace "eww-bar"
+    (centerbox :orientation "horizontal"
+      (box :class "widgets-left"
+           :halign "start"
+           :space-evenly false
+        (logo)
+        (workspaces)
+      )
+      (box :class "widgets-center"
+           :halign "center"
+           :space-evenly false
+        (clock)
+        (window)
+        (media)
+      )
+      (box :class "widgets-right"
+           :halign "end"
+           :space-evenly false
+        (systray :spacing 5
+                 :orientation "horizontal"
+                 :space-evenly false
+                 :icon-size 14
+                 :prepend-new true
+                 :class "systray"
+        )
+        (audio)
+        (battery)
+        (network)
+        (control-center-toggle)
+      )
+    )
+)

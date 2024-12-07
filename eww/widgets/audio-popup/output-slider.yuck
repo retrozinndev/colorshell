@@ -1,0 +1,18 @@
+(defwidget output-slider []
+    (box :class "output-slider"
+         :space-evenly true
+
+        (overlay
+            (scale :min 0
+                   :max 100
+                   :value "${volume_json.output}"
+                   :orientation "horizontal"
+                   :draw-value false
+                   :flipped false
+                   :onchange "wpctl set-volume @DEFAULT_AUDIO_SINK@ $(awk -v n={} 'BEGIN { print (n / 100) }')")
+
+            (label :text "󰕾"
+                   :xalign 0)
+        )
+    )
+)

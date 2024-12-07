@@ -6,7 +6,7 @@
 `sh ./scripts/active-workspace.sh`)
 
 (defwidget workspaces [] 
-    (eventbox :onscroll "[[ {} == up ]] && hyprctl dispatch workspace e+1 || hyprctl dispatch workspace e-1"
+    (eventbox :onscroll "[[ {} == up ]] && hyprctl dispatch workspace e+1 >> /dev/null || hyprctl dispatch workspace e-1 >> /dev/null"
       (box :class "workspaces"
            :space-evenly false
         (for workspace in json_workspaces
