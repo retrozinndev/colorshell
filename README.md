@@ -5,6 +5,19 @@ My customized Hyprland dotfiles that I keep changing time to time!
 > This is a work in progress, it's still not ready to use.
 > Currently, I'm making the Eww configuration myself.
 
+## Recent progress screenshots
+Every widget on any of these screenshots are totally functional! Except the notification center.
+
+<div align="center"
+
+[!image](repo/eww_shots/desktop.png)
+[!image](repo/eww_shots/control_center.png)
+[!image](repo/eww_shots/audio_thing.png)
+[!image](repo/eww_shots/calendar.png)
+[!image](repo/eww_shots/logout_menu.png)
+
+</div>
+
 ## 🎨 Colors
 All the colors are dynamically based on the current wallpaper! This is possible by using [pywal], a cli tool to generate colorschemes by using an image as a base.
 
@@ -12,7 +25,7 @@ All the colors are dynamically based on the current wallpaper! This is possible 
 When you're at the [Installation](#Installation) process, you can choose to copy my dotfiles' wallpapers folder. If you chose to copy, you can change the current wallpaper by pressing <kbd>SUPER</kbd> + <kbd>W</kbd>, or clicking to change wallpaper in the Control Center.
 
 ### Source
-All wallpapers inside this repo are not made by me! You can find all sources inside [`WALLPAPERS.md`](https://github.com/retrozinndev/Hyprland-Dots/blob/ryo/WALLPAPERS.md) file.
+All wallpapers inside this repo are not made by me! You can find all sources inside the [`WALLPAPERS.md`](https://github.com/retrozinndev/Hyprland-Dots/blob/ryo/WALLPAPERS.md) file.
 
 
 ## Installation
