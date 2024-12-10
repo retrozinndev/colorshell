@@ -10,7 +10,7 @@ echo "######################################"
 printf "\n"
 
 CONFIG_DIR="$HOME/.config"
-DOTFILES_DIRS=("hypr" "eww" "swaync" "wlogout" "anyrun" "wal" "fastfetch")
+DOTFILES_DIRS=("hypr" "eww" "kitty" "anyrun" "wal" "fastfetch")
 DOTFILES_BACKUP_DIR="$HOME/hyprland-dotfiles-bkp"
 TRASH_DIR="$HOME/.local/share/Trash/files"
 
