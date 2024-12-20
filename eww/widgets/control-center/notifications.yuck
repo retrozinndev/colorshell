@@ -21,8 +21,7 @@
                         :image "${notification.app-icon.data}"
                         :summary "${notification.summary.data}"
                         :body "${notification.body.data}"
-                        ;:onclickclose "dunstctl history-rm ${notification.id.data}" ; needs fix
-                        :onclick "makoctl invoke -n ${notification.id.data}"
+                        :onclick "makoctl invoke -n ${notification.id.data} view"
                         :icon "${notification.app-name.data}"
           )
         )

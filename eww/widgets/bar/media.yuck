@@ -10,26 +10,28 @@
                   "${ active_window.class =~ json_media.player || active_window.title =~ json_media.title ? false : true }" 
               }
             :onclick "sh scripts/eww-window.sh toggle floating-media"
+            :class "mediaplayer-eventbox"
 
     (box :class "mediaplayer ${ media_reveal_controls && window_state_floating-media == "closed" ? 'revealed' : '' }"
          :space-evenly false
 
-      (box :class "media"
-           :space-evenly false
-           :tooltip "${json_media.title} - ${json_media.artist}"
+      (eventbox :class "media"
+                :tooltip "${json_media.title} - ${json_media.artist}"
 
-        (label :class "player"
-               :text { json_media.player == "spotify" ? " " : "󰎇 " })
+        (box :space-evenly false
+          (label :class "player"
+                 :text { json_media.player == "spotify" ? " " : "󰎇 " })
 
-        (label :class "media-title" 
-               :text "${json_media.title}"
-               :limit-width 40)
+          (label :class "media-title" 
+                 :text "${json_media.title}"
+                 :limit-width 40)
 
-        (box :class "separator")
+          (box :class "separator")
 
-        (label :class "media-artist"
-               :text "${json_media.artist}"
-               :limit-width 25)
+          (label :class "media-artist"
+                 :text "${json_media.artist}"
+                 :limit-width 25)
+        )
       )
       (revealer :class "media-controls-revealer"
                 :reveal { media_reveal_controls ? "${ window_state_floating-media == 'closed' ? true : false }" : false }

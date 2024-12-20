@@ -103,7 +103,7 @@ class PlayerManager:
         else:    
             self.clear_output()
 
-    def on_metadata_changed(self, player, metadata, _=None):
+    de on_metadata_changed(self, player, metadata, _=None):
         logger.debug(f"Metadata changed for player {player.props.player_name}")
         player_name = player.props.player_name
         artist = player.get_artist()
@@ -114,8 +114,6 @@ class PlayerManager:
             track_info = "Advertisement"
         elif artist != None and title != None:
             track_info = f"{artist} - {title}"
-            if(artist == "" or artist == " "):
-                track_info = f"{title}"
         else:
             track_info = title
 
@@ -135,7 +133,8 @@ class PlayerManager:
             "artist": player.get_artist(),
             "player": player.props.player_name.lower(),
             "artUrl": player.print_metadata_prop("mpris:artUrl"),
-            "length": player.print_metadata_prop("mpris:length")
+            "length": player.print_metadata_prop("mpris:length"),
+            "url": player.print_metadata_prop("xesam:url")
         }
 
         sys.stdout.write(json.dumps(output) + "\n")

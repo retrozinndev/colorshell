@@ -17,7 +17,7 @@
          :space-evenly false
         (top-bar)
         (toggles)
-        (big-media :album_background true)
+        (big-media :album-background true)
         (notifications)
     )
 )

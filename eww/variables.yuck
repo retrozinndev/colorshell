@@ -59,6 +59,10 @@
 (defpoll notification_modes :interval "1s"
 `makoctl mode | xargs`)
 
+(defpoll media_shuffle_status :interval "1.5s"
+                              :run-while { json_media.player != "" 
+                                && json_media.player != "null" }
+`playerctl shuffle`)
 
 ; Variables
 (defvar hold_volume_popup false)

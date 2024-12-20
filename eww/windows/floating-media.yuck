@@ -1,10 +1,15 @@
 (defwindow floating-media []
     :monitor 0
-    :geometry (geometry :anchor "top center")
+    :geometry (geometry :anchor "top center"
+                        :width "350px")
     :exclusive false
     :stacking "overlay"
     :focusable false
   (box :class "floating-media"
-    (big-media :album_background true)
+       :orientation "vertical"
+       :space-evenly false
+       :style "box-shadow: 0 5px 6px 1px rgb(0, 0, 0);"
+    (big-media :album-background true
+               :player-info true)
   )
 )

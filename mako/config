@@ -1,3 +1,6 @@
+# Lightweight Wayland Notification Daemon (mako) Configuration File
+# the man page of mako config file is a mess :skull:
+
 # general
 max-history=14
 sort=-time
