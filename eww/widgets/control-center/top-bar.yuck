@@ -23,13 +23,24 @@
              
              (button :class "lock"
                      :onclick "hyprctl dispatch exec hyprlock"
-             "󰌾")
+                     :tooltip "Lock"
+             '󰌾')
              (button :class "color-picker"
                      :onclick "hyprctl dispatch exec 'sh $HOME/.config/eww/scripts/color-picker.sh'"
-             "󰴱")
+                     :tooltip "Pick a Color"
+             '󰴱')
+             (button :class "screenshot"
+                     :onclick "hyprctl dispatch exec 'hyprshot -m region -o $HOME/Screenshots'"
+                     :tooltip "Select to screenshot"
+             '󰹑')
+             (button :class "wallpaper"
+                     :onclick "hyprctl dispatch exec 'sh $HOME/.config/hypr/scripts/change-wallpaper.sh'"
+                     :tooltip "Select a wallpaper"
+             '󰸉')
              (button :class "powermenu"
                      :onclick "sh scripts/eww-window.sh close bar && sh scripts/eww-window.sh open powermenu"
-             "󰗽")
+                     :tooltip "Choose power options"
+             '󰗽')
         )
     )
 )
