@@ -1,24 +1,27 @@
-(defwidget big-media [ album-background ?player-info ]
-    (box :class "big-media ${ album-background == true ? 'album-bg' : '' }"
-         :style { album-background == true ? "background-image: image(url('${json_media.artUrl}'))" : "" }
-         :visible { json_media.title != "null" && json_media.artist != "null" ? true : false }
+(defwidget big-media [ show-album-bg show-album-image ?album-image-size ?style-background-color ?visible ]
+    (box :class "big-media ${ show-album-bg ? 'album-bg' : '' } ${ show-album-image ? 'album-image' : '' }"
+         :style "${ show-album-bg ? 'background-image: image(url(\"${json_media.artUrl}\"))' : '' } ${ 
+                  style-background-color != '' ? 'background-color: ${style-background-color}' : '' }"
+         :visible { visible ? true : false}
          :space-evenly false
          :orientation "vertical"
 
     (box :orientation "horizontal"
-           :space-evenly false 
-           :class "media"
+         :space-evenly false 
+         :class "media"
 
       (box :class "album-image"
-           :width 98
-           :height 87
+           :width { album-image-size != "" ? album-image-size : 98 }
+           :height { album-image-size != "" ? "${album-image-size - 11}" : 87 }
            :style "background-image: image(url('${json_media.artUrl}'));"
-           :valign "center")
+           :valign "center"
+           :visible { show-album-image ? true : false })
 
       (box :orientation "vertical"
            :space-evenly false
            :class "right"
            :hexpand true
+           :valign "center"
 
         (box :class "media-info"
              :space-evenly false

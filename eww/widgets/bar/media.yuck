@@ -4,11 +4,11 @@
 (defwidget media [] 
   (eventbox :onhover "${EWW_CMD} update media_reveal_controls=true"
             :onhoverlost "${EWW_CMD} update media_reveal_controls=false"
-            :visible { json_media.title == "null" && json_media.artist == "null" ?
-                  false 
-              : 
-                  "${ active_window.class =~ json_media.player || active_window.title =~ json_media.title ? false : true }" 
-              }
+            :visible { json_media == "" ||
+                       (active_window.class =~ json_media.player &&
+                       active_window.title =~ json_media.title) ?
+                           false : true
+                     }
             :onclick "sh scripts/eww-window.sh toggle floating-media"
             :class "mediaplayer-eventbox"
 

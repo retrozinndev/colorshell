@@ -9,3 +9,6 @@
 (include "windows/volume-control.yuck")
 (include "windows/volume-popup.yuck")
 (include "windows/floating-media.yuck")
+
+; Widgets
+(include "widgets/big-media.yuck")

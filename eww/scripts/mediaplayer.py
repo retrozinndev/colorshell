@@ -103,7 +103,7 @@ class PlayerManager:
         else:    
             self.clear_output()
 
-    de on_metadata_changed(self, player, metadata, _=None):
+    def on_metadata_changed(self, player, metadata, _=None):
         logger.debug(f"Metadata changed for player {player.props.player_name}")
         player_name = player.props.player_name
         artist = player.get_artist()

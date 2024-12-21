@@ -16,7 +16,7 @@ box.button-row {
     $bg-color: darken($color: $foreground, $amount: 25);
 
     & > button {
-        background: rgba($bg-color, .7);
+        background: rgba($bg-color, .8);
         border-radius: 1px;
         margin: 0 1px;
 
@@ -31,7 +31,7 @@ box.button-row {
         }
 
         &:hover {
-            background: rgba($bg-color, 1);
+            background: $bg-color;
         }
     }
 }
@@ -41,7 +41,7 @@ box.vertical.button-row {
     $bg-color: darken($color: $foreground, $amount: 25);
 
     & > button {
-        background: rgba($bg-color, .7);
+        background: rgba($bg-color, .8);
         border-radius: 2px;
         margin: 1px 0;
 
@@ -56,7 +56,7 @@ box.vertical.button-row {
         }
 
         &:hover {
-            background: rgba($bg-color, 1);
+            background: $bg-color;
         }
     }
 }
@@ -201,4 +201,5 @@ tooltip {
         box-shadow: inset 0 0 0 100px rgba($background, .55);
         background-size: cover;
     }
+
 }

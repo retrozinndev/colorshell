@@ -45,8 +45,8 @@
                     (label :class "summary"
                            :text "${summary}"
                            :xalign 0
-                           :show-truncated true
-                           :halign "start")
+                           :halign "start"
+                           :show-truncated true)
 
                     (label :class "body"
                            :markup "${body}"

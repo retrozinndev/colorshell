@@ -1,15 +1,16 @@
 (defwindow floating-media []
     :monitor 0
     :geometry (geometry :anchor "top center"
-                        :width "350px")
+                        :width "420px")
     :exclusive false
-    :stacking "overlay"
+    :stacking "fg"
     :focusable false
+    :namespace "eww-media"
   (box :class "floating-media"
        :orientation "vertical"
        :space-evenly false
-       :style "box-shadow: 0 5px 6px 1px rgb(0, 0, 0);"
-    (big-media :album-background true
-               :player-info true)
+    (big-media :show-album-bg true
+               :album-image-size 124
+               :show-album-image true)
   )
 )

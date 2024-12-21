@@ -1,6 +1,5 @@
 (include "widgets/control-center/top-bar.yuck")
 (include "widgets/control-center/notifications.yuck")
-(include "widgets/control-center/big-media.yuck")
 (include "widgets/control-center/notification.yuck")
 (include "widgets/control-center/toggles.yuck")
 
@@ -17,7 +16,9 @@
          :space-evenly false
         (top-bar)
         (toggles)
-        (big-media :album-background true)
+        (big-media :show-album-bg true
+                   :show-album-image true
+                   :visible { json_media != "" ? true : false })
         (notifications)
     )
 )
