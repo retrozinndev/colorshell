@@ -1,9 +1,8 @@
 
 .volume-control {
-    background: rgba($background, .8);
-    padding: 8px;
+    background: rgba($background, .6);
+    padding: 6px;
     border-radius: 16px;
-    border: .5px solid rgba($foreground, .3);
 
     trough {
         background: rgba(lighten($color: $background, $amount: 8), .4);

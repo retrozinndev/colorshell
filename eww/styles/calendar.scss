@@ -1,19 +1,23 @@
 
 .calendar-box {
-    padding: 12px;
+    padding: 10px;
     background: rgba($background, 0.6);
     border-radius: 16px;
 
     & > label.calendar-header {
         font-size: 15px;
         font-weight: 700;
+        margin-bottom: 8px;
     }
 
     .month-calendar {
-        transition: all 120ms linear;
-        border-radius: 8px;
-        padding: 6px;
-        font-weight: 600;
+        & > * {
+            background: lighten($color: $background, $amount: 2);
+        }
+        border-radius: 12px;
+        padding: 0 5px;
+        padding-top: 10px;
+        font-weight: 500;
 
         & > .header {
             border-radius: 6px;
@@ -24,7 +28,7 @@
 
         // Selected day / Current day
         &:selected {
-            background: darken($color: $color3, $amount: 20);
+            background: darken($color: $color1, $amount: 20);
         }
     }
 }
