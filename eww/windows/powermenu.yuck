@@ -19,12 +19,15 @@
             (button :class "reboot"
                     :onclick "systemctl reboot"
             "󰜉")
+            (button :class "suspend"
+                    :onclick "systemctl suspend"
+            "󰤄")
             (button :class "logout"
                     :onclick "loginctl kill-user $(sh -c 'echo $USER')"
             "󰗽")
-            (button :class "close"
-                    :onclick "sh scripts/eww-window.sh close powermenu; sh scripts/eww-window.sh open bar"
-            "󰅖")
+            ;(button :class "close"
+            ;        :onclick "sh scripts/eww-window.sh close powermenu; sh scripts/eww-window.sh open bar"
+            ;"󰅖")
         )
     )
 )
