@@ -134,6 +134,18 @@ scale {
     padding: 10px;
 }
 
+scrollbar trough {
+    background: rgba(darken($color: $foreground, $amount: 50), .7);
+    margin: 5px 0;
+    padding: 2px;
+
+    & slider {
+        background: lighten($color: $color1, $amount: 15);
+        padding: 3px;
+        border-radius: inherit;
+    }
+}
+
 tooltip {
     & box {
         margin: 16px;
