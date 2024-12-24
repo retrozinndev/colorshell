@@ -5,8 +5,7 @@ print_workspaces_literal() {
     existing_workspaces=$(hyprctl -j workspaces | jq .[].id | xargs)
 
     output="
-        (box :class \"workspaces\"
-             :space-evenly false
+        (box :space-evenly false
              :orientation \"horizontal\""
 
     for i in {1..10}; do

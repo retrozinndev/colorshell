@@ -62,19 +62,19 @@ box.vertical.button-row {
 }
 
 button,
-.button {
+.button > box {
     padding: 6px 10px;
     border-radius: 12px;
     background: none;
 }
 
 button:hover,
-.button:hover {
+.button:hover > box {
     background: darken($color: $color2, $amount: 5);
 }
 
 button:active,
-.button:active {
+.button:active > box {
     background: darken($color: $color3, $amount: 10);
 }
 

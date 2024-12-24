@@ -136,11 +136,14 @@ box.cc {
             & > box {
                 background: darken($color: $color2, $amount: 15);
             }
+            &:checked > box {
+                background: $color3;
+            }
         }
 
         &:checked {
             & > box {
-                background: darken($color: $color3, $amount: 12);
+                background: darken($color: $color3, $amount: 5);
             }
         }
 
@@ -155,14 +158,26 @@ box.cc {
             margin-left: -16px; // This covers the checkbox space, hiding the check thing
 
             .icon {
-                font-size: 14px;
+                font-size: 15px;
                 padding-right: 5px;
             }
 
             .label {
-                font-size: 12px;
+                font-size: 12.6px;
                 font-weight: 600;
             }
+        }
+    }
+
+    & .network {
+        .icon {
+            margin-right: 5px;
+        }
+    }
+
+    & .dnd {
+        .icon {
+            margin-right: 4px;
         }
     }
 }

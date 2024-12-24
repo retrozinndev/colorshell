@@ -10,7 +10,8 @@
                    :draw-value false
                    :flipped false
                    :onchange "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ $(awk -v n={} 'BEGIN { print (n / 100) }')"
-                   :class "output-volume-slider")
+                   :class "output-volume-slider"
+                   :tooltip "${json_volume.source}")
 
             (label :text "󰍬"
                    :xalign 0)

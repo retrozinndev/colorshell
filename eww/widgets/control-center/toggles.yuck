@@ -21,7 +21,8 @@
                :enabled { notification_modes =~ "dnd" ? true : false }
                :onenable "makoctl mode -a dnd"
                :ondisable "makoctl mode -r dnd"
-               :visible true)
+               :visible true
+               :class "dnd")
     )
     (box :class "toggles toggles2"
          :visible false
@@ -39,7 +40,7 @@
   (checkbox :onchecked "${onenable}"
             :onunchecked "${ondisable}"
             :checked { enabled == true ? true : false }
-            :class "toggle-checkbox"
+            :class "toggle-checkbox ${class}"
 
     (box :class "toggle"
          :space-evenly false
