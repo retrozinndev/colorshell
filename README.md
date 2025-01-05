@@ -1,5 +1,10 @@
 # Retrozinn's Hyprland Dots
-My customized Hyprland configuration that I use everyday!
+My customized Hyprland configuration that with waybar and swaync!
+
+> [!note]
+> I've started using Eww for widgets instead of waybar and swaync.
+> This is my previous configuration. Please note that, if you want
+> to use it anyways, it may not work out-of-the-box!
 
 <div align="center">
     <div class="screenshot-container">
@@ -18,10 +23,6 @@ My customized Hyprland configuration that I use everyday!
 <p>(for some reason I was nervous when recording this lol)</p>
 </div>
 <br>
-
-> [!note]
-> I am currently working with eww, you can see how my work is going in the branch `eww-edition`.
-> Thus I may be a little bit inactive in the main branch (`ryo`).
 
 ## 🎨 Colors
 All the colors are dynamically based on the current wallpaper! This is possible by using [pywal], a cli tool to generate colorschemes by using an image as a base.
