@@ -1,18 +1,21 @@
 Config (
     x: Fraction(0.5),
-    y: Fraction(0.35),
+    y: Fraction(0.2),
     width: Fraction(0.4),
     height: Absolute(100),
     hide_icons: false,
     ignore_exclusive_zones: false,
     layer: Overlay,
-    show_results_immediately: true,
-    max_entries: Some(8),
+    show_results_immediately: true, 
+    max_entries: Some(100),
     close_on_click: true,
     hide_plugin_info: true,
 
     plugins: [
         "libapplications.so",
-        "libshell.so"
-    ],
+        "libshell.so",
+        "libwebsearch.so",
+        "libtranslate.so",
+        "librink.so"
+    ]
 )

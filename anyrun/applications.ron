@@ -1,0 +1,5 @@
+Config (
+    max_entries: 8,
+    desktop_actions: false,
+    show_results_immediately: true
+)

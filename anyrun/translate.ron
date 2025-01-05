@@ -1,0 +1,5 @@
+Config (
+    prefix: ":",
+    language_delimeter: ">",
+    max_entries: 3
+)

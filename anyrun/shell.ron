@@ -1,4 +1,4 @@
 Config (
-    prefix: ":",
-    shell: "bash"
+    prefix: "!",
+    shell: "/usr/bin/env bash",
 )
