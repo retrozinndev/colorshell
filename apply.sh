@@ -69,15 +69,15 @@ function Apply_wallpapers {
 
     if [[ $input_wallpaper =~ "y" ]]
     then
-        echo "Thanks for using the wallpapers! Oh, remember that I am not the author of them!"
-        echo "You can see sources on the repo website: https://github.com/retrozinndev/Hyprland-Dots/WALLPAPER_SOURCES.md"
+        echo "Thanks for installing these wallpapers! Oh, remember that I am not the author of them!"
+        echo "You can see sources in the repo: https://github.com/retrozinndev/Hyprland-Dots/WALLPAPERS.md"
  
         echo "-> Copying wallpapers to ~/wallpapers"
         mkdir -p $HOME/wallpapers
         cp ./wallpapers/* $HOME/wallpapers
     else
         echo "Ok! The wallpaper is yours to choose!"
-        echo "Tip: you can change it by creating a directory named \"wallpapers\", on your home dir, put your wallpapers there and press ´SUPER + W´ to select wallpaper :3"
+        echo "Tip: create a directory named \"wallpapers/\" on your home dir, put your wallpapers there and press ´SUPER + W´ to select any of them :3"
     fi
 }
 
