@@ -12,7 +12,6 @@ printf "\n"
 CONFIG_DIR="$HOME/.config"
 DOTFILES_DIRS=("hypr" "eww" "kitty" "anyrun" "wal" "fastfetch" "mako")
 DOTFILES_BACKUP_DIR="$HOME/hyprland-dotfiles-bkp"
-TRASH_DIR="$HOME/.local/share/Trash/files"
 
 echo "Welcome to my dotfiles installation script!"
 
@@ -30,13 +29,13 @@ function Backup_previous_dotfiles {
         if [[ -d $DOTFILES_BACKUP_DIR ]]
         then
             echo "Looks like the backup directory already exists!"
-            echo -n "Would you like to override it with the current configuration? (Will be deleted forever) [y/n] "
+            echo -n "Would you like to override it with the current configuration? (Will be moved to trash) [y/n] "
             read override_backup
             
             if [[ $override_backup = "y" ]] || [[ $override_backup = "yes" ]]
             then
                 echo "Ok! The backup folder will be ovewritten with the current user configuration."
-                mv -f $DOTFILES_BACKUP_DIR $TRASH_DIR
+                trash-put $DOTFILES_BACKUP_DIR
             fi
         else
             mkdir $DOTFILES_BACKUP_DIR
@@ -74,7 +73,7 @@ function Apply_wallpapers {
  
         echo "-> Copying wallpapers to ~/wallpapers"
         mkdir -p $HOME/wallpapers
-        cp ./wallpapers/* $HOME/wallpapers
+        cp -f ./wallpapers/* $HOME/wallpapers
     else
         echo "Ok! The wallpaper is yours to choose!"
         echo "Tip: create a directory named \"wallpapers/\" on your home dir, put your wallpapers there and press ´SUPER + W´ to select any of them :3"
@@ -91,7 +90,8 @@ function Apply_dotfiles {
 
 	for dir in ${DOTFILES_DIRS[@]}; do
         echo "-> Installing $dir in $CONFIG_DIR/$dir"
-        cp -rf ./$dir $CONFIG_DIR/$dir
+        mkdir -p $CONFIG_DIR/$dir
+        cp -rf ./$dir/* $CONFIG_DIR/$dir
     done
 
     # Ask if user wants to apply repo's wallpapers dir
@@ -102,6 +102,14 @@ function Apply_dotfiles {
 	echo "Thanks for using my dotfiles! I'm really happy about that :3"
     printf "\n"
 }
+
+for dir in ${DOTFILES_DIRS[@]}; do
+    if ! [[ -d ./$dir ]]; then
+        echo "[error] Looks like $dir configuration is in fault, or you didn't run this script in its directory!"
+        echo "[tip] If directory doesn't exist, try cloning the dotfiles again."
+        exit 1
+    fi
+done
 
 echo -n "Do you want to install the dotfiles? [y/n] "
 read input
