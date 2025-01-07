@@ -1,7 +1,6 @@
-(defwidget big-media [ show-album-bg show-album-image ?album-image-size ?style-background-color ?visible ]
+(defwidget big-media [ show-album-bg show-album-image ?album-image-size ?style ?visible ]
     (box :class "big-media ${ show-album-bg ? 'album-bg' : '' } ${ show-album-image ? 'album-image' : '' }"
-         :style "${ show-album-bg ? 'background-image: image(url(\"${json_media.artUrl}\"))' : '' } ${ 
-                  style-background-color != '' ? 'background-color: ${style-background-color}' : '' }"
+         :style "${ show-album-bg ? 'background-image: url(\"${json_media.artUrl}\");' : '' } ${style}" 
          :visible { visible == "" ? true : "${ visible ? true : false }" }
          :space-evenly false
          :orientation "vertical"

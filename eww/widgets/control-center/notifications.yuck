@@ -1,54 +1,38 @@
 (defwidget notifications []
-  (box :class "cc-notifications"
-       :orientation "vertical"
-       :space-evenly false
-      
-    (scroll :class "vertical-scroll"
-            :hscroll false
-            :vscroll true
-            :hexpand true
-            :vexpand true
-            :height 500
-            :style "border-radius: 16px;"
+  (scroll :class "cc-notifications scroll"
+          :hscroll false
+          :vscroll true
+          :vexpand true
+          :style "border-radius: 16px;"
 
-      (box :class "notifications"
-           :orientation "vertical"
-           :space-evenly false
-           
-
-        (for notification in json_notifications
-          (notification :application_name "${notification.app-name.data}"
-                        :image "${notification.app-icon.data}"
-                        :summary "${notification.summary.data}"
-                        :body "${notification.body.data}"
-                        :onclick "makoctl invoke -n ${notification.id.data} view"
-                        :icon "${notification.app-name.data}"
-          )
-        )
-
-        (box :class "empty-notifications"
-             :visible { arraylength(json_notifications) == 0 ? true : false }
-             :style "margin-top: 50px;"
-             :space-evenly false
-             :orientation "vertical"
-             :halign "center"
-            
-            (label :class "bell-icon"
-                   :text "󱇦"
-                   :style "font-size: 96px")
-
-            (label :text "You're done!"
-                   :style "margin-left: 12px;")
-        )
-      )
-    )
-
-    (box :class "bottom button-row"
-         :halign "end"
+    (box :class "notifications"
+         :orientation "vertical"
          :space-evenly false
-      (button :class "clear-all"
-              :onclick { arraylength(json_notifications) > 0 ? "pkill mako; hyprctl dispatch exec mako" : "" }
-      "󰎟  Clear")
+
+      (for notification in { json_notification_history["history"] }
+        (notification :application_name "${notification.app-name.data}"
+                      :image "${notification.app-icon.data}"
+                      :summary "${notification.summary.data}"
+                      :body "${notification.body.data}"
+                      :onclickclose "sh scripts/notification-remove.sh ${notification.id.data}"
+                      :icon "${notification.app-name.data}")
+      )
+
+      (box :class "empty-notifications"
+           :visible { arraylength(json_notification_history["history"]) == 0 }
+           :style "margin-top: 50px;"
+           :space-evenly false
+           :orientation "vertical"
+           :halign "center"
+           :valign "center"
+          
+          (label :class "bell-icon"
+                 :text "󱇦"
+                 :style "font-size: 96px")
+
+          (label :text "You're done!"
+                 :style "margin-left: 12px;")
+      )
     )
   )
 )

@@ -23,9 +23,8 @@
                            :text "${application_name}")
                 )
                 (button :class "close"
-                        :style "border-radius: 10px; padding: 6px; padding-left: 10px; padding-right: 10px;"
                         :onclick "${onclickclose}"
-                        :visible false ; Temporary, will try doing something to remove history items
+                        :visible true
                 "󰅖")
             )
 
@@ -43,7 +42,7 @@
                      :space-evenly false
 
                     (label :class "summary"
-                           :text "${summary}"
+                           :markup "${summary}"
                            :xalign 0
                            :halign "start"
                            :show-truncated true)

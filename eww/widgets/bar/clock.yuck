@@ -1,8 +1,26 @@
 (defwidget clock []
-    (box :class "clock"
-         :tooltip "${day-name}, ${month-name} ${day}"
-      (button :onclick "sh scripts/eww-window.sh toggle calendar-window"
-              :class "${window_state_calendar-window == 'open' ? 'cal-open' : ''}"
-      "${day-name} ${day}, ${time}")
+  (box :class "clock"
+       :tooltip { formattime(EWW_TIME, "%A, %B %d") }
+
+    (eventbox :onclick "sh scripts/eww-window.sh toggle calendar-window"
+              :class '${ window_state_calendar-window == "open" ? "cal-open" : "" } button'
+      (box :space-evenly false
+        (box :space-evenly false
+             :class "time"
+          (label :text "󰸗"
+                 :class "icon")
+
+          (label :text "${ formattime(EWW_TIME, "%A") }")
+
+          (revealer :reveal { window_state_calendar-window == "closed" }
+                    :transition "slideright"
+                    :duration "240ms"
+                    :class "unrevealer"
+
+            (label :text { formattime(EWW_TIME, "%d, %H:%M") } )
+          )
+        )
+      )
     )
+  )
 )

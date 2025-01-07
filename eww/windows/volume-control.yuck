@@ -18,7 +18,8 @@
     (output-slider)
     (source-slider)
 
-    (box :class "separator")
+    (separator :orientation "vertical"
+               :alpha 0.5)
 
     (box :class "vertical button-row"
          :orientation "vertical"

@@ -9,6 +9,9 @@
 (include "windows/volume-control.yuck")
 (include "windows/volume-popup.yuck")
 (include "windows/floating-media.yuck")
+(include "windows/floating-notifications.yuck")
+(include "windows/hardware-monitor.yuck")
 
-; Widgets
+; Universal Widgets
 (include "widgets/big-media.yuck")
+(include "widgets/separator.yuck")

@@ -1,7 +1,7 @@
-; All globally used variables should be stored here
+; All globally used variables, polls and listeners should be stored here
 
-
-; State
+; Variables
+;  State
 (defvar window_state_powermenu "closed")
 (defvar window_state_control-center "closed")
 (defvar window_state_floating-notifications "closed")
@@ -11,10 +11,12 @@
 (defvar window_state_volume-popup "closed")
 (defvar window_state_floating-media "closed")
 
+(defvar json_popup_notifications "{ \"notifications\": [] }")
+
 
 ; Listeners
-(deflisten json_notifications :initial "[]"
-`sh scripts/notification-handler.sh`)
+(deflisten json_notification_history :initial "{\"history\": []}"
+`sh scripts/notification-watch.sh`)
 
 (deflisten json_volume :initial `{ "output": 60, "source": 80 }`
 `sh scripts/get-volume-watch.sh`)
@@ -25,24 +27,11 @@
 (deflisten json_media :initial "{}"
 `python3 scripts/mediaplayer.py`)
 
-(deflisten active_window :initial `{ "title": "null", "class": "null" }`
+(deflisten json_active_window :initial "{ \"title\": \"null\", \"class\": \"null\" }"
 `sh scripts/active-window.sh`)
 
 
 ; Polls
-(defpoll day-name :interval "5s"
-`date +"%A"`)
-(defpoll day :interval "5s"
-`date +"%d"`)
-(defpoll month :interval "5s"
-`date +"%m"`)
-(defpoll month-name :interval "5s"
-`date +"%B"`)
-(defpoll year :interval "5s"
-`date +"%Y"`)
-(defpoll time :interval "5s"
-`date +"%H:%M"`)
-
 (defpoll hostname :initial "GNU/Linux"
                   :interval "24h"
 `cat /etc/hostname`)
@@ -64,5 +53,8 @@
                                 && json_media.player != "null" }
 `playerctl shuffle`)
 
-; Variables
-(defvar hold_volume_popup false)
+(defpoll is_recording :interval "1s"
+`sh -c "[[ -f $HOME/.cache/recording.lock ]] && echo true || echo false"`)
+
+(defpoll night_light :interval "1s"
+`sh -c "[[ -f $HOME/.cache/night-light.pid ]] && echo true || echo false"`)

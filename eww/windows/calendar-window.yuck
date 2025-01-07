@@ -9,8 +9,11 @@
          :space-evenly false
          :orientation "vertical"
 
-        (label :class "calendar-header"
-               :text "${month-name} ${day}, ${year}")
+        (label :class "time"
+               :text { formattime(EWW_TIME, "%H:%M") })
+
+        (label :class "date"
+               :text { formattime(EWW_TIME, "%B %d, %Y") })
         (calendar :class "month-calendar"
                   :show-details true
                   :show-heading true

@@ -1,11 +1,12 @@
 (include "widgets/control-center/top-bar.yuck")
 (include "widgets/control-center/notifications.yuck")
 (include "widgets/control-center/notification.yuck")
-(include "widgets/control-center/toggles.yuck")
+(include "widgets/control-center/tiles.yuck")
 
 (defwindow control-center []
     :monitor 0
     :geometry (geometry :width "500px"
+                        :height "90%"
                         :anchor "top right")
     :stacking "overlay"
     :exclusive false
@@ -15,10 +16,23 @@
          :orientation "vertical"
          :space-evenly false
         (top-bar)
-        (toggles)
-        (big-media :show-album-bg true
-                   :show-album-image true
-                   :visible { json_media == "" || (json_media.title == "null" && json_media.artist == "null") ? false : true })
+        (tiles)
+        (revealer :reveal { window_state_floating-media != "open" }
+                  :transition "slideup"
+                  :duration "380ms"
+          (big-media :show-album-bg true
+                     :show-album-image true
+                     :visible { json_media == "" || (json_media.title == "null" 
+                                && json_media.artist == "null") ? false : true })
+        )
         (notifications)
+        (box :class "bottom button-row"
+             :halign "end"
+             :space-evenly false
+          (button :class "clear-all"
+                  :onclick "sh scripts/notification-clear.sh" 
+                  :visible { arraylength(json_notification_history["history"]) > 0 }
+          "󰎟  Clear")
+        )
     )
 )

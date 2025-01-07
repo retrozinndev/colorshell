@@ -6,6 +6,7 @@
             :onhover "${EWW_CMD} update hover_workspaces=true"
             :onhoverlost "${EWW_CMD} update hover_workspaces=false"
     (box :class "workspaces"
+         :valign "center"
       (literal :content literal_workspaces)
     )
   )

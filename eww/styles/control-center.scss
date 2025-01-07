@@ -1,12 +1,11 @@
 box.cc {
-    margin-top: 8px;
-    margin-bottom: 14px;
-    margin-left: 14px;
+    margin: 12px;
+    margin-right: 0;
     background: rgba($background, .85);
     border-top-left-radius: 24px;
     border-bottom-left-radius: 24px;
     padding: 18px;
-    box-shadow: 0 5 8px 1px black;
+    box-shadow: 0 3px 4px 1px $background;
 }
 
 .top-bar {
@@ -50,7 +49,7 @@ box.cc {
 }
 
 .cc-notifications {
-    & > .vertical-scroll {
+    &.scroll {
         .notifications {
             box.notification {
                 background: darken($color: $color1, $amount: 10);
@@ -70,6 +69,11 @@ box.cc {
                         }
                         font-weight: 600;
                     }
+
+                    .close {
+                        padding: 4px 8px;
+                        border-radius: 9px;
+                    }
                 }
 
                 & .content {
@@ -87,7 +91,7 @@ box.cc {
 
                     & .text {
                         & label {
-                            font-family: "Cantarell", "Noto Sans CJK JP", "Noto Sans CJK KR";
+                            font-family: "Cantarell", "Noto Sans", "Noto Sans CJK JP", "Noto Sans CJK KR";
                         }
 
                         & label.summary {
@@ -117,33 +121,36 @@ box.cc {
     }
 }
 
-.toggles {
-    
+.tiles-grid {
     margin-bottom: 10px;
-    
-    & > .toggle-checkbox:first-child {
+}
+
+.tiles {
+    margin-bottom: 2px;
+
+    & > .tile-checkbox:first-child {
         margin-left: 0;
     }
 
-    & > .toggle-checkbox:last-child {
+    & > .tile-checkbox:last-child {
         margin-right: 0;
     }
 
-    & .toggle-checkbox {
+    & .tile-checkbox {
         margin: 2px;
 
         &:hover {
             & > box {
-                background: darken($color: $color2, $amount: 15);
+                background: $color3;
             }
             &:checked > box {
-                background: $color3;
+                background: $color2;
             }
         }
 
         &:checked {
             & > box {
-                background: darken($color: $color3, $amount: 5);
+                background: $color2;
             }
         }
 
@@ -151,7 +158,7 @@ box.cc {
             color: transparent;
         }
 
-        & > .toggle {
+        & > .tile {
             background: darken($color: $foreground, $amount: 65);
             border-radius: 16px;
             padding: 16px;
@@ -176,6 +183,18 @@ box.cc {
     }
 
     & .dnd {
+        .icon {
+            margin-right: 4px;
+        }
+    }
+
+    & .screen-rec {
+        .icon {
+            margin-right: 4px;
+        }
+    }
+
+    & .night-light {
         .icon {
             margin-right: 4px;
         }

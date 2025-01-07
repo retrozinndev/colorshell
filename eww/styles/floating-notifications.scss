@@ -1,5 +1,5 @@
 .floating-notifications {
-    & > .floating-notification {
+    & > .notifications .floating-notification {
         $background-color: darken($color: $color1, $amount: 40);
         background: $background-color;
         border-radius: 16px;
@@ -44,5 +44,33 @@
             }
         }
 
+    }
+
+    & > .bottom {
+        padding: 8px;
+        margin: 0 8px;
+
+        & .tip {
+            background: darken($color: $color1, $amount: 40);
+            border-radius: 12px;
+            padding: 8px 12px;
+            box-shadow: 0 0 0px 1px $background;
+
+            & > .icon {
+                margin-right: 4px;
+                font-size: 16px;
+            }
+        }
+
+        & > .right {
+            background: darken($color: $color1, $amount: 40);
+            border-radius: 12px;
+            box-shadow: 0 0 0px 1px $background;
+
+            & .icon {
+                margin-right: 4px;
+                font-size: 16px;
+            }
+        }
     }
 }

@@ -18,6 +18,13 @@
 
     & > * {
         margin: 0 3px;
+        border-radius: 12px;
+        &.button {
+            margin: 0;
+            & > box {
+                margin: 0 3px;
+            }
+        }
     }
 
     & > *:first-child {
@@ -35,20 +42,26 @@
 
 // Styles the literal script for workspace indicators
 .workspaces {
-    padding: 2px 0px;
     border-radius: 50%;
 
     & button {
-        $padding-block: 5px;
-
         border-radius: 16px;
         margin: 0 2px;
-        padding: $padding-block 12px;
+        padding: 5px 12px;
         background: lighten($color: $color1, $amount: 10);
 
+        &:not(.active):hover {
+            box-shadow: inset 0 0 0 50px rgba($color: $foreground, $alpha: .5);
+        }
+
         &.active {
-            padding: $padding-block 22px;
+            padding-right: 22px;
+            padding-left: 22px;
             background: $foreground;
+        }
+
+        &.special {
+            background: darken($color: $color3, $amount: 5);
         }
     }
 }
@@ -99,17 +112,10 @@
                     margin-right: 8px;
                 }
             }
-
-            & > box.separator {
-                margin: 8px 4px;
-                padding: 0 1px;
-                background: darken($color: $foreground, $amount: 20);
-            }
         }
     }
 
     &.revealed {
-        background: darken($color: $color3, $amount: 25);
         transition: 80ms linear;
 
         .media > box {
@@ -118,12 +124,31 @@
         }
 
         .media-controls {
-            background: darken($color: $color3, $amount: 25);
+            padding: 3px;
+            background: darken($color: $color3, $amount: 10);
             border-top-right-radius: 12px;
             border-bottom-right-radius: 12px;
 
-            & button:last-child {
-                border-radius: inherit;
+            & button {
+                background: $color2;
+                margin: 0 1px;
+                border-radius: 2px;
+
+                &:hover {
+                    background: lighten($color: $color2, $amount: 5);
+                }
+
+                &:first-child {
+                    border-top-left-radius: 8px;
+                    border-bottom-left-radius: 8px;
+                    margin-left: 0;
+                }
+
+                &:last-child {
+                    border-top-right-radius: 8px;
+                    border-bottom-right-radius: 8px;
+                    margin-right: 0;
+                }
             }
         }
     }
@@ -135,7 +160,7 @@
 }
 
 .window {
-    padding: 0 4px;
+    padding: 0 6px;
 
     & > .icon {
         margin-right: 6px;
@@ -146,17 +171,18 @@
             font-size: 9.8px;
             font-family: monospace;
             color: darken($color: $foreground, $amount: 20);
+            margin-top: -1px;
         }
 
         & > label.window-title {
             font-size: 12px;
             color: $foreground;
-            margin-top: -3px;
+            margin-top: -1px;
         }
     }
 }
 
-.network button {
+.network-eventbox > box {
     padding-left: 10px;
     padding-right: 7px;
 }
@@ -193,8 +219,18 @@
     }
 }
 
-.clock button.cal-open {
-    background: darken($color: $color3, $amount: 10);
+.clock {
+    & .cal-open > box {
+        background: darken($color: $color3, $amount: 10);
+    }
+
+    & .icon {
+        margin-right: 6px;
+    }
+
+    & label:not(.icon) {
+      margin-right: 3px;
+    }
 }
 
 .control-center-toggle {
@@ -215,5 +251,19 @@
 
     &.open {
         background: darken($color: $color3, $amount: 10);
+    }
+}
+
+.hardware {
+    & > box {
+        margin: 0 5px;
+
+        &:first-child {
+            margin-left: 0;
+        }
+
+        &:last-child {
+            margin-right: 0;
+        }
     }
 }

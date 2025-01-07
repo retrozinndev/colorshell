@@ -1,26 +1,27 @@
 
 (defwidget window []
   (box :class "window"
-       :visible { active_window.class == "" || active_window.class == "null" ? false : true }
+       :visible { json_active_window.class == "" || json_active_window.class == "null" ? false : true }
        :space-evenly false
+       :valign "center"
        :orientation "horizontal"
 
     (image :class "icon"
-           :icon "${ active_window.initialClass =~ 'zen-(.*)$' ? 'zen-browser' : active_window.initialClass }"
+           :icon "${ json_active_window.initialClass =~ 'zen-(.*)$' ? 'zen-browser' : json_active_window.initialClass }"
            :icon-size "toolbar")
 
     (box :class "info"
-         :orientation { active_window.title == "" ? "horizontal" : "vertical" }
+         :orientation { json_active_window.title == "" ? "horizontal" : "vertical" }
          :space-evenly false
         (label :class "window-class"
-               :text "${active_window.class}"
+               :text "${json_active_window.class}"
                :xalign 0
                :yalign 0)
         (label :class "window-title"
-               :text "${active_window.title}"
-               :visible { active_window.title != "" ? true : false }
+               :text "${json_active_window.title}"
+               :visible { json_active_window.title != "" ? true : false }
                :limit-width 45
-               :tooltip "${active_window.title}"
+               :tooltip "${json_active_window.title}"
                :xalign 0
                :yalign 0)
     )

@@ -1,0 +1,4 @@
+(defwidget separator [ ?orientation ?alpha ?style ]
+  (box :class "separator ${ orientation == '' || orientation == 'horizontal' ? 'horizontal' : 'vertical' }"
+       :style "opacity: ${ alpha == '' ? 1 : alpha }; ${style}")
+)

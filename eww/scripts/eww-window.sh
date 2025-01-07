@@ -44,7 +44,7 @@ Licensed under the MIT License, as in retrozinndev's Hyprland-Dots repo."
 
     --open | open)
         check_if_empty $2 "WINDOW_NAME"
-        if [[ $(eww get "window_state_$2") == "closed" ]]; then
+        if ! [[ $(eww active-windows) =~ "$2" ]]; then
             eww open "$2"
             eww update "window_state_$2=open"
         else
@@ -54,7 +54,7 @@ Licensed under the MIT License, as in retrozinndev's Hyprland-Dots repo."
 
     --close | close)
         check_if_empty $2 "WINDOW_NAME"
-        if [[ $(eww get "window_state_$2") == "open" ]]; then
+        if [[ $(eww active-windows) =~ "$2" ]]; then
             eww close "$2"
             eww update "window_state_$2=closed"
         else
@@ -64,7 +64,7 @@ Licensed under the MIT License, as in retrozinndev's Hyprland-Dots repo."
 
     --toggle | toggle)
         check_if_empty $2 "WINDOW_NAME"
-        if [[ $(eww get "window_state_$2") == "closed" ]]; then
+        if ! [[ $(eww active-windows) =~ "$2" ]]; then
             eww open "$2"
             eww update "window_state_$2=open" 
         else 
