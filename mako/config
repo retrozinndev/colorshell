@@ -2,11 +2,13 @@
 # the man page of mako config file is a mess :skull:
 
 # general
-max-history=14
+max-history=20
 sort=-time
 actions=1
 history=1
 icons=1
+default-timeout=1
+ignore-timeout=1
 
 # display
 layer=overlay
@@ -27,14 +29,14 @@ text-alignment=left
 margin=16
 max-icon-size=72
 
-[urgency="low"]
-default-timeout=4000
+# [urgency="low"]
+# default-timeout=1
 
-[urgency="normal"]
-default-timeout=8000
+# [urgency="normal"]
+# default-timeout=1
 
-[urgency="critical"]
-default-timeout=0
+# [urgency="critical"]
+# default-timeout=1
 
 # modes
 [mode="dnd"]
