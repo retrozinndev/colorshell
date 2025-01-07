@@ -19,6 +19,10 @@ the links down below.
 
 - [Alpha Coders](https://alphacoders.com/dandadan-wallpapers)
 
+## Frieren: Beyond Journey's End Wallpapers
+
+- [Alpha Coders](https://alphacoders.com/frieren-beyond-journeys-end-wallpapers)
+
 ## Hypr-chan Wallpaper
 
 - [GitHub (hyprwm/Hyprland)](https://github.com/hyprwm/Hyprland)
