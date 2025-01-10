@@ -1,6 +1,6 @@
 (defwidget big-media [ show-album-bg show-album-image ?album-image-size ?style ?visible ]
   (box :class "big-media ${ show-album-bg ? 'album-bg' : '' } ${ show-album-image ? 'album-image' : '' }"
-       :style "${ show-album-bg ? "background-image: url(\"${ json_media.artUrl =~ "^(http(.*)://(.*))$" ? json_media.artUrl : "${ "${ json_media.artUrl =~ "^(file://(.*))$" ? '' : 'file://' }" + json_media.artUrl }" }\")" : "" }; ${style}" 
+       :style "${ show-album-bg ? "background-image: url(\"${ json_media.artUrl != "null" ? json_media.artUrl : '' }\")" : "" }; ${style}" 
        :visible { visible == false ? false : true }
        :space-evenly false
        :orientation "vertical"
@@ -12,7 +12,7 @@
       (box :class "album-image"
            :width { album-image-size != "" ? album-image-size : 98 }
            :height { album-image-size != "" ? "${album-image-size - 11}" : 87 }
-           :style "background-image: url('${ json_media.artUrl =~ "^(http(.*)://(.*))$" ? json_media.artUrl : "${ "${ json_media.artUrl =~ "^(file://(.*))$" ? '' : 'file://' }" + json_media.artUrl }" }');"
+           :style "background-image: url(\"${ json_media.artUrl != "null" ? json_media.artUrl : "" }\");"
            :valign "center"
            :visible { json_media.artUrl == "null" || !show-album-image ? false : true })
 

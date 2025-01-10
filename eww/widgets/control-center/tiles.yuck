@@ -5,17 +5,17 @@
       (tile :icon '󰤨'
             :label "Network"
             :enabled { network_status == "full" ? true : false }
-            :onenable "nmcli n on"
-            :ondisable "nmcli n off"
+            :onenable "nmcli n on > /dev/null"
+            :ondisable "nmcli n off > /dev/null"
             :visible true
             :class "network")
 
       (tile :icon '󰂯'
             :label "Bluetooth"
             :enabled { bluetooth_powered == "yes" ? true : false }
-            :onenable "bluetoothctl power on"
-            :ondisable "bluetoothctl power off"
-            :visible true)
+            :onenable "bluetoothctl power on > /dev/null"
+            :ondisable "bluetoothctl power off > /dev/null"
+            :visible { bluetooth_powered == "" ? false : true })
 
       (tile :icon '󰍶'
             :label "Do Not Disturb"

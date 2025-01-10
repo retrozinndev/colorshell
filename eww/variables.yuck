@@ -52,11 +52,6 @@
 (defpoll notification_modes :interval "1s"
 `makoctl mode | xargs`)
 
-(defpoll media_shuffle_status :interval "1.5s"
-                              :run-while { json_media.player != "" 
-                                && json_media.player != "null" }
-`playerctl shuffle`)
-
 (defpoll is_recording :interval "1s"
 `sh -c "[[ -f $HOME/.cache/recording.lock ]] && echo true || echo false"`)
 

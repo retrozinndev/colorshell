@@ -127,12 +127,17 @@ class PlayerManager:
     def write_output(self, text, player):
         logger.debug(f"Writing output: {text}")
 
+        artUrl = player.print_metadata_prop("mpris:artUrl")
+        
+        if artUrl is not None and not artUrl.startswith("file://") and not artUrl.startswith("http://") and not artUrl.startswith("https://") and artUrl != "null":
+            artUrl = f"file://{artUrl}"
+
         output = {
             "status": player.props.status.lower(),
             "title": player.get_title(),
             "artist": player.get_artist(),
             "player": player.props.player_name.lower(),
-            "artUrl": player.print_metadata_prop("mpris:artUrl"),
+            "artUrl": artUrl,
             "length": player.print_metadata_prop("mpris:length"),
             "url": player.print_metadata_prop("xesam:url")
         }
