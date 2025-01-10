@@ -34,7 +34,7 @@
                      :width 96
                      :height 96
                      :visible { image != "" && image != "\{\}" ? true : false }
-                     :style { image != "" ? "background-image: image(url('${image}'));" : "" }
+                     :style { image != "" ? "background-image: url('${ image =~ "^file://(.*)$" || image =~ "^http(.*)://(.*)$" ? image : "${ "file://" + image }" }');" : "" }
                 ) 
 
                 (box :class "text"

@@ -50,7 +50,6 @@
                  :prepend-new false
                  :class "systray"
         )
-        (hardware)
         (audio)
         (battery)
         (network)
