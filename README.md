@@ -14,7 +14,7 @@ My customized Hyprland dotfiles that I keep improving almost everyday 🤩 !
   <img src="repo/shots/showing_off_rice.png" width="45%">
   <img src="repo/shots/runner.png" width="45%">
   <img src="repo/shots/floating_github.png" width="45%">
-  <img src="repo/shots/calendar.png" width="45%">
+  <img src="repo/shots/volume_control.png" width="45%">
   <img src="repo/shots/floating_media.png" width="45%">
   <img src="repo/shots/power_menu.png" width="45%">
 
