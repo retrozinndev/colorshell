@@ -27,6 +27,7 @@ function Restart_handler() {
     wait $pid_handler && Exit_daemon || \
         (Send_log "error" "An error occurred and handler stopped"
          Send_log "info" "Clearing history and starting handler again."
+         sh $HOME/.config/eww/scripts/notification-clear.sh &
          Restart_handler)
 }
 

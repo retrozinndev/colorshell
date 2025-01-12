@@ -6,4 +6,3 @@
 # Made by retrozinndev (João Dias)
 # From https://github.com/retrozinndev/Hyprland-Dots
 
-
