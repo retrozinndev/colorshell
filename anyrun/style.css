@@ -32,7 +32,8 @@ entry {
 }
 
 entry:focus, entry:active {
-    box-shadow: inset 0 0 0 2px @color2;
+    box-shadow: inset 0 0 0 2px @color2, 
+        0 4px 4px 1px alpha(@color2, 0.2);
 }
 
 entry:hover {
