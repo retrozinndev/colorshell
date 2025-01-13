@@ -84,24 +84,24 @@ button label {
 menu {
     background: $background;
     border-radius: 14px;
-    padding: 3px;
+    padding: 2px;
 
     & > menuitem {
         padding: 8px 24px;
-        border-radius: 5px;
+        border-radius: 4px;
 
         &:hover {
             background: $color1;
         }
 
         &:first-child {
-            border-top-left-radius: inherit;
-            border-top-right-radius: inherit;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
         }
 
         &:last-child {
-            border-bottom-left-radius: inherit;
-            border-bottom-right-radius: inherit;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
         }
 
         label {
