@@ -34,19 +34,8 @@ See more bindings inside the `~/.config/hypr/bindings.conf` file or check the [W
 ### ℹ️ Source
 All wallpapers inside this repo are not made by me! You can find all sources inside the [`WALLPAPERS.md`](https://github.com/retrozinndev/Hyprland-Dots/blob/ryo/WALLPAPERS.md) file.
 
-
-## Installation
-You'll need to have installed all needed packages before installing my dotfiles! Use your package manager to do so. See needed packages in [Wiki/Dependencies].
-
-In order to install this style right away, just run this installation script:
-
-> ℹ️ Notice: the installation script will make a backup folder containing all previous files in `~/hyprland-dots-bkp`.
-
-> 💡 Tip: Note the `$` character means that it's recommended to run this command without root privileges.
-
-```nushell
- $ git clone https://github.com/retrozinndev/Hyprland-Dots; cd Hyprland-Dots; sh apply.sh
-```
+## ⚙️ Installation
+See the Installation Guide on [Wiki/Installation].
 
 ### 🎉 Tools
 - Browser: [Zen Browser]
@@ -82,6 +71,7 @@ Thanks to everyone who starred my dotfiles! 💖
 <!-- Wiki Pages -->
 [wiki/dependencies]: https://github.com/retrozinndev/Hyprland-Dots/wiki/Dependencies
 [wiki/usage]: https://github.com/retrozinndev/Hyprland-Dots/wiki/Usage
+[wiki/installation]: https://github.com/retrozinndev/Hyprland-Dots/wiki/Installation
 
 <!-- Action Links -->
 [new issue]: https://github.com/retrozinndev/Hyprland-Dots/issues/new
