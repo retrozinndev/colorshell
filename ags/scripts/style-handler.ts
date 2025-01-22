@@ -40,9 +40,12 @@ function watch(): void {
         monitorFile(
             `${path}`,
             (file: string) => {
-                console.log(`[LOG] Stylesheet ${file} file updated`)
-                compileStyle();
-                applyStyle();
+                // Ignore tmp files
+                if(!file.endsWith('~')) {
+                    console.log(`[LOG] Stylesheet ${file} file updated`)
+                    compileStyle();
+                    applyStyle();
+                }
             }
         )
     )
