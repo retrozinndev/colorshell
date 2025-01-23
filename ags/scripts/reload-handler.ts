@@ -1,4 +1,4 @@
-import { Gio, monitorFile, Process } from "astal";
+import { monitorFile, Process } from "astal";
 
 const monitoringPaths = [ "./scripts", "./widget", "./app.ts", "env.d.ts" ];
 
