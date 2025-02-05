@@ -49,7 +49,7 @@ function LogoutButton(): Widget.Button {
     return new Widget.Button({
         label: "󰗽",
         onClick: () => Process.exec_async(
-            "bash -c 'loginctl terminate-user $USER'",
+            "bash -c 'wlogout -b 5'",
             () => {}
         )
     } as Widget.ButtonProps);

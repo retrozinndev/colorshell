@@ -6,31 +6,6 @@
   padding-bottom: 0px;
 
   & * {
-    all: unset;
-    transition: 120ms linear;
-
-    menu {
-      padding: 4px;
-      background: wal.$background;
-      border-radius: 14px;
-
-      & > separator {
-        margin: 0 4px;
-        color: wal.$background;
-      }
-
-      & > menuitem {
-        padding: 8px 0px;
-        border-radius: 10px;
-        font-size: 12px;
-        font-weight: 600;
-
-        &:hover {
-          background: wal.$color1;
-        }
-      }
-    }
-
     button {
       padding: 6px 8px;
       border-radius: 12px;
@@ -39,6 +14,13 @@
         background: wal.$color1;
       }
     }
+
+    label {
+      font-size: 12px;
+      font-family: "Cantarell", "Noto Sans";
+      font-weight: 500;
+    }
+
   }
 
   // Style widget groups
@@ -62,152 +44,146 @@
       }
     }
   }
-}
 
-.bar-container label {
-  font-size: 12px;
-  font-family: "Cantarell", "Noto Sans";
-  font-weight: 500;
-}
+  .workspaces {
+    padding: 2px 2px;
 
-.workspaces {
-  padding: 2px 2px;
+    & button {
+      all: unset;
+      border-radius: 16px;
+      transition: 80ms linear;
+      padding: 12px 12px;
+      background: wal.$color1;
+      margin: 1px 2px;
 
-  & button {
-    all: unset;
-    border-radius: 16px;
-    transition: 80ms linear;
-    padding: 12px 12px;
-    background: wal.$color1;
-    margin: 1px 2px;
-
-    &.focus {
-      background: wal.$foreground;
-      padding: 12px 20px;
+      &.focus {
+        background: wal.$foreground;
+        padding: 12px 20px;
+      }
     }
   }
-}
 
-.focused-window {
-  padding: 0 6px;
-
-  & > .icon {
-    margin-right: 6px;
-  }
-
-  & > .text-content {
-    & > .class {
-      font-size: 9px;
-      font-weight: 500;
-      font-family: monospace;
-      color: adjust-hue($color: wal.$foreground, $degrees: 100deg);
-      margin-top: 1px;
-    }
-    
-    & > .title {
-      font-size: 11.5px;
-      font-weight: 500;
-      margin-top: -2px;
-    }
-  }
-}
-
-.logo button {
-  padding: 0 11px;
-  padding-right: 16px;
-
-  & label {
-    font-size: 14px;
-  }
-}
-
-.media-eventbox {
-  & > .media > box {
-    border-radius: 12px;
-    background: wal.$color2;
+  .focused-client {
     padding: 0 6px;
 
-    & .icon {
+    & > .icon {
       margin-right: 6px;
+    }
+
+    & > .text-content {
+      & > .class {
+        font-size: 9px;
+        font-weight: 500;
+        font-family: monospace;
+        color: adjust-hue($color: wal.$foreground, $degrees: 100deg);
+        margin-top: 1px;
+      }
+      
+      & > .title {
+        font-size: 11.5px;
+        font-weight: 500;
+        margin-top: -2px;
+      }
+    }
+  }
+
+  .logo button {
+    padding: 0 11px;
+    padding-right: 16px;
+
+    & label {
       font-size: 14px;
     }
   }
 
-  &.reveal {
-    & .media > box {
-      border-top-right-radius: 0;
-      border-bottom-right-radius: 0;
+  .media-eventbox {
+    & > .media > box {
+      border-radius: 12px;
+      background: wal.$color1;
+      padding: 0 6px;
+
+      & .icon {
+        margin-right: 6px;
+        font-size: 14px;
+      }
     }
-    & .media-controls {
-      padding-left: 3px;
-      border-top-right-radius: 12px;
-      border-bottom-right-radius: 12px;
-      background: scale-color($color: wal.$color3, $lightness: -12%);
 
-      & > button {
-        margin: 0px 1px;
-        border-radius: 4px;
+    &.reveal {
+      & .media > box {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+      & .media-controls {
+        padding-left: 3px;
+        border-top-right-radius: 12px;
+        border-bottom-right-radius: 12px;
+        background: scale-color($color: wal.$color1, $lightness: -20%);
 
-        &:first-child {
-          border-top-left-radius: 12px;
-          border-bottom-left-radius: 12px;
-          margin-left: 0;
-        }
+        & > button {
+          margin: 0px 1px;
+          border-radius: 4px;
 
-        &:last-child {
-          border-top-right-radius: 12px;
-          border-bottom-right-radius: 12px;
-          margin-right: 0;
+          &:first-child {
+            border-top-left-radius: 12px;
+            border-bottom-left-radius: 12px;
+            margin-left: 0;
+          }
+
+          &:last-child {
+            border-top-right-radius: 12px;
+            border-bottom-right-radius: 12px;
+            margin-right: 0;
+          }
         }
       }
     }
   }
-}
 
-.tray {
-  padding: 0 6px;
+  .tray {
+    padding: 0 6px;
 
-  & .item {
-    all: unset;
+    & .item {
+      all: unset;
 
-    &:hover {
-      background: none;
+      &:hover {
+        background: none;
+      }
+
+      margin: 0 6px;
+      padding: 0;
+
+      &:first-child {
+        margin-left: 0;
+      }
+
+      &:last-child {
+        margin-right: 0;
+      }
+    }
+  }
+
+  .audio {
+    &:hover > box {
+      background: wal.$color1;
     }
 
-    margin: 0 6px;
-    padding: 0;
-
-    &:first-child {
-      margin-left: 0;
+    & > box {
+      padding: 0 9px;
+      border-radius: 12px;
     }
 
-    &:last-child {
-      margin-right: 0;
+    & .sink .icon {
+      margin-right: 6px;
+    }
+
+    & .source .icon {
+      margin-right: 4px;
     }
   }
-}
 
-.audio {
-  &:hover > box {
-    background: wal.$color1;
+  .cc-toggle button {
+    $padding-inline: 12px;
+    padding-left: $padding-inline;
+    padding-right: calc($padding-inline + 2px);
   }
-
-  & > box {
-    padding: 0 9px;
-    border-radius: 12px;
-  }
-
-  & .sink .icon {
-    margin-right: 6px;
-  }
-
-  & .source .icon {
-    margin-right: 4px;
-  }
-}
-
-.cc-toggle button {
-  $padding-inline: 12px;
-  padding-left: $padding-inline;
-  padding-right: calc($padding-inline + 2px);
 }

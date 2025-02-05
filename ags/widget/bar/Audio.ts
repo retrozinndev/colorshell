@@ -1,5 +1,5 @@
-import { bind } from "astal";
-import { Astal, Widget } from "astal/gtk3";
+import { bind, Process } from "astal";
+import { Widget } from "astal/gtk3";
 import AstalWp from "gi://AstalWp?version=0.1";
 import { Wireplumber } from "../../scripts/volume";
 
@@ -8,6 +8,7 @@ const wp = AstalWp.get_default();
 export function Audio() {
     return wp && new Widget.EventBox({
         className: "audio",
+        onClick: () => Process.exec_async("astal toggle control-center", () => {}),
         child: new Widget.Box({
             children: [
                 new Widget.EventBox({

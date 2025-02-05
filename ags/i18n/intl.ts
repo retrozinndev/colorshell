@@ -2,16 +2,16 @@
 
 import { GLib } from "astal";
 
-export const i18nKeys = {
-    "en_US": () => import("./lang/en_US"),
-    "pt_BR": () => import("./lang/pt_BR")
+const i18nKeys = {
+    "en_US": (() => import("./lang/en_US")!)(),
+    "pt_BR": (() => import("./lang/pt_BR")!)()
 }
 
-export const languages: Array<string> = (() => 
+const languages: Array<string> = (() => 
     Object.keys(i18nKeys))()
 
 const defaultLanguage: string = languages[0];
-let language: string = defaultLanguage;
+let language: string = getSystemLanguage();
 
 export function getSystemLanguage(): string {
     const sysLanguage: (string|null|undefined) = GLib.getenv("LANG") || GLib.getenv("LANGUAGE");
@@ -40,14 +40,14 @@ export function setLanguage(lang: keyof typeof i18nKeys): (string|Error) {
 }
 
 export function tr(key: string): (string|undefined) {
-    let langKeys: Object = i18nKeys[language as keyof typeof i18nKeys];
     let result = i18nKeys[language as keyof typeof i18nKeys], 
     defResult = i18nKeys[defaultLanguage as keyof typeof i18nKeys];
 
-    key.split('.').map((keyString: string) => {
+    for(const keyString in key.split('.')) {
+        console.log(result);
         result = result[keyString as keyof typeof result];
         defResult = defResult[keyString as keyof typeof defResult];
-    });
+    }
 
     return (result as never) || (defResult as never) || undefined;
 }

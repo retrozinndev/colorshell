@@ -1,3 +1,8 @@
 export default {
-    "language": "Português (Brasil)"
+    "language": "Português (Brasil)",
+    "bar": {
+        "logo": {
+            "tooltip": "Aplicativos"
+        }
+    }
 }

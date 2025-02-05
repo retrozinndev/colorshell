@@ -5,9 +5,9 @@ import { getAppIcon } from "../../scripts/apps";
 
 const hyprland = AstalHyprland.get_default();
 
-export function FocusedWindow() {
+export function FocusedClient() {
     return new Widget.Box({
-        className: "focused-window",
+        className: "focused-client",
         visible: bind(hyprland, "focusedClient").as(Boolean),
         children: [
             new Widget.Icon({

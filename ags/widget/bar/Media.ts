@@ -4,7 +4,6 @@ import AstalMpris from "gi://AstalMpris";
 import { Separator, SeparatorProps } from "../Separator";
 
 const mpris: AstalMpris.Mpris = AstalMpris.get_default();
-let defaultPlayer: (AstalMpris.Player|undefined) = mpris.get_players()?.[0];
 
 const playerIcons = {
     spotify: '󰓇',
@@ -15,80 +14,77 @@ const playerIcons = {
 }
 
 export function Media(): JSX.Element {
-
-    bind(mpris, "players")?.as((players: Array<AstalMpris.Player>) => {
-        defaultPlayer = players?.[0] as AstalMpris.Player;
-    });
-
     const mediaControlsRevealer: Widget.Revealer = new Widget.Revealer({
         transitionType: Gtk.RevealerTransitionType.SLIDE_RIGHT,
         transitionDuration: 260,
         revealChild: false,
         child: new Widget.Box({
             className: "media-controls",
+            expand: false,
             homogeneous: false,
-            children: [
-                new Widget.Button({
-                    className: "previous",
-                    label: "󰒮",
-                    onClick: () => {
-                        if(bind(defaultPlayer!, "canGoPrevious").as(Boolean))
-                            defaultPlayer?.previous();
-                    }
-                } as Widget.ButtonProps),
-                new Widget.Button({
-                    className: "pause",
-                    label: bind(defaultPlayer!, "playback_status").as((status: AstalMpris.PlaybackStatus) => {
-                        return status === AstalMpris.PlaybackStatus.PLAYING ? "󰏤" : "󰐊"
-                    }),
-                    onClick: () => {
-                        if(bind(defaultPlayer!, "canPlay").as(Boolean)
-                          || bind(defaultPlayer!, "canPause").as(Boolean))
-                            defaultPlayer?.play_pause();
-                    }
-                } as Widget.ButtonProps),
-                new Widget.Button({
-                    className: "next",
-                    label: "󰒭",
-                    onClick: () => {
-                        if(bind(defaultPlayer!, "canGoNext").as(Boolean))
-                            defaultPlayer?.next();
-                    }
-                } as Widget.ButtonProps)
-            ]
+            children: bind(mpris, "players").as((players: Array<AstalMpris.Player>) =>
+                players[0] ? [ 
+                    new Widget.Button({
+                        className: "previous",
+                        label: "󰒮",
+                        onClick: () => players[0].canGoPrevious && players[0].previous()
+                    } as Widget.ButtonProps),
+                    new Widget.Button({
+                        className: "pause",
+                        label: bind(players[0], "playbackStatus").as((status: AstalMpris.PlaybackStatus) => 
+                            status === AstalMpris.PlaybackStatus.PLAYING ? "󰏤" : "󰐊"),
+                        onClick: () => {
+                            players[0].playbackStatus === AstalMpris.PlaybackStatus.PAUSED ?
+                                players[0].play()
+                            :
+                                players[0].pause()
+                        }
+                    } as Widget.ButtonProps),
+                    new Widget.Button({
+                        className: "next",
+                        label: "󰒭",
+                        onClick: () => players[0].canGoNext && players[0].next()
+                    } as Widget.ButtonProps)
+                ] : new Widget.Label({
+                    label: "Don't Stop The Music!"
+                } as Widget.LabelProps)
+            )
         } as Widget.BoxProps)
     } as Widget.RevealerProps);
 
     const mediaWidget = new Widget.EventBox({
         className: "media-eventbox",
-        visible: bind(mpris, "players").as((players: Array<AstalMpris.Player>) => players?.[0]).as(Boolean),
+        visible: bind(mpris, "players").as((players: Array<AstalMpris.Player>) => players[0]).as(Boolean),
         child: new Widget.Box({
             className: "media",
             children: [
                 new Widget.Box({
-                    children: [
-                        new Widget.Label({
-                            className: "icon",
-                            label: defaultPlayer && bind(defaultPlayer, "busName")?.as((name: string) => {
-                                const banana: Array<string> = name.split('.');
-                                const playerName: string = banana[banana.length-1];
-                                return playerIcons[playerName as keyof typeof playerIcons] || '󰎇';
-                            })
-                        } as Widget.LabelProps),
-                        new Widget.Label({
-                            className: "title",
-                            label: defaultPlayer && bind(defaultPlayer, "title")?.as((title: string) => title)
-                        } as Widget.LabelProps),
-                        Separator({
-                            size: 2,
-                            cssColor: `rgb(180, 180, 180)`,
-                            alpha: 1
-                        } as SeparatorProps),
-                        new Widget.Label({
-                            className: "artist",
-                            label: defaultPlayer && bind(defaultPlayer, "artist")?.as((artist: string) => artist)
+                    children: bind(mpris, "players").as((players: Array<AstalMpris.Player>) =>
+                        players[0] ? [
+                            new Widget.Label({
+                                className: "icon",
+                                label: bind(players[0], "busName").as((busName: string) => {
+                                    const playerName: string = busName.split('.')[busName.split('.').length-1];
+                                    return playerIcons[playerName as keyof typeof playerIcons] || "󰎇";
+                                })
+                            } as Widget.LabelProps),
+                            new Widget.Label({
+                                className: "title",
+                                label: bind(players[0], "title").as((title: string) => title || "No Title")
+                            } as Widget.LabelProps),
+                            Separator({
+                                size: 2,
+                                cssColor: `rgb(180, 180, 180)`,
+                                alpha: 1
+                            } as SeparatorProps),
+                            new Widget.Label({
+                                className: "artist",
+                                label: bind(players[0], "artist").as((artist: string) => artist || "No Artist")
+                            } as Widget.LabelProps)
+                        ] : new Widget.Label({
+                            label: "Crazy to think this widget didn't disappear yet!"
                         } as Widget.LabelProps)
-                    ]
+                    )
                 } as Widget.BoxProps),
                 mediaControlsRevealer
             ]

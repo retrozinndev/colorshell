@@ -1,4 +1,54 @@
+@use "sass:color";
 @use "./style/bar";
 @use "./style/wal";
 @use "./style/osd";
-@use "./style/control-center"
+@use "./style/control-center";
+
+* {
+  all: unset;
+  transition: 120ms linear;
+}
+
+.button-row {
+  & > button {
+    background: color.scale($color: wal.$foreground, $lightness: -30%, $alpha: 70%);
+    margin: 0 1px;
+    border-radius: 2px;
+
+    &:hover {
+      background: color.scale($color: wal.$foreground, $lightness: -30%, $alpha: 100%);
+    }
+
+    &:first-child {
+      border-top-left-radius: 10px;
+      border-bottom-left-radius: 10px;
+    }
+
+    &:last-child {
+      border-top-right-radius: 10px;
+      border-bottom-right-radius: 10px;
+    }
+  }
+}
+
+menu {
+  padding: 4px;
+  background: wal.$background;
+  border-radius: 14px;
+
+  & > separator {
+    margin: 0 4px;
+    color: wal.$background;
+  }
+
+  & > menuitem {
+    padding: 8px 0px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+
+    &:hover {
+      background: wal.$color1;
+    }
+  }
+}

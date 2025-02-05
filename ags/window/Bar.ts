@@ -2,12 +2,11 @@ import { Gdk, Astal, Gtk, Widget } from "astal/gtk3";
 
 import { Clock } from "../widget/bar/Clock";
 import { Logo } from "../widget/bar/Logo";
-import { CCToggle } from "../widget/bar/CCToggle";
 import { Tray } from "../widget/bar/Tray";
 import { Workspaces } from "../widget/bar/Workspaces";
 import { Audio } from "../widget/bar/Audio";
-import { FocusedWindow } from "../widget/bar/FocusedWindow";
-//import { Media } from "../widget/bar/Media";
+import { FocusedClient } from "../widget/bar/FocusedClient";
+import { Media } from "../widget/bar/Media";
 
 export const Bar: Widget.Window = new Widget.Window({
     className: "bar",
@@ -34,7 +33,7 @@ export const Bar: Widget.Window = new Widget.Window({
                 children: [
                     Logo(),
                     Workspaces(),
-                    FocusedWindow()
+                    FocusedClient()
                 ]
             } as Widget.BoxProps),
             centerWidget: new Widget.Box({
@@ -43,7 +42,7 @@ export const Bar: Widget.Window = new Widget.Window({
                 halign: Gtk.Align.CENTER,
                 children: [
                     Clock(),
-                    /*<Media />*/
+                    Media()
                 ]
             } as Widget.BoxProps),
             endWidget: new Widget.Box({
@@ -52,8 +51,7 @@ export const Bar: Widget.Window = new Widget.Window({
                 halign: Gtk.Align.END,
                 children: [
                     Tray(),
-                    Audio(),
-                    CCToggle()
+                    Audio()
                 ]
             } as Widget.BoxProps)
         } as Widget.CenterBoxProps)

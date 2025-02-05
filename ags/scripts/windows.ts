@@ -27,4 +27,8 @@ export class Windows {
     public close(window: Widget.Window): void {
         window.hide();
     }
+
+    public toggle(window: Widget.Window): void {
+        window.is_visible() ? this.close(window) : this.open(window);
+    }
 }

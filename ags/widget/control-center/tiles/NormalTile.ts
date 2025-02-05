@@ -1,4 +1,4 @@
-import { Binding } from "astal";
+import { Binding, Variable } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
 
 export interface NormalTileProps {
@@ -13,9 +13,6 @@ export interface NormalTileProps {
 }
 
 export function MoreTile(props: NormalTileProps): Gtk.Widget {
-
-    let toggleState: boolean = props?.toggleState !== undefined ? 
-        props.toggleState : false;
 
     const mainEventBox = new Widget.EventBox({
         onClick: () => toggleState ? props.onToggledOff() : props.onToggledOn(),
