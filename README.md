@@ -1,10 +1,13 @@
 # Retrozinn's Hyprland Dots
 My customized Hyprland dotfiles that I keep improving almost everyday 🤩 !
 
+> [!warning]
+> This is the branch for the Elkowar's Wacky Widgets(eww) edition! If you're <br>
+> here for the waybar version instead, go to the [`waybar-edition`](https://github.com/retrozinndev/Hyprland-Dots/tree/waybar-edition) branch!
+
 > [!note]
-> Finally, the Eww edition is ready! You can now use it if you want to! :heart: <br>
-> If you're searching for the previous dotfiles with Waybar and Swaync, go
-> to the [`waybar-edition`](https://github.com/retrozinndev/Hyprland-Dots/tree/waybar-edition) branch!
+> I'm currently developing an [AGS](https://aylur.github.io/ags)+[Astal](https://aylur.github.io/astal) version of these dots! Peek a little on <br>
+> how developement is going in the [`ryoland`](https://github.com/retrozinndev/Hyprland-Dots/tree/ryoland) branch. <br>
 
 ## 🌄 Screenshots
 <div align="center"
