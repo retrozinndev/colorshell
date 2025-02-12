@@ -59,6 +59,7 @@ Thanks to everyone who starred my dotfiles! 💖
 <!-- Wiki Pages -->
 [wiki/dependencies]: https://github.com/retrozinndev/Hyprland-Dots/wiki/Dependencies
 [wiki/usage]: https://github.com/retrozinndev/Hyprland-Dots/wiki/Usage
+[wiki/installation]: https://github.com/retrozinndev/Hyprland-Dots/wiki/Installation
 
 <!-- Action Links -->
 [new issue]: https://github.com/retrozinndev/Hyprland-Dots/issues/new
