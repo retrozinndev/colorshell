@@ -4,7 +4,12 @@ My Hyprland dotfiles that I keep improving almost everyday 🤩! (i love doing t
 > [!note]
 > This is very work in progress, it's an Aylur's GTK Shell version of my dots! I absolutely <br>
 > don't recommend installing this one, since it's WIP.
-> If you're searching for the stable dotfiles, go to the [`ryo`](https://github.com/retrozinndev/Hyprland-Dots/tree/ryo) branch!
+> If you're searching for the stable dotfiles, go to the [`ryo`](https://github.com/retrozinndev/Hyprland-Dots/tree/ryo) branch! <br>
+
+> **TODO List:**
+> - Notification Popup
+> - Notification History
+> - Monitor Brightness controlling(not as important as ones above, can be released without this feature)
 
 ## 🌄 Screenshots
 ![Desktop](repo/shots/desktop.png)
