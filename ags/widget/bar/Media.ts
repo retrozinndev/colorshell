@@ -54,6 +54,7 @@ export function Media(): Gtk.Widget {
                     new Widget.Button({
                         className: "next nf",
                         label: "󰒭",
+                        tooltipText: "Next",
                         onClick: () => players[0].canGoNext && players[0].next()
                     } as Widget.ButtonProps)
                 ] : new Widget.Label({

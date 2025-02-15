@@ -2,6 +2,7 @@ import { Astal, Gtk, Widget } from "astal/gtk3";
 import { GLib } from "astal";
 
 import { getDateTime } from "../scripts/time";
+import { BigMedia } from "../widget/center-window/BigMedia";
 
 export const CenterWindow: Widget.Window = new Widget.Window({
     className: "center-window",
@@ -25,6 +26,7 @@ export const CenterWindow: Widget.Window = new Widget.Window({
                     new Widget.Box({
                         className: "top",
                         orientation: Gtk.Orientation.VERTICAL,
+                        valign: Gtk.Align.START,
                         children: [
                             new Widget.Label({
                                 className: "time",
@@ -38,6 +40,7 @@ export const CenterWindow: Widget.Window = new Widget.Window({
                             } as Widget.LabelProps)
                         ]
                     } as Widget.BoxProps),
+                    BigMedia
                 ]
             } as Widget.BoxProps),
             new Widget.Box({

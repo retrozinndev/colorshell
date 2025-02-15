@@ -1,38 +1,75 @@
 @use "sass:color";
 @use "./wal";
-@use "./functions" as funs; // Did you know that you can use the 'as' keyword? I just found out!
+@use "./colors";
+@use "./functions" as funs; 
 
 .center-window-container {
-  background: wal.$background;
+  background: colors.$bg-translucent;
   border-radius: 18px;
   padding: 12px;
 
   & .left {
-    .top {
-      .time {
-        font-size: 22px;
+    & > .top {
+      padding-bottom: 10px;
+
+      & .time {
+        font-size: 28px;
         font-weight: 800;
       }
 
-      .date {
+      & .date {
         font-size: 14px;
         font-weight: 500;
-        color: funs.toRGB(color.adjust($color: wal.$foreground, $lightness: -15%));
+        color: colors.$fg-disabled;
+      }
+    }
+
+    & .big-media {
+      padding: 6px 16px;
+
+      & > box > .image {
+        background-size: cover;
+        background-position: center center;
+        border-radius: 10px;
+      }
+
+      & > .info {
+        padding: {
+          top: 4px;
+          bottom: 6px;
+        };
+
+        & .title {
+          font-size: 16px;
+          font-weight: 700;
+        }
+
+        & .artist {
+          font-size: 14px;
+          font-weight: 600;
+          color: colors.$fg-disabled;
+        }
+      }
+
+      & > .controls {
+        padding: 8px 0;
       }
     }
   }
 
-  & .calendar-box {
-    padding: 5px;
-    & calendar {
-      border-radius: 6px;
-      padding: 2px;
+  & .right {
+    & .calendar-box {
+      padding: 5px;
+      & calendar {
+        border-radius: 6px;
+        padding: 2px;
 
-      &.view {
-        background: funs.toRGB(color.adjust($color: wal.$color1, $lightness: -35%));
+        &.view {
+          background: funs.toRGB(color.adjust($color: wal.$color1, $lightness: -35%));
 
-        & header {
-          background: funs.toRGB(color.adjust($color: wal.$background, $lightness: -20%));
+          & header {
+            background: funs.toRGB(color.adjust($color: wal.$background, $lightness: -20%));
+          }
         }
       }
     }

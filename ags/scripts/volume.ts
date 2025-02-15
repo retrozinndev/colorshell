@@ -1,10 +1,11 @@
-import {  GObject } from "astal";
+import {  GObject, register } from "astal";
 import AstalWp from "gi://AstalWp";
 
-export const Wireplumber = GObject.registerClass({
-    GTypeName: "Wireplumber",
-    Signals: {}
-}, class WireplumberClass extends GObject.Object {
+export { WireplumberClass as Wireplumber };
+
+
+@register({ GTypeName: "Wireplumber" })
+class WireplumberClass extends GObject.Object {
     private static astalWireplumber: (AstalWp.Wp|null) = AstalWp.get_default();
     private static inst: WireplumberClass;
 
@@ -14,8 +15,8 @@ export const Wireplumber = GObject.registerClass({
     private maxSinkVolume: number = 100;
     private maxSourceVolume: number = 100;
 
-    _init(...props: any[]) {
-        super._init(props);
+    constructor() {
+        super();
 
         if(!WireplumberClass.astalWireplumber) 
             throw new Error("Audio features will not work correctly! Please install wireplumber first", {
@@ -145,4 +146,4 @@ export const Wireplumber = GObject.registerClass({
 
         return this.muteSource();
     }
-});
+}

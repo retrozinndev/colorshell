@@ -1,7 +1,6 @@
 import { bind, Binding, Variable } from "astal";
 import { Astal, Gtk, Widget } from "astal/gtk3";
 import { Wireplumber } from "../scripts/volume";
-import AstalWp from "gi://AstalWp?version=0.1";
 
 export enum OSDModes {
     SINK,

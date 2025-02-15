@@ -19,7 +19,7 @@
     & > button {
       background: colors.$bg-secondary;
       margin: 0 1px;
-      padding: 0 6px;
+      padding: 4px 6px;
       border-radius: 2px;
 
       &:hover {
@@ -77,5 +77,27 @@
       font-size: 14px;
       color: colors.$fg-primary;
     }
+  }
+
+  & trough {
+    background: funs.toRGB(color.adjust($color: wal.$color1, $lightness: -20%));
+    border-radius: 8px;
+    margin: 2px 0;
+  }
+
+  & trough highlight {
+    background: wal.$color1;
+    min-height: .9em;
+    border-top-left-radius: inherit;
+    border-bottom-left-radius: inherit;
+  }
+
+  & trough slider {
+    border-radius: 50%;
+    margin: -2px 0;
+    background: wal.$foreground;
+    margin-left: -1px;
+    min-width: 1.2em;
+    min-height: 1.2em;
   }
 }

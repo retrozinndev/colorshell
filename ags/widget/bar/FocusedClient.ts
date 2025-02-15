@@ -29,11 +29,15 @@ export function FocusedClient() {
                         new Widget.Label({
                             className: "class",
                             xalign: 0,
+                            max_width_chars: 65,
+                            truncate: false,
                             label: bind(focusedClient, "class")
                         } as Widget.LabelProps),
                         new Widget.Label({
                             className: "title",
                             xalign: 0,
+                            max_width_chars: 48,
+                            truncate: false,
                             label: bind(focusedClient, "title")
                         } as Widget.LabelProps)
                     ] : []

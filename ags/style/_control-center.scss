@@ -1,9 +1,14 @@
 @use "sass:color";
 @use "./wal";
+@use "./colors";
 @use "./functions" as funs;
+@use "./mixins";
 
 .control-center-container {
-  background: rgba(wal.$background, .65);
+  @include mixins.reset-props;
+  @include mixins.default-styles;
+
+  background: colors.$bg-translucent;
   border-radius: 24px;
   padding: 20px 14px;
 
@@ -57,26 +62,6 @@
     .icon.nf {
       margin-right: 8px;
       font-size: 15px;
-    }
-
-    trough {
-      background: funs.toRGB(color.adjust($color: wal.$color1, $lightness: -20%));
-      border-radius: 8px;
-    }
-
-    trough highlight {
-      background: wal.$color1;
-      border-top-left-radius: inherit;
-      border-bottom-left-radius: inherit;
-    }
-
-    trough slider {
-      min-width: 1.2em;
-      min-height: 1.2em;
-      border-radius: 50%;
-      margin: -3px 0;
-      background: wal.$foreground;
-      margin-left: -1px;
     }
   }
 }

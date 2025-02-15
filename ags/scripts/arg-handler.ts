@@ -71,14 +71,47 @@ function handleVolumeArgs(args: Array<string>) {
     if(!args[1]) 
         return `Please specify what you want to do!\n\n${volumeHelp()}`
 
-    if(!/(sink|source)\-mute/.test(args[1]) && !args[2])
+    if(/^(sink|source)(\-increase|\-decrease|\-set)$/.test(args[1]) && !args[2])
         return `You forgot to add a value to be set!`;
+
+    if(Number.isNaN(Number.parseFloat(args[2])) && Number.isSafeInteger(Number.parseFloat(args[2]))) 
+        return `Argument "${args[2]} is not a valid number! Please use integers"`;
 
     const command: Array<string> = args[1].split('-');
 
+    if(/help/.test(args[1]))
+        return volumeHelp();
+
     switch(command[1]) {
         case "set":
+            command[0] === "sink" ? 
+                Wireplumber.getDefault().setSinkVolume(Number.parseInt(args[2]))
+            :
+                Wireplumber.getDefault().setSourceVolume(Number.parseInt(args[2]))
             return `Done! Set ${command[0]} volume to ${args[2]}`;
+
+        case "mute":
+            command[0] === "sink" ? 
+                Wireplumber.getDefault().toggleMuteSink()
+            :
+                Wireplumber.getDefault().toggleMuteSource()
+            return `Done toggling mute!`;
+
+        case "increase":
+            command[0] === "sink" ?
+                Wireplumber.getDefault().increaseSinkVolume(Number.parseInt(args[2]))
+            : 
+                Wireplumber.getDefault().increaseSourceVolume(Number.parseInt(args[2]))
+
+            return `Done increasing volume by ${args[2]}`;
+
+        case "decrease":
+            command[0] === "sink" ?
+                Wireplumber.getDefault().decreaseSinkVolume(Number.parseInt(args[2]))
+            : 
+                Wireplumber.getDefault().decreaseSourceVolume(Number.parseInt(args[2]))
+
+            return `Done decreasing volume to ${args[2]}`;
     }
 
     return `Couldn't resolve arguments! "${args.join(' ').replace(new RegExp(`^${args[0]}`), "")}"`;
@@ -109,9 +142,10 @@ Options:
   close [window_name]: sets specified window's visibility to false.
   toggle [window_name]: toggles visibility of specified window.
   reload: creates a new astal instance and removes this one.
+  volume: wireplumber volume controller, see "volume help".
   help, -h, --help: shows this help message.
 
-2024 (c) retrozinndev's Hyprland-Dots, licensed under the MIT License.
+2025 (c) retrozinndev's Hyprland-Dots, licensed under the MIT License.
 https://github.com/retrozinndev/Hyprland-Dots
 `.trim();
 }

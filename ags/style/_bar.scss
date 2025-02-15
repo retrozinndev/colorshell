@@ -112,26 +112,9 @@
 
         & > button {
           margin: 4px 1px;
-          border-radius: 4px;
 
-          label {
+          & label {
             font-size: 8px;
-          }
-
-          &:hover {
-            background: colors.$bg-secondary;
-          }
-
-          &:first-child {
-            border-top-left-radius: 12px;
-            border-bottom-left-radius: 12px;
-            margin-left: 0;
-          }
-
-          &:last-child {
-            border-top-right-radius: 12px;
-            border-bottom-right-radius: 12px;
-            margin-right: 0;
           }
         }
       }

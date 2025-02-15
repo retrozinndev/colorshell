@@ -1,4 +1,4 @@
-import { Gdk, Astal, Gtk, Widget } from "astal/gtk3";
+import { Astal, Gtk, Widget } from "astal/gtk3";
 
 import { Clock } from "../widget/bar/Clock";
 import { Logo } from "../widget/bar/Logo";
@@ -11,12 +11,11 @@ import { Media } from "../widget/bar/Media";
 export const Bar: Widget.Window = new Widget.Window({
     monitor: 0,
     namespace: "top-bar",
-    anchor: Astal.WindowAnchor.TOP,
+    anchor: Astal.WindowAnchor.TOP | Astal.WindowAnchor.LEFT | Astal.WindowAnchor.RIGHT,
     layer: Astal.Layer.TOP,
     exclusivity: Astal.Exclusivity.EXCLUSIVE,
     canFocus: false,
     visible: true,
-    widthRequest: Gdk.Screen.get_default()?.get_monitor_geometry(0)?.width,
     child: new Widget.Box({
         className: "bar-container",
         child: new Widget.CenterBox({

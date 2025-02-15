@@ -1,29 +1,32 @@
 import AstalNotifd from "gi://AstalNotifd";
 import { timeout } from "astal/time";
 import { Connectable } from "astal/binding";
-import { GObject, register, property, signal } from "astal";
+import { GObject, register, signal } from "astal";
 import { Windows } from "../windows";
 
-@register()
-class Notifications extends GObject.Object implements Connectable {
+@register({ GTypeName: "Notifications" })
+class NotificationsClass extends GObject.Object implements Connectable {
 
-    private static instance: Notifications;
+    private static instance: NotificationsClass;
     private notifd: AstalNotifd.Notifd;
 
     public notifications: Array<AstalNotifd.Notification> = [];
     public notificationHistory: Array<AstalNotifd.Notification> = [];
 
-    @signal()
-    declare "notification-added": (notification: AstalNotifd.Notification) => void;
+    @signal(AstalNotifd.Notification)
+    declare notificationAdded: (added: AstalNotifd.Notification) => void;
+
+    @signal(Number)
+    declare notificationRemoved: (id: number) => void;
 
 
-    public static getDefault(): Notifications {
-        if(!Notifications.instance) { 
-            Notifications.instance = new Notifications();
+    public static getDefault(): NotificationsClass {
+        if(!NotificationsClass.instance) { 
+            NotificationsClass.instance = new NotificationsClass();
             this.instance._init();
         }
 
-        return Notifications.instance;
+        return NotificationsClass.instance;
     }
 
     constructor() { 
@@ -95,3 +98,5 @@ class Notifications extends GObject.Object implements Connectable {
         return this.notifd;
     }
 }
+
+export const Notifications = new NotificationsClass();

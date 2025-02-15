@@ -12,8 +12,6 @@ export const LogoutMenu: Widget.Window = new Widget.Window({
     exclusivity: Astal.Exclusivity.IGNORE,
     monitor: 0,
     visible: false,
-    widthRequest: Gdk.Screen.get_default()?.get_monitor_geometry(0)?.width,
-    height_request: Gdk.Screen.get_default()?.get_monitor_geometry(0)?.height,
     child: new Widget.EventBox({
         className: "logout-menu",
         onClick: () => Process.exec_async("astal close logout-menu", () => {}),
