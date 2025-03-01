@@ -18,8 +18,10 @@ export function Tile(props: TileProps): Widget.EventBox {
     const toggled = new Variable<boolean>(props.toggleState instanceof Binding ?
         (props.toggleState.get() || false) : (props.toggleState || false));
 
+    let subscription: () => void;
+
     if(props?.toggleState instanceof Binding) 
-        props.toggleState.subscribe(val => toggled.set(val || false))();
+        subscription = props.toggleState.subscribe(val => toggled.set(val || false));
 
     return new Widget.EventBox({
         className: toggled().as((state: boolean) => 
@@ -36,6 +38,7 @@ export function Tile(props: TileProps): Widget.EventBox {
             toggled.set(true);
             props.onToggledOn && props.onToggledOn(); 
         },
+        onDestroy: () => subscription(),
         child: new Widget.Box({
             className: (props.className instanceof Binding) ? 
                 props.className.as((clsName: (string|undefined)) => 
