@@ -54,7 +54,7 @@ export const CenterWindow: Widget.Window = PopupWindow({
             } as Widget.BoxProps),
             Separator({
                 visible: bind(BigMedia, "visible"),
-                orientation: Gtk.Orientation.VERTICAL,
+                orientation: Gtk.Orientation.HORIZONTAL,
                 alpha: .5,
                 cssColor: "gray",
                 size: 1
