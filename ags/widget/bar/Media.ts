@@ -1,4 +1,4 @@
-import { bind, GLib, Process } from "astal";
+import { bind, execAsync, GLib } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
 import AstalMpris from "gi://AstalMpris";
 import { Separator, SeparatorProps } from "../Separator";
@@ -35,7 +35,7 @@ export function Media(): Gtk.Widget {
                         tooltipText: "Copy link to Clipboard",
                         visible: bind(players[0], "metadata").as((_metadata: GLib.HashTable) =>
                             players[0].get_meta("xesam:url") === null),
-                        onClick: () => Process.exec(`wl-copy ${players[0].get_meta("xesam:url")?.get_string()[0]}`)
+                        onClick: () => execAsync(`sh -c "wl-copy \\"$(playerctl metadata 'xesam:url')\\""`)
                     } as Widget.ButtonProps),
                     new Widget.Button({
                         className: "previous nf",

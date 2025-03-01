@@ -1,4 +1,4 @@
-import { AstalIO, bind, Binding, GLib, Process, timeout } from "astal";
+import { AstalIO, bind, Binding, execAsync, GLib, timeout } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
 import AstalMpris from "gi://AstalMpris";
 
@@ -51,11 +51,6 @@ export const BigMedia: Gtk.Widget = new Widget.Box({
                 hexpand: true,
                 visible: bind(players[0], "canSeek"),
                 children: [
-                    /*new Widget.Label({
-                        className: "elapsed",
-                        label: bind(players[0], "position").as((position: number) =>
-                            Math.floor(position).toString())
-                    }),*/
                     new Widget.Slider({
                         min: 0,
                         hexpand: true,
@@ -100,7 +95,7 @@ export const BigMedia: Gtk.Widget = new Widget.Box({
                             tooltipText: "Copy link to Clipboard",
                             visible: bind(players[0], "metadata").as((_meta: GLib.HashTable) =>
                                 players[0].get_meta("xesam:url") === null),
-                            onClick: () => Process.exec(`wl-copy ${players[0].get_meta("xesam:url")?.get_string()[0]}`)
+                            onClick: () => execAsync(`sh -c "wl-copy \\"$(playerctl metadata 'xesam:url')\\""`)
                         } as Widget.ButtonProps),
                         new Widget.Button({
                             className: "shuffle nf",
