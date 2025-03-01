@@ -1,8 +1,15 @@
-import { bind, Gio } from "astal";
-import { Gtk, Widget } from "astal/gtk3";
+import { bind, Gio, Variable } from "astal";
+import { Astal, Gdk, Gtk, Widget } from "astal/gtk3";
 import AstalTray from "gi://AstalTray"
 
 const astalTray = AstalTray.get_default();
+
+function menuFromModel(model: Gio.MenuModel, actionGroup: Gio.ActionGroup | null): Gtk.Menu {
+    const menu = Gtk.Menu.new_from_model(model);
+    menu.insert_action_group("dbusmenu", actionGroup)
+
+    return menu;
+}
 
 export function Tray() {
     return new Widget.Box({
@@ -10,19 +17,30 @@ export function Tray() {
         visible: bind(astalTray, "items").as((items: Array<AstalTray.TrayItem>) => items.length > 0),
         children: bind(astalTray, "items").as((items: Array<AstalTray.TrayItem>) => 
             items.map((item: AstalTray.TrayItem) => 
-                new Widget.MenuButton({
+                new Widget.Box({
                     className: "item",
-                    tooltipMarkup: bind(item, "tooltipMarkup"),
-                    menuModel: bind(item, "menuModel"),
-                    usePopover: false,
-                    actionGroup: bind(item, "actionGroup").as((actionGroup: any) => ["dbusmenu", actionGroup]),
-                    direction: Gtk.ArrowType.DOWN,
-                    halign: Gtk.Align.CENTER,
-                    child: new Widget.Icon({
-                        gicon: bind(item, "gicon"),
-                        iconSize: Gtk.IconSize.SMALL_TOOLBAR
-                    })
-                } as Widget.MenuButtonProps)
+                    child: Variable.derive(
+                        [ bind(item, "menuModel"), bind(item, "actionGroup") ],
+                        (menuModel: Gio.MenuModel, actionGroup: Gio.ActionGroup) => {
+                            const menu = menuFromModel(menuModel, actionGroup);
+
+                            return new Widget.Button({
+                                className: "item-button",
+                                tooltipMarkup: bind(item, "tooltipMarkup"),
+                                onClick: (_, event: Astal.ClickEvent) => {
+                                    if(event.button === Astal.MouseButton.SECONDARY) {
+                                        menu.popup_at_widget(_, Gdk.Gravity.NORTH, Gdk.Gravity.SOUTH_WEST, null);
+                                    } else if(event.button === Astal.MouseButton.PRIMARY) 
+                                        item.secondary_activate(event.x, event.y);
+                                },
+                                halign: Gtk.Align.CENTER,
+                                child: new Widget.Icon({
+                                    gIcon: bind(item, "gicon")
+                                })
+                            } as Widget.ButtonProps)
+                        }
+                    )()
+                } as Widget.BoxProps)
             )
         )
     } as Widget.BoxProps);

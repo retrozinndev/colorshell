@@ -16,6 +16,9 @@ const playerIcons = {
 }
 
 export function Media(): Gtk.Widget {
+    let hoverConnectionId: number;
+    let hoverLostConnectionId: number;
+
     const mediaControlsRevealer: Widget.Revealer = new Widget.Revealer({
         transitionType: Gtk.RevealerTransitionType.SLIDE_RIGHT,
         transitionDuration: 260,
@@ -71,6 +74,13 @@ export function Media(): Gtk.Widget {
         visible: bind(mpris, "players").as((players: Array<AstalMpris.Player>) => {
             return players[0] && players[0].get_available() || CenterWindow.is_visible();
         }),
+        onDestroy: (_) => {
+            hoverConnectionId !== undefined && 
+                _.disconnect(hoverConnectionId);
+
+            hoverLostConnectionId !== undefined && 
+                _.disconnect(hoverLostConnectionId);
+        },
         onClick: () => Windows.toggle(CenterWindow),
         child: new Widget.Box({
             className: "media",
@@ -79,7 +89,7 @@ export function Media(): Gtk.Widget {
                     children: bind(mpris, "players").as((players: Array<AstalMpris.Player>) =>
                         players[0] ? [
                             new Widget.Label({
-                                className: "player-icon nf",
+                                className: "icon nf",
                                 label: bind(players[0], "busName").as((busName: string) => {
                                     const playerName: string = busName.split('.')[busName.split('.').length-1];
                                     return playerIcons[playerName.toLowerCase() as keyof typeof playerIcons] || "󰎇";
@@ -92,7 +102,7 @@ export function Media(): Gtk.Widget {
                                 truncate: true
                             } as Widget.LabelProps),
                             Separator({
-                                orientation: Gtk.Orientation.VERTICAL,
+                                orientation: Gtk.Orientation.HORIZONTAL,
                                 size: 2,
                                 cssColor: `rgb(180, 180, 180)`,
                                 alpha: 1
@@ -113,14 +123,15 @@ export function Media(): Gtk.Widget {
         } as Widget.BoxProps)
     } as Widget.EventBoxProps);
 
-    mediaWidget.connect("hover", () => {
+    hoverConnectionId = mediaWidget.connect("hover", () => {
         mediaControlsRevealer.set_reveal_child(true);
         mediaWidget.className = mediaWidget.className + " reveal";
     });
-    mediaWidget.connect("hover-lost", () => {
+
+    hoverLostConnectionId = mediaWidget.connect("hover-lost", (_) => {
         mediaControlsRevealer.set_reveal_child(false);
-        mediaWidget.className = mediaWidget.className.replaceAll(" reveal", "");
-    })
+        _.className = mediaWidget.className.replaceAll(" reveal", "");
+    });
 
     return mediaWidget;
 }
