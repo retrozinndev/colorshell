@@ -7,14 +7,17 @@ My Hyprland dotfiles that I keep improving almost everyday! 🤩 (i love doing t
 > If you're searching for the stable dotfiles, go to the [`ryo`](https://github.com/retrozinndev/Hyprland-Dots/tree/ryo) branch! <br>
 
 > **TODO List:**
-> - Notification Popup
-> - Notification History
+> - Notification Popup and History
 > - Control Center Tiles(Wi-Fi, Bluetooth...)
-> - Monitor Brightness controlling(not as important as ones above, can be released without this feature)
+> - Control Center Pages(bluetooth device management, wifi, wired network and more via control center).
+> - Runner(Name can be changed) (Application Runner, Calculator + more features)
+> - Apps Window(Gnome-like, full screen)
 
 ## 🌄 Screenshots
-![Desktop](repo/shots/desktop.png)
 ![Kitty](repo/shots/kitty.png)
+![Widgets](repo/shots/widgets.png)
+![Control Center](repo/shots/control-center.png)
+![Neovim](repo/shots/neovim.png)
 
 ## 🎨 Colors
 All the colors of the interface are dynamically generated from your wallpaper! This is possible by using [pywal16] (fork of pywal), a cli tool to generate color schemes on the fly.
@@ -30,7 +33,7 @@ All wallpapers inside this repo are not made by me! You can find all sources ins
 ## ⚙️ Installation
 See the Installation Guide on [Wiki/Installation].
 
-### 🎉 Tools
+## 🎉 Tools
 - Browser: [Zen Browser]
 - Text Editor: [Neovim], my config is [here](https://github.com/retrozinndev/nvim-conf.lua)
 - Terminal Emulator: [Kitty]
