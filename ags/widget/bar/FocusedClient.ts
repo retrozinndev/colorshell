@@ -5,7 +5,7 @@ import { getAppIcon } from "../../scripts/apps";
 
 const hyprland = AstalHyprland.get_default();
 
-export function FocusedClient() {
+export function FocusedClient(): Gtk.Widget {
     return new Widget.Box({
         className: "focused-client",
         visible: bind(hyprland, "focusedClient").as(Boolean),
@@ -31,15 +31,19 @@ export function FocusedClient() {
                         new Widget.Label({
                             className: "class",
                             xalign: 0,
-                            maxWidthChars: 50,
+                            maxWidthChars: 55,
                             truncate: true,
+                            tooltipText: bind(focusedClient, "class").as((clientClass: string) => 
+                                clientClass.length > 55 ? clientClass : ""),
                             label: bind(focusedClient, "class")
                         } as Widget.LabelProps),
                         new Widget.Label({
                             className: "title",
                             xalign: 0,
-                            maxWidthChars: 45,
+                            maxWidthChars: 50,
                             truncate: true,
+                            tooltipText: bind(focusedClient, "title").as((clientTitle: string) => 
+                                clientTitle.length > 55 ? clientTitle : ""),
                             label: bind(focusedClient, "title")
                         } as Widget.LabelProps)
                     ] : []
