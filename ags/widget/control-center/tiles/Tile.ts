@@ -1,5 +1,6 @@
 import { Binding, Variable } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
+import { tr } from "../../../i18n/intl";
 
 export type TileProps = {
     className?: string | Binding<string | undefined>;
@@ -99,6 +100,7 @@ export function Tile(props: TileProps): Widget.EventBox {
                     className: "more icon",
                     visible: props.onClickMore !== undefined,
                     halign: Gtk.Align.END,
+                    tooltipText: tr("control_center.tiles.more") || "More",
                     image: new Widget.Icon({
                         icon: "go-next-symbolic",
                         css: "icon { font-size: 16px; }"

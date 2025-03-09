@@ -1,33 +1,32 @@
-//TODO use I18n system >.<
+import { Binding, GLib } from "astal";
+
 import en_US from "./lang/en_US";
 import pt_BR from "./lang/pt_BR";
 
-import { GLib } from "astal";
+
+export type i18nStruct = Record<string, string|object|Binding<string| undefined>>;
 
 const i18nKeys = {
     "en_US": en_US,
     "pt_BR": pt_BR
 };
-
 const languages: Array<string> = Object.keys(i18nKeys);
-
-const defaultLanguage: string = languages[0];
 let language: string = getSystemLanguage();
 
 export function getSystemLanguage(): string {
     const sysLanguage: (string|null|undefined) = GLib.getenv("LANG") || GLib.getenv("LANGUAGE");
 
     if(!sysLanguage) {
-        console.log(`[WARNING] Couldn't get system language, fallback to default ${defaultLanguage}`);
+        console.log(`[WARNING] Couldn't get system language, fallback to default ${languages[0]}`);
         console.log("[TIP] Please set the LANG or LANGUAGE environment variable");
 
-        return "en_US";
+        return languages[0];
     }
 
     return sysLanguage.split('.')[0];
 }
 
-export function setLanguage(lang: keyof typeof i18nKeys): string {
+export function setLanguage(lang: string): string {
     languages.map((cur: string) => {
         if(cur === lang) {
             language = lang;
@@ -42,12 +41,20 @@ export function setLanguage(lang: keyof typeof i18nKeys): string {
 
 export function tr(key: string): string {
     let result = i18nKeys[language as keyof typeof i18nKeys],
-        defResult = i18nKeys[defaultLanguage as keyof typeof i18nKeys];
+        defResult = i18nKeys[languages[0] as keyof typeof i18nKeys];
 
-    for(const keyString in key.split('.')) {
+    for(const keyString of key.split('.')) {
         result = result[keyString as keyof typeof result] as never;
         defResult = defResult[keyString as keyof typeof defResult] as never;
     }
 
-    return (result as never) || (defResult as never) || "couldn't find i18n key";
+    return (typeof result == "string") ? 
+            result 
+        : ((typeof defResult == "string") ? 
+           defResult 
+        : "not found / is not of type \"string\"");
+}
+
+export function trGet() {
+    return i18nKeys[getSystemLanguage() as keyof typeof i18nKeys];
 }

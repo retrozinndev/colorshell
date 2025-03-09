@@ -1,13 +1,14 @@
 import { Tile, TileProps } from "./Tile";
 import { Recording } from "../../../scripts/recording";
 import { bind } from "astal";
+import { tr } from "../../../i18n/intl";
 
 export const TileRecording = Tile({
-    title: "Screen Recording",
+    title: tr("control_center.tiles.recording.title") || "Screen Recording",
     description: bind(Recording.getDefault(), "recording").as(
         (isRecording: boolean) => isRecording ? 
             "Recording {time}" 
-        : "Start a Screen Record"
+        : tr("control_center.tiles.recording.disabled_description") || "Start recording"
     ),
     icon: "󰻂",
     onToggledOff: () => Recording.getDefault().stopRecording(),

@@ -1,6 +1,7 @@
 import { Astal, Gtk, Widget } from "astal/gtk3";
 import AstalNotifd from "gi://AstalNotifd";
 import { Separator } from "./Separator";
+import Pango from "gi://Pango";
 
 export function getUrgencyString(notif: AstalNotifd.Notification) {
     switch(notif.urgency) {
@@ -78,6 +79,7 @@ export function NotificationWidget(notification: AstalNotifd.Notification|number
                     new Widget.Box({
                         className: "text",
                         orientation: Gtk.Orientation.VERTICAL,
+                        expand: true,
                         children: [
                             new Widget.Label({
                                 className: "summary",
@@ -89,9 +91,10 @@ export function NotificationWidget(notification: AstalNotifd.Notification|number
                             new Widget.Label({
                                 className: "body",
                                 useMarkup: true,
-                                xalign: 0,
-                                expand: true,
+                                halign: Gtk.Align.START,
+                                truncate: false,
                                 wrap: true,
+                                wrapMode: Pango.WrapMode.WORD,
                                 label: notification.body
                             } as Widget.LabelProps)
                         ]

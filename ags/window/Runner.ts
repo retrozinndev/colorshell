@@ -6,7 +6,6 @@ import { handleShell } from "../scripts/runner/shell";
 import { handleWebSearch } from "../scripts/runner/websearch";
 import { handleApplications } from "../scripts/runner/apps";
 import { ResultWidget, ResultWidgetProps } from "../widget/runner/ResultWidget";
-import Wp05 from "gi://Wp";
 
 export let runnerInstance: (Widget.Window|null) = null;
 

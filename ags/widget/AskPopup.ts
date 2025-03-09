@@ -2,6 +2,7 @@ import { Binding } from "astal";
 import { PopupWindow, PopupWindowProps } from "./PopupWindow";
 import { Astal, Gtk, Widget } from "astal/gtk3";
 import { Separator } from "./Separator";
+import { tr } from "../i18n/intl";
 
 export type AskPopupProps = {
     title?: string | Binding<string | undefined>;
@@ -22,7 +23,7 @@ export function AskPopup(props: AskPopupProps) {
         new Widget.Button({
             className: "cancel",
             hexpand: true,
-            label: props.cancelText || "Cancel",
+            label: props.cancelText || tr("ask_popup.options.cancel") || "Cancel",
             onClick: (_) => {
                 window.destroy();
                 props.onCancel && props.onCancel();
@@ -31,7 +32,7 @@ export function AskPopup(props: AskPopupProps) {
         new Widget.Button({
             className: "accept",
             hexpand: true,
-            label: props.acceptText || "Ok",
+            label: props.acceptText || tr("ask_popup.options.accept") || "Ok",
             onClick: (_) => {
                 window.destroy();
                 props.onAccept && props.onAccept();
@@ -57,7 +58,7 @@ export function AskPopup(props: AskPopupProps) {
                 new Widget.Label({
                     className: "title",
                     visible: Boolean(props.title),
-                    label: props.title || ""
+                    label: props.title || tr("ask_popup.title") || "Question"
                 } as Widget.LabelProps),
                 Separator({
                     alpha: .2,
