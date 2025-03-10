@@ -153,7 +153,7 @@ scrollbar trough {
   background: colors.$bg-translucent;
   border-top-left-radius: 8px;
   border-bottom-left-radius: 8px;
-  padding: 0 2px;
+  padding: 2px;
 
   & slider {
     @include mixins.reset-props;

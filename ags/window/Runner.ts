@@ -1,4 +1,4 @@
-import { Variable } from "astal";
+import { AstalIO, timeout, Variable } from "astal";
 import { Gdk, Gtk, Widget } from "astal/gtk3";
 import { PopupWindow, PopupWindowProps } from "../widget/PopupWindow";
 import { updateApps } from "../scripts/apps";
@@ -8,6 +8,7 @@ import { handleApplications } from "../scripts/runner/apps";
 import { ResultWidget, ResultWidgetProps } from "../widget/runner/ResultWidget";
 
 export let runnerInstance: (Widget.Window|null) = null;
+let onClickTimeout: (AstalIO.Time|undefined);
 
 export function closeRunner(gtkWindow?: Widget.Window) {
     const window = gtkWindow ? gtkWindow : runnerInstance;
@@ -64,6 +65,13 @@ export namespace Runner {
             className: "search",
             onChanged: (entry) => entryText.set(entry.text),
             placeholderText: props?.entryPlaceHolder || "",
+            onActivate: (_) => {
+                const resultWidget = resultsList.get_selected_row()?.get_child();
+                if(resultWidget instanceof ResultWidget) {
+                    resultWidget.onClick();
+                    _.isFocus = false;
+                }
+            },
             primary_icon_name: "system-search"
         } as Widget.EntryProps);
 
@@ -82,33 +90,6 @@ export namespace Runner {
                 : pluginResult) 
             : null;
 
-            [
-                new Widget.Box({
-                    className: "not-found",
-                    orientation: Gtk.Orientation.VERTICAL,
-                    visible: entryText((text: string) => text.trim().length > 0),
-                    expand: true,
-                    children: [
-                        new Widget.Icon({
-                            icon: "software-update-urgent-symbolic"
-                        } as Widget.IconProps),
-                        new Widget.Label({
-                            label: "Couldn't find any results with this search. Maybe try pressing F5 and searching again?",
-                            truncate: false,
-                            wrap: true
-                        } as Widget.LabelProps)
-                    ]
-                } as Widget.BoxProps),
-                new Widget.Box({
-                    className: "placeholder",
-                    orientation: Gtk.Orientation.VERTICAL,
-                    expand: true,
-                    visible: Boolean(props?.resultsPlaceholder),
-                    children: props?.resultsPlaceholder && 
-                        props?.resultsPlaceholder()
-                } as Widget.BoxProps)
-            ];
-
             if(resultsList.get_children().length > 0) {
                 resultsList.get_children().map((listItem: Gtk.Widget) => {
                     resultsList.remove(listItem);
@@ -116,10 +97,34 @@ export namespace Runner {
                 });
             }
 
-            if(results && results.length > 0)
+            if(results && results.length > 0 && searchEntry.text.trim().length > 0) {
                 results.map((resultWidget: ResultWidget) => {
                     resultsList.insert(resultWidget, -1);
+
+                    const listBoxChild = resultsList.get_row_at_index(resultsList.get_children().length - 1)!;
+                    const resWidget = listBoxChild.get_child();
+                    if(listBoxChild && resWidget instanceof ResultWidget) {
+                        resultsList.connect("row-activated", (_, row: Gtk.ListBoxRow) => {
+                            const rWidget = row.get_child()!;
+                            if(rWidget instanceof ResultWidget) {
+                                if(!onClickTimeout) {
+                                    rWidget.onClick();
+                                    // Timeout, so it doesn't fire the executable a hundred times :skull:
+                                    onClickTimeout = timeout(500, () => onClickTimeout = undefined);
+                                }
+                            }
+                        });
+                    }
                 });
+            } else {
+                if(props?.resultsPlaceholder) {
+                    const widgets = props.resultsPlaceholder();
+                    resultsList.get_children().map((res) => 
+                        resultsList.remove(res));
+
+                    widgets.map((widget) => resultsList.insert(widget, -1));
+                }
+            }
 
             selectedResultIndex = 0;
             resultsList.select_row(resultsList.get_row_at_index(selectedResultIndex));
@@ -133,17 +138,17 @@ export namespace Runner {
                 widthRequest: props?.width || 750,
                 heightRequest: props?.height || 450,
                 onKeyPressEvent: (_, event: Gdk.Event) => {
+                    const keyVal = event.get_keyval()[1];
+                    if(!searchEntry.has_focus && keyVal !== Gdk.KEY_F5 
+                       && keyVal !== Gdk.KEY_Down && keyVal !== Gdk.KEY_Up
+                       && keyVal !== Gdk.KEY_KP_Enter && keyVal !== Gdk.KEY_ISO_Enter) {
+                        searchEntry.grab_focus_without_selecting();
+                    }
+
+
                     event.get_keyval()[1] === Gdk.KEY_F5 &&
                         updateApps();
-
-                    if(event.get_keyval()[1] === Gdk.KEY_Down) {
-                        resultsList.get_children().length > 0 &&
-                            resultsList.select_row(resultsList.get_row_at_index(
-                                (selectedResultIndex + 1) > (resultsList.get_children().length - 1) ? 
-                                    0 
-                                : selectedResultIndex + 1
-                            ));
-                    }
+                    
                 },
                 closeAction: (_) => closeRunner(_),
                 onClose: () => subs.map(sub => sub()),

@@ -32,15 +32,14 @@
   }
 
   & list {
-    & eventbox:focus > box, 
-    & eventbox:hover > box,
-    & listboxchild:selected eventbox > box,
-    & listboxchild:active eventbox > box {
+    & > *:selected > .result,
+    & > *:active > .result,
+    & > *:hover > .result {
       background: colors.$bg-secondary;
     }
   }
 
-  & list eventbox > .result {
+  & list .result {
     padding: 10px;
     background: colors.$bg-primary;
     margin: 2px 0;
