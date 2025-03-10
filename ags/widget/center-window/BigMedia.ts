@@ -172,15 +172,15 @@ export function BigMedia(): Gtk.Widget {
  * @param player the player you want to pull album art from
  * @returns Binding to player.artUrl containing the album art uri, or an undefined binding ig none was found.
 * */
-function getAlbumArt(player: AstalMpris.Player): Binding<string|undefined> {
+function getAlbumArt(player: AstalMpris.Player): Binding<string | undefined> {
     return bind(player, "artUrl").as((artUrl: string) => {
-        const finalUrl: string = artUrl;
 
-        if(/^(https|http)$/.test(finalUrl.split("://")[0])) 
-            return artUrl;
-        else if(artUrl.startsWith("/")) 
+        if(!artUrl) 
+            return undefined;
+
+        if(artUrl.startsWith("/")) 
             return "file://" + artUrl;
-        
-        return undefined;
+
+        return artUrl;
     });
 }
