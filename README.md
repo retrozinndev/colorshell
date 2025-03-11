@@ -6,12 +6,19 @@ My Hyprland dotfiles that I keep improving almost everyday! 🤩 (i love doing t
 > don't recommend installing this one, since it's WIP.
 > If you're searching for the stable dotfiles, go to the [`ryo`](https://github.com/retrozinndev/Hyprland-Dots/tree/ryo) branch! <br>
 
-> **TODO List:**
-> - Notification Popup and History
-> - Control Center Tiles(Wi-Fi, Bluetooth...)
-> - Control Center Pages(bluetooth device management, wifi, wired network and more via control center).
-> - Runner(Name can be changed) (Application Runner, Calculator + more features)
-> - Apps Window(Gnome-like, full screen)
+## ✔️ What's already done
+- Notification Popups(with actions support!)
+- Runner for applications and commands, supports making plugins to show custom results by prefix with TypeScript
+- Bluetooth and Network Toggles + Manage bluetooth and network devices by the control center itself!
+- Beatiful media player
+- Super cool and blurred Bar, Control Center and everything!
+
+## 🔘 TODO List
+- Support for multiple monitors
+- Notification History list
+- Apps Window(Gnome-like, full screen)
+- Per-app Volume(can be done after release / low priority)
+- Maybe a settings app in the future? ✨
 
 ## 🌄 Screenshots
 ![Kitty](repo/shots/kitty.png)
@@ -37,7 +44,7 @@ See the Installation Guide on [Wiki/Installation].
 - Browser: [Zen Browser]
 - Text Editor: [Neovim], my config is [here](https://github.com/retrozinndev/nvim-conf.lua)
 - Terminal Emulator: [Kitty]
-- Bar and Widgets: [AGS](https://aylur.github.io/ags)(Aylur's GTK Shell) and [Astal](https://aylur.github.io/astal)
+- Bar and Widgets: [Astal](https://aylur.github.io/astal) and [AGS](https://aylur.github.io/ags)
 - Shell: [Nushell]
 - See more on the [wiki]!
 
@@ -47,7 +54,7 @@ Having issues? Please create a [new Issue] here, I'll be happy to help you out!
 ## 📜 License
 This repo is licensed under the [MIT License].
 
-## 🌠 Stargazers Graph
+## 🌠 Stargazers
 Thanks to everyone who starred my dotfiles! 💖
 [![Stargazers over time](https://starchart.cc/retrozinndev/Hyprland-Dots.svg?background=%2324292e&axis=%23fafbfc&line=%232dba4e)](https://starchart.cc/retrozinndev/Hyprland-Dots)
 
