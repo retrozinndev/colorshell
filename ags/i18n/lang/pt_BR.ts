@@ -17,8 +17,8 @@ export default {
                 disconnected: "Desconectado",
                 unknown: "Desconhecido",
                 connecting: "Conectando",
-                wireless: "Wireless",
-                wired: "Cabeado"
+                wireless: "Wi-Fi",
+                wired: "Cabeada"
             },
             recording: {
                 title: "Gravação de Tela",
