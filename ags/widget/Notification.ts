@@ -23,7 +23,7 @@ export function NotificationWidget(notification: AstalNotifd.Notification|number
 
     return new Widget.EventBox({
         onClick: () => {
-            if(notification.actions.length >= 1) {
+            if(notification.actions.length >= 1 && notification.actions[0].label.toLowerCase() === "view") {
                 notification.invoke(notification.actions[0]!.id);
                 onClose && onClose(notification);
             }
@@ -112,10 +112,13 @@ export function NotificationWidget(notification: AstalNotifd.Notification|number
                 new Widget.Box({
                     className: "actions button-row",
                     hexpand: true,
-                    visible: notification.actions.length > 1,
-                    children: notification.actions.map((action: AstalNotifd.Action) => 
+                    visible: (notification.actions.length === 1 && 
+                        notification.actions[0].label.toLowerCase() === "view") 
+                            || notification.actions.length === 0 ? false : true,
+                    children: notification.actions.map((action: AstalNotifd.Action, i: number) => 
                         new Widget.Button({
                             className: "action",
+                            visible: i === 0 ? (action.label.toLowerCase() !== "view") : true,
                             label: action.label,
                             hexpand: true,
                             onClicked: () => {
