@@ -1,6 +1,6 @@
 import { register } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
-import { closeRunner } from "../../window/Runner";
+import { closeRunner } from "../../runner/Runner";
 
 export { ResultWidget, ResultWidgetProps };
 

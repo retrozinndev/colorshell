@@ -2,9 +2,9 @@ import { Gtk } from "astal/gtk3";
 import { Windows } from "../windows";
 import { restartInstance } from "./reload-handler";
 import { Wireplumber } from "./volume";
-import { startRunnerDefault } from "../window/Runner";
 import { AskPopup } from "../widget/AskPopup";
 import { execAsync } from "astal";
+import { startRunnerDefault } from "../runner/Runner";
 
 export function handleArguments(request: string): any {
     const args: Array<string> = request.split(" ");

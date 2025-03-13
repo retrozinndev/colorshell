@@ -9,17 +9,18 @@ import { Time, timeout } from "astal/time";
 import { OSD, OSDModes, setOSDMode } from "./window/OSD";
 import { ControlCenter } from "./window/ControlCenter";
 
-import { Runner } from "./window/Runner";
-import { PluginApps } from "./scripts/runner/apps";
-import { PluginShell } from "./scripts/runner/shell";
-import { PluginWebSearch } from "./scripts/runner/websearch";
+import { Runner } from "./runner/Runner";
+import { PluginApps } from "./runner/plugins/apps";
+import { PluginShell } from "./runner/plugins/shell";
+import { PluginWebSearch } from "./runner/plugins/websearch";
+
 
 let osdTimer: (Time|undefined);
 
 const runnerPlugins: Array<Runner.Plugin> = [
-    new PluginApps(),
-    new PluginShell(),
-    new PluginWebSearch()
+    PluginApps,
+    PluginShell,
+    PluginWebSearch
 ];
 
 App.start({

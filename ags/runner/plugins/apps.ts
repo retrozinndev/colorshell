@@ -1,14 +1,13 @@
 import AstalHyprland from "gi://AstalHyprland";
-import { getAstalApps } from "../apps";
 import { ResultWidget, ResultWidgetProps } from "../../widget/runner/ResultWidget";
 import AstalApps from "gi://AstalApps";
-import { Runner } from "../../window/Runner";
+import { getAstalApps } from "../../scripts/apps";
+import { Runner } from "../Runner";
 
-export class PluginApps implements Runner.Plugin {
+export const PluginApps = {
     // Do not provide prefix, so it's always ran.
-    public readonly name = "Apps";
-
-    public handle(text: string) {
+    name: "Apps",
+    handle: (text: string) => {
         return getAstalApps().fuzzy_query(text).map((app: AstalApps.Application) =>
             new ResultWidget({
                 title: app.get_name(),
@@ -18,4 +17,4 @@ export class PluginApps implements Runner.Plugin {
             } as ResultWidgetProps)
         ) || null;
     }
-}
+} as Runner.Plugin;

@@ -134,6 +134,12 @@ class Notifications extends GObject.Object {
         this.emit("notification-removed", notification.id);
     }
 
+    public toggleDoNotDisturb(): boolean {
+        if(AstalNotifd.get_default().dontDisturb) {
+
+        }
+    }
+
     connect(signal: string, callback: (...args: any[]) => void): number {
         return super.connect(signal, callback);
     }

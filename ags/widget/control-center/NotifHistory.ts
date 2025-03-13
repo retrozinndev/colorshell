@@ -7,7 +7,8 @@ import { NotificationWidget } from "../Notification";
 export const NotifHistory: Gtk.Widget = new Widget.Scrollable({
     hscroll: Gtk.PolicyType.NEVER,
     vscroll: Gtk.PolicyType.AUTOMATIC,
-    expand: true,
+    vexpand: true,
+    hexpand: true,
     child: new Widget.Box({
         className: "notifications",
         children: bind(Notifications.getDefault(), "history").as((history: Array<AstalNotifd.Notification>) =>
