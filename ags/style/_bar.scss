@@ -51,18 +51,25 @@
 
   .workspaces {
     @include mixins.reset-props;
-    padding: 2px 2px;
+    padding: 1px 1px;
 
     & button {
+      @include mixins.reset-props;
+      
       border-radius: 16px;
       transition: 80ms linear;
-      padding: 12px 12px;
+      min-width: 12px;
+      padding: 0 6px;
       background: colors.$bg-tertiary;
       margin: 1px 2px;
 
       &.focus {
         background: colors.$fg-primary;
-        padding: 12px 20px;
+        min-width: 31px;
+      }
+
+      & icon {
+        font-size: 16px;
       }
     }
   }
@@ -178,6 +185,21 @@
 
       & > * > * {
         margin: 0 2px;
+      }
+
+      & trough {
+        min-width: 65px;
+        min-height: 10px;
+        margin-right: 4px;
+      }
+
+      & slider {
+        min-width: 10px;
+        min-height: 10px;
+      }
+
+      & highlight {
+        min-height: 10px;
       }
 
       & .nf {
