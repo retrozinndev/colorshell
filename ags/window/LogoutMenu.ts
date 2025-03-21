@@ -16,7 +16,7 @@ export const LogoutMenu: Widget.Window = new Widget.Window({
     visible: false,
     onKeyPressEvent: (_, event: Gdk.Event) => {
         event.get_keyval()[1] === Gdk.KEY_Escape &&
-            execAsync("astal close logout-menu")
+            _.hide();
     },
     child: new Widget.EventBox({
         className: "logout-menu",
