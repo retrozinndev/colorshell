@@ -11,19 +11,19 @@ My Hyprland dotfiles that I keep improving almost everyday! 🤩 (i love doing t
 - Runner for applications and commands, supports making plugins to show custom results by prefix with TypeScript
 - Bluetooth and Network Toggles + Manage bluetooth and network devices by the control center itself!
 - Beatiful media player
+- Apps Window(Gnome-like, full screen)
 - Super cool and blurred Bar, Control Center and everything!
 
 ## 🔘 TODO List
 - Support for multiple monitors
 - Notification History list
-- Apps Window(Gnome-like, full screen)
 - Per-app Volume(can be done after release / low priority)
 - Maybe a settings app in the future? ✨
 
 ## 🌄 Screenshots
 ![Kitty](repo/shots/kitty.png)
 ![Widgets](repo/shots/widgets.png)
-![Control Center](repo/shots/control-center.png)
+![Control Center](repo/shots/runner-plugin.png)
 ![Neovim](repo/shots/neovim.png)
 
 ## 🎨 Colors
