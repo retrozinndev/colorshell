@@ -1,8 +1,8 @@
-import AstalHyprland from "gi://AstalHyprland";
 import { ResultWidget, ResultWidgetProps } from "../../widget/runner/ResultWidget";
 import AstalApps from "gi://AstalApps";
-import { getAstalApps } from "../../scripts/apps";
+import { cleanExec, getAstalApps } from "../../scripts/apps";
 import { Runner } from "../Runner";
+import { Astal } from "astal/gtk3";
 
 export const PluginApps = {
     // Do not provide prefix, so it's always ran.
@@ -12,9 +12,9 @@ export const PluginApps = {
             new ResultWidget({
                 title: app.get_name(),
                 description: app.get_description(),
-                icon: app.iconName,
-                onClick: () => AstalHyprland.get_default().dispatch("exec", app.get_executable())
+                icon: Astal.Icon.lookup_icon(app.iconName) ? app.iconName : "application-x-executable-symbolic",
+                onClick: () => cleanExec(app)
             } as ResultWidgetProps)
-        ) || null;
+        );
     }
 } as Runner.Plugin;
