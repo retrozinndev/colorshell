@@ -22,6 +22,7 @@ export const FloatingNotifications: Widget.Window = new Widget.Window({
             }),
             Notifications.getDefault().connect("notification-removed", (_: Notifications, _id: number) => {
                 window.is_visible() && _.notifications.length === 0 && window.hide()
+                window.isFocus = false;
             })
         );
     },
