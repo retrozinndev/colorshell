@@ -8,7 +8,7 @@ export const TileRecording = Tile({
     description: bind(Recording.getDefault(), "recording").as(
         (isRecording: boolean) => isRecording ? 
             "Recording {time}" 
-        : tr("control_center.tiles.recording.disabled_description") || "Start recording"
+        : tr("control_center.tiles.recording.disabled_desc") || "Start recording"
     ),
     icon: "󰻂",
     onToggledOff: () => Recording.getDefault().stopRecording(),

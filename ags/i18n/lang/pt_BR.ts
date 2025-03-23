@@ -24,8 +24,8 @@ export default {
             },
             recording: {
                 title: "Gravação de Tela",
-                disabled_description: "Iniciar gravação",
-                enabled_description: "Parar gravação",
+                disabled_desc: "Iniciar gravação",
+                enabled_desc: "Parar gravação",
             },
             dnd: {
                 title: "Não Perturbe"
