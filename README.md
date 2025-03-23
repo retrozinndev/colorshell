@@ -12,11 +12,11 @@ My Hyprland dotfiles that I keep improving almost everyday! 🤩 (i love doing t
 - Bluetooth and Network Toggles + Manage bluetooth and network devices by the control center itself!
 - Beatiful media player
 - Apps Window(Gnome-like, full screen)
+- Notification History list
 - Super cool and blurred Bar, Control Center and everything!
 
 ## 🔘 TODO List
 - Support for multiple monitors
-- Notification History list
 - Per-app Volume(can be done after release / low priority)
 - Maybe a settings app in the future? ✨
 
