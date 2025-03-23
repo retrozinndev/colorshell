@@ -105,7 +105,7 @@ export function Media(): Gtk.Widget {
                                 orientation: Gtk.Orientation.HORIZONTAL,
                                 size: 2,
                                 cssColor: `rgb(180, 180, 180)`,
-                                alpha: 1
+                                alpha: 0.3
                             } as SeparatorProps),
                             new Widget.Label({
                                 className: "artist",

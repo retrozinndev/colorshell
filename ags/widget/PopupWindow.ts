@@ -18,6 +18,7 @@ export type PopupWindowProps = Pick<Widget.WindowProps,
     | "heightRequest"
     | "child"
     | "monitor"
+    | "setup"
     | "exclusivity"> & {
     marginTop?: number;
     marginLeft?: number;
@@ -42,8 +43,8 @@ export function PopupWindow(props: PopupWindowProps): Widget.Window {
         layer: props?.layer || Astal.Layer.OVERLAY,
         focusOnMap: true,
         visible: props?.visible,
-        acceptFocus: true,
         monitor: props?.monitor || 0,
+        setup: props.setup,
         onButtonPressEvent: (_, event: Gdk.Event) => {
             const [, posX, posY] = event.get_coords();
             const childAllocation = _.get_child()!.get_allocation();
@@ -70,20 +71,19 @@ export function PopupWindow(props: PopupWindowProps): Widget.Window {
             : `popup ${props?.className || ""}`,
             halign: props?.halign || Gtk.Align.CENTER,
             valign: props?.valign || Gtk.Align.CENTER,
-            expand: props?.expand || false,
-            widthRequest: props?.widthRequest,
-            heightRequest: props?.heightRequest,
-            hexpand: props?.hexpand || false,
-            vexpand: props?.vexpand || false,
-            visible: true,
             css: `.popup {
                 margin-top: ${props.marginTop || 0}px;
                 margin-bottom: ${props.marginBottom || 0}px;
                 margin-left: ${props.marginLeft || 0}px;
                 margin-right: ${props.marginRight || 0}px;
             }`,
+            expand: props.expand,
+            vexpand: props.vexpand,
+            hexpand: props.hexpand,
+            widthRequest: props.widthRequest,
+            heightRequest: props.heightRequest,
             onButtonPressEvent: () => true,
             child: props.child
         } as Widget.BoxProps)
-    } as Widget.WindowProps);;
+    } as Widget.WindowProps);
 }

@@ -9,7 +9,10 @@ export default {
     },
     control_center: {
         tiles: {
+            enabled: "Enabled",
+            disabled: "Disabled",
             more: "More",
+
             network: {
                 network: "Network",
                 connected: "Connected",
@@ -21,8 +24,11 @@ export default {
             },
             recording: {
                 title: "Screen Recording",
-                disabled_description: "Start recording",
-                enabled_description: "Stop recording",
+                disabled_desc: "Start recording",
+                enabled_desc: "Stop recording",
+            },
+            dnd: {
+                title: "Do Not Disturb"
             }
         }
     },

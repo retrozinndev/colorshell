@@ -1,12 +1,12 @@
 import { Astal, Gtk, Widget } from "astal/gtk3";
 
 import { Clock } from "../widget/bar/Clock";
-import { Logo } from "../widget/bar/Logo";
 import { Tray } from "../widget/bar/Tray";
 import { Workspaces } from "../widget/bar/Workspaces";
-import { Audio } from "../widget/bar/Audio";
 import { FocusedClient } from "../widget/bar/FocusedClient";
 import { Media } from "../widget/bar/Media";
+import { Status } from "../widget/bar/Status";
+import { Apps } from "../widget/bar/Apps";
 
 export const Bar: Widget.Window = new Widget.Window({
     monitor: 0,
@@ -14,6 +14,7 @@ export const Bar: Widget.Window = new Widget.Window({
     anchor: Astal.WindowAnchor.TOP | Astal.WindowAnchor.LEFT | Astal.WindowAnchor.RIGHT,
     layer: Astal.Layer.TOP,
     exclusivity: Astal.Exclusivity.EXCLUSIVE,
+    heightRequest: 46,
     canFocus: false,
     visible: true,
     child: new Widget.Box({
@@ -27,7 +28,7 @@ export const Bar: Widget.Window = new Widget.Window({
                 homogeneous: false,
                 halign: Gtk.Align.START,
                 children: [
-                    Logo(),
+                    Apps(),
                     Workspaces(),
                     FocusedClient()
                 ]
@@ -47,7 +48,7 @@ export const Bar: Widget.Window = new Widget.Window({
                 halign: Gtk.Align.END,
                 children: [
                     Tray(),
-                    Audio()
+                    Status()
                 ]
             } as Widget.BoxProps)
         } as Widget.CenterBoxProps)

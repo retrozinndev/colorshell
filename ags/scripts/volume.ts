@@ -71,42 +71,42 @@ class WireplumberClass extends GObject.Object {
         );
     }
 
-    public increaseSinkVolume(volumeIncrease: number): void {
-        if((this.getSinkVolume() + volumeIncrease) > this.maxSinkVolume) {
-            this.setSinkVolume(this.maxSinkVolume);
+    public increaseEndpointVolume(endpoint: AstalWp.Endpoint, volumeIncrease: number): void {
+        volumeIncrease = Math.abs(volumeIncrease) / 100;
+
+        if((endpoint.get_volume() + volumeIncrease) > this.maxSinkVolume) {
+            endpoint.set_volume(1.0);
             return;
         }
 
-        this.setSinkVolume(this.getSinkVolume() + volumeIncrease);
+        endpoint.set_volume(endpoint.get_volume() + volumeIncrease);
+    }
+
+    public increaseSinkVolume(volumeIncrease: number): void {
+        this.increaseEndpointVolume(this.getDefaultSink(), volumeIncrease);
     }
 
     public increaseSourceVolume(volumeIncrease: number): void {
-        if((this.getSourceVolume() + volumeIncrease) > this.maxSourceVolume) {
-            this.setSourceVolume(this.maxSourceVolume);
+        this.increaseEndpointVolume(this.getDefaultSource(), volumeIncrease);
+    }
+
+    public decreaseEndpointVolume(endpoint: AstalWp.Endpoint, volumeDecrease: number): void {
+        volumeDecrease = Math.abs(volumeDecrease) / 100;
+
+        if((endpoint.get_volume() - volumeDecrease) < 0) {
+            endpoint.set_volume(0);
             return;
         }
 
-        this.setSourceVolume(this.getSourceVolume() + volumeIncrease);
+        endpoint.set_volume(endpoint.get_volume() - volumeDecrease);
     }
 
     public decreaseSinkVolume(volumeDecrease: number): void {
-        const absDecrease = Math.abs(volumeDecrease);
-
-        if((this.getSinkVolume() - absDecrease) < 0) {
-            this.setSinkVolume(0);
-            return;
-        }
-
-        this.setSinkVolume(this.getSinkVolume() - absDecrease);
+        this.decreaseEndpointVolume(this.getDefaultSink(), volumeDecrease);
     }
 
     public decreaseSourceVolume(volumeDecrease: number): void {
-        const absDecrease = Math.abs(volumeDecrease);
-
-        if((this.getSourceVolume() - absDecrease) < 0) 
-            return this.setSourceVolume(0);
-
-        this.setSourceVolume(this.getSourceVolume() - absDecrease);
+        this.decreaseEndpointVolume(this.getDefaultSource(), volumeDecrease);
     }
 
     public muteSink(): void {

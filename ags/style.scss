@@ -72,6 +72,14 @@ window.ask-popup {
       font-size: 12px;
     }
 
+
+    & label.time {
+      font-size: 11px;
+      font-weight: 500;
+      color: colors.$fg-disabled;
+      margin-right: 6px;
+    }
+
     & button.close {
       padding: 2px;
       border-radius: 8px;
@@ -177,13 +185,14 @@ menu {
 
 scrollbar trough {
   @include mixins.reset-props;
+
   background: colors.$bg-translucent;
-  border-top-left-radius: 8px;
-  border-bottom-left-radius: 8px;
+  border-radius: 8px;
   padding: 2px;
 
   & slider {
     @include mixins.reset-props;
+
     min-width: .85em;
     background: colors.$bg-tertiary;
     border-radius: 12px;

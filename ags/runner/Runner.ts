@@ -7,34 +7,27 @@ import { ResultWidget, ResultWidgetProps } from "../widget/runner/ResultWidget";
 export let runnerInstance: (Widget.Window|null) = null;
 let onClickTimeout: (AstalIO.Time|undefined);
 
-export function closeRunner(gtkWindow?: Widget.Window) {
-    const window = gtkWindow ? gtkWindow : runnerInstance;
-
-    window?.destroy();
-    runnerInstance = null;
-}
-
 export function startRunnerDefault() {
-    return Runner.RunnerWindow({
-        entryPlaceHolder: "Start typing...",
-        resultsPlaceholder: () => [
-            new ResultWidget({
-                icon: "utilities-terminal-symbolic",
-                title: "Run shell commands",
-                description: "Start typing with '!' prefix to run shell commands"
-            } as ResultWidgetProps),
-            new ResultWidget({
-                icon: "application-x-executable-symbolic",
-                title: "Run your applications",
-                description: "Type the name of the application to search"
-            } as ResultWidgetProps),
-            new ResultWidget({
-                icon: "applications-internet-symbolic",
-                title: "Search the Web",
-                description: "Start typing with '?' prefix to search the web"
-            } as ResultWidgetProps)
-        ]
-    } as Runner.RunnerProps);
+    return Runner.openRunner({
+        entryPlaceHolder: "Start typing..."
+    } as Runner.RunnerProps,
+    () => [
+        new ResultWidget({
+            icon: "utilities-terminal-symbolic",
+            title: "Run shell commands",
+            description: "Start typing with '!' prefix to run shell commands"
+        } as ResultWidgetProps),
+        new ResultWidget({
+            icon: "application-x-executable-symbolic",
+            title: "Run your applications",
+            description: "Type the name of the application to search"
+        } as ResultWidgetProps),
+        new ResultWidget({
+            icon: "applications-internet-symbolic",
+            title: "Search the Web",
+            description: "Start typing with '?' prefix to search the web"
+        } as ResultWidgetProps)
+    ]);
 }
 
 export namespace Runner {
@@ -44,8 +37,17 @@ export namespace Runner {
         width?: number;
         height?: number;
         entryPlaceHolder?: string;
-        resultsPlaceholder?: () => Array<ResultWidget>;
     };
+
+    export function close(gtkWindow?: Widget.Window) {
+        const window = gtkWindow ? gtkWindow : runnerInstance;
+
+        [...plugins.values()].map(plugin =>
+            plugin && plugin.onClose && plugin.onClose());
+
+        window?.close();
+        runnerInstance = null;
+    }
 
     const plugins = new Set<Runner.Plugin>([]);
 
@@ -54,14 +56,19 @@ export namespace Runner {
         readonly prefix?: string;
         /** name of the plugin. e.g.: websearch, shell */
         readonly name?: string;
-        /** handle the user input to return results (does not contain prefix) */
+        /** ran on plugin load */
+        readonly init?: () => void;
+        /** handle the user input to return results (does not include plugin's prefix) */
         readonly handle: (inputText: string) => (ResultWidget|Array<ResultWidget>|null|undefined);
+        /** ran on runner close */
+        readonly onClose?: () => void;
     }
 
     export function addPlugin(plugin: Runner.Plugin, force?: boolean) {
         if(!force && plugin.prefix && plugins.has(plugin)) 
             throw new Error(`Runner plugin with prefix ${plugin.prefix} already exists`);
 
+        plugins.delete(plugin);
         plugins.add(plugin);
     }
 
@@ -76,7 +83,7 @@ export namespace Runner {
         return plugins.delete(plugin);
     }
 
-    export function RunnerWindow(props?: RunnerProps): (Widget.Window|null) {
+    export function openRunner(props?: RunnerProps, placeholder?: () => Array<ResultWidget>): (Widget.Window|null) {
         let subs: Array<() => void> = [];
         const entryText: Variable<string> = new Variable<string>("");
 
@@ -87,8 +94,8 @@ export namespace Runner {
             onActivate: (entry) => {
                 const resultWidget = resultsList.get_selected_row()?.get_child();
                 if(resultWidget instanceof ResultWidget) {
-                    resultWidget.onClick();
                     entry.isFocus = false;
+                    resultWidget.onClick();
                 }
             },
             primary_icon_name: "system-search"
@@ -114,8 +121,8 @@ export namespace Runner {
             });
 
             // Insert placeholder if somehow no results are found
-            if((!entryText || !widgets || widgets.length === 0) && props?.resultsPlaceholder)
-                widgets.push(...props.resultsPlaceholder());
+            if(placeholder && (!entryText || !widgets || widgets.length === 0))
+                widgets.push(...placeholder());
 
             // Insert results inside GtkListBox
             widgets.map((resultWidget: ResultWidget) => {
@@ -142,25 +149,25 @@ export namespace Runner {
         if(!runnerInstance)
             runnerInstance = PopupWindow({
                 namespace: "runner",
-                halign: props?.halign || Gtk.Align.CENTER,
-                valign: props?.valign || Gtk.Align.CENTER,
                 widthRequest: props?.width || 750,
                 heightRequest: props?.height || 450,
                 onKeyPressEvent: (_, event: Gdk.Event) => {
                     const keyVal = event.get_keyval()[1];
                     if(!searchEntry.has_focus && keyVal !== Gdk.KEY_F5 
                        && keyVal !== Gdk.KEY_Down && keyVal !== Gdk.KEY_Up
-                       && keyVal !== Gdk.KEY_KP_Enter && keyVal !== Gdk.KEY_ISO_Enter) {
+                       && keyVal !== Gdk.KEY_KP_Enter && keyVal !== Gdk.KEY_ISO_Enter
+                       && keyVal !== Gdk.KEY_Escape) {
                         searchEntry.grab_focus_without_selecting();
                     }
 
-
                     event.get_keyval()[1] === Gdk.KEY_F5 &&
                         updateApps();
-                    
+
                 },
-                closeAction: (_) => closeRunner(_),
-                onClose: () => subs.map(sub => sub()),
+                closeAction: (_) => {
+                    close(_);
+                    subs.map(sub => sub());
+                },
                 child: new Widget.Box({
                     className: "runner main",
                     orientation: Gtk.Orientation.VERTICAL,

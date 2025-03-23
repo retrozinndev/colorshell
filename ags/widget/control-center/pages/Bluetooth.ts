@@ -1,10 +1,11 @@
-import { bind, timeout } from "astal";
+import { AstalIO, bind, timeout } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
 import AstalBluetooth from "gi://AstalBluetooth";
 import { Page } from "./Page";
 import { Separator, SeparatorProps } from "../../Separator";
 
 let watchingDevices: boolean = false;
+let watchTimeout: (AstalIO.Time|undefined);
 
 export const BluetoothPage: Page = new Page({
     title: "Bluetooth Devices",
@@ -48,7 +49,7 @@ export const BluetoothPage: Page = new Page({
             } as Widget.BoxProps)
         ]
     } as Widget.BoxProps)
-})
+});
 
 function DeviceWidget(dev: AstalBluetooth.Device): Gtk.Widget {
     return new Widget.Button({
@@ -85,11 +86,13 @@ function DeviceWidget(dev: AstalBluetooth.Device): Gtk.Widget {
 }
 
 function watchNewDevices(): void {
-    if(watchingDevices) {
-        timeout(8000, () => {
-            reloadBluetoothDevicesList();
+    if(!watchTimeout) {
+        watchTimeout = timeout(5000, () => {
+            reloadBluetoothDevicesList(2500);
             watchNewDevices();
+            watchTimeout = undefined;
         });
+
         return;
     }
 
@@ -98,11 +101,15 @@ function watchNewDevices(): void {
 
 export function stopBluetoothDevicesWatch(): void {
     watchingDevices = false;
+    watchTimeout?.cancel();
+    watchTimeout = undefined;
+
     AstalBluetooth.get_default().adapter.discovering && 
         AstalBluetooth.get_default().adapter.stop_discovery();
 }
 
-export function reloadBluetoothDevicesList(): void {
+export function reloadBluetoothDevicesList(discoveryTimeout?: number): void {
     AstalBluetooth.get_default().adapter.start_discovery();
-    timeout(4000, () => AstalBluetooth.get_default().adapter.stop_discovery());
+    timeout(discoveryTimeout || 2500, () => 
+        AstalBluetooth.get_default().adapter.stop_discovery());
 }

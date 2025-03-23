@@ -1,15 +1,15 @@
 import { Gtk, Widget } from "astal/gtk3";
-import AstalHyprland from "gi://AstalHyprland";
-import { trGet } from "../../i18n/intl";
+import { tr } from "../../i18n/intl";
+import { Windows } from "../../windows";
 
-export function Logo(): Gtk.Widget {
+export function Apps(): Gtk.Widget {
     return new Widget.EventBox({
-        onClickRelease: () => AstalHyprland.get_default().dispatch("exec", "anyrun"),
-        className: "logo",
+        onClickRelease: () => Windows.getWindow("apps-window")?.show(),
+        className: "apps",
         child: new Widget.Box({
             child: new Widget.Label({
                 className: "nf",
-                tooltipText: trGet()["bar"]["apps"]["tooltip"],
+                tooltipText: tr("bar.apps.tooltip"),
                 label: ""
             } as Widget.LabelProps)
         } as Widget.BoxProps)

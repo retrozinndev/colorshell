@@ -171,7 +171,7 @@
     }
   }
 
-  .audio {
+  .status {
     @include mixins.reset-props;
 
     &:hover > box,
@@ -211,13 +211,17 @@
         font-size: 12px;
       }
 
-      & .bell {
-        margin: 0 4px;
+      & .status-icons {
+        padding: 0 4px;
+
+        & > * {
+          margin: 0 4px;
+        }
       }
     }
   }
 
-  .logo {
+  .apps {
     & > box {
       border-radius: 12px;
       transition: 100ms linear;
@@ -225,7 +229,6 @@
 
       & > label {
         font-size: 14px;
-        margin-right: 1px;
       }
     }
     &:hover {

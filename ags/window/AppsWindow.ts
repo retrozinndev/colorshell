@@ -1,12 +1,10 @@
 import { Variable } from "astal";
 import { Astal, Gdk, Gtk, Widget } from "astal/gtk3";
-import { getAstalApps } from "../scripts/apps";
+import { cleanExec, getAstalApps } from "../scripts/apps";
 import AstalApps from "gi://AstalApps";
-import AstalHyprland from "gi://AstalHyprland";
 
 const { TOP, LEFT, RIGHT, BOTTOM } = Astal.WindowAnchor;
 const searchString = new Variable<string>("");
-const appsArray = new Variable<Array<AstalApps.Application>>([]);
 let searchSubscription: () => void;
 
 export const AppsWindow = new Widget.Window({
@@ -16,64 +14,98 @@ export const AppsWindow = new Widget.Window({
     anchor: TOP | LEFT | RIGHT | BOTTOM,
     visible: false,
     keymode: Astal.Keymode.EXCLUSIVE,
-    onKeyPressEvent: (_, event: Gdk.Event) => {
-        event.get_keyval()[1] === Gdk.KEY_Escape &&
-            hideAppsWindow(_);
-    },
-    setup: () => {
-        searchSubscription = searchString.subscribe((str: string) => {
-            appsArray.set(getAstalApps().fuzzy_query(str));
-        });
-    },
-    child: new Widget.Box({
-        className: "apps-window container",
-        expand: true,
-        orientation: Gtk.Orientation.VERTICAL,
-        children: [
-            new Widget.Entry({
-                className: "entry",
-                hexpand: true,
-                vexpand: false,
-                onDraw: (_) => _.grab_focus(),
-                onChanged: (entry) => {
-                    searchString.set(entry.text);
-                }
-            } as Widget.EntryProps),
-            new Widget.Box({
-                className: "apps",
-                hexpand: true,
-                vexpand: true,
-                orientation: Gtk.Orientation.VERTICAL,
-                children: appsArray((apps: Array<AstalApps.Application>) =>
-                    apps.map((app: AstalApps.Application) => 
-                        new Widget.Button({
-                            className: "app",
-                            onClickRelease: (_) => {
-                                _.get_window()?.hide();
-                                AstalHyprland.get_default().dispatch("exec", app.get_executable());
-                            },
-                            child: new Widget.Box({
-                                orientation: Gtk.Orientation.VERTICAL,
-                                children: [
-                                    new Widget.Icon({
-                                        className: "icon",
-                                        iconName: app.get_icon_name()
-                                    } as Widget.IconProps),
-                                    new Widget.Label({
-                                        className: "name",
-                                        label: app.get_name()
-                                    } as Widget.LabelProps)
-                                ]
-                            } as Widget.BoxProps)
-                        } as Widget.ButtonProps)
-                    )
-                )
-            } as Widget.BoxProps)
-        ]
-    } as Widget.BoxProps)
-} as Widget.WindowProps);
+    onDestroy: () => searchSubscription(),
+    setup: (window) => {
+        const flowbox = new Gtk.FlowBox({
+            rowSpacing: 6,
+            homogeneous: true,
+            columnSpacing: 6,
+            expand: false,
+            orientation: Gtk.Orientation.HORIZONTAL,
+            visible: true
+        } as Gtk.FlowBox.ConstructorProps);
 
-function hideAppsWindow(window: Widget.Window) {
-    searchString.set("");
-    window.hide();
-}
+        const entry = new Widget.Entry({
+            className: "entry",
+            halign: Gtk.Align.CENTER,
+            primary_icon_name: "system-search",
+            onChanged: (entry) => {
+                searchString.set(entry.text);
+            }
+        } as Widget.EntryProps);
+
+        searchSubscription = searchString.subscribe((str: string) => {
+            const results: Array<AstalApps.Application> = getAstalApps().fuzzy_query(str);
+
+            // Destroy is handled by GnomeJS
+            flowbox.get_children().map(flowboxChild => flowbox.remove(flowboxChild));
+
+            results.map(app => {
+                flowbox.insert(new Widget.Button({
+                    onClick: (_button, event: Astal.ClickEvent) => {
+                        if(event.button === Astal.MouseButton.PRIMARY) {
+                            searchString.set("");
+                            entry.text = "";
+                            window.hide();
+                            cleanExec(app);
+
+                            return;
+                        }
+
+                        // select app launch options TODO
+                    },
+                    child: new Widget.Box({
+                        orientation: Gtk.Orientation.VERTICAL,
+                        children: [
+                            new Widget.Icon({
+                                className: "icon",
+                                expand: true,
+                                icon: app.get_icon_name()
+                            } as Widget.IconProps),
+                            new Widget.Label({
+                                className: "name",
+                                truncate: true,
+                                label: app.get_name()
+                            } as Widget.LabelProps)
+                        ]
+                    } as Widget.BoxProps)
+                } as Widget.ButtonProps), -1);
+
+                const flowboxchild = flowbox.get_children()[flowbox.get_children().length-1];
+                flowboxchild.set_valign(Gtk.Align.START);
+            });
+
+            const firstChild = flowbox.get_child_at_index(0);
+            firstChild && flowbox.select_child(firstChild);
+        });
+
+        window.add(new Widget.EventBox({
+            onClick: () => {
+                searchString.set("");
+                entry.text = "";
+                window.hide();
+            },
+            onKeyPressEvent: (_, event: Gdk.Event) => {
+                if(event.get_keyval()[1] === Gdk.KEY_Escape) {
+                    searchString.set("");
+                    entry.text = "";
+                    window.hide();
+                }
+            },
+            child: new Widget.Box({
+                className: "apps-window-container",
+                expand: true,
+                orientation: Gtk.Orientation.VERTICAL,
+                children: [
+                    entry,
+                    new Widget.Scrollable({
+                        vscroll: Gtk.PolicyType.AUTOMATIC,
+                        hscroll: Gtk.PolicyType.NEVER,
+                        expand: true,
+                        child: flowbox
+                    } as Widget.ScrollableProps)
+                ]
+            } as Widget.BoxProps)
+        } as Widget.EventBoxProps));
+    }
+} as Widget.WindowProps);

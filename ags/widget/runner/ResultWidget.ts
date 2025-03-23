@@ -1,6 +1,6 @@
 import { register } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
-import { closeRunner } from "../../runner/Runner";
+import { Runner } from "../../runner/Runner";
 
 export { ResultWidget, ResultWidgetProps };
 
@@ -32,7 +32,7 @@ class ResultWidget extends Widget.Box {
 
         this.onClick = () => {
             props.onClick && props.onClick();
-            this.closeOnClick && closeRunner();
+            this.closeOnClick && Runner.close();
         };
 
         this.set_class_name("result");

@@ -66,6 +66,43 @@
   }
 }
 
+box.history {
+  margin-top: 10px;
+  background: colors.$bg-translucent;
+  border-radius: 24px;
+  padding: 20px 14px;
+
+  & scrollable viewport .notifications > eventbox {
+    & > box {
+      margin: 4px 0;
+    }
+
+    &:first-child {
+      & > box {
+        margin-top: 0;
+      }
+    }
+
+    &:last-child {
+      & > box {
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  & > .button-row {
+    & button {
+      & label.nf {
+        font-size: 16px;
+      }
+      & label:not(.nf) {
+        font-size: 12px;
+        font-weight: 600;
+      }
+    }
+  }
+}
+
 .tiles-container {
   @include mixins.reset-props;
 
@@ -150,15 +187,16 @@
     font-weight: 500;
   }
 
-  &.bluetooth {
-    .connections button {
-      @include mixins.hover-shadow;
-      padding: 6px;
-      border-radius: 12px;
+  & button {
+    @include mixins.hover-shadow;
 
-      &.connected {
-        background: colors.$bg-tertiary;
-      }
+    padding: 6px;
+    border-radius: 12px;
+  }
+
+  &.bluetooth {
+    button.connected {
+      background: colors.$bg-tertiary;
     }
   }
 }

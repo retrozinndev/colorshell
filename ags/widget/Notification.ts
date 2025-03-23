@@ -2,6 +2,8 @@ import { Astal, Gtk, Widget } from "astal/gtk3";
 import AstalNotifd from "gi://AstalNotifd";
 import { Separator } from "./Separator";
 import Pango from "gi://Pango";
+import { HistoryNotification } from "../scripts/notifications";
+import { GLib } from "astal";
 
 export function getUrgencyString(notif: AstalNotifd.Notification) {
     switch(notif.urgency) {
@@ -14,24 +16,29 @@ export function getUrgencyString(notif: AstalNotifd.Notification) {
     return "normal";
 }
 
-export function NotificationWidget(notification: AstalNotifd.Notification|number, 
-        onClose?: (notif: AstalNotifd.Notification) => void): Gtk.Widget {
+export function NotificationWidget(notification: AstalNotifd.Notification|number|HistoryNotification, 
+        onClose?: (notif: AstalNotifd.Notification|HistoryNotification) => void,
+        showTime?: boolean /* It's showTime :speaking_head: :boom: :bangbang: */): Gtk.Widget {
 
-    notification = (notification instanceof AstalNotifd.Notification) ? 
-        notification
-    : AstalNotifd.get_default().get_notification(notification);
+    notification = (typeof notification === "number") ? 
+        AstalNotifd.get_default().get_notification(notification)
+    : notification;
 
     return new Widget.EventBox({
         onClick: () => {
-            if(notification.actions.length >= 1 && notification.actions[0].label.toLowerCase() === "view") {
-                notification.invoke(notification.actions[0]!.id);
-                onClose && onClose(notification);
+            if(notification instanceof AstalNotifd.Notification) {
+                const viewAction = notification.actions.filter(action => action.label.toLowerCase() === "view")?.[0];
+                if(viewAction) notification.invoke(viewAction.id);
             }
+
+            onClose && onClose(notification);
         },
+        hexpand: true,
+        vexpand: false,
         child: new Widget.Box({
-            className: `notification ${getUrgencyString(notification)}`,
+            className: `notification ${ (notification instanceof AstalNotifd.Notification) ? getUrgencyString(notification) : "" }`,
             homogeneous: false,
-            expand: false,
+            expand: true,
             orientation: Gtk.Orientation.VERTICAL,
             children: [
                 new Widget.Box({
@@ -42,7 +49,7 @@ export function NotificationWidget(notification: AstalNotifd.Notification|number
                     children: [
                         new Widget.Icon({
                             className: "icon app-icon",
-                            icon: Astal.Icon.lookup_icon(notification.appIcon) ? 
+                            icon: (notification instanceof AstalNotifd.Notification) && Astal.Icon.lookup_icon(notification.appIcon) ? 
                                 notification.appIcon
                             : (Astal.Icon.lookup_icon(notification.appName.toLowerCase()) ?
                                notification.appName.toLowerCase()
@@ -59,15 +66,25 @@ export function NotificationWidget(notification: AstalNotifd.Notification|number
                             hexpand: true,
                             label: notification.appName || "Unknown Application"
                         } as Widget.LabelProps),
-                        new Widget.Button({
-                            className: "close nf",
+                        new Widget.Box({
                             halign: Gtk.Align.END,
-                            onClick: () => onClose && onClose(notification),
-                            image: new Widget.Icon({
-                                className: "close icon",
-                                icon: "window-close-symbolic"
-                            } as Widget.IconProps)
-                        } as Widget.ButtonProps)
+                            children: [
+                                new Widget.Label({
+                                    xalign: 1,
+                                    visible: !showTime ? false : true,
+                                    className: "time",
+                                    label: GLib.DateTime.new_from_unix_utc(notification.time).format("%H:%M"),
+                                } as Widget.LabelProps),
+                                new Widget.Button({
+                                    className: "close nf",
+                                    onClick: () => onClose && onClose(notification),
+                                    image: new Widget.Icon({
+                                        className: "close icon",
+                                        icon: "window-close-symbolic"
+                                    } as Widget.IconProps)
+                                } as Widget.ButtonProps)
+                            ]
+                        } as Widget.BoxProps)
                     ]
                 } as Widget.BoxProps),
                 Separator({
@@ -112,21 +129,23 @@ export function NotificationWidget(notification: AstalNotifd.Notification|number
                 new Widget.Box({
                     className: "actions button-row",
                     hexpand: true,
-                    visible: (notification.actions.length === 1 && 
-                        notification.actions[0].label.toLowerCase() === "view") 
-                            || notification.actions.length === 0 ? false : true,
-                    children: notification.actions.map((action: AstalNotifd.Action, i: number) => 
-                        new Widget.Button({
-                            className: "action",
-                            visible: i === 0 ? (action.label.toLowerCase() !== "view") : true,
-                            label: action.label,
-                            hexpand: true,
-                            onClicked: () => {
-                                notification.invoke(action.id);
-                                onClose && onClose(notification);
-                            }
-                        } as Widget.ButtonProps)
-                    )
+                    visible: (notification instanceof AstalNotifd.Notification) ?
+                        (notification.actions.filter(action => action.label.toLowerCase() !== "view").length > 0)
+                    : false,
+                    children: (notification instanceof AstalNotifd.Notification) ? 
+                        notification.actions.filter(action => action.label.toLowerCase() !== "view")
+                        .map((action: AstalNotifd.Action) => 
+                            new Widget.Button({
+                                className: "action",
+                                label: action.label,
+                                hexpand: true,
+                                onClicked: () => {
+                                    notification.invoke(action.id);
+                                    onClose && onClose(notification);
+                                }
+                            } as Widget.ButtonProps)
+                        )
+                    : []
                 } as Widget.BoxProps)
             ]
         } as Widget.BoxProps),

@@ -9,6 +9,8 @@ export default {
     },
     control_center: {
         tiles: {
+            enabled: "Ligado",
+            disabled: "Desligado",
             more: "Mais",
 
             network: {
@@ -24,6 +26,9 @@ export default {
                 title: "Gravação de Tela",
                 disabled_description: "Iniciar gravação",
                 enabled_description: "Parar gravação",
+            },
+            dnd: {
+                title: "Não Perturbe"
             }
         }
     },

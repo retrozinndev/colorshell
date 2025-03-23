@@ -15,11 +15,7 @@ export function FocusedClient(): Gtk.Widget {
                 vexpand: true,
                 css: ".icon { font-size: 18px; }",
                 icon: bind(hyprland, "focusedClient").as((client: AstalHyprland.Client) => 
-                    client ? 
-                        (getAppIcon(client.initialClass) || client.initialClass)
-                    :
-                        "image-missing"
-                )
+                    client ? getAppIcon(client.initialClass) : "image-missing")
             }),
             new Widget.Box({
                 className: "text-content",

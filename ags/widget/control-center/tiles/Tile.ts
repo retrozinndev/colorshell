@@ -56,7 +56,7 @@ export function Tile(props: TileProps): Widget.EventBox {
                         new Widget.Label({
                             className: "icon nf",
                             label: props.icon || "icon",
-                            css: `label { font-size: ${props.iconSize || "12"}px; }`
+                            css: `label { font-size: ${props.iconSize || 12}px; }`
                         } as Widget.LabelProps),
                         new Widget.Box({
                             className: "text",
@@ -74,23 +74,15 @@ export function Tile(props: TileProps): Widget.EventBox {
                                 } as Widget.LabelProps),
                                 new Widget.Label({
                                     className: "description",
-                                    visible: Boolean(props.description),
-                                    setup: (label: Widget.Label) => {
-                                        if(props.description instanceof Binding) {
-                                            const sub = props.description.subscribe((value) => {
-                                                label.set_visible(Boolean(value));
-                                            });
-
-                                            const destroyId = label.connect("destroy-event", () => {
-                                                label.disconnect(destroyId);
-                                                sub();
-                                            });
-                                        }
-                                    },
+                                    visible: (props.description instanceof Binding) ?
+                                        props.description.as(Boolean)
+                                    : Boolean(props.description),
                                     halign: Gtk.Align.START,
                                     truncate: true,
                                     xalign: 0,
-                                    label: props.description
+                                    label: (props.description instanceof Binding) ?
+                                        props.description.as((desc) => desc ? desc : "")
+                                    : (props.description || "")
                                 } as Widget.LabelProps)
                             ]
                         } as Widget.BoxProps)
