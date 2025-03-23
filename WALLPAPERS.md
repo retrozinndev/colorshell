@@ -13,6 +13,7 @@ the links down below.
 ## Vocaloid Wallpapers
 
 - [Arch Miku (DeviantArt, nesyah)](https://www.deviantart.com/nesyah/art/Arch-linux-feat-Hatsune-Miku-858316759)
+- [Gumi](https://alphacoders.com/gumi-%28vocaloid%29-wallpapers)
 - [Others (Alpha Coders)](https://alphacoders.com/vocaloid-wallpapers)
 
 ## Dan Da Dan Wallpapers
