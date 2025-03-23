@@ -72,25 +72,8 @@ box.history {
   border-radius: 24px;
   padding: 20px 14px;
 
-  & scrollable viewport .notifications > eventbox {
-    & > box {
-      margin: 4px 0;
-    }
-
-    &:first-child {
-      & > box {
-        margin-top: 0;
-      }
-    }
-
-    &:last-child {
-      & > box {
-        margin-bottom: 0;
-      }
-    }
-  }
-
   & > .button-row {
+    margin-top: 12px;
     & button {
       & label.nf {
         font-size: 16px;

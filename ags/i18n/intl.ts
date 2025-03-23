@@ -8,6 +8,7 @@ const i18nKeys = {
     "en_US": en_US,
     "pt_BR": pt_BR
 };
+
 const languages: Array<string> = Object.keys(i18nKeys);
 let language: string = getSystemLanguage();
 

@@ -193,7 +193,7 @@ scrollbar trough {
   & slider {
     @include mixins.reset-props;
 
-    min-width: .85em;
+    min-width: .45em;
     background: colors.$bg-tertiary;
     border-radius: 12px;
   }

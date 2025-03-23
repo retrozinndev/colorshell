@@ -7,20 +7,26 @@ import { NotificationWidget } from "../Notification";
 export const NotifHistory: Gtk.Widget = new Widget.Box({
     orientation: Gtk.Orientation.VERTICAL,
     className: "history",
-    expand: true,
     visible: bind(Notifications.getDefault(), "history").as(history => history.length > 0),
     children: [
         new Widget.Scrollable({
             className: "history",
             hscroll: Gtk.PolicyType.NEVER,
             vscroll: Gtk.PolicyType.AUTOMATIC,
-            expand: true,
             visible: bind(Notifications.getDefault(), "history").as(history => history.length > 0),
+            propagateNaturalHeight: true,
+            propagateNaturalWidth: false,
+            onDraw: (scrollable) => {
+                scrollable.minContentHeight = 
+                    ((scrollable.get_child()! as Gtk.Viewport).get_child() as Widget.Box).get_children()?.[0].get_allocation().height || 0;
+            },
             child: new Widget.Box({
                 className: "notifications",
                 hexpand: true,
                 orientation: Gtk.Orientation.VERTICAL,
                 homogeneous: false,
+                spacing: 4,
+                valign: Gtk.Align.START,
                 children: bind(Notifications.getDefault(), "history").as((history: Array<HistoryNotification>) =>
                     history.map((notification: HistoryNotification) => NotificationWidget(notification, 
                         () => Notifications.getDefault().removeHistory(notification.id))

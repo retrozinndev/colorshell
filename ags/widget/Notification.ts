@@ -1,7 +1,6 @@
 import { Astal, Gtk, Widget } from "astal/gtk3";
 import AstalNotifd from "gi://AstalNotifd";
 import { Separator } from "./Separator";
-import Pango from "gi://Pango";
 import { HistoryNotification } from "../scripts/notifications";
 import { GLib } from "astal";
 
@@ -119,7 +118,6 @@ export function NotificationWidget(notification: AstalNotifd.Notification|number
                                     xalign: 0,
                                     truncate: false,
                                     wrap: true,
-                                    wrapMode: Pango.WrapMode.WORD,
                                     label: notification.body.replace(/\&/g, "&amp;")
                                 } as Widget.LabelProps)
                             ]
