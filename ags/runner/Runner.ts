@@ -56,7 +56,7 @@ export namespace Runner {
         readonly prefix?: string;
         /** name of the plugin. e.g.: websearch, shell */
         readonly name?: string;
-        /** ran on plugin load */
+        /** ran on runner open */
         readonly init?: () => void;
         /** handle the user input to return results (does not include plugin's prefix) */
         readonly handle: (inputText: string) => (ResultWidget|Array<ResultWidget>|null|undefined);
@@ -106,6 +106,9 @@ export namespace Runner {
             expand: true
         } as Gtk.ListBox.ConstructorProps);
 
+        // Init plugins
+        plugins.forEach(plugin => plugin.init && plugin.init());
+
         function updateResultsList(entryText: string) {
             const calledPlugins: Array<Plugin> = getPlugins().filter((plugin) => plugin.prefix && entryText.startsWith(plugin.prefix) ?
                 plugin : null).concat(getPlugins().filter(plugin => plugin.prefix === undefined));
@@ -150,7 +153,9 @@ export namespace Runner {
             runnerInstance = PopupWindow({
                 namespace: "runner",
                 widthRequest: props?.width || 750,
-                heightRequest: props?.height || 450,
+                heightRequest: props?.height || 0,
+                marginTop: 250,
+                valign: Gtk.Align.START,
                 onKeyPressEvent: (_, event: Gdk.Event) => {
                     const keyVal = event.get_keyval()[1];
                     if(!searchEntry.has_focus && keyVal !== Gdk.KEY_F5 
@@ -178,6 +183,8 @@ export namespace Runner {
                             vscroll: Gtk.PolicyType.AUTOMATIC,
                             hscroll: Gtk.PolicyType.NEVER,
                             expand: true,
+                            propagateNaturalHeight: true,
+                            maxContentHeight: 450,
                             child: resultsList
                         })
                     ]
