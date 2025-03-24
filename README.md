@@ -37,6 +37,14 @@ See more bindings inside the `~/.config/hypr/bindings.conf` file or check the [W
 ### ℹ️ Source
 All wallpapers inside this repo are not made by me! You can find all sources inside the [`WALLPAPERS.md`](https://github.com/retrozinndev/Hyprland-Dots/blob/ryo/WALLPAPERS.md) file.
 
+## 🌐 Internationalization
+This Shell supports i18n. Currently, it supports the following languages: 
+- English (United States), maintained by [@retrozinndev](https://github.com/retrozinndev)
+- Português (Brasil), maintained by [@retrozinndev](https://github.com/retrozinndev)
+  
+Don't see your language here? You can contribute and make translations too! <br>
+To do so, fork this repository, translate your fork, then open a pull request to this repository, simple as that!
+
 ## ⚙️ Installation
 See the Installation Guide on [Wiki/Installation].
 
