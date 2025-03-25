@@ -106,6 +106,12 @@ export namespace Runner {
             expand: true
         } as Gtk.ListBox.ConstructorProps);
 
+        if(placeholder) {
+            const placeholderWidgets = placeholder();
+            placeholderWidgets.map(widget =>
+                resultsList.insert(widget, -1));
+        }
+
         // Init plugins
         plugins.forEach(plugin => plugin.init && plugin.init());
 
