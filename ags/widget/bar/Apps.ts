@@ -7,11 +7,12 @@ export function Apps(): Gtk.Widget {
         onClickRelease: () => Windows.getWindow("apps-window")?.show(),
         className: "apps",
         child: new Widget.Box({
-            child: new Widget.Label({
-                className: "nf",
+            child: new Widget.Icon({
                 tooltipText: tr("bar.apps.tooltip"),
-                label: ""
-            } as Widget.LabelProps)
+                icon: "applications-other-symbolic",
+                halign: Gtk.Align.CENTER,
+                hexpand: true
+            } as Widget.IconProps)
         } as Widget.BoxProps)
     } as Widget.EventBoxProps);
 }

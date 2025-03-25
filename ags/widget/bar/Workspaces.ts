@@ -19,8 +19,12 @@ export function Workspaces(): Gtk.Widget {
 
                 return sortedWorkspaces.map((workspace: AstalHyprland.Workspace) => 
                     new Widget.Button({
-                        className: bind(hyprland, "focusedWorkspace").as(
-                            (focusedWs: AstalHyprland.Workspace) => workspace.id === focusedWs.id ? "focus" : ""),
+                        className: Variable.derive([
+                            bind(hyprland, "focusedWorkspace"),
+                            showWorkspaceNumbers()
+                        ], (focusedWs, showWsNumbers) =>
+                            `${focusedWs.id === workspace.id ? "focus" : ""} ${showWsNumbers ? "show" : ""}`
+                        )(),
                         visible: true,
                         tooltipText: bind(workspace, "lastClient").as((lastClient) => `Workspace ${workspace.id}${ lastClient ? ` - ${
                             !lastClient.title.toLowerCase().includes(lastClient.class) ?

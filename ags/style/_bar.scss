@@ -73,9 +73,17 @@
         }
       }
 
+      &.show {
+        // Smooth showing
+        & label.id {
+          opacity: 1;
+        }
+      }
+
       & label.id {
         font-weight: 600;
         margin-right: 4px;
+        opacity: 0;
       }
 
       & icon {
@@ -235,15 +243,34 @@
     & > box {
       border-radius: 12px;
       transition: 100ms linear;
-      padding: 0 8px;
+      min-width: 28px;
+      padding: 0 4px;
 
-      & > label {
+      & > icon {
+        transition: 120ms linear;
         font-size: 14px;
       }
     }
     &:hover {
       & > box {
         background: colors.$bg-primary;
+
+        & > icon {
+          font-size: 15px;
+          -gtk-icon-transform: scale(1.12);
+        }
+      }
+    }
+    &:active {
+      & > box {
+        @include mixins.hover-shadow;
+
+        background: colors.$bg-primary;
+
+        & > icon {
+          font-size: 15px;
+          -gtk-icon-transform: scale(1);
+        } 
       }
     }
   }

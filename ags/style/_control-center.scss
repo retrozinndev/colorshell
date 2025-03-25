@@ -72,12 +72,21 @@ box.history {
   border-radius: 24px;
   padding: 20px 14px;
 
+  & .notifications {
+    & .notification {
+      background: colors.$bg-primary;
+    }
+  }
+
   & > .button-row {
     margin-top: 12px;
     & button {
+      padding: 6px;
+
       & label.nf {
         font-size: 16px;
       }
+
       & label:not(.nf) {
         font-size: 12px;
         font-weight: 600;

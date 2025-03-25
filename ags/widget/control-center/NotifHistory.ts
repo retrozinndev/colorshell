@@ -29,7 +29,7 @@ export const NotifHistory: Gtk.Widget = new Widget.Box({
                 valign: Gtk.Align.START,
                 children: bind(Notifications.getDefault(), "history").as((history: Array<HistoryNotification>) =>
                     history.map((notification: HistoryNotification) => NotificationWidget(notification, 
-                        () => Notifications.getDefault().removeHistory(notification.id))
+                        () => Notifications.getDefault().removeHistory(notification.id), true)
                 ))
             } as Widget.BoxProps)
         } as Widget.ScrollableProps),
