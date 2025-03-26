@@ -1,7 +1,7 @@
 import { AstalIO, GObject, property, register, signal, timeout } from "astal";
 import AstalNotifd from "gi://AstalNotifd";
 
-export const 
+export let 
     NOTIFICATION_TIMEOUT_URGENT: number = 0,
     NOTIFICATION_TIMEOUT_NORMAL: number = 4000,
     NOTIFICATION_TIMEOUT_LOW: number = 2000;
@@ -22,7 +22,7 @@ class Notifications extends GObject.Object {
 
     #notifications: Array<AstalNotifd.Notification> = [];
     #history: Array<HistoryNotification> = [];
-    #connections: Array<number>;
+    #connections: Array<number> = [];
     #historyLimit: number = 10;
 
 
@@ -60,7 +60,7 @@ class Notifications extends GObject.Object {
     constructor() {
         super();
 
-        this.#connections = [
+        this.#connections.push(
             AstalNotifd.get_default().connect("notified", (notifd, id) => {
                 const notification = notifd.get_notification(id);
                 const notifTimeout = notification.urgency === AstalNotifd.Urgency.LOW ? 
@@ -106,7 +106,7 @@ class Notifications extends GObject.Object {
                 this.removeNotification(id);
                 this.addHistory(notifd.get_notification(id));
             })
-        ];
+        );
 
         this.run_dispose = () => {
             super.run_dispose();
@@ -128,8 +128,10 @@ class Notifications extends GObject.Object {
         this.#history.length === this.#historyLimit &&
             this.removeHistory(this.#history[this.#history.length - 1]);
 
-        const newArray = this.#history.length > 0 ? this.#history.reverse().filter((item) => item.id !== notif.id) : [];
-        newArray.push({
+        this.#history.map((notifb, i) => 
+            notifb.id === notif.id && this.#history.splice(i, 1));
+
+        this.#history.unshift({
             id: notif.id,
             appName: notif.appName,
             body: notif.body,
@@ -138,21 +140,18 @@ class Notifications extends GObject.Object {
             time: notif.time,
             image: notif.image ? notif.image : undefined
         } as HistoryNotification);
-        this.#history = newArray.reverse();
+
         this.notify("history");
         this.emit("history-added", this.#history[0]);
         onAdded && onAdded(notif);
     }
 
     public clearHistory(): void {
-        for(let i = 0; i < this.history.length; i++) {
-            const notif = this.history[this.history.length-1];
-
-            if(this.#history.pop()) {
-                this.emit("history-removed", notif.id);
-                this.notify("history");
-            }
-        }
+        this.#history.reverse().map((notif) => {
+            this.#history.pop()
+            this.emit("history-removed", notif.id);
+            this.notify("history");
+        });
     }
 
     public removeHistory(notif: (HistoryNotification|number)): void {

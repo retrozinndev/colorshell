@@ -13,6 +13,7 @@ import { Runner } from "./runner/Runner";
 import { PluginApps } from "./runner/plugins/apps";
 import { PluginShell } from "./runner/plugins/shell";
 import { PluginWebSearch } from "./runner/plugins/websearch";
+import { PluginMedia } from "./runner/plugins/media";
 
 
 let osdTimer: (Time|undefined);
@@ -20,13 +21,14 @@ let osdTimer: (Time|undefined);
 const runnerPlugins: Array<Runner.Plugin> = [
     PluginApps,
     PluginShell,
-    PluginWebSearch
+    PluginWebSearch,
+    PluginMedia
 ];
 
 App.start({
     instanceName: "astal",
     requestHandler(request: string, response: (result: any) => void) {
-        console.log(`[LOG] Arguments received: ${request}`);
+        // console.log(`[LOG] Arguments received: ${request}`);
         response(handleArguments(request));
     },
     main() {

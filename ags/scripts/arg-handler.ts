@@ -1,10 +1,13 @@
 import { Gtk } from "astal/gtk3";
-import { Windows } from "../windows";
-import { restartInstance } from "./reload-handler";
+
 import { Wireplumber } from "./volume";
+import { Windows } from "../windows";
+
+import { restartInstance } from "./reload-handler";
 import { startRunnerDefault } from "../runner/Runner";
 import { showWorkspaceNumbers } from "../widget/bar/Workspaces";
 import { timeout } from "astal";
+
 
 export function handleArguments(request: string): any {
     const args: Array<string> = request.split(" ");
@@ -30,8 +33,10 @@ export function handleArguments(request: string): any {
             return "Opening runner..."
 
         case "show-ws-numbers":
-            showWorkspaceNumbers.set(true);
-            timeout(2000, () => showWorkspaceNumbers.set(false));
+            if(!showWorkspaceNumbers.get()) {
+                showWorkspaceNumbers.set(true);
+                timeout(2200, () => showWorkspaceNumbers.set(false));
+            }
             return "Showing numbers";
 
         default:
@@ -156,7 +161,7 @@ Options:
   reload: creates a new astal instance and removes this one.
   volume: wireplumber volume controller, see "volume help".
   runner: open the application runner.
-  (show|hide)-ws-numbers: show or hide workspace numbers in bar.
+  show-ws-numbers: show or hide workspace numbers in bar.
   help, -h, --help: shows this help message.
 
 2025 (c) retrozinndev's Hyprland-Dots, licensed under the MIT License.

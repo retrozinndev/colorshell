@@ -1,13 +1,13 @@
-import { register } from "astal";
+import { Binding, register } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
 import { Runner } from "../../runner/Runner";
 
 export { ResultWidget, ResultWidgetProps };
 
 type ResultWidgetProps = {
-    icon?: string;
-    title: string;
-    description?: string;
+    icon?: string | Binding<string | undefined>;
+    title: string | Binding<string | undefined>;
+    description?: string | Binding<string | undefined>;
     closeOnClick?: boolean;
     setup?: () => void;
     onClick?: () => void;
@@ -16,7 +16,7 @@ type ResultWidgetProps = {
 @register({ GTypeName: "ResultWidget" })
 class ResultWidget extends Widget.Box {
     public readonly onClick: (() => void);
-    public readonly icon: (string|undefined);
+    public readonly icon: (string | Binding<string|undefined> | undefined);
     public readonly setup: ((() => void)|undefined);
     public readonly closeOnClick: boolean = true;
 
@@ -55,7 +55,9 @@ class ResultWidget extends Widget.Box {
                 } as Widget.LabelProps),
                 new Widget.Label({
                     className: "description",
-                    visible: Boolean(props.description),
+                    visible: (props.description instanceof Binding) ? 
+                        props.description.as(Boolean)
+                    : Boolean(props.description),
                     truncate: true,
                     xalign: 0,
                     label: props.description || ""
