@@ -2,7 +2,7 @@ import { Binding } from "astal";
 import { Astal, Gdk, Gtk, Widget } from "astal/gtk3";
 
 
-const { TOP, BOTTOM, LEFT, RIGHT }: typeof Astal.WindowAnchor = Astal.WindowAnchor;
+const { TOP, BOTTOM, LEFT, RIGHT } = Astal.WindowAnchor;
 
 export type PopupWindowProps = Pick<Widget.WindowProps, 
     "namespace"
@@ -16,27 +16,26 @@ export type PopupWindowProps = Pick<Widget.WindowProps,
     | "layer"
     | "widthRequest"
     | "heightRequest"
-    | "child"
     | "monitor"
     | "setup"
     | "exclusivity"> & {
+    child?: (Gtk.Widget | Binding<Gtk.Widget | undefined>);
+    children?: (Array<Gtk.Widget | Binding<Gtk.Widget | undefined>>);
     marginTop?: number;
     marginLeft?: number;
     marginBottom?: number;
     marginRight?: number;
     onKeyPressEvent?: (self: Widget.Window, event: Gdk.Event) => void;
-    /** Do something else instead of hiding window on close action(clicking outside conent / pressing Escape) 
+    /** Do something else instead of closing window on close action(clicking outside conent/pressing Escape) 
      * Observation: onClose() function will still be ran after close action if defined.
      */
     closeAction?: (self: Widget.Window) => void;
     onClose?: (self: Widget.Window) => void;
 };
 
-export function PopupWindow(props: PopupWindowProps): Widget.Window {
+export const PopupWindow = (props: PopupWindowProps): Widget.Window => {
     if(!props.closeAction)
-        props.closeAction = (window) => {
-            window.hide();
-        };
+        props.closeAction = (window) => window.close();
 
     return new Widget.Window({
         namespace: props?.namespace || "popup-window",
@@ -47,9 +46,8 @@ export function PopupWindow(props: PopupWindowProps): Widget.Window {
         keymode: Astal.Keymode.EXCLUSIVE,
         layer: props?.layer || Astal.Layer.OVERLAY,
         focusOnMap: true,
-        visible: props?.visible,
-        monitor: props?.monitor || 0,
         setup: props.setup,
+        monitor: props.monitor || 0,
         onButtonPressEvent: (_, event: Gdk.Event) => {
             const [, posX, posY] = event.get_coords();
             const childAllocation = _.get_child()!.get_allocation();
@@ -88,7 +86,8 @@ export function PopupWindow(props: PopupWindowProps): Widget.Window {
             widthRequest: props.widthRequest,
             heightRequest: props.heightRequest,
             onButtonPressEvent: () => true,
-            child: props.child
+            ...(props.child ? { child: props.child } : {}),
+            ...(props.children ? { children: props.children } : {})
         } as Widget.BoxProps)
     } as Widget.WindowProps);
 }

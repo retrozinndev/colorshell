@@ -1,5 +1,3 @@
-import { Gtk } from "astal/gtk3";
-
 import { Wireplumber } from "./volume";
 import { Windows } from "../windows";
 
@@ -7,9 +5,10 @@ import { restartInstance } from "./reload-handler";
 import { startRunnerDefault } from "../runner/Runner";
 import { showWorkspaceNumbers } from "../widget/bar/Workspaces";
 import { timeout } from "astal";
+import { App } from "astal/gtk3";
 
 
-export function handleArguments(request: string): any {
+export async function handleArguments(request: string): Promise<any> {
     const args: Array<string> = request.split(" ");
     switch(args[0]) {
         case "open":
@@ -27,6 +26,10 @@ export function handleArguments(request: string): any {
         case "reload":
             restartInstance();
             return "Restarting instance..."
+
+        case "windows":
+            return Object.keys(Windows.windows).map(name =>
+                `${name}: ${Windows.isVisible(name) ? "open" : "closed" }`).join('\n');
         
         case "runner":
             startRunnerDefault();
@@ -39,6 +42,12 @@ export function handleArguments(request: string): any {
             }
             return "Showing numbers";
 
+        case "c":
+        case "code":
+            const input = request.replace(args[0], "").trimStart();
+            console.log(input);
+            return await (App.eval(input).then((v) => v).catch((r) => r));
+
         default:
             return "command not found! try checking help";
     }
@@ -46,13 +55,13 @@ export function handleArguments(request: string): any {
 
 // Didn't want to bloat the switch statement, so I just separated it into functions
 function handleWindowArgs(args: Array<string>): string {
-    const specifiedWindow: (Gtk.Window|undefined) = Windows.getWindow(args[1]);
-
-    if(!specifiedWindow) 
+    if(!args[1]) 
         return "Window argument not specified!";
 
-    if(!Windows.getList().has(args[1])) 
-        return `Name "${args[1]}" not found windows map! Make sure to add new Windows on the Map!`
+    const specifiedWindow: string = args[1];
+
+    if(!Windows.hasWindow(specifiedWindow)) 
+        return `Name "${specifiedWindow}" not found windows map! Make sure to add new Windows on the Map!`
 
     switch(args[0]) {
         case "open":
@@ -137,11 +146,11 @@ function handleVolumeArgs(args: Array<string>) {
         return `
 Control speaker and microphone volumes easily!
 Options:
-  sink-set [number]: set sink(speaker) volume with [number], 0 to ${Wireplumber.getDefault().getMaxSinkVolume()}.
+  sink-set [number]: set sink(speaker) volume with [number], 0 to ${Wireplumber.getDefault().getMaxSinkVolume() || 100}.
   sink-mute: toggle mute for the sink(speaker) device.
   sink-increase [number]: increases sink(speaker) volume with [number].
   sink-decrease [number]: decreases sink(speaker) volume with [number].
-  source-set [number]: set source(microphone) volume with [number], 0 to ${Wireplumber.getDefault().getMaxSourceVolume()}.
+  source-set [number]: set source(microphone) volume with [number], 0 to ${Wireplumber.getDefault().getMaxSourceVolume() || 100}.
   source-mute: toggle mute for the source(microphone) device.
   source-increase [number]: increases source(microphone) volume with [number].
   source-decrease [number]: decreases source(microphone) volume with [number]
@@ -158,11 +167,13 @@ Options:
   open [window_name]: sets specified window's visibility to true.
   close [window_name]: sets specified window's visibility to false.
   toggle [window_name]: toggles visibility of specified window.
+  windows: shows available windows to control.
   reload: creates a new astal instance and removes this one.
   volume: wireplumber volume controller, see "volume help".
   runner: open the application runner.
+  c, code [js]: runs provided js in args and returns result.
   show-ws-numbers: show or hide workspace numbers in bar.
-  help, -h, --help: shows this help message.
+  h, help: shows this help message.
 
 2025 (c) retrozinndev's Hyprland-Dots, licensed under the MIT License.
 https://github.com/retrozinndev/Hyprland-Dots

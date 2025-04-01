@@ -2,9 +2,10 @@ import { AstalIO, bind, Binding, execAsync, GLib, timeout } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
 import AstalMpris from "gi://AstalMpris";
 
-let dragTimer: (AstalIO.Time|undefined);
 
 export function BigMedia(): Gtk.Widget {
+    let dragTimer: (AstalIO.Time|undefined);
+
     return new Widget.Box({
         className: "big-media",
         orientation: Gtk.Orientation.VERTICAL,

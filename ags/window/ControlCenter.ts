@@ -4,11 +4,11 @@ import { Tiles } from "../widget/control-center/Tiles";
 import { Sliders } from "../widget/control-center/Sliders";
 import { hidePages, PagesWidget } from "../widget/control-center/Pages";
 import { NotifHistory } from "../widget/control-center/NotifHistory";
+import { Windows } from "../windows";
 
-const connections: Array<number> = [];
 const { TOP, LEFT, BOTTOM, RIGHT } = Astal.WindowAnchor;
 
-export const ControlCenter = new Widget.Window({
+export const ControlCenter = (mon: number) => new Widget.Window({
     namespace: "control-center",
     className: "control-center",
     anchor: TOP | BOTTOM | LEFT | RIGHT,
@@ -16,22 +16,23 @@ export const ControlCenter = new Widget.Window({
     keymode: Astal.Keymode.EXCLUSIVE,
     layer: Astal.Layer.OVERLAY,
     focusOnMap: true,
-    visible: false,
-    monitor: 0,
-    onDestroy: (_) => connections.map(id => _.disconnect(id)),
+    monitor: mon,
+    onDestroy: (_) => {
+        hidePages();
+    },
     onButtonPressEvent: (_, event: Gdk.Event) => {
         const [, posX, posY] = event.get_coords();
         const childAllocation = _.get_child()!.get_allocation();
 
         if((posX < childAllocation.x || posX > (childAllocation.x + childAllocation.width)) || 
            (posY < childAllocation.y || posY > (childAllocation.y + childAllocation.height))) {
-            _.hide();
+            Windows.close("control-center");
             hidePages();
         }
     },
     onKeyPressEvent: (_, event: Gdk.Event) => {
         if(event.get_keyval()[1] === Gdk.KEY_Escape) {
-            _.hide();
+            Windows.close("control-center");
             hidePages();
         }
     },
@@ -54,17 +55,13 @@ export const ControlCenter = new Widget.Window({
                 widthRequest: 400,
                 vexpand: false,
                 children: [
-                    QuickActions, 
-                    Sliders,
-                    Tiles,
-                    PagesWidget
+                    QuickActions(), 
+                    Sliders(),
+                    Tiles(),
+                    PagesWidget()
                 ]
             } as Widget.BoxProps),
-            NotifHistory
+            NotifHistory()
         ]
     } as Widget.BoxProps)
 } as Widget.WindowProps);
-
-connections.push(ControlCenter.connect("hide", (_) => {
-    hidePages();
-}));

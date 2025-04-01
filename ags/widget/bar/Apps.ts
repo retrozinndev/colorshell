@@ -4,7 +4,7 @@ import { Windows } from "../../windows";
 
 export function Apps(): Gtk.Widget {
     return new Widget.EventBox({
-        onClickRelease: () => Windows.getWindow("apps-window")?.show(),
+        onClickRelease: () => Windows.open("apps-window"),
         className: "apps",
         child: new Widget.Box({
             child: new Widget.Icon({

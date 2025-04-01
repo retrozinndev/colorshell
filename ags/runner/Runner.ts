@@ -3,8 +3,9 @@ import { Gdk, Gtk, Widget } from "astal/gtk3";
 import { PopupWindow, PopupWindowProps } from "../widget/PopupWindow";
 import { updateApps } from "../scripts/apps";
 import { ResultWidget, ResultWidgetProps } from "../widget/runner/ResultWidget";
+import { Windows } from "../windows";
 
-export let runnerInstance: (Widget.Window|null) = null;
+export let runnerInstance: (Gtk.Window|null) = null;
 let onClickTimeout: (AstalIO.Time|undefined);
 
 export function startRunnerDefault() {
@@ -13,14 +14,19 @@ export function startRunnerDefault() {
     } as Runner.RunnerProps,
     () => [
         new ResultWidget({
-            icon: "utilities-terminal-symbolic",
-            title: "Run shell commands",
-            description: "Start typing with '!' prefix to run shell commands"
-        } as ResultWidgetProps),
-        new ResultWidget({
             icon: "application-x-executable-symbolic",
             title: "Run your applications",
             description: "Type the name of the application to search"
+        } as ResultWidgetProps),
+        new ResultWidget({
+            icon: "media-playback-start-symbolic",
+            title: "Control media",
+            description: "Use prefix ':' to run"
+        } as ResultWidgetProps),
+        new ResultWidget({
+            icon: "utilities-terminal-symbolic",
+            title: "Run shell commands",
+            description: "Start typing with '!' prefix to run shell commands"
         } as ResultWidgetProps),
         new ResultWidget({
             icon: "applications-internet-symbolic",
@@ -39,13 +45,11 @@ export namespace Runner {
         entryPlaceHolder?: string;
     };
 
-    export function close(gtkWindow?: Widget.Window) {
-        const window = gtkWindow ? gtkWindow : runnerInstance;
-
+    export function close() {
         [...plugins.values()].map(plugin =>
             plugin && plugin.onClose && plugin.onClose());
 
-        window?.close();
+        runnerInstance?.close();
         runnerInstance = null;
     }
 
@@ -83,7 +87,7 @@ export namespace Runner {
         return plugins.delete(plugin);
     }
 
-    export function openRunner(props?: RunnerProps, placeholder?: () => Array<ResultWidget>): (Widget.Window|null) {
+    export function openRunner(props?: RunnerProps, placeholder?: () => Array<ResultWidget>): (Gtk.Window|null) {
         let subs: Array<() => void> = [];
         const entryText: Variable<string> = new Variable<string>("");
 
@@ -156,8 +160,9 @@ export namespace Runner {
         }));
 
         if(!runnerInstance)
-            runnerInstance = PopupWindow({
+            runnerInstance = Windows.createWindowForFocusedMonitor((mon: number): (Widget.Window) => PopupWindow({
                 namespace: "runner",
+                monitor: mon,
                 widthRequest: props?.width || 750,
                 heightRequest: props?.height || 0,
                 marginTop: 250,
@@ -176,8 +181,8 @@ export namespace Runner {
 
                 },
                 closeAction: (_) => {
-                    close(_);
                     subs.map(sub => sub());
+                    close();
                 },
                 child: new Widget.Box({
                     className: "runner main",
@@ -195,7 +200,7 @@ export namespace Runner {
                         })
                     ]
                 } as Widget.BoxProps)
-            } as PopupWindowProps);
+            } as PopupWindowProps))();
 
         return runnerInstance;
     }

@@ -1,22 +1,22 @@
 import { Astal, Gtk, Widget } from "astal/gtk3";
 
-import { Clock } from "../widget/bar/Clock";
 import { Tray } from "../widget/bar/Tray";
 import { Workspaces } from "../widget/bar/Workspaces";
 import { FocusedClient } from "../widget/bar/FocusedClient";
 import { Media } from "../widget/bar/Media";
-import { Status } from "../widget/bar/Status";
 import { Apps } from "../widget/bar/Apps";
+import { Clock } from "../widget/bar/Clock";
+import { Status } from "../widget/bar/Status";
 
-export const Bar: Widget.Window = new Widget.Window({
-    monitor: 0,
+export const Bar = (mon: number) => new Widget.Window({
     namespace: "top-bar",
     anchor: Astal.WindowAnchor.TOP | Astal.WindowAnchor.LEFT | Astal.WindowAnchor.RIGHT,
     layer: Astal.Layer.TOP,
     exclusivity: Astal.Exclusivity.EXCLUSIVE,
     heightRequest: 46,
-    canFocus: false,
+    monitor: mon,
     visible: true,
+    canFocus: false,
     child: new Widget.Box({
         className: "bar-container",
         child: new Widget.CenterBox({

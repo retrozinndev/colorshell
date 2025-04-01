@@ -20,15 +20,15 @@ export function setOSDMode(newMode: OSDModes): void {
     osdMode.set(newMode);
 }
 
-export const OSD: Widget.Window = new Widget.Window({
+export const OSD = (mon: number) => new Widget.Window({
     namespace: "osd",
     layer: Astal.Layer.OVERLAY,
     anchor: Astal.WindowAnchor.BOTTOM,
     canFocus: false,
-    margin_bottom: 80,
-    monitor: 0,
-    visible: false,
+    marginBottom: 80,
     focusOnClick: false,
+    clickThrough: true,
+    monitor: mon,
     child: new Widget.Box({
         className: "osd",
         children: [

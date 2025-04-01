@@ -15,7 +15,7 @@ export type TileProps = {
     onClickMore?: () => void;
 }
 
-export function Tile(props: TileProps): Widget.EventBox {
+export function Tile(props: TileProps): (() => Widget.EventBox) {
     const toggled = new Variable<boolean>(props.toggleState instanceof Binding ?
         (props.toggleState.get() || false) : (props.toggleState || false));
 
@@ -24,7 +24,7 @@ export function Tile(props: TileProps): Widget.EventBox {
     if(props?.toggleState instanceof Binding) 
         subscription = props.toggleState.subscribe(val => toggled.set(val || false));
 
-    return new Widget.EventBox({
+    return () => new Widget.EventBox({
         className: toggled().as((state: boolean) => 
             state ? "tile-eventbox toggled" : "tile-eventbox"),
         expand: true,
@@ -39,7 +39,7 @@ export function Tile(props: TileProps): Widget.EventBox {
             toggled.set(true);
             props.onToggledOn && props.onToggledOn(); 
         },
-        onDestroy: () => subscription(),
+        onDestroy: () => subscription?.(),
         child: new Widget.Box({
             className: (props.className instanceof Binding) ? 
                 props.className.as((clsName: (string|undefined)) => 

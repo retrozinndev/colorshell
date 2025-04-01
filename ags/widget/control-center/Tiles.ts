@@ -3,13 +3,13 @@ import { TileNetwork } from "./tiles/Network";
 import { TileBluetooth } from "./tiles/Bluetooth";
 import { TileDND } from "./tiles/DoNotDisturb";
 
-export const tileList: Array<any> = [
+export const tileList: Array<() => Gtk.Widget> = [
     TileNetwork,
     TileBluetooth,
     TileDND
 ];
 
-export function TilesWidget(): Gtk.Widget {
+export function Tiles(): Gtk.Widget {
     const tilesFlowBox: Gtk.FlowBox = new Gtk.FlowBox({
         visible: true,
         orientation: Gtk.Orientation.HORIZONTAL,
@@ -21,13 +21,11 @@ export function TilesWidget(): Gtk.Widget {
         homogeneous: true,
     } as Gtk.FlowBox.ConstructorProps);
 
-    tileList.map((item: Gtk.Widget) => 
-        tilesFlowBox.insert(item, -1));
+    tileList.map((item: (() => Gtk.Widget)) => 
+        tilesFlowBox.insert(item(), -1));
 
     return new Widget.Box({
         className: "tiles-container",
         child: tilesFlowBox
     } as Widget.BoxProps);
 }
-
-export const Tiles: Gtk.Widget = TilesWidget();

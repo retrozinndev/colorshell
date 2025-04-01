@@ -3,6 +3,7 @@ import { PopupWindow, PopupWindowProps } from "./PopupWindow";
 import { Astal, Gtk, Widget } from "astal/gtk3";
 import { Separator } from "./Separator";
 import { tr } from "../i18n/intl";
+import { Windows } from "../windows";
 
 export type AskPopupProps = {
     title?: string | Binding<string | undefined>;
@@ -17,15 +18,16 @@ export type AskPopupProps = {
  * A Popup Widget that asks yes or no to a certain question. 
  * Runs onAccept() when user accepts or else onDecline() when
  * user doesn't accept or closes window.
+ * This window isn't registered in this shell windowing stuff.
  */
-export function AskPopup(props: AskPopupProps) {
+export function AskPopup(props: AskPopupProps): Gtk.Window {
     const buttons = [
         new Widget.Button({
             className: "cancel",
             hexpand: true,
             label: props.cancelText || tr("ask_popup.options.cancel") || "Cancel",
             onClick: (_) => {
-                window.destroy();
+                window.close();
                 props.onCancel && props.onCancel();
             }
         } as Widget.ButtonProps),
@@ -34,15 +36,14 @@ export function AskPopup(props: AskPopupProps) {
             hexpand: true,
             label: props.acceptText || tr("ask_popup.options.accept") || "Ok",
             onClick: (_) => {
-                window.destroy();
+                window.close();
                 props.onAccept && props.onAccept();
             }
         } as Widget.ButtonProps)
     ];
 
-    const window = PopupWindow({
+    const window = Windows.createWindowForFocusedMonitor(PopupWindow({
         namespace: "ask-popup",
-        visible: true,
         className: "ask-popup",
         exclusivity: Astal.Exclusivity.IGNORE,
         widthRequest: 350,
@@ -80,5 +81,7 @@ export function AskPopup(props: AskPopupProps) {
                 } as Widget.BoxProps)
             ]
         } as Widget.BoxProps)
-    } as PopupWindowProps);
+    } as PopupWindowProps))();
+
+    return window;
 }

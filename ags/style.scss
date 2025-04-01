@@ -42,7 +42,12 @@ window.ask-popup {
     & button {
       background: colors.$bg-primary;
       border-radius: 12px;
-      padding: 6px;
+      padding: 9px 6px;
+
+      & label {
+        font-size: 16px;
+        font-weight: 600;
+      }
 
       margin: {
         left: 4px;

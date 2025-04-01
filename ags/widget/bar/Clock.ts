@@ -2,14 +2,13 @@ import { Gtk, Widget } from "astal/gtk3";
 import { getDateTime } from "../../scripts/time";
 import { bind, GLib } from "astal";
 import { Windows } from "../../windows";
-import { CenterWindow } from "../../window/CenterWindow";
 
 export function Clock(): Gtk.Widget {
     return new Widget.Box({
-        className: bind(CenterWindow, "visible").as((visible: boolean) =>
-            visible ? "clock open" : "clock"),
+        className: bind(Windows, "openWindows").as((openWins) => 
+            Object.hasOwn(openWins, "center-window") ? "open clock" : "clock"),
         child: new Widget.Button({
-            onClick: () => Windows.toggle(CenterWindow),
+            onClick: () => Windows.toggle("center-window"),
             label: getDateTime().as((dateTime: GLib.DateTime) => {
                 return dateTime.format("%A %d, %H:%M")
             })

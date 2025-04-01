@@ -57,7 +57,7 @@ function LogoutButton(): Widget.Button {
     } as Widget.ButtonProps);
 }
 
-export const QuickActions: Widget.Box = new Widget.Box({
+export const QuickActions = () => new Widget.Box({
     className: "quickactions",
     children: [
         new Widget.Box({

@@ -6,7 +6,7 @@ import { togglePage } from "../Pages";
 import { PageNetwork } from "../pages/Network";
 import { tr } from "../../../i18n/intl";
 
-export const TileNetwork = new Widget.Box({
+export const TileNetwork = () => new Widget.Box({
     child: Variable.derive([
             bind(AstalNetwork.get_default(), "primary"), 
             bind(AstalNetwork.get_default(), "wired"), 
@@ -36,7 +36,7 @@ export const TileNetwork = new Widget.Box({
                     icon: "󰤨",
                     iconSize: 16,
                     toggleState: bind(wifi, "enabled")
-                } as TileProps);
+                } as TileProps)();
 
             } else if(primary === AstalNetwork.Primary.WIRED) {
                 return Tile({
@@ -69,7 +69,7 @@ export const TileNetwork = new Widget.Box({
                         internet === AstalNetwork.Internet.CONNECTING 
                             || internet === AstalNetwork.Internet.CONNECTED
                     )
-                } as TileProps);
+                } as TileProps)();
             }
             
             return Tile({
@@ -82,6 +82,6 @@ export const TileNetwork = new Widget.Box({
                 iconSize: 16,
                 toggleState: bind(wired, "internet").as((internet: AstalNetwork.Internet) => 
                     internet === AstalNetwork.Internet.CONNECTING || internet === AstalNetwork.Internet.CONNECTED)
-            } as TileProps);
+            } as TileProps)();
         })()
 } as Widget.BoxProps);

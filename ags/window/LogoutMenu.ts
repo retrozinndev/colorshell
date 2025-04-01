@@ -6,14 +6,13 @@ import { AskPopup } from "../widget/AskPopup";
 
 const { TOP, LEFT, RIGHT, BOTTOM } = Astal.WindowAnchor;
 
-export const LogoutMenu: Widget.Window = new Widget.Window({
+export const LogoutMenu = (mon: number) => new Widget.Window({
     namespace: "logout-menu",
     anchor: TOP | LEFT | RIGHT | BOTTOM,
     layer: Astal.Layer.OVERLAY,
     exclusivity: Astal.Exclusivity.IGNORE,
     keymode: Astal.Keymode.EXCLUSIVE,
-    monitor: 0,
-    visible: false,
+    monitor: mon,
     onKeyPressEvent: (_, event: Gdk.Event) => {
         event.get_keyval()[1] === Gdk.KEY_Escape &&
             _.hide();
@@ -57,8 +56,6 @@ export const LogoutMenu: Widget.Window = new Widget.Window({
                             onClick: () => AskPopup({
                                 title: "Power Off",
                                 text: "Are you sure you want to power off? Unsaved work will be lost.",
-                                cancelText: "No! Let me go back",
-                                acceptText: "Yes, shutdown",
                                 onAccept: () => execAsync("systemctl poweroff")
                             })
                         } as Widget.ButtonProps),
@@ -68,8 +65,6 @@ export const LogoutMenu: Widget.Window = new Widget.Window({
                             onClick: () => AskPopup({
                                 title: "Reboot",
                                 text: "Are you sure you want to Reboot? Unsaved work will be lost.",
-                                cancelText: "No! Let me go back",
-                                acceptText: "Yes, reboot",
                                 onAccept: () => execAsync("systemctl reboot")
                             })
                         } as Widget.ButtonProps),
@@ -79,8 +74,6 @@ export const LogoutMenu: Widget.Window = new Widget.Window({
                             onClick: () => AskPopup({
                                 title: "Suspend",
                                 text: "Are you sure you want to Suspend?",
-                                cancelText: "No! Let me go back",
-                                acceptText: "Yes, suspend",
                                 onAccept: () => execAsync("systemctl suspend")
                             })
                         } as Widget.ButtonProps),
@@ -90,8 +83,6 @@ export const LogoutMenu: Widget.Window = new Widget.Window({
                             onClick: () => AskPopup({
                                 title: "Log out",
                                 text: "Are you sure you want to log out? Your session will be ended.",
-                                cancelText: "No! Let me go back",
-                                acceptText: "Yes, please log out",
                                 onAccept: () => execAsync(`sh -c "loginctl terminate-user ${GLib.getenv("USER") || "$USER"}"`)
                             })
                         } as Widget.ButtonProps),

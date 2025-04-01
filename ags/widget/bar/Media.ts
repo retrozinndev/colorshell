@@ -71,9 +71,8 @@ export function Media(): Gtk.Widget {
 
     const mediaWidget = new Widget.EventBox({
         className: "media-eventbox",
-        visible: bind(mpris, "players").as((players: Array<AstalMpris.Player>) => {
-            return players[0] && players[0].get_available() || CenterWindow.is_visible();
-        }),
+        visible: bind(mpris, "players").as((players: Array<AstalMpris.Player>) => 
+            players[0] && players[0].get_available()),
         onDestroy: (_) => {
             hoverConnectionId !== undefined && 
                 _.disconnect(hoverConnectionId);
@@ -81,7 +80,7 @@ export function Media(): Gtk.Widget {
             hoverLostConnectionId !== undefined && 
                 _.disconnect(hoverLostConnectionId);
         },
-        onClick: () => Windows.toggle(CenterWindow),
+        onClick: () => Windows.toggle("center-window"),
         child: new Widget.Box({
             className: "media",
             children: [

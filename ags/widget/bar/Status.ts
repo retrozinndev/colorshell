@@ -5,16 +5,15 @@ import AstalWp from "gi://AstalWp";
 import { bind, Variable } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
 import { Wireplumber } from "../../scripts/volume";
-import { ControlCenter } from "../../window/ControlCenter";
 import { Notifications } from "../../scripts/notifications";
 import { Windows } from "../../windows";
 
 
 export function Status(): Gtk.Widget {
     return new Widget.EventBox({
-        className: bind(ControlCenter, "visible").as((visible: boolean) => 
-            visible ? "status open" : "status"),
-        onClick: () => Windows.toggle(ControlCenter!),
+        className: bind(Windows, "openWindows").as((openWins) => 
+            Object.hasOwn(openWins, "control-center") ? "open status" : "status"),
+        onClick: () => Windows.toggle("control-center"),
         child: new Widget.Box({
             children: [
                 volumeStatusSlider({
@@ -63,6 +62,7 @@ function volumeStatusSlider(props: { className?: string, endpoint: AstalWp.Endpo
 
                             revealer.add(new Widget.Slider({
                                 className: "slider",
+                                setup: (slider) => slider.set_value(Math.floor(props.endpoint.get_volume() * 100)),
                                 onDragged: (slider) => props.endpoint.set_volume(slider.value / 100),
                                 value: bind(props.endpoint, "volume").as((volume) => 
                                     Math.floor(volume * 100)),

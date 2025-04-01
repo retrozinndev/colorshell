@@ -2,7 +2,7 @@ import { bind } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
 import { Wireplumber } from "../../scripts/volume";
 
-export const Sliders: Gtk.Widget = new Widget.Box({
+export const Sliders = () => new Widget.Box({
     className: "sliders",
     orientation: Gtk.Orientation.VERTICAL,
     expand: true,
@@ -17,6 +17,7 @@ export const Sliders: Gtk.Widget = new Widget.Box({
                 new Widget.Slider({
                     drawValue: false,
                     hexpand: true,
+                    setup: (slider) => slider.set_value(Wireplumber.getDefault().getSinkVolume()),
                     value: bind(Wireplumber.getDefault().getDefaultSink(), "volume").as((volume: number) => 
                         Math.floor(volume * 100)),
                     max: Wireplumber.getDefault().getMaxSinkVolume(),
@@ -34,6 +35,7 @@ export const Sliders: Gtk.Widget = new Widget.Box({
                 new Widget.Slider({
                     drawValue: false,
                     hexpand: true,
+                    setup: (slider) => slider.set_value(Wireplumber.getDefault().getSourceVolume()),
                     value: bind(Wireplumber.getDefault().getDefaultSource(), "volume").as((volume: number) => 
                         Math.floor(volume * 100)),
                     max: Wireplumber.getDefault().getMaxSourceVolume(),

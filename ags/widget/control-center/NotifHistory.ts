@@ -4,7 +4,7 @@ import { HistoryNotification, Notifications } from "../../scripts/notifications"
 import { NotificationWidget } from "../Notification";
 
 
-export const NotifHistory: Gtk.Widget = new Widget.Box({
+export const NotifHistory = () => new Widget.Box({
     orientation: Gtk.Orientation.VERTICAL,
     className: "history",
     visible: bind(Notifications.getDefault(), "history").as(history => history.length > 0),
