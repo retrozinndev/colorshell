@@ -83,6 +83,7 @@ Thanks to everyone who starred my project! 💖
 [ags]: https://aylur.github.io/ags
 [astal]: https://aylur.github.io/astal
 [typescript]: https://typescriptlang.org
+[gtk]: https://www.gtk.org
 
 <!--  Web refs -->
 [mit license]: https://en.wikipedia.org/wiki/MIT_License
