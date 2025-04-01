@@ -6,18 +6,25 @@ My Hyprland dotfiles that I keep improving almost everyday! 🤩 (i love doing t
 > don't recommend installing this one, since it's WIP.
 > If you're searching for the stable dotfiles, go to the [`ryo`](https://github.com/retrozinndev/Hyprland-Dots/tree/ryo) branch! <br>
 
-## ✔️ What's already done
-- Notification Popups(with actions support!)
-- Runner for applications and commands, supports making plugins to show custom results by prefix with TypeScript
-- Bluetooth and Network Toggles + Manage bluetooth and network devices by the control center itself!
-- Beatiful media player
-- Apps Window(Gnome-like, full screen)
-- Notification History list
-- Super cool and blurred Bar, Control Center and everything!
+## ❓ Why
+These dotfiles includes a desktop shell I made with [GTK] using [Astal] and [AGS] + [TypeScript]. It took me a lot of time to make this, so please star the repo if you like it! :star:
 
-## 🔘 TODO List
+### ✔️ What's included in this shell
+- Super pretty Bar, Control Center and Clock Window(with calendar and media controller)
+- Notifications with support for actions + History
+- Internationalization(i18n, see [🌐 Internationalization](#-internationalization) for available languages)
+- Bluetooth + Network Controllers
+- Bluetooth device management inside Control Center itself
+- Runner with support for plugins ([anyrun](https://github.com/anyrun-org/anyrun)-like)
+- Super cool media controller
+- Gnome-like application runner(the fullscreen one)
 - Support for multiple monitors
-- Per-app Volume(can be done after release / low priority)
+
+## 🔘 TODO
+- More Control Center Tiles:
+  - Screen Recording
+  - Night Light
+- Per-app Volume(low priority)
 - Maybe a settings app in the future? ✨
 
 ## 🌄 Screenshots
@@ -30,9 +37,11 @@ My Hyprland dotfiles that I keep improving almost everyday! 🤩 (i love doing t
 All the colors of the interface are dynamically generated from your wallpaper! This is possible by using [pywal16] (fork of pywal), a cli tool to generate color schemes on the fly.
 
 ## 🖼️ Wallpapers
-When you're at the [Installation](#Installation) process, you can choose whether to install my wallpapers. If you chose to install, you can select any of them by clicking to change wallpaper in the Control Center. Or if you haven't chose to install, you can create the directory `~/wallpapers` in your home directory `~` and put an image you want to use as wallpaper and choose it using the menu inside control center and also by pressing <kbd>SUPER</kbd> + <kbd>W</kbd>!
+When you're at the [Installation](#Installation) process, you can choose whether to install the wallpapers. Or if you haven't, you can just create a directory `~/wallpapers` in your home `~` and put images you want to use as wallpapers!
 
-See more bindings inside the `~/.config/hypr/bindings.conf` file or check the [Wiki/Usage] page!
+You can select any of the images inside `~/wallpapers` by pressing <kbd>SUPER</kbd> + <kbd>W</kbd> or by accessing the Control Center and clicking in the image icon on top.
+## :keyboard: Binds
+You can see pre-configured bindings in the [Wiki/Bindings] page!
 
 ### ℹ️ Source
 All wallpapers inside this repo are not made by me! You can find all sources inside the [`WALLPAPERS.md`](https://github.com/retrozinndev/Hyprland-Dots/blob/ryo/WALLPAPERS.md) file.
@@ -52,7 +61,6 @@ See the Installation Guide on [Wiki/Installation].
 - Browser: [Zen Browser]
 - Text Editor: [Neovim], my config is [here](https://github.com/retrozinndev/nvim-conf.lua)
 - Terminal Emulator: [Kitty]
-- Bar and Widgets: [Astal](https://aylur.github.io/astal) and [AGS](https://aylur.github.io/ags)
 - Shell: [Nushell]
 - See more on the [wiki]!
 
@@ -63,7 +71,7 @@ Having issues? Please create a [new Issue] here, I'll be happy to help you out!
 This repo is licensed under the [MIT License].
 
 ## 🌠 Stargazers
-Thanks to everyone who starred my dotfiles! 💖
+Thanks to everyone who starred my project! 💖
 [![Stargazers over time](https://starchart.cc/retrozinndev/Hyprland-Dots.svg?background=%2324292e&axis=%23fafbfc&line=%232dba4e)](https://starchart.cc/retrozinndev/Hyprland-Dots)
 
 <!-- References of other projects -->
@@ -72,6 +80,9 @@ Thanks to everyone who starred my dotfiles! 💖
 [neovim]: https://neovim.io
 [nushell]: https://nushell.sh
 [kitty]: https://sw.kovidgoyal.net/kitty
+[ags]: https://aylur.github.io/ags
+[astal]: https://aylur.github.io/astal
+[typescript]: https://typescriptlang.org
 
 <!--  Web refs -->
 [mit license]: https://en.wikipedia.org/wiki/MIT_License
@@ -84,6 +95,7 @@ Thanks to everyone who starred my dotfiles! 💖
 [wiki/dependencies]: https://github.com/retrozinndev/Hyprland-Dots/wiki/Dependencies
 [wiki/usage]: https://github.com/retrozinndev/Hyprland-Dots/wiki/Usage
 [wiki/installation]: https://github.com/retrozinndev/Hyprland-Dots/wiki/Installation
+[wiki/bindings]: https://github.com/retrozinndev/Hyprland-Dots/wiki/Bindings
 
-<!-- Action Links -->
+<!-- Actions -->
 [new issue]: https://github.com/retrozinndev/Hyprland-Dots/issues/new

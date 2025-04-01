@@ -23,7 +23,7 @@ export const Windows = GObject.registerClass({
         "open-windows": GObject.ParamSpec.jsobject(
             "open-windows",
             "Open Windows",
-            "A Readonly object that stores open GTKLayerShell Windows",
+            "A Readonly object that stores open GTK+ Windows",
             GObject.ParamFlags.READABLE
         )
     }
