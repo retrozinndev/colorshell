@@ -71,6 +71,11 @@ box.history {
   background: colors.$bg-translucent;
   border-radius: 24px;
   padding: 20px 14px;
+  transition: 120ms linear;
+
+  &.hide {
+    opacity: 0;
+  }
 
   & .notifications {
     & .notification {
@@ -160,7 +165,7 @@ box.history {
   border-radius: 24px;
 
   & .header {
-    margin-bottom: 6px;
+    margin-bottom: 12px;
 
     & > .title:first-child {
       font-size: 20px;
@@ -172,11 +177,16 @@ box.history {
       font-weight: 500;
       color: colors.$fg-disabled;
     }
+
+    & button label {
+      font-size: 14px;
+    }
   }
 
   & .sub-header {
-    font-size: 18px;
+    font-size: 14px;
     font-weight: 500;
+    margin-bottom: 6px;
   }
 
   & button {
@@ -189,6 +199,10 @@ box.history {
   &.bluetooth {
     button.connected {
       background: colors.$bg-tertiary;
+    }
+
+    &.paired {
+      margin-bottom: 20px;
     }
   }
 }

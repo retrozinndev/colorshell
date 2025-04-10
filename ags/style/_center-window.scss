@@ -1,7 +1,6 @@
 @use "sass:color";
 @use "./wal";
 @use "./colors";
-@use "./functions" as funs; 
 
 .center-window-container {
   background: colors.$bg-translucent;

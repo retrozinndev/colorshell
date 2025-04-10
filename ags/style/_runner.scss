@@ -2,13 +2,15 @@
 
 .runner.main {
   background: colors.$bg-translucent;
-  padding: 12px;
-  border-radius: 24px;
+  padding: 10px;
+  border-radius: 22px;
 
   & entry {
     background: colors.$bg-primary;
     padding: 10px 9px;
     border-radius: 12px;
+    margin-bottom: 1px;
+    min-height: 1.4em;
 
     &:focus {
       box-shadow: inset 0 0 0 2px colors.$bg-secondary;
@@ -20,6 +22,8 @@
   }
 
   & list {
+    all: unset;
+
     & > *:selected > .result,
     & > *:active > .result,
     & > *:hover > .result {
