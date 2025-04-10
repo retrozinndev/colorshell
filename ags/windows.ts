@@ -52,10 +52,31 @@ export const Windows = GObject.registerClass({
 
         // Listen to monitor events
         this.#appConnections.push(
-            App.connect("monitor-added", () => 
-                this.reopen()),
-            App.connect("monitor-removed", () => 
-                this.reopen())
+            App.connect("monitor-added", (_, _monitor) => {
+                AstalHyprland.get_default().get_monitors().length > 0 && 
+                    this.reopen();
+            }),
+            App.connect("monitor-removed", (_, monitor) => {
+                Object.values(this.openWindows).map((window: (Array<Widget.Window> | Widget.Window), i: number) => {
+                    if(Array.isArray(window)) {
+                        window = window as Array<Widget.Window>;
+                        window.map(win => {
+                            if(win.get_current_monitor() === monitor) {
+                                win?.close();
+                                this.openWindows[i] = (this.openWindows[i] as Array<Widget.Window>).filter(item =>
+                                    item !== win);
+                            }
+                        });
+
+                        if((this.openWindows[i] as Array<Widget.Window>).length < 1) 
+                            delete this.openWindows[i];
+                    }
+
+                    window = window as Widget.Window;
+                    if(window.get_current_monitor() === monitor) 
+                        window.close();
+                });
+            })
         );
     }
 
@@ -86,7 +107,6 @@ export const Windows = GObject.registerClass({
                 return;
             }
 
-            console.log(id as number);
             GObject.signal_handler_is_connected(window, id as number) &&
                 window.disconnect(id as number);
         });
@@ -112,7 +132,6 @@ export const Windows = GObject.registerClass({
                 }),
                 win.connect("destroy", () => {
                     this.disconnectWindow(name);
-                    delete this.#openWindows[name];
                     this.notify("open-windows");
                 })
             ]);
@@ -142,13 +161,38 @@ export const Windows = GObject.registerClass({
         return this.#instance;
     }
 
+    /**
+     * Creates a window instance for every monitor connected
+     * @param windowFun function: (mon: number) => Widget.Window, returned window must use provided monitor number
+     * @returns a function that when called, returns Array<Widget.Window>
+     * @throws Error if there are no monitors connected
+     */
     public createWindowForMonitors(windowFun: (mon: number) => Widget.Window): (() => Array<Widget.Window>) {
-        return () => AstalHyprland.get_default().get_monitors().map(mon => 
-            windowFun(mon.id));
+        const monitors = AstalHyprland.get_default().get_monitors();
+        if(monitors.length < 1) 
+            throw new Error("Couldn't create window for monitors", {
+                cause: `No monitors connected on Hyprland`
+            });
+
+        return () => monitors.map(mon => windowFun(mon.id));
     }
 
+    /**
+     * Creates a window instance for focused monitor only
+     * @param windowFun function: (mon: number) => Widget.Window, returned window must use provided monitor number
+     * @returns a function that when called, returns a Widget.Window instance
+     * @throws Error if no focused monitor is found
+     */
     public createWindowForFocusedMonitor(windowFun: (mon: number) => Widget.Window): (() => Widget.Window) {
-        return () => windowFun(AstalHyprland.get_default().get_monitors().filter(mon => mon.focused)[0].id);
+        const focusedMonitor = AstalHyprland.get_default()
+            .get_monitors().filter(mon => mon.focused)[0];
+
+        if(!focusedMonitor) 
+            throw new Error("Couldn't create window for focused monitor", { 
+                cause: `No focused monitor found (${typeof focusedMonitor})` 
+            });
+
+        return () => windowFun(focusedMonitor.id);
     }
 
     public addWindow(name: string, window: (() => (Widget.Window | Array<Widget.Window>))): void {
@@ -172,7 +216,7 @@ export const Windows = GObject.registerClass({
     }
 
     public isVisible(name: keyof typeof this.windows): boolean {
-        return Object.hasOwn(this.#openWindows, name) ?? Object.hasOwn(this.#windowConnections, name);
+        return Object.hasOwn(this.#openWindows, name) || Object.hasOwn(this.#windowConnections, name);
     }
 
     public open(name: keyof typeof this.windows): void {
@@ -197,20 +241,19 @@ export const Windows = GObject.registerClass({
 
     public close(name: keyof typeof this.windows): void {
         if(!this.isVisible(name)) return;
-
         this.disconnectWindow(name);
 
-        const windows = this.#openWindows[name];
+        const window = this.#openWindows[name];
         delete this.#openWindows[name];
 
-        if(Array.isArray(windows)) {
-            windows.map(win => win.close());
+        if(Array.isArray(window)) {
+            window.map(win => win.close());
             this.emit("close", name);
             this.notify("open-windows");
             return;
         }
 
-        windows.close();
+        window.close();
         this.emit("close", name);
         this.notify("open-windows");
     }
