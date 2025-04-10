@@ -17,7 +17,7 @@ export const ControlCenter = (mon: number) => new Widget.Window({
     layer: Astal.Layer.OVERLAY,
     focusOnMap: true,
     monitor: mon,
-    onDestroy: (_) => {
+    onDestroy: () => {
         hidePages();
     },
     onButtonPressEvent: (_, event: Gdk.Event) => {
@@ -39,12 +39,9 @@ export const ControlCenter = (mon: number) => new Widget.Window({
     child: new Widget.Box({
         className: "popup",
         halign: Gtk.Align.END,
-        css: `.popup {
-            margin-top: 10px;
-            margin-right: 10px;
-            margin-bottom: 10px;
-        }`,
-        vexpand: true,
+        css: `margin-top: 10px;
+              margin-right: 10px;
+              margin-bottom: 10px;`,
         widthRequest: 400,
         onButtonPressEvent: () => true,
         orientation: Gtk.Orientation.VERTICAL,
