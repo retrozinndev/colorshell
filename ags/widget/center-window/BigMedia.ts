@@ -21,6 +21,7 @@ export function BigMedia(): Gtk.Widget {
                         className: "image",
                         hexpand: false,
                         orientation: Gtk.Orientation.VERTICAL,
+                        marginTop: 6,
                         visible: getAlbumArt(players[0]).as(Boolean),
                         css: getAlbumArt(players[0]).as((artUrl: string|undefined) => 
                             artUrl ? `.image { background-image: url('${artUrl}'); }` : undefined),
@@ -31,6 +32,8 @@ export function BigMedia(): Gtk.Widget {
                 new Widget.Box({
                     className: "info",
                     orientation: Gtk.Orientation.VERTICAL,
+                    vexpand: true,
+                    valign: Gtk.Align.CENTER,
                     children: [
                         new Widget.Label({
                             className: "title",
@@ -77,6 +80,7 @@ export function BigMedia(): Gtk.Widget {
                     className: "bottom",
                     homogeneous: false,
                     hexpand: true,
+                    marginBottom: 6,
                     startWidget: new Widget.Label({
                         className: "elapsed",
                         valign: Gtk.Align.START,
