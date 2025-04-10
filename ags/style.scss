@@ -193,7 +193,6 @@ scrollbar trough {
 
   background: colors.$bg-translucent;
   border-radius: 8px;
-  padding: 2px;
 
   & slider {
     @include mixins.reset-props;
@@ -201,5 +200,13 @@ scrollbar trough {
     min-width: .45em;
     background: colors.$bg-tertiary;
     border-radius: 12px;
+
+    &:hover, &:active, &:focus {
+      margin: 0 2px;
+    }
+  }
+
+  &:hover, &:active, &:focus {
+    padding: 0 2px;
   }
 }
