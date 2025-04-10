@@ -6,11 +6,11 @@ import { ResultWidget, ResultWidgetProps } from "../widget/runner/ResultWidget";
 import { Windows } from "../windows";
 
 export let runnerInstance: (Gtk.Window|null) = null;
-let onClickTimeout: (AstalIO.Time|undefined);
 
 export function startRunnerDefault() {
     return Runner.openRunner({
-        entryPlaceHolder: "Start typing..."
+        entryPlaceHolder: "Start typing...",
+        showResultsPlaceHolderOnStartup: false,
     } as Runner.RunnerProps,
     () => [
         new ResultWidget({
@@ -43,6 +43,7 @@ export namespace Runner {
         width?: number;
         height?: number;
         entryPlaceHolder?: string;
+        showResultsPlaceHolderOnStartup?: boolean;
     };
 
     export function close() {
@@ -90,6 +91,7 @@ export namespace Runner {
     export function openRunner(props?: RunnerProps, placeholder?: () => Array<ResultWidget>): (Gtk.Window|null) {
         let subs: Array<() => void> = [];
         const entryText: Variable<string> = new Variable<string>("");
+        let onClickTimeout: (AstalIO.Time|undefined);
 
         const searchEntry = new Widget.Entry({
             className: "search",
@@ -110,7 +112,7 @@ export namespace Runner {
             expand: true
         } as Gtk.ListBox.ConstructorProps);
 
-        if(placeholder) {
+        if(props?.showResultsPlaceHolderOnStartup && placeholder) {
             const placeholderWidgets = placeholder();
             placeholderWidgets.map(widget =>
                 resultsList.insert(widget, -1));
@@ -134,7 +136,7 @@ export namespace Runner {
             });
 
             // Insert placeholder if somehow no results are found
-            if(placeholder && (!entryText || !widgets || widgets.length === 0))
+            if(placeholder && widgets.length === 0)
                 widgets.push(...placeholder());
 
             // Insert results inside GtkListBox
@@ -146,7 +148,7 @@ export namespace Runner {
                     if(rWidget instanceof ResultWidget) {
                         if(!onClickTimeout) {
                             rWidget.onClick();
-                            // Timeout, so it doesn't fire the executable a hundred times :skull:
+                            // Timeout, so it doesn't fire the event a hundred times :skull:
                             onClickTimeout = timeout(500, () => onClickTimeout = undefined);
                         }
                     }
@@ -165,7 +167,7 @@ export namespace Runner {
                 monitor: mon,
                 widthRequest: props?.width || 750,
                 heightRequest: props?.height || 0,
-                marginTop: 250,
+                marginTop: 230,
                 valign: Gtk.Align.START,
                 onKeyPressEvent: (_, event: Gdk.Event) => {
                     const keyVal = event.get_keyval()[1];
@@ -178,9 +180,8 @@ export namespace Runner {
 
                     event.get_keyval()[1] === Gdk.KEY_F5 &&
                         updateApps();
-
                 },
-                closeAction: (_) => {
+                closeAction: () => {
                     subs.map(sub => sub());
                     close();
                 },
@@ -195,7 +196,7 @@ export namespace Runner {
                             hscroll: Gtk.PolicyType.NEVER,
                             expand: true,
                             propagateNaturalHeight: true,
-                            maxContentHeight: 450,
+                            maxContentHeight: (props?.height ?? 450),
                             child: resultsList
                         })
                     ]
