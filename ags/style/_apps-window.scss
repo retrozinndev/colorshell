@@ -1,5 +1,7 @@
-@use "mixins";
-@use "colors";
+@use "sass:color";
+@use "./mixins";
+@use "./colors";
+@use "./functions";
 
 .apps-window-container {
   padding: 24px;
@@ -23,20 +25,25 @@
   & flowbox {
     padding: 16px 24px;
 
-    & > flowboxchild > button {
-      padding: 8px;
-      border-radius: 24px;
+    & > flowboxchild {
 
-      &:hover {
-        background: colors.$bg-translucent;
+      & > button {
+        padding: 8px;
+        border-radius: 24px;
+
+        & icon {
+          font-size: 64px;
+        }
+
+        & label {
+          margin-top: 6px;
+        }
       }
 
-      & icon {
-        font-size: 64px;
-      }
-
-      & label {
-        margin-top: 6px;
+      &:focus > button, 
+      &:selected > button,
+      & > button:hover {
+        background-color: rgba($color: colors.$bg-secondary, $alpha: .5);
       }
     }
   }

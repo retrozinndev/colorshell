@@ -1,6 +1,6 @@
-import { Variable } from "astal";
+import { GObject, Variable } from "astal";
 import { Astal, Gdk, Gtk, Widget } from "astal/gtk3";
-import { cleanExec, getAstalApps } from "../scripts/apps";
+import { cleanExec, getAppIcon, getAstalApps } from "../scripts/apps";
 import AstalApps from "gi://AstalApps";
 
 const { TOP, LEFT, RIGHT, BOTTOM } = Astal.WindowAnchor;
@@ -12,29 +12,29 @@ export const AppsWindow = (mon: number): (Widget.Window) => {
     });
 
     let results: Array<AstalApps.Application> = [];
+    let flowboxConnection: number;
 
     const flowbox = new Gtk.FlowBox({
         rowSpacing: 6,
-        homogeneous: true,
         columnSpacing: 6,
-        expand: false,
-        vexpand: false,
-        orientation: Gtk.Orientation.HORIZONTAL,
-        visible: true
+        homogeneous: false,
+        visible: true,
+        minChildrenPerLine: 1,
+        activateOnSingleClick: true
     } as Gtk.FlowBox.ConstructorProps);
 
     const entry = new Widget.Entry({
         className: "entry",
         halign: Gtk.Align.CENTER,
         primary_icon_name: "system-search",
-        onChanged: (entry) => {
-            searchString.set(entry.text);
-        }
+        onChanged: (entry) => searchString.set(entry.text),
+        onActivate: () => flowbox.get_selected_children()?.[0]?.get_child()?.activate()
     } as Widget.EntryProps);
 
     async function updateResults(str: string) {
-        results = [];
-        results = getAstalApps().fuzzy_query(str);
+        if(!str) results = getAstalApps().fuzzy_query(str).sort((a, b) => 
+            a.name > b.name ? 1 : -1);
+        else results = getAstalApps().fuzzy_query(str);
 
         // Destroy is handled by GnomeJS
         flowbox.get_children().map(flowboxChild => flowbox.remove(flowboxChild));
@@ -42,8 +42,11 @@ export const AppsWindow = (mon: number): (Widget.Window) => {
         results.map(app => {
             flowbox.insert(AppWidget(app), -1);
 
-            const flowboxchild = flowbox.get_children()[flowbox.get_children().length-1];
+            const flowboxchild = flowbox.get_child_at_index(flowbox.get_children().length-1)!.get_child();
+            if(!flowboxchild) return;
+
             flowboxchild.set_valign(Gtk.Align.START);
+            flowboxchild.set_halign(Gtk.Align.START);
         });
 
         const firstChild = flowbox.get_child_at_index(0);
@@ -51,33 +54,55 @@ export const AppsWindow = (mon: number): (Widget.Window) => {
     }
 
     function AppWidget(app: AstalApps.Application) {
-        return new Widget.Button({
-            onClick: (_button, event: Astal.ClickEvent) => {
-                if(event.button === Astal.MouseButton.PRIMARY) {
-                    searchString.set("");
-                    entry.text = "";
-                    window.close();
-                    cleanExec(app);
-                    return;
-                }
-                // select app launch options TODO
-            },
+        const connections: Array<number> = [];
+        // Astal3.Button doesn't work the way I need, so I'll use normal GtkButton
+        const button = new Gtk.Button({
+            visible: true,
+            widthRequest: 180,
+            heightRequest: 140,
+            expand: false,
+            tooltipMarkup: app.name + (app.description ? 
+                `\n<span foreground="#7f7f7f">${app.description}</span>`
+            : ""),
             child: new Widget.Box({
                 orientation: Gtk.Orientation.VERTICAL,
                 children: [
                     new Widget.Icon({
                         className: "icon",
                         expand: true,
-                        icon: app.get_icon_name()
+                        icon: getAppIcon(app) ?? "application-x-executable"
                     } as Widget.IconProps),
                     new Widget.Label({
                         className: "name",
                         truncate: true,
-                        label: app.get_name()
+                        maxWidthChars: 10,
+                        valign: Gtk.Align.START,
+                        label: app.name || "Unnamed App"
                     } as Widget.LabelProps)
                 ]
-            } as Widget.BoxProps)
-        } as Widget.ButtonProps);
+            } as Widget.BoxProps) as Gtk.Widget,
+        } as Gtk.Button.ConstructorProps);
+
+        button.set_can_focus(false);
+
+        const openFun = () => {
+            cleanExec(app);
+            window.close();
+        };
+
+        connections.push(
+            button.connect("activate", openFun),
+            button.connect("clicked", openFun)
+        );
+
+        button.vfunc_destroy = () => {
+            connections.map(id => 
+                GObject.signal_handler_is_connected(button, id) &&
+                    button.disconnect(id)
+            );
+        };
+
+        return button;
     }
 
     const window = new Widget.Window({
@@ -89,11 +114,26 @@ export const AppsWindow = (mon: number): (Widget.Window) => {
         monitor: mon,
         onDestroy: () => {
             searchString.set("");
-            searchSubscription()
+            entry.text = "";
+            searchSubscription();
+            GObject.signal_handler_is_connected(flowbox, flowboxConnection) &&
+                flowbox.disconnect(flowboxConnection);
         },
         onKeyPressEvent: (_, event: Gdk.Event) => {
-            event.get_keyval()[1] === Gdk.KEY_Escape &&
+            if(event.get_keyval()[1] === Gdk.KEY_Escape) {
                 _.close();
+                return;
+            }
+
+            if(event.get_keyval()[1] !== Gdk.KEY_Right &&
+              event.get_keyval()[1] !== Gdk.KEY_Down &&
+              event.get_keyval()[1] !== Gdk.KEY_Up &&
+              event.get_keyval()[1] !== Gdk.KEY_Left &&
+              event.get_keyval()[1] !== Gdk.KEY_Return &&
+              event.get_keyval()[1] !== Gdk.KEY_space &&
+              event.get_keyval()[1] !== Gdk.KEY_Escape) {
+                !entry.is_focus && entry.grab_focus();
+            }
         },
         child: new Widget.EventBox({
             onClick: () => {
@@ -124,6 +164,11 @@ export const AppsWindow = (mon: number): (Widget.Window) => {
             } as Widget.BoxProps)
         } as Widget.EventBoxProps),
         setup: () => updateResults("")
+    });
+
+    flowboxConnection = flowbox.connect("child-activated", (_, item) => {
+        if(!item || !item.get_child()) return;
+        item.get_child()!.activate();
     });
 
     return window;
