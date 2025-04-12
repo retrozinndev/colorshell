@@ -1,6 +1,6 @@
 import { GObject, Variable } from "astal";
 import { Astal, Gdk, Gtk, Widget } from "astal/gtk3";
-import { cleanExec, getAppIcon, getAstalApps } from "../scripts/apps";
+import { cleanExec, getAppIcon, getApps, getAstalApps } from "../scripts/apps";
 import AstalApps from "gi://AstalApps";
 
 const { TOP, LEFT, RIGHT, BOTTOM } = Astal.WindowAnchor;
@@ -12,12 +12,12 @@ export const AppsWindow = (mon: number): (Widget.Window) => {
     });
 
     let results: Array<AstalApps.Application> = [];
-    let flowboxConnection: number;
+    const flowboxConnections: Array<number> = [];
 
     const flowbox = new Gtk.FlowBox({
         rowSpacing: 6,
         columnSpacing: 6,
-        homogeneous: false,
+        homogeneous: true,
         visible: true,
         minChildrenPerLine: 1,
         activateOnSingleClick: true
@@ -31,8 +31,8 @@ export const AppsWindow = (mon: number): (Widget.Window) => {
         onActivate: () => flowbox.get_selected_children()?.[0]?.get_child()?.activate()
     } as Widget.EntryProps);
 
-    async function updateResults(str: string) {
-        if(!str) results = getAstalApps().fuzzy_query(str).sort((a, b) => 
+    async function updateResults(str?: string) {
+        if(!str) results = getApps().sort((a, b) => 
             a.name > b.name ? 1 : -1);
         else results = getAstalApps().fuzzy_query(str);
 
@@ -61,16 +61,16 @@ export const AppsWindow = (mon: number): (Widget.Window) => {
             widthRequest: 180,
             heightRequest: 140,
             expand: false,
-            tooltipMarkup: app.name + (app.description ? 
+            tooltipMarkup: `${app.name}${app.description ? 
                 `\n<span foreground="#7f7f7f">${app.description}</span>`
-            : ""),
+            : ""}`.replace(/\&/g, "&amp;"),
             child: new Widget.Box({
                 orientation: Gtk.Orientation.VERTICAL,
                 children: [
                     new Widget.Icon({
                         className: "icon",
                         expand: true,
-                        icon: getAppIcon(app) ?? "application-x-executable"
+                        icon: getAppIcon(app) || "application-x-executable"
                     } as Widget.IconProps),
                     new Widget.Label({
                         className: "name",
@@ -115,9 +115,8 @@ export const AppsWindow = (mon: number): (Widget.Window) => {
         onDestroy: () => {
             searchString.set("");
             entry.text = "";
-            searchSubscription();
-            GObject.signal_handler_is_connected(flowbox, flowboxConnection) &&
-                flowbox.disconnect(flowboxConnection);
+            searchSubscription?.();
+            flowboxConnections.map(id => flowbox.disconnect(id));
         },
         onKeyPressEvent: (_, event: Gdk.Event) => {
             if(event.get_keyval()[1] === Gdk.KEY_Escape) {
@@ -132,7 +131,7 @@ export const AppsWindow = (mon: number): (Widget.Window) => {
               event.get_keyval()[1] !== Gdk.KEY_Return &&
               event.get_keyval()[1] !== Gdk.KEY_space &&
               event.get_keyval()[1] !== Gdk.KEY_Escape) {
-                !entry.is_focus && entry.grab_focus();
+                !entry.isFocus && entry.grab_focus_without_selecting();
             }
         },
         child: new Widget.EventBox({
@@ -163,13 +162,19 @@ export const AppsWindow = (mon: number): (Widget.Window) => {
                 ]
             } as Widget.BoxProps)
         } as Widget.EventBoxProps),
-        setup: () => updateResults("")
     });
 
-    flowboxConnection = flowbox.connect("child-activated", (_, item) => {
-        if(!item || !item.get_child()) return;
-        item.get_child()!.activate();
+    const connId = window.connect("focus-in-event", (_) => {
+        updateResults();
+        window.disconnect(connId);
     });
+
+    flowboxConnections.push(
+        flowbox.connect("child-activated", (_, item) => {
+            if(!item || !item.get_child()) return;
+            item.get_child()!.activate();
+        })
+    );
 
     return window;
 }
