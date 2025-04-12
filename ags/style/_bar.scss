@@ -256,21 +256,8 @@
         background: colors.$bg-primary;
 
         & > icon {
-          font-size: 15px;
-          -gtk-icon-transform: scale(1.12);
+          -gtk-icon-transform: scale(1.14);
         }
-      }
-    }
-    &:active {
-      & > box {
-        @include mixins.hover-shadow;
-
-        background: colors.$bg-primary;
-
-        & > icon {
-          font-size: 15px;
-          -gtk-icon-transform: scale(1);
-        } 
       }
     }
   }
