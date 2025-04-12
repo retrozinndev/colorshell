@@ -1,3 +1,5 @@
+import AstalNotifd from "gi://AstalNotifd";
+
 import { App } from "astal/gtk3"
 import { Wireplumber } from "./scripts/volume";
 
@@ -14,17 +16,13 @@ import { PluginWebSearch } from "./runner/plugins/websearch";
 import { PluginMedia } from "./runner/plugins/media";
 import { Windows } from "./windows";
 import { Notifications } from "./scripts/notifications";
-import AstalNotifd from "gi://AstalNotifd";
 import { GObject } from "astal";
 
-
-const defaultWindows: Array<keyof typeof Windows.windows> = [
-    "bar"
-];
 
 let osdTimer: (Time|undefined);
 let connections = new Map<GObject.Object, (Array<number> | number)>();
 
+const defaultWindows: Array<keyof typeof Windows.windows> = [ "bar" ];
 const runnerPlugins: Array<Runner.Plugin> = [
     PluginApps,
     PluginShell,
@@ -34,12 +32,12 @@ const runnerPlugins: Array<Runner.Plugin> = [
 
 App.start({
     instanceName: "astal",
-    async requestHandler(request: string, response: (result: any) => void) {
-        // console.log(`[LOG] Arguments received: ${request}`);
+    requestHandler: async (request: string, response: (result: any) => void): Promise<void> => {
         response(await handleArguments(request));
     },
-    main() {
+    main: (..._args: Array<string>) => {
         console.log(`[LOG] Initialized astal instance as: ${ App.instanceName || "astal" }`);
+
         App.vfunc_dispose = () => {
             console.log("[LOG] Disconnecting stuff");
             connections.forEach((v, k) => Array.isArray(v) ? 
@@ -47,7 +45,8 @@ App.start({
             : k.disconnect(v));
         };
 
-        console.log(`[LOG] Running Stylesheet handler`);
+
+        console.log("[LOG] Running Stylesheet handler");
 
         runStyleHandler();
 
