@@ -11,6 +11,8 @@ export function Workspaces(): Gtk.Widget {
     return new Widget.EventBox({
         onScroll: (_, event) => 
             event.delta_y > 0 ? hyprland.dispatch("workspace", "e-1") : hyprland.dispatch("workspace", "e+1"),
+        onHover: () => showWorkspaceNumbers.set(true),
+        onHoverLost: () => showWorkspaceNumbers.set(false),
         child: new Widget.Box({
             className: "workspaces",
             children: bind(hyprland, "workspaces").as((workspaces) => {
@@ -26,15 +28,19 @@ export function Workspaces(): Gtk.Widget {
                             `${focusedWs.id === workspace.id ? "focus" : ""} ${showWsNumbers ? "show" : ""}`
                         )(),
                         visible: true,
-                        tooltipText: bind(workspace, "lastClient").as((lastClient) => `Workspace ${workspace.id}${ lastClient ? ` - ${
-                            !lastClient.title.toLowerCase().includes(lastClient.class) ?
-                                `${lastClient.get_class()}: `
-                            : ""
-                        } ${lastClient.title}` : "" }`),
+                        tooltipText: Variable.derive([
+                            bind(workspace, "lastClient"),
+                            bind(hyprland, "focusedWorkspace")
+                        ],(lastClient, focusWs) => focusWs.id === workspace.id ? "" : 
+                            `Workspace ${workspace.id}${ lastClient ? ` - ${
+                                    !lastClient.title.toLowerCase().includes(lastClient.class) ?
+                                        `${lastClient.get_class()}: `
+                                    : ""
+                                } ${lastClient.title}` : "" }`)(),
                         child: new Widget.Box({
                             children: [
                                 new Widget.Revealer({
-                                    transitionDuration: 120,
+                                    transitionDuration: 200,
                                     transitionType: Gtk.RevealerTransitionType.SLIDE_LEFT,
                                     revealChild: showWorkspaceNumbers(),
                                     child: new Widget.Label({
