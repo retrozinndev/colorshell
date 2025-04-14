@@ -2,6 +2,7 @@ import { Astal, Gdk, Gtk, Widget } from "astal/gtk3";
 import { getDateTime } from "../scripts/time";
 import { execAsync, GLib } from "astal";
 import { AskPopup } from "../widget/AskPopup";
+import { Windows } from "../windows";
 
 
 const { TOP, LEFT, RIGHT, BOTTOM } = Astal.WindowAnchor;
@@ -19,7 +20,7 @@ export const LogoutMenu = (mon: number) => new Widget.Window({
     },
     child: new Widget.EventBox({
         className: "logout-menu",
-        onClick: () => execAsync("astal close logout-menu"),
+        onClick: () => Windows.close("logout-menu"),
         child: new Widget.Box({
             expand: true,
             orientation: Gtk.Orientation.VERTICAL,

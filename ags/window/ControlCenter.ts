@@ -42,7 +42,7 @@ export const ControlCenter = (mon: number) => new Widget.Window({
         css: `margin-top: 10px;
               margin-right: 10px;
               margin-bottom: 10px;`,
-        widthRequest: 400,
+        widthRequest: 420,
         onButtonPressEvent: () => true,
         orientation: Gtk.Orientation.VERTICAL,
         children: [
