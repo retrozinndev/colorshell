@@ -1,12 +1,16 @@
+@use "./colors";
+
 .logout-menu {
   .top {
     .time {
       font-size: 128px;
       font-weight: 900;
+      text-shadow: 1px 1px 2px colors.$bg-translucent;
     }
     .date {
       font-size: 24px;
       font-weight: 500;
+      text-shadow: 1px 1px 2px colors.$bg-translucent;
     }
   }
   .button-row {
