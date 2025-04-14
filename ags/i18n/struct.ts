@@ -27,6 +27,10 @@ export type i18nStruct = {
             },
             dnd: {
                 title: string
+            },
+            night_light: {
+                title: string,
+                default_desc: string
             }
         }
     },

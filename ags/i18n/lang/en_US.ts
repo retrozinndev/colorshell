@@ -29,6 +29,10 @@ export default {
             },
             dnd: {
                 title: "Do Not Disturb"
+            },
+            night_light: {
+                title: "Night Light",
+                default_desc: "Fidelity"
             }
         }
     },
