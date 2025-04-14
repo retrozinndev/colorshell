@@ -55,7 +55,7 @@ App.start({
 
         connections.set(Wireplumber.getDefault(), [
             Wireplumber.getDefault().getDefaultSink().connect("notify::volume", () => 
-                triggerOSD(OSDModes.SINK))
+                !Windows.isVisible("control-center") && triggerOSD(OSDModes.SINK))
         ]);
 
         connections.set(Notifications.getDefault(), [
