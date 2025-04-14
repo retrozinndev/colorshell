@@ -38,12 +38,17 @@ export function togglePage(page: Page): void {
     if(!pagesInstance.revealChild) {
         showPages(page);
         return;
+    } 
+
+    if((currentPage.get() ?? true) && currentPage.get() !== page) {
+        hidePages(() => showPages(page));
+        return;
     }
 
     hidePages();
 }
 
-export function hidePages() {
+export function hidePages(onHidden?: () => void) {
     if(!pagesInstance) return;
 
     pagesInstance.set_reveal_child(false);
@@ -54,5 +59,6 @@ export function hidePages() {
             currentPage.get()!.props.onClose!();
 
         currentPage.set(undefined);
+        onHidden?.();
     });
 }
