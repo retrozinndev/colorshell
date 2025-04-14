@@ -3,12 +3,14 @@ import { TileNetwork } from "./tiles/Network";
 import { TileBluetooth } from "./tiles/Bluetooth";
 import { TileDND } from "./tiles/DoNotDisturb";
 import { TileRecording } from "./tiles/Recording";
+import { TileNightLight } from "./tiles/NightLight";
 
 export const tileList: Array<() => Gtk.Widget> = [
     TileNetwork,
     TileBluetooth,
     TileRecording,
-    TileDND
+    TileDND,
+    TileNightLight
 ];
 
 export function Tiles(): Gtk.Widget {
