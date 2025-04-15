@@ -9,7 +9,7 @@ export const PluginShell = {
         const shell = GLib.getenv("SHELL") || "/usr/bin/env sh";
 
         return new ResultWidget({
-            onClick: () => AstalHyprland.get_default().dispatch("exec", `${shell} -c "${command}"`),
+            onClick: () => AstalHyprland.get_default().dispatch("exec", `${shell} -c '${command}'`),
             title: `Run: \`${command}\``,
             description: shell,
             icon: "utilities-terminal-symbolic"
