@@ -251,14 +251,13 @@
         font-size: 14px;
       }
     }
-    &:hover {
-      & > box {
+    &:hover > box,
+    &.open > box {
         background: colors.$bg-primary;
+    }
 
-        & > icon {
-          -gtk-icon-transform: scale(1.14);
-        }
-      }
+    &:hover > box > icon {
+      -gtk-icon-transform: scale(1.14);
     }
   }
 }
