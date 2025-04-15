@@ -1,25 +1,44 @@
 # Retrozinn's Hyprland Dots
 > [!note]
-> This is very work in progress, it's an Aylur's GTK Shell version of my dots! I absolutely <br>
-> don't recommend installing this one, since it's WIP.
-> If you're searching for the stable dotfiles, go to the [`ryo`](https://github.com/retrozinndev/Hyprland-Dots/tree/ryo) branch! <br>
+> This is a WIP Aylur's GTK Shell version of my dots! Everything at the moment in<br>
+> this shell is working flawlessly, you can try it out if you want to! <br> <br>
+> Want the stable dotfiles? Go to the [`ryo`](https://github.com/retrozinndev/Hyprland-Dots/tree/ryo) branch! <br>
 
-My Hyprland dot-files that I keep improving almost everyday! 🤩 (i love doing this) <br>
+My Hyprland Shell + Dotfiles that I keep improving almost everyday! 🤩 (i love doing this) <br>
 
 This repository includes a desktop shell made with [GTK], using [Astal] and [AGS] + [TypeScript]. 
 It really took me a lot of time to make this, so please star the repo if you like it! :star:
 
 ### ✔️ What's included in this shell
-- Super pretty Bar, Control Center and Clock Window(with calendar and media controller)
-- Notifications with support for actions + History
-- Internationalization(i18n, see [🌐 Internationalization](#-internationalization) for available languages)
-- Bluetooth + Network Controllers
-- Bluetooth device management inside Control Center itself
-- Runner with support for plugins ([anyrun](https://github.com/anyrun-org/anyrun)-like)
-- Super cool media controller
+- Pretty Top-Bar
+  - Apps button(basically the "start menu", opens the full-screen app launcher)
+  - Workspace indicator(contains icon of last used application on each)
+  - Focused Client(Window) information(title, class and icon)
+  - Clock(with date)
+  - Media(shows only when media is being played)
+  - Tray(Applications running in the background)
+  - Status (volume information, bluetooth, network and notification status)
+- Control Center
+  - Volume Sliders(Microphone and Speaker)
+  - Pages(the thing that shows up when you click the arrow on a tile)
+    - Bluetooth devices
+    - Network devices
+    - Night Light controls
+  - Tiles
+    - Screen Recording
+    - Bluetooth
+    - Night Light
+    - Network(wifi needs work, i don't have wifi in my machine)
+    - Don't Disturb(disables notification popups)
+- Center Window(clock, calendar + media management)
+- Notifications with support for application actions + Notification History
+- Localization(see [🌐 Internationalization](#-internationalization) for available languages)
+- Application Runner with support for plugins ([anyrun](https://github.com/anyrun-org/anyrun)-like)
+  - Shell(`!`): Run shell commands with the user shell
+  - Media(`:`): Control playing media
+  - Search(`?`): Search something on the internet with your default browser
 - Gnome-like application runner(the fullscreen one)
-- Support for multiple monitors
-- Screen Recording support(wf-recorder needed)
+- Support for your multiple monitors
 
 ## 🔘 TODO
 - Per-app Volume
