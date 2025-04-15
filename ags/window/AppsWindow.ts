@@ -2,7 +2,7 @@ import { GObject, Variable } from "astal";
 import { Astal, Gdk, Gtk, Widget } from "astal/gtk3";
 import { cleanExec, getAppIcon, getApps, getAstalApps } from "../scripts/apps";
 import AstalApps from "gi://AstalApps";
-import { BackgroundWindow } from "../widget/BackgroundWindow";
+import { PopupWindow } from "../widget/PopupWindow";
 
 const { TOP, LEFT, RIGHT, BOTTOM } = Astal.WindowAnchor;
 
@@ -106,18 +106,15 @@ export const AppsWindow = (mon: number): (Widget.Window) => {
         return button;
     }
 
-    const bgWindow = BackgroundWindow(null, () => window.close(), () => window.close());
-
-    const window = new Widget.Window({
+    const window = PopupWindow({
         namespace: "apps-window",
         layer: Astal.Layer.OVERLAY,
         exclusivity: Astal.Exclusivity.IGNORE,
         anchor: TOP | LEFT | RIGHT | BOTTOM,
-        keymode: Astal.Keymode.EXCLUSIVE,
         monitor: mon,
+        cssBackgroundWindow: "background: rgba(0, 0, 0, .2)",
         marginTop: 64,
         onDestroy: () => {
-            bgWindow.close();
             searchSubscription?.();
             flowboxConnections.map(id => flowbox.disconnect(id));
         },
