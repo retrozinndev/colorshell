@@ -1,13 +1,16 @@
+import { Binding } from "astal";
 import { Astal, Gdk, Widget } from "astal/gtk3";
 
 
 const { TOP, LEFT, RIGHT, BOTTOM } = Astal.WindowAnchor;
 
 export type BackgroundWindowProps = {
+    /** GtkWindow Layer */
+    layer?: Astal.Layer | Binding<Astal.Layer | undefined>;
     /** Monitor number where the window should open */
-    monitor: number;
+    monitor: number | Binding<number | undefined>;
     /** Custom stylesheet used in the window. default: `background: rgba(0, 0, 0, .2)` */
-    css?: string;
+    css?: string | Binding<string | undefined>;
     /** Function that is called when the user clicks on the window (any mouse button) */
     onClick?: (window: Widget.Window) => void;
     /** Function that is called when the user clicks on the window with primary mouse button */
@@ -29,6 +32,7 @@ export function BackgroundWindow(props: BackgroundWindowProps) {
         namespace: "background-window",
         css: props.css ?? "background: rgba(0, 0, 0, .2);",
         monitor: props.monitor,
+        layer: props.layer ?? Astal.Layer.OVERLAY,
         anchor: TOP | LEFT | BOTTOM | RIGHT,
         exclusivity: Astal.Exclusivity.IGNORE,
         onButtonPressEvent: (window, event: Gdk.Event) => {

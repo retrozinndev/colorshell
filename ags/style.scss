@@ -16,14 +16,14 @@
 
 * {
   @include mixins.reset-props;
+
+  /*&:selected {
+    box-shadow: inset 0 0 0 2px colors.$fg-primary;
+  }*/
 }
 
 window * {
   @include mixins.default-styles;
-}
-
-window.ask-popup {
-  background: rgba(black, .4);
 }
 
 .ask-popup-box {

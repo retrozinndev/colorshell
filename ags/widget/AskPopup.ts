@@ -5,6 +5,7 @@ import { Separator } from "./Separator";
 import { tr } from "../i18n/intl";
 import { Windows } from "../windows";
 
+
 export type AskPopupProps = {
     title?: string | Binding<string | undefined>;
     text: string | Binding<string | undefined>;
@@ -15,29 +16,27 @@ export type AskPopupProps = {
 };
 
 /** 
- * A Popup Widget that asks yes or no to a certain question. 
- * Runs onAccept() when user accepts or else onDecline() when
- * user doesn't accept or closes window.
- * This window isn't registered in this shell windowing stuff.
+ * A Popup Widget that asks yes or no to a defined promt. 
+ * Runs onAccept() when user accepts, or else onDecline() when
+ * user doesn't accept / closes window.
+ * This window isn't usually registered in this shell windowing 
+ * system.
  */
-export function AskPopup(props: AskPopupProps): Gtk.Window {
+export function AskPopup(props: AskPopupProps): Widget.Window {
     const buttons = [
         new Widget.Button({
             className: "cancel",
             hexpand: true,
             label: props.cancelText || tr("ask_popup.options.cancel") || "Cancel",
-            onClick: (_) => {
-                window.close();
-                props.onCancel && props.onCancel();
-            }
+            onClick: () => window.close(),
         } as Widget.ButtonProps),
         new Widget.Button({
             className: "accept",
             hexpand: true,
             label: props.acceptText || tr("ask_popup.options.accept") || "Ok",
-            onClick: (_) => {
+            onClick: () => {
                 window.close();
-                props.onAccept && props.onAccept();
+                props.onAccept?.();
             }
         } as Widget.ButtonProps)
     ];
@@ -46,13 +45,12 @@ export function AskPopup(props: AskPopupProps): Gtk.Window {
         namespace: "ask-popup",
         className: "ask-popup",
         monitor: mon,
+        cssBackgroundWindow: "background: rgba(0, 0, 0, .3);",
         exclusivity: Astal.Exclusivity.IGNORE,
-        widthRequest: 350,
-        heightRequest: 200,
-        onClose: (_) => {
-            props.onCancel && props.onCancel();
-            _.destroy();
-        },
+        layer: Astal.Layer.OVERLAY,
+        widthRequest: 400,
+        heightRequest: 220,
+        onDestroy: () => props.onCancel?.(),
         child: new Widget.Box({
             className: "ask-popup-box",
             orientation: Gtk.Orientation.VERTICAL,

@@ -1,17 +1,10 @@
 import { Binding } from "astal";
 import { Astal, Gdk, Widget } from "astal/gtk3";
 import { BackgroundWindow } from "./BackgroundWindow";
-import { Windows } from "../windows";
 
 type PopupWindowSpecificProps = {
     onDestroy?: (self: Widget.Window) => void;
     onKeyPressEvent?: (win: Widget.Window, event: Gdk.Event) => void;
-    /** Do something else instead of closing window on close action(clicking outside conent/pressing Escape) 
-     * Observation: onClose() will still be called after close action, if defined.
-     */
-    closeAction?: (self: Widget.Window) => void;
-    /** Do something when window closes */
-    onClose?: (self: Widget.Window) => void;
     /** Stylesheet for the background of the popup-window */
     cssBackgroundWindow?: string;
 };
@@ -19,14 +12,15 @@ type PopupWindowSpecificProps = {
 export type PopupWindowProps = Omit<Widget.WindowProps, "keymode"> & PopupWindowSpecificProps;
 
 export function PopupWindow(props: PopupWindowProps): Widget.Window {
-    props.closeAction = props.closeAction ?? ((window) => window.close());
+    props.layer = props.layer ?? Astal.Layer.OVERLAY;
 
     const bgWindow = BackgroundWindow({
-        monitor: Windows.getFocusedMonitorId() ?? 0,
+        monitor: props.monitor ?? 0,
+        layer: props.layer!,
         css: props.cssBackgroundWindow ?? "", 
-        onClick: () => {
-            props.closeAction!(window);
-            props.onClose?.(window);
+        onClick: (bgWin) => {
+            bgWin.close();
+            window.close();
         }
     });
 
@@ -36,16 +30,15 @@ export function PopupWindow(props: PopupWindowProps): Widget.Window {
         className: `popup-window ${(props.namespace instanceof Binding ?
             props.namespace.get() : props.namespace) || ""}`,
         keymode: Astal.Keymode.EXCLUSIVE,
+        layer: props.layer!,
         onDestroy: (self) => {
             bgWindow.close();
-            props.closeAction!(self);
-            props.onClose?.(self);
             props.onDestroy?.(self);
         },
         onKeyPressEvent: (self, event: Gdk.Event) => {
             if(event.get_keyval()[1] === Gdk.KEY_Escape) {
-                props.closeAction!(self);
                 bgWindow.close();
+                self.close();
 
                 return;
             }

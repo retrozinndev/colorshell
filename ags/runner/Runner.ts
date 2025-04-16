@@ -47,11 +47,7 @@ export namespace Runner {
     };
 
     export function close() {
-        [...plugins.values()].map(plugin =>
-            plugin && plugin.onClose && plugin.onClose());
-
         runnerInstance?.close();
-        runnerInstance = null;
     }
 
     const plugins = new Set<Runner.Plugin>([]);
@@ -181,9 +177,12 @@ export namespace Runner {
                     event.get_keyval()[1] === Gdk.KEY_F5 &&
                         updateApps();
                 },
-                closeAction: () => {
+                onDestroy: () => {
                     subs.map(sub => sub());
-                    close();
+
+                    [...plugins.values()].map(plugin =>
+                        plugin && plugin.onClose && plugin.onClose());
+                    runnerInstance = null;
                 },
                 child: new Widget.Box({
                     className: "runner main",

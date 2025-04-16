@@ -16,7 +16,7 @@ export const LogoutMenu = (mon: number) => new Widget.Window({
     monitor: mon,
     onKeyPressEvent: (_, event: Gdk.Event) => {
         event.get_keyval()[1] === Gdk.KEY_Escape &&
-            _.hide();
+            _.close();
     },
     child: new Widget.EventBox({
         className: "logout-menu",
