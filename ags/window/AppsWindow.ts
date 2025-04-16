@@ -134,38 +134,24 @@ export const AppsWindow = (mon: number): (Widget.Window) => {
                 !entry.isFocus && entry.grab_focus_without_selecting();
             }
         },
-        child: new Widget.EventBox({
-            onClick: () => {
-                searchString.set("");
-                entry.text = "";
-                window.close();
-            },
-            onKeyPressEvent: (_, event: Gdk.Event) => {
-                if(event.get_keyval()[1] === Gdk.KEY_Escape) {
-                    searchString.set("");
-                    entry.text = "";
-                    window.close();
-                }
-            },
-            child: new Widget.Box({
-                className: "apps-window-container",
-                expand: true,
-                orientation: Gtk.Orientation.VERTICAL,
-                children: [
-                    entry,
-                    new Widget.Box({
-                        className: "apps-area",
-                        child: new Widget.Scrollable({
-                            vscroll: Gtk.PolicyType.AUTOMATIC,
-                            hscroll: Gtk.PolicyType.NEVER,
-                            overlayScrolling: true,
-                            expand: true,
-                            child: flowbox
-                        } as Widget.ScrollableProps)
-                    } as Widget.BoxProps)
-                ]
-            } as Widget.BoxProps)
-        } as Widget.EventBoxProps),
+        child: new Widget.Box({
+            className: "apps-window-container",
+            expand: true,
+            orientation: Gtk.Orientation.VERTICAL,
+            children: [
+                entry,
+                new Widget.Box({
+                    className: "apps-area",
+                    child: new Widget.Scrollable({
+                        vscroll: Gtk.PolicyType.AUTOMATIC,
+                        hscroll: Gtk.PolicyType.NEVER,
+                        overlayScrolling: true,
+                        expand: true,
+                        child: flowbox
+                    } as Widget.ScrollableProps)
+                } as Widget.BoxProps)
+            ]
+        } as Widget.BoxProps)
     });
 
     const connId = window.connect("focus-in-event", (_) => {
