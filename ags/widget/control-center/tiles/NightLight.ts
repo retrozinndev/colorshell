@@ -12,7 +12,7 @@ export const TileNightLight = Tile({
         bind(NightLight.getDefault(), "temperature"),
         bind(NightLight.getDefault(), "gamma")
     ], (temp, gamma) => 
-        (temp === 10000 ? tr("control_center.tiles.night_light.default_desc") 
+        (temp === 6000 ? tr("control_center.tiles.night_light.default_desc") 
             : `${temp}K`) + (gamma < NightLight.getDefault().maxGamma ? 
                 ` (${gamma}%)` : "")
     )(),
@@ -21,6 +21,5 @@ export const TileNightLight = Tile({
     onToggledOn: () => NightLight.getDefault().identity = false,
     enableOnClickMore: true,
     onClickMore: () => togglePage(PageNightLight),
-    toggleState: bind(NightLight.getDefault(), "identity").as(identity =>
-        identity ? false : true)
+    toggleState: bind(NightLight.getDefault(), "identity").as(identity => !identity)
 } as TileProps);

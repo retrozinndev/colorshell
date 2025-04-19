@@ -37,7 +37,7 @@ class NightLight extends GObject.Object {
     constructor() {
         super();
 
-        this.#watchInterval = interval(500, () => {
+        this.#watchInterval = interval(1000, () => {
             execAsync("hyprctl hyprsunset temperature").then(t => {
                 if(t.trim() !== "" && t.trim().length <= 5) {
                     const val = Number.parseInt(t.trim());
@@ -80,6 +80,10 @@ class NightLight extends GObject.Object {
         execAsync(`hyprctl hyprsunset temperature ${value}`).then(() => {
             this.#temperature = value;
             this.notify("temperature");
+
+            this.#identity = false;
+            this.#prevTemperature = null;
+            this.#prevGamma = null;
         }).catch((r) => console.error(
             `Night Light(hyprsunset): Couldn't set temperature. Stderr: ${r}`
         ));
@@ -97,6 +101,10 @@ class NightLight extends GObject.Object {
         execAsync(`hyprctl hyprsunset gamma ${value}`).then(() => {
             this.#gamma = value;
             this.notify("gamma");
+
+            this.#identity = false;
+            this.#prevTemperature = null;
+            this.#prevGamma = null;
         }).catch((r) => console.error(
             `Night Light(hyprsunset): Couldn't set gamma. Stderr: ${r}`
         ));
@@ -108,13 +116,9 @@ class NightLight extends GObject.Object {
         this.#prevGamma = this.#gamma;
         this.#prevTemperature = this.#temperature;
 
-        execAsync("hyprctl hyprsunset identity").then(() => {
-            this.#identity = true;
-            this.temperature = 10000;
-            this.gamma = this.maxGamma;
-        }).catch((r) => console.error(
-            `Night Light(hyprsunset): Couldn't set filters to identity(no filters). Stderr: ${r}`
-        ));
+        this.#identity = true;
+        this.temperature = 6000;
+        this.gamma = this.maxGamma;
     }
 
     public filter(): void {
@@ -123,5 +127,8 @@ class NightLight extends GObject.Object {
         this.#identity = false;
         this.setTemperature(this.#prevTemperature ?? 1000);
         this.setGamma(this.#prevGamma ?? 100);
+
+        this.#prevTemperature = null;
+        this.#prevGamma = null;
     }
 }
