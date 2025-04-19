@@ -2,6 +2,10 @@ import { i18nStruct } from "../struct";
 
 export default {
     language: "English (United States)",
+
+    cancel: "Cancel",
+    accept: "Ok",
+
     bar: {
         apps: {
             tooltip: "Applications"
@@ -37,10 +41,6 @@ export default {
         }
     },
     ask_popup: {
-        title: "Question",
-        options: {
-            cancel: "Cancel",
-            accept: "Ok"
-        }
+        title: "Question"
     }
 } as i18nStruct;

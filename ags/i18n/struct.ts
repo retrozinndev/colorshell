@@ -1,5 +1,9 @@
 export type i18nStruct = {
     language: string,
+
+    cancel: string,
+    accept: string
+
     bar: {
         apps: {
             tooltip: string
@@ -35,10 +39,6 @@ export type i18nStruct = {
         }
     },
     ask_popup: {
-        title: string,
-        options: {
-            cancel: string,
-            accept: string
-        }
+        title: string
     }
 };
