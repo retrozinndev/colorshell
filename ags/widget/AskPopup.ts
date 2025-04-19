@@ -11,7 +11,7 @@ export type AskPopupProps = {
     text: string | Binding<string | undefined>;
     cancelText?: string;
     acceptText?: string;
-    onAccept: () => void;
+    onAccept?: () => void;
     onCancel?: () => void;
 };
 
@@ -23,19 +23,22 @@ export type AskPopupProps = {
  * system.
  */
 export function AskPopup(props: AskPopupProps): Widget.Window {
+    let accepted: boolean = false;
+
     const buttons = [
         new Widget.Button({
             className: "cancel",
             hexpand: true,
-            label: props.cancelText || tr("ask_popup.options.cancel") || "Cancel",
+            label: props.cancelText ?? tr("cancel"),
             onClick: () => window.close(),
         } as Widget.ButtonProps),
         new Widget.Button({
             className: "accept",
             hexpand: true,
-            label: props.acceptText || tr("ask_popup.options.accept") || "Ok",
+            label: props.acceptText ?? tr("accept"),
             onClick: () => {
                 window.close();
+                accepted = true;
                 props.onAccept?.();
             }
         } as Widget.ButtonProps)
@@ -50,7 +53,7 @@ export function AskPopup(props: AskPopupProps): Widget.Window {
         layer: Astal.Layer.OVERLAY,
         widthRequest: 400,
         heightRequest: 220,
-        onDestroy: () => props.onCancel?.(),
+        onDestroy: () => !accepted && props.onCancel?.(),
         child: new Widget.Box({
             className: "ask-popup-box",
             orientation: Gtk.Orientation.VERTICAL,
