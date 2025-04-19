@@ -26,7 +26,21 @@ window * {
   @include mixins.default-styles;
 }
 
-.ask-popup-box {
+entry {
+  background: colors.$bg-primary;
+  padding: 10px 9px;
+  border-radius: 12px;
+
+  &:focus {
+    box-shadow: inset 0 0 0 2px colors.$bg-secondary;
+  }
+
+  & image.left {
+    margin-right: 6px;
+  }
+}
+
+.ask-popup-box, .entry-popup-box {
   background: colors.$bg-translucent;
   padding: 18px;
   border-radius: 24px;
@@ -54,10 +68,14 @@ window * {
         right: 4px;
       };
 
-      &:hover {
+      &:hover, &:focus {
         background: colors.$bg-secondary;
       }
     }
+  }
+
+  &.entry-popup-box entry.password {
+    font-size: 16px;
   }
 }
 
@@ -89,7 +107,7 @@ window * {
       padding: 2px;
       border-radius: 8px;
 
-      &:hover {
+      &:hover, &:focus {
         background: colors.$bg-secondary;
       }
     }
@@ -182,7 +200,7 @@ menu {
     font-size: 12px;
     font-weight: 600;
                                
-    &:hover {
+    &:hover, &:focus {
       background: wal.$color1;
     }
   }

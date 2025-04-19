@@ -11,18 +11,8 @@
 
   & > entry {
     background: rgba(colors.$bg-primary, .4);
-    padding: 10px 9px;
     margin-bottom: 32px;
-    border-radius: 12px;
     min-width: 400px;
-
-    &:focus {
-      box-shadow: inset 0 0 0 2px colors.$bg-secondary;
-    }
-
-    & image.left {
-      margin-right: 6px;
-    }
   }
 
   & flowbox {
