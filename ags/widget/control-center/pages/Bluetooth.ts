@@ -85,7 +85,20 @@ export const BluetoothPage: Page = new Page({
 
 function DeviceWidget(dev: AstalBluetooth.Device): Gtk.Widget {
     return new Widget.Button({
-        onClick: () => dev.connected ? dev.disconnect_device(null) : dev.connect_device(null),
+        onClick: () => {
+            if(dev.paired) {
+                dev.connected ? 
+                    dev.disconnect_device(null)
+                : dev.connect_device(null);
+
+                return;
+            }
+
+            dev.pair();
+            dev.connected ? 
+                dev.disconnect_device(null)
+            : dev.connect_device(null);
+        },
         className: bind(dev, "connected").as((connected) => connected ? "connected" : ""),
         child: new Widget.Box({
             className: "device",
