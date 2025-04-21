@@ -59,7 +59,7 @@ export function NotificationWidget(notification: AstalNotifd.Notification|number
             onClose?.(notification);
         },
         onHover: () => holdOnHover && Notifications.getDefault().holdNotification(notification.id),
-        onHoverLost: () => onClose?.(notification),
+        onHoverLost: () => holdOnHover && onClose?.(notification),
         hexpand: true,
         vexpand: false,
         child: new Widget.Box({
