@@ -27,6 +27,7 @@ export const AppsWindow = (mon: number): (Widget.Window) => {
     const entry = new Widget.Entry({
         className: "entry",
         halign: Gtk.Align.CENTER,
+        placeholderText: "Start typing...",
         primary_icon_name: "system-search",
         onChanged: (entry) => searchString.set(entry.text),
         onActivate: () => flowbox.get_selected_children()?.[0]?.get_child()?.activate()
