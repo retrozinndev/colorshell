@@ -32,8 +32,8 @@ const runnerPlugins: Array<Runner.Plugin> = [
 
 App.start({
     instanceName: "astal",
-    requestHandler: async (request: string, response: (result: any) => void): Promise<void> => {
-        response(await handleArguments(request));
+    requestHandler: (request: string, response: (result: any) => void): void => {
+        response(handleArguments(request));
     },
     main: (..._args: Array<string>) => {
         console.log(`[LOG] Initialized astal instance as: ${ App.instanceName || "astal" }`);

@@ -5,10 +5,9 @@ import { restartInstance } from "./reload-handler";
 import { startRunnerDefault } from "../runner/Runner";
 import { showWorkspaceNumbers } from "../widget/bar/Workspaces";
 import { timeout } from "astal";
-import { App } from "astal/gtk3";
 
 
-export async function handleArguments(request: string): Promise<any> {
+export function handleArguments(request: string): any {
     const args: Array<string> = request.split(" ");
     switch(args[0]) {
         case "open":
@@ -41,12 +40,6 @@ export async function handleArguments(request: string): Promise<any> {
                 timeout(2200, () => showWorkspaceNumbers.set(false));
             }
             return "Showing numbers";
-
-        case "c":
-        case "code":
-            const input = request.replace(args[0], "").trimStart();
-            console.log(input);
-            return await (App.eval(input).then((v) => v).catch((r) => r));
 
         default:
             return "command not found! try checking help";
@@ -171,7 +164,6 @@ Options:
   reload: creates a new astal instance and removes this one.
   volume: wireplumber volume controller, see "volume help".
   runner: open the application runner.
-  c, code [js]: runs provided js in args and returns result.
   show-ws-numbers: show or hide workspace numbers in bar.
   h, help: shows this help message.
 
