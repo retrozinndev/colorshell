@@ -1,41 +1,39 @@
-import { Binding, GObject, register } from "astal";
+import { Binding, register } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
 
 export type PageProps = {
     setup?: () => void;
     onClose?: () => void;
     onOpen?: () => void;
-    className?: string | Binding<string | undefined>;
-    title: string | Binding<string | undefined>;
-    description?: string | Binding<string | undefined>;
-    headerButtons?: () => Array<Gtk.Widget>;
-    pageChild: () => Gtk.Widget;
+    id: string;
+    className?: string | Binding<string>;
+    title: string | Binding<string>;
+    description?: string | Binding<string>;
+    headerButtons?: Array<Gtk.Button> | Binding<Array<Gtk.Button>>;
+    orientation?: Gtk.Orientation | Binding<Gtk.Orientation>;
+    child?: Gtk.Widget | Binding<Gtk.Widget>;
+    children?: Array<Gtk.Widget> | Binding<Array<Gtk.Widget>>;
 };
 
-@register({ GTypeName: "Page" })
-class Page extends GObject.Object {
-    readonly #props: PageProps;
+export { Page };
 
-    get props() { return this.#props; }
+@register({ GTypeName: "Page" })
+class Page extends Widget.Box {
+    readonly #id: string;
+    #title: string | Binding<string>;
+    #description: string | undefined | Binding<string>;
+
+    public get title() { return this.#title; }
+    public get description() { return this.#description; }
+    public get id() { return this.#id; }
 
     constructor(props: PageProps) {
-        super();
-        this.#props = props;
-    }
-
-    public getHeaderButtons(): (Array<Gtk.Widget>|null) {
-        return this.props.headerButtons ? 
-            this.props.headerButtons()
-        : null;
-    }
-
-    public getPage(): Gtk.Widget {
-        return new Widget.Box({
-            className: (this.props.className instanceof Binding) ? 
-                this.props.className.as((clsName: (string|undefined)) => `page ${ clsName || "" }`) : `page ${this.#props.className || ""}`,
-            orientation: Gtk.Orientation.VERTICAL,
+        super({
             hexpand: true,
-            setup: this.props.setup,
+            orientation: Gtk.Orientation.VERTICAL,
+            className: (props.className instanceof Binding) ? 
+                props.className.as((clsName) => `page ${ clsName ?? "" }`)
+            : `page ${props.className ?? ""}`,
             children: [
                 new Widget.Box({
                     className: "header",
@@ -43,22 +41,24 @@ class Page extends GObject.Object {
                     hexpand: true,
                     children: [
                         new Widget.Box({
-                            className: "title",
+                            className: "top",
                             children: [
                                 new Widget.Label({
                                     hexpand: true,
                                     className: "title",
                                     truncate: true,
-                                    visible: (this.props.title instanceof Binding) ? 
-                                        this.props.title.as(Boolean) 
-                                    : (this.props.title ? true : false),
-                                    label: this.props.title,
+                                    visible: (props.title instanceof Binding) ? 
+                                        props.title.as(Boolean) 
+                                    : (props.title ? true : false),
+                                    label: props.title,
                                     halign: Gtk.Align.START
                                 } as Widget.LabelProps),
                                 new Widget.Box({
                                     className: "button-row",
-                                    visible: Boolean(this.getHeaderButtons()),
-                                    children: this.getHeaderButtons() || undefined
+                                    visible: (props.headerButtons instanceof Binding) ? 
+                                        props.headerButtons.as(Boolean) 
+                                    : (props.headerButtons ? true : false),
+                                    children: props.headerButtons
                                 } as Widget.BoxProps)
                             ]
                         } as Widget.BoxProps),
@@ -67,22 +67,74 @@ class Page extends GObject.Object {
                             hexpand: true,
                             truncate: true,
                             xalign: 0,
-                            visible: (this.props.description instanceof Binding) ? 
-                                this.props.description.as(Boolean) 
-                            : this.props.description ? true : false,
-                            label: this.props.description
+                            visible: (props.description instanceof Binding) ? 
+                                props.description.as(Boolean) 
+                            : props.description ? true : false,
+                            label: props.description
                         } as Widget.LabelProps),
                     ]
                 } as Widget.BoxProps),
                 new Widget.Box({
                     className: "content",
-                    orientation: Gtk.Orientation.VERTICAL,
+                    orientation: props.orientation ?? Gtk.Orientation.VERTICAL,
                     expand: true,
-                    setup: (_) => _.add(this.props.pageChild())
+                    setup: props.setup,
+                    child: props.child,
+                    children: props.children
                 } as Widget.BoxProps)
             ]
-        } as Widget.BoxProps);
+        });
+
+        this.#id = props.id;
+        this.#title = props.title;
+        this.#description = props.description;
     }
 }
 
-export { Page };
+export function PageButton(props: {
+    className?: string | Binding<string>;
+    icon?: string | Binding<string>;
+    title: string | Binding<string>;
+    endWidget?: Gtk.Widget;
+    extraButtons?: Array<Widget.Button>;
+    onClick?: (self: Widget.Button) => void;
+}): Gtk.Widget {
+    return new Widget.Box({
+        setup: (self) => {
+            self.add(new Widget.Button({
+                onClick: props.onClick,
+                className: props.className,
+                hexpand: true,
+                child: new Widget.Box({
+                    className: "page-button",
+                    orientation: Gtk.Orientation.HORIZONTAL,
+                    expand: true,
+                    setup: (box) => {
+                        box.set_children([
+                            new Widget.Icon({
+                                className: "icon",
+                                icon: props.icon,
+                                visible: props.icon,
+                                css: "font-size: 20px; margin-right: 6px;"
+                            } as Widget.IconProps),
+                            new Widget.Label({
+                                className: "title",
+                                halign: Gtk.Align.START,
+                                hexpand: true,
+                                truncate: true,
+                                label: props.title
+                            } as Widget.LabelProps)
+                        ]);
+
+                        props.endWidget && box.add(props.endWidget);
+                    }
+                } as Widget.BoxProps)
+            } as Widget.ButtonProps));
+
+            props.extraButtons && self.add(new Widget.Box({
+                className: "button-row extra-buttons",
+                children: props.extraButtons
+            } as Widget.BoxProps));
+        }
+    } as Widget.BoxProps);
+}
