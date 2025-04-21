@@ -4,7 +4,6 @@
 
 .bar-container {
   @include mixins.reset-props;
-  @include mixins.default-styles;
 
   padding: 6px;
   padding-bottom: 0px;
@@ -18,7 +17,7 @@
 
   // Style widget groups
   & > .bar-centerbox > * {
-    background: colors.$bg-translucent;
+    background: rgba(colors.$bg-translucent, .6);
     padding: 5px;
     border-radius: 18px;
 
@@ -54,8 +53,6 @@
     padding: 1px 1px;
 
     & button {
-      @include mixins.reset-props;
-      
       border-radius: 16px;
       transition: 80ms linear;
       min-width: 12px;

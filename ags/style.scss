@@ -2,6 +2,7 @@
 
 @use "./style/wal";
 @use "./style/mixins";
+@use "./style/functions";
 @use "./style/colors";
 
 @use "./style/bar";
@@ -17,13 +18,9 @@
 * {
   @include mixins.reset-props;
 
-  /*&:selected {
+  /*&:focus {
     box-shadow: inset 0 0 0 2px colors.$fg-primary;
   }*/
-}
-
-window * {
-  @include mixins.default-styles;
 }
 
 entry {
@@ -40,19 +37,23 @@ entry {
   }
 }
 
-.ask-popup-box, .entry-popup-box {
+.custom-dialog-container {
   background: colors.$bg-translucent;
   padding: 18px;
   border-radius: 24px;
 
   & .title {
-    font-size: 20px;
+    font-size: 21px;
     font-weight: 700;
+    margin-bottom: 10px;
   }
 
-  & .buttons {
-    margin-top: 20px;
+  & .text {
+    font-size: 16px;
+    font-weight: 400;
+  }
 
+  & .options {
     & button {
       background: colors.$bg-primary;
       border-radius: 12px;
@@ -74,8 +75,14 @@ entry {
     }
   }
 
-  &.entry-popup-box entry.password {
-    font-size: 16px;
+  &.entry-popup-box entry {
+    margin-bottom: 10px;
+
+    &.password {
+      font-size: 14px;
+      font-family: "Adwaita Mono", "Cantarell Mono", "Noto Sans Mono", monospace;
+      font-weight: 400;
+    }
   }
 }
 
@@ -204,6 +211,66 @@ menu {
       background: wal.$color1;
     }
   }
+}
+
+.button-row {
+  & > button {
+    background: colors.$bg-secondary;
+    margin: 0 1px;
+    padding: 4px 6px;
+    border-radius: 2px;
+
+    &:hover {
+      background: colors.$bg-tertiary;
+    }
+
+    &:first-child {
+      border-top-left-radius: 10px;
+      border-bottom-left-radius: 10px;
+      margin-left: 0;
+    }
+
+    &:last-child {
+      border-top-right-radius: 10px;
+      border-bottom-right-radius: 10px;
+      margin-right: 0;
+    }
+  }
+}
+
+selection {
+  background: colors.$bg-tertiary;
+}
+
+label.nf,
+button.nf label {
+  font-size: 12px;
+  font-family: "Symbols Nerd Font Mono", "Noto Sans Nerd Font Mono",
+    "0xProto Nerd Font Mono", "Fira Code Nerd Font Mono", 
+    "Symbols Nerd Font", "Noto Sans Nerd Font", "Fira Code Nerd Font",
+    "Font Awesome";
+}
+
+trough {
+  background: functions.toRGB(color.adjust($color: wal.$color1, $lightness: -20%));
+  border-radius: 8px;
+  margin: 2px 0;
+}
+
+trough highlight {
+  background: wal.$color1;
+  min-height: .9em;
+  border-top-left-radius: inherit;
+  border-bottom-left-radius: inherit;
+}
+
+trough slider {
+  border-radius: 50%;
+  margin: -2px 0;
+  background: wal.$foreground;
+  margin-left: -1px;
+  min-width: 1.2em;
+  min-height: 1.2em;
 }
 
 scrollbar trough {
