@@ -319,6 +319,46 @@ in their source link.
 - Source: [Alpha Coders](https://wall.alphacoders.com/big.php?i=1313438)
 </details>
 
+<details>
+  <summary>
+    <b>Gumi Ocean Sunset</b>
+  </summary>
+  
+<img src="wallpapers/Gumi Ocean Sunset.jpg"></img>
+
+- Source: [WallHaven](https://wallhaven.cc/w/we8pgx)
+</details>
+
+<details>
+  <summary>
+    <b>Gumi Street Bike</b>
+  </summary>
+  
+<img src="wallpapers/Gumi Street Bike.jpg"></img>
+
+- Source: [WallHaven](https://wallhaven.cc/w/4x7e7o)
+</details>
+
+<details>
+  <summary>
+    <b>Inabakumori Kaai Yuki</b>
+  </summary>
+  
+<img src="wallpapers/Inabakumori Kaai Yuki.png"></img>
+
+- Source: [WallHaven](https://wallhaven.cc/w/wed3m7)
+</details>
+
+<details>
+  <summary>
+    <b>Inabakumori Osage</b>
+  </summary>
+  
+<img src="wallpapers/Inabakumori Osage.jpg"></img>
+
+- Source: [WallHaven](https://wallhaven.cc/w/o3r8z9)
+</details>
+
 <!----------------- -->
 ## Frieren: Beyond Journey's End
 <details>
