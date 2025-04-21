@@ -18,10 +18,7 @@ export function PopupWindow(props: PopupWindowProps): Widget.Window {
         monitor: props.monitor ?? 0,
         layer: props.layer!,
         css: props.cssBackgroundWindow ?? "", 
-        onAction: (bgWin) => {
-            bgWin.close();
-            window.close();
-        }
+        onAction: () => window.close()
     });
 
     const window = new Widget.Window({
