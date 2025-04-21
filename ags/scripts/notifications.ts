@@ -23,6 +23,7 @@ class Notifications extends GObject.Object {
 
     #notifications: Array<AstalNotifd.Notification> = [];
     #history: Array<HistoryNotification> = [];
+    #notificationsOnHold: Set<number> = new Set<number>();
     #connections: Array<number> = [];
     #historyLimit: number = 10;
 
@@ -48,7 +49,7 @@ class Notifications extends GObject.Object {
     @signal(Number)
     declare notificationRemoved: (id: number) => void;
 
-    @signal(Object)
+    @signal(Object) // It's an Object, beacuase HistoryNotification is just an interface
     declare historyAdded: (notification: AstalNotifd.Notification) => void;
 
     @signal(Number)
@@ -85,6 +86,8 @@ class Notifications extends GObject.Object {
 
                         const removeFun = () => { // Funny name haha lmao remove fun :skull:
                             notifTimer = undefined;
+                            if(this.#notificationsOnHold.has(notification.id)) return;
+
                             this.addHistory(notification, () => {
                                 replacedConnectionId && this.disconnect(replacedConnectionId);
                                 this.removeNotification(id);
@@ -181,12 +184,29 @@ class Notifications extends GObject.Object {
 
     public removeNotification(notif: (AstalNotifd.Notification|number)): void {
         const notificationId = (notif instanceof AstalNotifd.Notification) ? notif.id : notif;
+        this.#notificationsOnHold.has(notificationId) && 
+            this.#notificationsOnHold.delete(notificationId);
+
         this.#notifications = this.#notifications.filter((item: AstalNotifd.Notification) =>
             item.id !== notificationId);
 
         AstalNotifd.get_default().get_notification(notificationId)?.dismiss();
         this.notify("notifications");
         this.emit("notification-removed", notificationId);
+    }
+
+    private getNotificationById(id: number): AstalNotifd.Notification|undefined {
+        return this.#notifications.filter(notif => notif.id === id)?.[0];
+    }
+
+    public holdNotification(notif: (AstalNotifd.Notification|number)): void {
+        notif = (typeof notif === "number") ? 
+            this.getNotificationById(notif)!
+        : notif;
+
+        if(!notif) return;
+
+        this.#notificationsOnHold.add(notif.id);
     }
 
     public toggleDoNotDisturb(): boolean {

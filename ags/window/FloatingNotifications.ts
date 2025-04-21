@@ -18,6 +18,9 @@ export const FloatingNotifications = (mon: number) => new Widget.Window({
         homogeneous: false,
         visible: bind(Notifications.getDefault(), "notifications").as(notifs => notifs.length > 0),
         children: bind(Notifications.getDefault(), "notifications").as((notifs) => 
-            notifs.map((item) => NotificationWidget(item, () => Notifications.getDefault().removeNotification(item)))),
+            notifs.map((item) => NotificationWidget(item, 
+                () => Notifications.getDefault().removeNotification(item),
+                false, true))
+        ),
     } as Widget.BoxProps)
 } as Widget.WindowProps);

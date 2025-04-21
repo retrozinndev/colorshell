@@ -1,7 +1,7 @@
 import { Astal, Gtk, Widget } from "astal/gtk3";
 import AstalNotifd from "gi://AstalNotifd";
 import { Separator } from "./Separator";
-import { HistoryNotification } from "../scripts/notifications";
+import { HistoryNotification, Notifications } from "../scripts/notifications";
 import { GLib } from "astal";
 
 export function getUrgencyString(notif: AstalNotifd.Notification) {
@@ -32,14 +32,16 @@ function getNotificationImage(notif: AstalNotifd.Notification|HistoryNotificatio
 
 export function NotificationWidget(notification: AstalNotifd.Notification|number|HistoryNotification, 
         onClose?: (notif: AstalNotifd.Notification|HistoryNotification) => void,
-        showTime?: boolean /* It's showTime :speaking_head: :boom: :bangbang: */): Gtk.Widget {
+        showTime?: boolean /* It's showTime :speaking_head: :boom: :bangbang: */,
+        holdOnHover?: boolean): Gtk.Widget {
 
     notification = (typeof notification === "number") ? 
         AstalNotifd.get_default().get_notification(notification)
     : notification;
 
     const body: string = notification.body.split(' ').map(strPart => {
-        if(/^\<.*\>.*\<.*\>$/.test(strPart)) return strPart;
+        if(/^\<(.*)\>/.test(strPart) || /<\/(.*)\>$/.test(strPart)) 
+            return strPart;
 
         return strPart.length >= 25 ? `${strPart.substring(0, 22)}...`
         : strPart
@@ -48,12 +50,16 @@ export function NotificationWidget(notification: AstalNotifd.Notification|number
     return new Widget.EventBox({
         onClick: () => {
             if(notification instanceof AstalNotifd.Notification) {
-                const viewAction = notification.actions.filter(action => action.label.toLowerCase() === "view")?.[0];
-                if(viewAction) notification.invoke(viewAction.id);
+                const viewAction = notification.actions.filter(action => 
+                    action.label.toLowerCase() === "view")?.[0];
+
+                viewAction && notification.invoke(viewAction.id);
             }
 
-            onClose && onClose(notification);
+            onClose?.(notification);
         },
+        onHover: () => holdOnHover && Notifications.getDefault().holdNotification(notification.id),
+        onHoverLost: () => onClose?.(notification),
         hexpand: true,
         vexpand: false,
         child: new Widget.Box({
