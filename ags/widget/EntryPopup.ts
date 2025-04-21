@@ -1,21 +1,19 @@
 import { Binding } from "astal";
-import { Astal, Gtk, Widget } from "astal/gtk3";
+import { Widget } from "astal/gtk3";
 import { tr } from "../i18n/intl";
-import { Windows } from "../windows";
-import { PopupWindow, PopupWindowProps } from "./PopupWindow";
-import { Separator } from "./Separator";
+import { CustomDialog, CustomDialogProps } from "./CustomDialog";
 
 export type EntryPopupProps = {
-    title?: string | Binding<string | undefined>;
-    text: string | Binding<string | undefined>;
-    cancelText?: string | Binding<string | undefined>;
-    acceptText?: string | Binding<string | undefined>;
+    title: string | Binding<string>;
+    text?: string | Binding<string>;
+    cancelText?: string | Binding<string>;
+    acceptText?: string | Binding<string>;
     closeOnAccept?: boolean;
-    entryPlaceholder?: string | Binding<string | undefined>;
+    entryPlaceholder?: string | Binding<string>;
     onAccept: (userInput: string) => void;
     onCancel?: () => void;
     onFinish?: () => void;
-    isPassword?: boolean | Binding<string | undefined>;
+    isPassword?: boolean | Binding<string>;
 };
 
 export function EntryPopup(props: EntryPopupProps): Widget.Window {
@@ -38,70 +36,34 @@ export function EntryPopup(props: EntryPopupProps): Widget.Window {
     } as Widget.EntryProps);
 
     let entered: boolean = false;
-    const buttons = [
-        new Widget.Button({
-            className: "cancel",
-            hexpand: true,
-            label: props.cancelText ?? tr("cancel"),
-            onClick: () => props.closeOnAccept && window.close(),
-        } as Widget.ButtonProps),
-        new Widget.Button({
-            className: "accept",
-            hexpand: true,
-            label: props.acceptText ?? tr("accept"),
-            onClick: () => {
-                props.closeOnAccept && window.close();
-                entered = true;
-                props.onAccept(entry.text);
-                entry.text = "";
-            }
-        } as Widget.ButtonProps)
-    ];
 
-    const window = Windows.createWindowForFocusedMonitor((mon: number) => PopupWindow({
+    const window = CustomDialog({
         namespace: "entry-popup",
-        className: "entry-popup",
-        monitor: mon,
-        cssBackgroundWindow: "background: rgba(0, 0, 0, .3);",
-        exclusivity: Astal.Exclusivity.IGNORE,
-        layer: Astal.Layer.OVERLAY,
-        widthRequest: 400,
+        widthRequest: 420,
         heightRequest: 220,
-        onDestroy: () => {
-            props.onFinish?.();
+        title: props.title,
+        text: props.text,
+        child: entry,
+        options: [
+            {
+                text: props.cancelText ?? tr("cancel"),
+                onClick: props.onCancel
+            },
+            {
+                text: props.acceptText ?? tr("accept"),
+                closeOnClick: props.closeOnAccept,
+                onClick: () => {
+                    entered = true;
+                    props.onAccept(entry.text);
+                    entry.text = "";
+                }
+            }
+        ],
+        onFinish: () => {
             !entered && props.onCancel?.()
-        },
-        child: new Widget.Box({
-            className: "entry-popup-box",
-            orientation: Gtk.Orientation.VERTICAL,
-            children: [
-                new Widget.Label({
-                    className: "title",
-                    visible: Boolean(props.title),
-                    label: props.title || tr("ask_popup.title") || "Question"
-                } as Widget.LabelProps),
-                Separator({
-                    alpha: .2,
-                    orientation: Gtk.Orientation.VERTICAL
-                }),
-                new Widget.Label({
-                    className: "text",
-                    label: props.text,
-                    yalign: 0,
-                    expand: true
-                } as Widget.LabelProps),
-                entry,
-                new Widget.Box({
-                    className: "buttons",
-                    orientation: Gtk.Orientation.HORIZONTAL,
-                    hexpand: true,
-                    heightRequest: 38,
-                    homogeneous: true,
-                    children: buttons
-                } as Widget.BoxProps)
-            ]
-        } as Widget.BoxProps)
-    } as PopupWindowProps))();
+            props.onFinish?.();
+        }
+    } as CustomDialogProps);
 
     return window;
 } 
