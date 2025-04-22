@@ -15,6 +15,7 @@ export const ControlCenter = (mon: number) => PopupWindow({
     focusOnMap: true,
     marginTop: 10,
     marginRight: 10,
+    marginBottom: 10,
     monitor: mon,
     widthRequest: 395,
     child: new Widget.Box({
