@@ -46,9 +46,7 @@ export namespace Runner {
         showResultsPlaceHolderOnStartup?: boolean;
     };
 
-    export function close() {
-        runnerInstance?.close();
-    }
+    export function close() { runnerInstance?.close(); }
 
     const plugins = new Set<Runner.Plugin>([]);
 
@@ -98,6 +96,7 @@ export namespace Runner {
                 if(resultWidget instanceof ResultWidget) {
                     entry.isFocus = false;
                     resultWidget.onClick();
+                    resultWidget.closeOnClick && Runner.close();
                 }
             },
             primary_icon_name: "system-search"
@@ -140,13 +139,14 @@ export namespace Runner {
                 resultsList.insert(resultWidget, -1);
 
                 resultsList.connect("row-activated", (_, row: Gtk.ListBoxRow) => {
-                    const rWidget = row.get_child()!;
+                    const rWidget = row.get_child();
                     if(rWidget instanceof ResultWidget) {
-                        if(!onClickTimeout) {
-                            rWidget.onClick();
-                            // Timeout, so it doesn't fire the event a hundred times :skull:
-                            onClickTimeout = timeout(500, () => onClickTimeout = undefined);
-                        }
+                        if(onClickTimeout) return;
+
+                        // Timeout, so it doesn't fire the event a hundred times :skull:
+                        onClickTimeout = timeout(500, () => onClickTimeout = undefined);
+                        rWidget.onClick();
+                        rWidget.closeOnClick && Runner.close();
                     }
                 });
             });
@@ -172,6 +172,7 @@ export namespace Runner {
                        && keyVal !== Gdk.KEY_Down && keyVal !== Gdk.KEY_Up
                        && keyVal !== Gdk.KEY_Return) {
                         searchEntry.grab_focus_without_selecting();
+                        return;
                     }
 
                     event.get_keyval()[1] === Gdk.KEY_F5 &&

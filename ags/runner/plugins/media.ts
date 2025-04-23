@@ -11,6 +11,7 @@ export const PluginMedia = {
         if(!player) return new ResultWidget({
             icon: "folder-music-symbolic",
             title: "Couldn't find any players",
+            closeOnClick: false,
             description: "No media / player found with mpris"
         } as ResultWidgetProps);
         return [
@@ -18,6 +19,7 @@ export const PluginMedia = {
                 icon: bind(player, "playbackStatus").as((status) => status === AstalMpris.PlaybackStatus.PLAYING ?
                     "media-playback-pause-symbolic"
                 : "media-playback-start-symbolic"),
+                closeOnClick: false,
                 title: Variable.derive([
                     bind(player, "title"),
                     bind(player, "artist"),
@@ -29,6 +31,7 @@ export const PluginMedia = {
             } as ResultWidgetProps),
             new ResultWidget({
                 icon: "media-skip-backward-symbolic",
+                closeOnClick: false,
                 title: Variable.derive([
                     bind(player, "title"),
                     bind(player, "artist")
@@ -39,6 +42,7 @@ export const PluginMedia = {
             } as ResultWidgetProps),
             new ResultWidget({
                 icon: "media-skip-forward-symbolic",
+                closeOnClick: false,
                 title: Variable.derive([
                     bind(player, "title"),
                     bind(player, "artist")

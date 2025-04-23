@@ -1,6 +1,5 @@
 import { Binding, register } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
-import { Runner } from "../../runner/Runner";
 
 export { ResultWidget, ResultWidgetProps };
 
@@ -22,21 +21,15 @@ class ResultWidget extends Widget.Box {
 
 
     constructor(props: ResultWidgetProps) {
-        super();
-        if(props.icon)
-            this.icon = props.icon;
-        if(props.setup)
-            this.setup = props.setup;
-        if(props.closeOnClick !== undefined)
-            this.closeOnClick = props.closeOnClick;
+        super({
+            className: "result",
+            hexpand: true
+        });
 
-        this.onClick = () => {
-            props.onClick && props.onClick();
-            this.closeOnClick && Runner.close();
-        };
-
-        this.set_class_name("result");
-        this.set_hexpand(true);
+        this.icon = props.icon;
+        this.setup = props.setup;
+        this.closeOnClick = props.closeOnClick ?? true;
+        this.onClick = () => props.onClick?.();
 
         this.add(new Widget.Icon({
             visible: Boolean(props.icon),
