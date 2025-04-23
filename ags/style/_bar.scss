@@ -17,40 +17,41 @@
 
   // Style widget groups
   & > .bar-centerbox > * {
+    $radius: 18px;
+    $color-hover: colors.$bg-primary;
+    $padding: 4px;
+
     background: rgba(colors.$bg-translucent, .6);
-    padding: 5px;
-    border-radius: 18px;
+    border-radius: $radius;
+    padding: 0 $padding;
 
-    // Style widgets
+    & > eventbox {
+      &:hover {
+        & > box:not(.workspaces) {
+          background: $color-hover;
+        }
+      }
+      & > box {
+        border-radius: calc($radius - $padding);
+        margin: $padding 0;
+        padding: 0 6px;
+      }
+    }
+
     & > button,
-    & > eventbox,
-    & > box {
-      margin: 0 2px;
+    & > box > button {
+      border-radius: calc($radius - $padding);
+      margin: $padding 0;
+      padding: 0 9px;
 
-      &:first-child {
-        margin-left: 0;
-      }
-
-      &:last-child {
-        margin-right: 0;
-      }
-
-      & > button,
-      & > eventbox > box {
-        padding: 4px 8px;
-        border-radius: 12px;
-      }
-
-      & > button:hover,
-      & > eventbox:hover > box {
-        background: colors.$bg-primary;
+      &:hover {
+        background: $color-hover;
       }
     }
   }
 
   .workspaces {
     @include mixins.reset-props;
-    padding: 1px 1px;
 
     & button {
       border-radius: 16px;
@@ -58,7 +59,7 @@
       min-width: 12px;
       padding: 0 6px;
       background: colors.$bg-tertiary;
-      margin: 1px 2px;
+      margin: 3px 0;
 
       &.focus {
         background: colors.$fg-primary;
@@ -119,7 +120,6 @@
 
   .media-eventbox {
     & > .media {
-      border-radius: 12px;
       background: colors.$bg-primary;
       padding: 0 8px;
     }
@@ -196,7 +196,6 @@
 
     & > box {
       padding: 0 8px;
-      border-radius: 12px;
 
       & > * > * {
         margin: 0 2px;
@@ -238,22 +237,19 @@
 
   .apps {
     & > box {
-      border-radius: 12px;
-      transition: 100ms linear;
-      min-width: 28px;
-      padding: 0 4px;
+      min-width: 24px;
+      padding: 0 6px;
 
       & > icon {
         transition: 120ms linear;
         font-size: 14px;
       }
     }
-    &:hover > box,
     &.open > box {
-        background: colors.$bg-primary;
+      background: colors.$bg-primary;
     }
 
-    &:hover > box > icon {
+    &:hover icon {
       -gtk-icon-transform: scale(1.14);
     }
   }

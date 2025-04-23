@@ -8,6 +8,8 @@ export const showWorkspaceNumbers = new Variable<boolean>(false);
 
 export function Workspaces(): Gtk.Widget {
 
+    const workspaceSpacing = 4;
+
     return new Widget.EventBox({
         onScroll: (_, event) => 
             event.delta_y > 0 ? hyprland.dispatch("workspace", "e-1") : hyprland.dispatch("workspace", "e+1"),
@@ -15,6 +17,7 @@ export function Workspaces(): Gtk.Widget {
         onHoverLost: () => showWorkspaceNumbers.set(false),
         child: new Widget.Box({
             className: "workspaces",
+            spacing: workspaceSpacing,
             children: bind(hyprland, "workspaces").as((workspaces) => {
                 const sortedWorkspaces = workspaces.filter(ws => ws.id > 0).sort(
                     (a: AstalHyprland.Workspace, b: AstalHyprland.Workspace) => a.get_id() - b.get_id());
