@@ -5,7 +5,7 @@ import { getDateTime } from "../scripts/time";
 import { Separator, SeparatorProps } from "../widget/Separator";
 import { PopupWindow, PopupWindowProps } from "../widget/PopupWindow";
 import { BigMedia } from "../widget/center-window/BigMedia";
-import AstalMpris from "gi://AstalMpris?version=0.1";
+import AstalMpris from "gi://AstalMpris";
 
 export const CenterWindow = (mon: number) => PopupWindow({
     namespace: "center-window",
@@ -50,29 +50,18 @@ export const CenterWindow = (mon: number) => PopupWindow({
                     } as Widget.BoxProps)
                 ]
             } as Widget.BoxProps),
-            new Widget.Revealer({
-                revealChild: bind(AstalMpris.get_default(), "players").as(players => 
-                    players.filter(player => player.available).length > 0),
-                transitionDuration: 220,
-                transitionType: Gtk.RevealerTransitionType.SLIDE_RIGHT,
-                child: new Widget.Box({
-                    children: [
-                        Separator({
-                            orientation: Gtk.Orientation.HORIZONTAL,
-                            alpha: .5,
-                            cssColor: "gray",
-                            size: 1
-                        } as SeparatorProps),
-                        new Widget.Box({
-                            className: "vertical right",
-                            orientation: Gtk.Orientation.VERTICAL,
-                            children: [
-                                BigMedia()
-                            ]
-                        } as Widget.BoxProps)
-                    ]
-                } as Widget.BoxProps)
-            } as Widget.RevealerProps)
+            Separator({
+                orientation: Gtk.Orientation.HORIZONTAL,
+                alpha: .5,
+                cssColor: "gray",
+                visible: bind(AstalMpris.get_default(), "players").as(players => players.length > 0),
+                size: 1
+            } as SeparatorProps),
+            new Widget.Box({
+                className: "vertical right",
+                orientation: Gtk.Orientation.VERTICAL,
+                child: BigMedia()
+            } as Widget.BoxProps)
         ]
     } as Widget.BoxProps)
 } as PopupWindowProps);
