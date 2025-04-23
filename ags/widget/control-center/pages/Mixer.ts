@@ -21,7 +21,7 @@ export function PageMixer(): Page {
                                 orientation: Gtk.Orientation.HORIZONTAL,
                                 children: [
                                     new Widget.Icon({
-                                        icon: getStreamIcon(ep) ?? "application-x-executable-symbolic",
+                                        icon: getAppIcon(ep.name.split(' ')[0]) || "application-x-executable-symbolic",
                                         css: "font-size: 18px; margin-right: 6px;"
                                     } as Widget.IconProps),
                                     new Widget.Box({
@@ -38,6 +38,8 @@ export function PageMixer(): Page {
                                                 onDestroy: () => connections.map(id => eventbox.disconnect(id)),
                                                 child: new Widget.Label({
                                                     label: ep.name || "Unknown",
+                                                    truncate: true,
+                                                    tooltipText: ep.name,
                                                     className: "name",
                                                     xalign: 0
                                                 } as Widget.LabelProps)
@@ -59,14 +61,4 @@ export function PageMixer(): Page {
             )
         ])
     } as PageProps);
-}
-
-function getStreamIcon(endpoint: AstalWp.Endpoint): (string|undefined) {
-    let icon = getAppIcon(endpoint.icon);
-    if(icon) return icon;
-
-    icon = getAppIcon(endpoint.name.split(' ')[0]);
-    if(icon) return icon;
-
-    return undefined;
 }

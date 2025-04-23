@@ -69,7 +69,7 @@ class Pages extends Widget.Revealer {
     close(onClosed?: () => void): void {
         if(!this.isOpen) return;
 
-        this.set_reveal_child(false);
+        this.revealChild = false;
         timeout(this.transitionDuration, () => {
             this.remove(this.#page!);
             this.page = undefined;

@@ -72,6 +72,10 @@
     }
 
     & .page .content {
+      & > eventbox > box {
+        margin: 6px 0;
+      }
+
       & label.name {
         font-size: 14px;
         font-weight: 500;
