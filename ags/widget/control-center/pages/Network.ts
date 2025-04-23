@@ -99,7 +99,7 @@ export const PageNetwork: (() => Page) = () => new Page({
         } as SeparatorProps),
         new Widget.Button({
             label: "More settings",
-            xalign: 0,
+            setup: (self) => self.set_alignment(0, 0.5),
             onClick: () => {
                 Windows.close("control-center");
                 AstalHyprland.get_default().dispatch("exec", "[animationstyle gnomed] nm-connection-editor");

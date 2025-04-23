@@ -97,7 +97,7 @@ export const BluetoothPage: (() => Page) = () => new Page({
                 new Widget.Button({
                     className: "more",
                     label: "More settings",
-                    xalign: 0
+                    setup: (self) => self.set_alignment(0, 0.5)
                 } as Widget.ButtonProps)
             ]
         } as Widget.BoxProps)
