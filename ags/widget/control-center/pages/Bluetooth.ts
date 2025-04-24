@@ -4,6 +4,8 @@ import AstalBluetooth from "gi://AstalBluetooth";
 import { Page, PageButton } from "./Page";
 import { Separator, SeparatorProps } from "../../Separator";
 import { tr } from "../../../i18n/intl";
+import AstalHyprland from "gi://AstalHyprland?version=0.1";
+import { Windows } from "../../../windows";
 
 
 export const BluetoothPage: (() => Page) = () => new Page({
@@ -100,6 +102,10 @@ export const BluetoothPage: (() => Page) = () => new Page({
                 new Widget.Button({
                     className: "more",
                     label: tr("control_center.pages.more_settings"),
+                    onClick: () => {
+                        Windows.close("control-center");
+                        AstalHyprland.get_default().dispatch("exec", "[float; animation slide right] overskride");
+                    },
                     setup: (self) => self.set_alignment(0, 0.5)
                 } as Widget.ButtonProps)
             ]
