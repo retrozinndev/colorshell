@@ -7,6 +7,7 @@ import { Media } from "../widget/bar/Media";
 import { Apps } from "../widget/bar/Apps";
 import { Clock } from "../widget/bar/Clock";
 import { Status } from "../widget/bar/Status";
+import { SpecialWorkspaces } from "../widget/bar/SpecialWorkspaces";
 
 export const Bar = (mon: number) => {
     const widgetSpacing = 4;
@@ -32,6 +33,7 @@ export const Bar = (mon: number) => {
                     spacing: widgetSpacing,
                     children: [
                         Apps(),
+                        SpecialWorkspaces(),
                         Workspaces(),
                         FocusedClient()
                     ]

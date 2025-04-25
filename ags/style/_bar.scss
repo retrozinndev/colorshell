@@ -1,6 +1,7 @@
 @use "sass:color";
 @use "./mixins";
 @use "./colors";
+@use "./wal";
 
 .bar-container {
   @include mixins.reset-props;
@@ -27,7 +28,7 @@
 
     & > eventbox {
       &:hover {
-        & > box:not(.workspaces) {
+        & > box:not(.workspaces):not(.special-workspaces) {
           background: $color-hover;
         }
       }
@@ -50,7 +51,7 @@
     }
   }
 
-  .workspaces {
+  .workspaces, .special-workspaces {
     @include mixins.reset-props;
 
     & button {
@@ -86,6 +87,12 @@
 
       & icon {
         font-size: 16px;
+      }
+    }
+
+    &.special-workspaces {
+      & button {
+        background: wal.$color4;
       }
     }
   }
