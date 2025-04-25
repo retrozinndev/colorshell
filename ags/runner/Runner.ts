@@ -113,25 +113,32 @@ export namespace Runner {
                 resultsList.insert(widget, -1));
         }
 
-        // Init plugins
-        plugins.forEach(plugin => plugin.init && plugin.init());
-
-        function updateResultsList(entryText: string) {
-            const calledPlugins: Array<Plugin> = getPlugins().filter((plugin) => plugin.prefix && entryText.startsWith(plugin.prefix) ?
-                plugin : null).concat(getPlugins().filter(plugin => plugin.prefix === undefined));
-
-            const widgets: Array<ResultWidget> = calledPlugins.map(plugin => plugin.handle(
-                plugin.prefix ? entryText.replace(plugin.prefix, "") : entryText
-            )).filter(value => value !== undefined && value !== null).flat(1);
-            
-            // Remove all previous results
-            resultsList.get_children().map((listItem: Gtk.Widget) => {
+        function cleanResults() {
+            resultsList.get_children().map((listItem) => {
                 resultsList.remove(listItem);
                 listItem.destroy();
             });
+        }
 
-            // Insert placeholder if somehow no results are found
-            if(placeholder && widgets.length === 0)
+        function getPluginResults(input: string): Array<ResultWidget> {
+            const calledPlugins: Array<Plugin> = getPlugins().filter((plugin) => plugin.prefix && input.startsWith(plugin.prefix) ?
+                plugin : null).concat(getPlugins().filter(plugin => plugin.prefix === undefined));
+
+            return calledPlugins.map(plugin => plugin.handle(
+                plugin.prefix ? input.replace(plugin.prefix, "") : input
+            )).filter(value => value !== undefined && value !== null).flat(1);
+        }
+
+        function updateResultsList(entryText: string) {
+            const widgets: Array<ResultWidget> = [];
+
+            // Remove all previous results
+            cleanResults();
+
+            widgets.push(...getPluginResults(entryText))
+
+            // Insert placeholder if there are no results
+            if(placeholder && widgets.length === 0) 
                 widgets.push(...placeholder());
 
             // Insert results inside GtkListBox
@@ -165,6 +172,10 @@ export namespace Runner {
                 heightRequest: props?.height ?? 450,
                 marginTop: 240,
                 anchor: Astal.WindowAnchor.TOP | Astal.WindowAnchor.BOTTOM,
+                setup: () => {
+                    // Init plugins
+                    plugins.forEach(plugin => plugin.init && plugin.init());
+                },
                 onKeyPressEvent: (_, event: Gdk.Event) => {
                     const keyVal = event.get_keyval()[1];
 
