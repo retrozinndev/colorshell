@@ -26,3 +26,11 @@ export function makeDirectory(dir: string): void {
 export function deleteFile(path: string): void {
     execAsync([ "rm", "-r", path ]);
 }
+
+export function isInstalled(commandName: string): boolean {
+    const output = exec(["command", "-v", commandName]);
+    if(output) 
+        return true;
+
+    return false;
+}
