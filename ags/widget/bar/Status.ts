@@ -16,12 +16,12 @@ export function Status(): Gtk.Widget {
         onClick: () => Windows.toggle("control-center"),
         child: new Widget.Box({
             children: [
-                volumeStatusSlider({
+                volumeStatus({
                     className: "sink",
                     endpoint: Wireplumber.getDefault().getDefaultSink(),
                     icon: "󰕾"
                 }),
-                volumeStatusSlider({
+                volumeStatus({
                     className: "source",
                     endpoint: Wireplumber.getDefault().getDefaultSource(),
                     icon: "󰍬"
@@ -32,7 +32,7 @@ export function Status(): Gtk.Widget {
     } as Widget.EventBoxProps);
 }
 
-function volumeStatusSlider(props: { className?: string, endpoint: AstalWp.Endpoint, icon: string }): Gtk.Widget {
+function volumeStatus(props: { className?: string, endpoint: AstalWp.Endpoint, icon: string }): Gtk.Widget {
     return new Widget.EventBox({
         className: props.className,
         onScroll: (_, event) => 
@@ -40,44 +40,19 @@ function volumeStatusSlider(props: { className?: string, endpoint: AstalWp.Endpo
                 Wireplumber.getDefault().decreaseEndpointVolume(props.endpoint, 5)
             :
                 Wireplumber.getDefault().increaseEndpointVolume(props.endpoint, 5),
-        setup: (eventbox) => {
-            const connections: Array<number> = [];
-            connections.push(eventbox.connect("destroy-event", () => 
-                connections.map(id => eventbox.disconnect(id))));
-
-            eventbox.add(new Widget.Box({
+            child: new Widget.Box({
                 children: [
                     new Widget.Label({
                         className: "nf",
                         label: props.icon,
                     } as Widget.LabelProps),
-                    new Widget.Revealer({
-                        revealChild: false,
-                        transitionType: Gtk.RevealerTransitionType.SLIDE_RIGHT,
-                        transitionDuration: 350,
-                        setup: (revealer) => {
-                            connections.push(
-                                eventbox.connect("hover", () => revealer.revealChild = true),
-                                eventbox.connect("hover-lost", () => revealer.revealChild = false));
-
-                            revealer.add(new Widget.Slider({
-                                className: "slider",
-                                setup: (slider) => slider.set_value(Math.floor(props.endpoint.get_volume() * 100)),
-                                onDragged: (slider) => props.endpoint.set_volume(slider.value / 100),
-                                value: bind(props.endpoint, "volume").as((volume) => 
-                                    Math.floor(volume * 100)),
-                                max: 100
-                            } as Widget.SliderProps));
-                        }
-                    } as Widget.RevealerProps),
                     new Widget.Label({
                         className: "volume",
                         label: bind(props.endpoint, "volume").as((volume: number) => 
                             Math.floor(volume * 100) + "%")
                     } as Widget.LabelProps),
                 ]
-            } as Widget.BoxProps))
-        }
+            } as Widget.BoxProps)
     } as Widget.EventBoxProps)
 }
 
