@@ -2,7 +2,7 @@ import { Wireplumber } from "./volume";
 import { Windows } from "../windows";
 
 import { restartInstance } from "./reload-handler";
-import { startRunnerDefault } from "../runner/Runner";
+import { runnerInstance, startRunnerDefault } from "../runner/Runner";
 import { showWorkspaceNumbers } from "../widget/bar/Workspaces";
 import { timeout } from "astal";
 
@@ -31,7 +31,9 @@ export function handleArguments(request: string): any {
                 `${name}: ${Windows.isVisible(name) ? "open" : "closed" }`).join('\n');
         
         case "runner":
-            startRunnerDefault();
+            !runnerInstance ? 
+                startRunnerDefault(args[1] || undefined)
+            : runnerInstance.close();
             return "Opening runner..."
 
         case "show-ws-numbers":

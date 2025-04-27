@@ -7,10 +7,11 @@ import { Windows } from "../windows";
 
 export let runnerInstance: (Gtk.Window|null) = null;
 
-export function startRunnerDefault() {
+export function startRunnerDefault(initialText?: string) {
     return Runner.openRunner({
         entryPlaceHolder: "Start typing...",
         showResultsPlaceHolderOnStartup: false,
+        initialText
     } as Runner.RunnerProps,
     () => [
         new ResultWidget({
@@ -43,6 +44,7 @@ export namespace Runner {
         width?: number;
         height?: number;
         entryPlaceHolder?: string;
+        initialText?: string;
         showResultsPlaceHolderOnStartup?: boolean;
     };
 
@@ -61,6 +63,8 @@ export namespace Runner {
         readonly handle: (inputText: string) => (ResultWidget|Array<ResultWidget>|null|undefined);
         /** ran on runner close */
         readonly onClose?: () => void;
+        /** hide other plugins when using this plugin **/
+        prioritize?: boolean;
     }
 
     export function addPlugin(plugin: Runner.Plugin, force?: boolean) {
@@ -121,12 +125,20 @@ export namespace Runner {
         }
 
         function getPluginResults(input: string): Array<ResultWidget> {
-            const calledPlugins: Array<Plugin> = getPlugins().filter((plugin) => plugin.prefix && input.startsWith(plugin.prefix) ?
-                plugin : null).concat(getPlugins().filter(plugin => plugin.prefix === undefined));
+            let calledPlugins: Array<Plugin> = getPlugins().filter((plugin) => 
+                plugin.prefix ? (input.startsWith(plugin.prefix) ? true : false) : true
+            ).sort((plugin) => plugin.prefix != null ? 0 : 1);
+
+            for(const plugin of calledPlugins) {
+                if(plugin.prioritize) {
+                    calledPlugins = [ plugin ];
+                    break;
+                }
+            }
 
             return calledPlugins.map(plugin => plugin.handle(
-                plugin.prefix ? input.replace(plugin.prefix, "") : input
-            )).filter(value => value !== undefined && value !== null).flat(1);
+                plugin.prefix ? input.replace(plugin.prefix, "") : input)
+            ).filter(value => value !== undefined && value !== null).flat(1);
         }
 
         function updateResultsList(entryText: string) {
@@ -175,6 +187,10 @@ export namespace Runner {
                 setup: () => {
                     // Init plugins
                     plugins.forEach(plugin => plugin.init && plugin.init());
+                    if(props?.initialText) {
+                        searchEntry.set_text(props.initialText);
+                        searchEntry.set_position(searchEntry.textLength);
+                    }
                 },
                 onKeyPressEvent: (_, event: Gdk.Event) => {
                     const keyVal = event.get_keyval()[1];
