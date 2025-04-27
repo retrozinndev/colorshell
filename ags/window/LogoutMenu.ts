@@ -1,6 +1,6 @@
 import { Astal, Gdk, Gtk, Widget } from "astal/gtk3";
 import { getDateTime } from "../scripts/time";
-import { execAsync, GLib } from "astal";
+import { exec, execAsync, GLib } from "astal";
 import { AskPopup } from "../widget/AskPopup";
 import { Windows } from "../windows";
 
@@ -57,7 +57,10 @@ export const LogoutMenu = (mon: number) => new Widget.Window({
                             onClick: () => AskPopup({
                                 title: "Power Off",
                                 text: "Are you sure you want to power off? Unsaved work will be lost.",
-                                onAccept: () => execAsync("systemctl poweroff")
+                                onAccept: () => {
+                                    exec(`sh "${GLib.getenv("XDG_CONFIG_HOME")}/hypr/scripts/save-hyprsunset.sh"`);
+                                    execAsync("systemctl poweroff");
+                                }
                             })
                         } as Widget.ButtonProps),
                         new Widget.Button({
@@ -66,7 +69,10 @@ export const LogoutMenu = (mon: number) => new Widget.Window({
                             onClick: () => AskPopup({
                                 title: "Reboot",
                                 text: "Are you sure you want to Reboot? Unsaved work will be lost.",
-                                onAccept: () => execAsync("systemctl reboot")
+                                onAccept: () => {
+                                    exec(`sh "${GLib.getenv("XDG_CONFIG_HOME")}/hypr/scripts/save-hyprsunset.sh"`);
+                                    execAsync("systemctl reboot");
+                                }
                             })
                         } as Widget.ButtonProps),
                         new Widget.Button({
@@ -84,7 +90,10 @@ export const LogoutMenu = (mon: number) => new Widget.Window({
                             onClick: () => AskPopup({
                                 title: "Log out",
                                 text: "Are you sure you want to log out? Your session will be ended.",
-                                onAccept: () => execAsync(`sh -c "loginctl terminate-user ${GLib.getenv("USER") || "$USER"}"`)
+                                onAccept: () => {
+                                    exec(`sh "${GLib.getenv("XDG_CONFIG_HOME")}/hypr/scripts/save-hyprsunset.sh"`);
+                                    execAsync(`sh -c "loginctl terminate-user ${GLib.getenv("USER") || "$USER"}"`);
+                                }
                             })
                         } as Widget.ButtonProps),
                     ]
