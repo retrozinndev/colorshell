@@ -11,6 +11,7 @@ export type TileProps = {
     description?: string | Binding<string | undefined>;
     toggleState?: boolean | Binding<boolean | undefined>;
     enableOnClickMore?: boolean | Binding<boolean | undefined>;
+    onDestroy?: () => void;
     onToggledOn: () => void;
     onToggledOff: () => void;
     onClickMore?: () => void;
@@ -42,7 +43,10 @@ export function Tile(props: TileProps): (() => Gtk.Widget) {
         ),
         expand: true,
         visible: props.visible,
-        onDestroy: () => subscription?.(),
+        onDestroy: () => {
+            props.onDestroy?.();
+            subscription?.();
+        },
         children: [
             new Widget.Button({
                 className: "toggle-button",

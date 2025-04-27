@@ -2,6 +2,7 @@ import { exec, execAsync, GLib, Variable } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
 import AstalHyprland from "gi://AstalHyprland";
 import { Windows } from "../../windows";
+import { Wallpaper } from "../../scripts/wallpaper";
 
 const uptime = new Variable<string>("Just turned on").poll(1000, 
     () => exec("uptime -p").replace(/^up /, "")
@@ -33,11 +34,10 @@ function ScreenshotButton(): Widget.Button {
     return new Widget.Button({
         className: "nf",
         label: "󰹑",
-        onClick: () => execAsync(
-            `hyprshot -m region -o ${GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_PICTURES) ?
-                    `${GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_PICTURES)}/Screenshots`
-                : `${GLib.get_home_dir()}/Screenshots` 
-            }`)
+        onClick: () => {
+            Windows.close("control-center");
+            execAsync(`sh ${GLib.get_user_config_dir()}/hypr/scripts/screenshot.sh`);
+        }
     } as Widget.ButtonProps);
 }
 
@@ -45,10 +45,10 @@ function SelectWallpaperButton(): Widget.Button {
     return new Widget.Button({
         className: "nf",
         label: "󰸉",
-        onClick: () => execAsync(
-            `sh ${GLib.get_user_config_dir() || `${GLib.get_home_dir()}/.config`
-            }/hypr/scripts/change-wallpaper.sh`
-        )
+        onClick: () => {
+            Windows.close("control-center");
+            Wallpaper.getDefault().pickWallpaper();
+        }
     } as Widget.ButtonProps);
 }
 
@@ -72,12 +72,14 @@ export const QuickActions = () => new Widget.Box({
                 new Widget.Label({
                     className: "hostname",
                     xalign: 0,
+                    tooltipText: "Host name",
                     label: GLib.get_host_name()
                 } as Widget.LabelProps),
                 new Widget.Label({
                     className: "uptime",
                     xalign: 0,
-                    label: uptime().as((uptime: string) => `󱡢  ${uptime}`)
+                    tooltipText: "Uptime",
+                    label: uptime().as((uptime: string) => `󰥔  ${uptime}`)
                 } as Widget.LabelProps)
             ]
         } as Widget.BoxProps),

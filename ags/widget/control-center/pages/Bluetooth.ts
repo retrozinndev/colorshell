@@ -1,5 +1,5 @@
 import { bind, Variable } from "astal";
-import { Gtk, Widget } from "astal/gtk3";
+import { astalify, Gtk, Widget } from "astal/gtk3";
 import AstalBluetooth from "gi://AstalBluetooth";
 import { Page, PageButton } from "./Page";
 import { Separator, SeparatorProps } from "../../Separator";
@@ -7,6 +7,8 @@ import { tr } from "../../../i18n/intl";
 import AstalHyprland from "gi://AstalHyprland?version=0.1";
 import { Windows } from "../../../windows";
 
+
+const AstalSpinner = astalify(Gtk.Spinner);
 
 export const BluetoothPage: (() => Page) = () => new Page({
     id: "bluetooth",
@@ -136,33 +138,31 @@ function DeviceWidget(dev: AstalBluetooth.Device): Gtk.Widget {
         endWidget: new Widget.Box({
             visible: bind(dev, "batteryPercentage").as((bat: number) => 
                 bat <= -1 ? false : true),
-            children: Variable.derive([
-                bind(dev, "connecting"),
-                bind(dev, "connected")
-            ], (connecting, connected) => {
-                if(connected) return [
-                    new Widget.Label({
-                        halign: Gtk.Align.END,
-                        label: bind(dev, "batteryPercentage").as((bat: number) =>
-                            `${Math.floor(bat * 100)}%`)
-                    } as Widget.LabelProps),
-                    new Widget.Icon({
-                        icon: "battery-symbolic",
-                        css: "font-size: 18px; margin-left: 6px;"
-                    } as Widget.IconProps)
-                ];
+            children: [
+                new Widget.Box({
+                    visible: bind(dev, "connected"),
+                    children: [
+                        new Widget.Label({
+                            halign: Gtk.Align.END,
+                            label: bind(dev, "batteryPercentage").as((bat: number) =>
+                                `${Math.floor(bat * 100)}%`)
+                        } as Widget.LabelProps),
+                        new Widget.Icon({
+                            icon: "battery-symbolic",
+                            css: "font-size: 18px; margin-left: 6px;"
+                        } as Widget.IconProps)
+                    ]
+                } as Widget.BoxProps),
+                new Widget.Box({
+                    visible: bind(dev, "connecting"),
+                    setup: (self) => {
+                        const spinner = new AstalSpinner();
 
-                if(connecting) {
-                    const spinner = new Gtk.Spinner({
-                        visible: true
-                    } as Gtk.Spinner.ConstructorProps);
-                    spinner.start();
-
-                    return spinner;
-                }
-
-                return [];
-            })()
+                        self.add(spinner);
+                    }
+                } as Widget.BoxProps)
+                // Spinner here
+            ]
         } as Widget.BoxProps),
         extraButtons: Variable.derive([
             bind(dev, "connected"),
