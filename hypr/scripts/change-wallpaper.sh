@@ -16,16 +16,6 @@ if [[ -z "$WALLPAPERS_DIR" ]]; then
     WALLPAPERS_DIR="$HOME/wallpapers"
 fi
 
-if [[ -z "$dmenu" ]]; then
-    notify-send -u normal -a "Wallpaper" "Dmenu not found" "Couldn't find anyrun or wofi for dmenu! Try installing one of these two before selecting wallpaper!"
-    exit 1
-fi
-
-if [[ -z $(ls -A $WALLPAPERS_DIR) ]]; then
-    notify-send -u normal -a "Wallpaper" "Wallpapers not found" "Couldn't find any wallpaper inside \`~/wallpapers\`, try putting an image you like in there to choose it!"
-    exit 1
-fi
-
 function Write_changes() {
     echo "[LOG] Writing to hyprpaper config file"
 
@@ -49,19 +39,33 @@ function Reload_pywal() {
     wal -t --cols16 $style -i "$wall"
 }
 
-# Prompt wallpaper list
-wall="$WALLPAPERS_DIR/$(ls $WALLPAPERS_DIR | $dmenu)"
+if [[ -z "$dmenu" ]]; then
+    notify-send -u normal -a "Wallpaper" "Dmenu not found" "Couldn't find anyrun or wofi for dmenu! Try installing one of these two before selecting wallpaper!"
+    exit 1
+fi
 
-# Check if input wallpaper is empty
-if [[ $wall == "$WALLPAPERS_DIR/" ]]; then
-    echo "No wallpaper has been selected by user!"
-    if [[ $RANDOM_WALLPAPER_WHEN_EMPTY == true ]]; then
-        wall="$WALLPAPERS_DIR/$(ls $WALLPAPERS_DIR | shuf -n 1)"
-        echo "Selected random from $WALLPAPERS_DIR: $wall"
-    else
-        echo "Skipping hyprpaper changes and exiting."
-        exit 0
+if [[ -z $(ls -A $WALLPAPERS_DIR) ]]; then
+    notify-send -u normal -a "Wallpaper" "Wallpapers not found" "Couldn't find any wallpaper inside \`~/wallpapers\`, try putting an image you like in there to choose it!"
+    exit 1
+fi
+
+if [[ -z $1 ]]; then 
+    # Prompt wallpaper list
+    wall="$WALLPAPERS_DIR/$(ls $WALLPAPERS_DIR | $dmenu)"
+
+    # Check if input wallpaper is empty
+    if [[ $wall == "$WALLPAPERS_DIR/" ]]; then
+        echo "No wallpaper has been selected by user!"
+        if [[ $RANDOM_WALLPAPER_WHEN_EMPTY == true ]]; then
+            wall="$WALLPAPERS_DIR/$(ls $WALLPAPERS_DIR | shuf -n 1)"
+            echo "Selected random from $WALLPAPERS_DIR: $wall"
+        else
+            echo "Skipping hyprpaper changes and exiting."
+            exit 0
+        fi
     fi
+else
+    wall=$1
 fi
 
 Reload_pywal
