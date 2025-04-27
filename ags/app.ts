@@ -17,6 +17,7 @@ import { PluginMedia } from "./runner/plugins/media";
 import { Windows } from "./windows";
 import { Notifications } from "./scripts/notifications";
 import { GObject } from "astal";
+import { PluginWallpapers } from "./runner/plugins/wallpapers";
 
 
 let osdTimer: (Time|undefined);
@@ -27,7 +28,8 @@ const runnerPlugins: Array<Runner.Plugin> = [
     PluginApps,
     PluginShell,
     PluginWebSearch,
-    PluginMedia
+    PluginMedia,
+    new PluginWallpapers()
 ];
 
 App.start({
