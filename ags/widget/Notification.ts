@@ -3,6 +3,7 @@ import AstalNotifd from "gi://AstalNotifd";
 import { Separator } from "./Separator";
 import { HistoryNotification, Notifications } from "../scripts/notifications";
 import { GLib } from "astal";
+import { getAppIcon } from "../scripts/apps";
 
 export function getUrgencyString(notif: AstalNotifd.Notification) {
     switch(notif.urgency) {
@@ -77,14 +78,10 @@ export function NotificationWidget(notification: AstalNotifd.Notification|number
                     children: [
                         new Widget.Icon({
                             className: "icon app-icon",
-                            icon: (notification instanceof AstalNotifd.Notification) && Astal.Icon.lookup_icon(notification.appIcon) ? 
+                            icon: notification.appIcon && Astal.Icon.lookup_icon(notification.appIcon) ? 
                                 notification.appIcon
-                            : (Astal.Icon.lookup_icon(notification.appName.toLowerCase()) ?
-                               notification.appName.toLowerCase()
-                            : "image-missing"
-                            ),
-                            setup: (_) => _.get_icon() === "image-missing" &&
-                                _.set_visible(false),
+                            : getAppIcon(notification.appName),
+                            setup: (self) => self.set_visible(Boolean(self.get_icon())),
                             halign: Gtk.Align.START,
                             css: "font-size: 16px;"
                         }),
