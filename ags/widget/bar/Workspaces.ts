@@ -23,23 +23,24 @@ export function Workspaces(): Gtk.Widget {
                     (a: AstalHyprland.Workspace, b: AstalHyprland.Workspace) => a.get_id() - b.get_id());
 
                 return sortedWorkspaces.map((workspace: AstalHyprland.Workspace) => 
-                    new Widget.Button({
+                    new Widget.EventBox({
                         className: Variable.derive([
                             bind(hyprland, "focusedWorkspace"),
                             showWorkspaceNumbers()
                         ], (focusedWs, showWsNumbers) =>
                             `${focusedWs.id === workspace.id ? "focus" : ""} ${showWsNumbers ? "show" : ""}`
                         )(),
-                        visible: true,
+                        onClickRelease: () => workspace.focus(),
                         tooltipText: Variable.derive([
                             bind(workspace, "lastClient"),
                             bind(hyprland, "focusedWorkspace")
-                        ],(lastClient, focusWs) => focusWs.id === workspace.id ? "" : 
+                        ], (lastClient, focusWs) => focusWs.id === workspace.id ? "" : 
                             `Workspace ${workspace.id}${ lastClient ? ` - ${
-                                    !lastClient.title.toLowerCase().includes(lastClient.class) ?
-                                        `${lastClient.get_class()}: `
-                                    : ""
-                                } ${lastClient.title}` : "" }`)(),
+                                !lastClient.title.toLowerCase().includes(lastClient.class) ?
+                                    `${lastClient.get_class()}: `
+                                : ""
+                            } ${lastClient.title}` : "" }`
+                        )(),
                         child: new Widget.Box({
                             children: bind(workspace, "lastClient").as((lastClient) => [
                                 new Widget.Revealer({
@@ -49,8 +50,7 @@ export function Workspaces(): Gtk.Widget {
                                     child: new Widget.Label({
                                         label: bind(workspace, "id").as(String),
                                         className: "id",
-                                        xalign: 0.5,
-                                        hexpand: true,
+                                        hexpand: true
                                     } as Widget.LabelProps)
                                 } as Widget.RevealerProps),
                                 new Widget.Icon({
@@ -65,9 +65,8 @@ export function Workspaces(): Gtk.Widget {
                                     : undefined
                                 } as Widget.IconProps)
                             ])
-                        } as Widget.BoxProps),
-                        onClicked: () => workspace.focus()
-                    } as Widget.ButtonProps)
+                        } as Widget.BoxProps)
+                    } as Widget.EventBoxProps)
                 )
             })
         } as Widget.BoxProps)

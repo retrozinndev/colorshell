@@ -119,6 +119,10 @@
         background: transparent;
         box-shadow: 0 2px 0 -1px rgba(colors.$bg-secondary, .5);
       }
+
+      &:focus {
+        outline: 1px white;
+      }
     }
   }
 }

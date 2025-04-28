@@ -59,19 +59,23 @@
     @include mixins.reset-props;
     padding: 0 4px;
 
-    & button {
-      border-radius: 16px;
-      transition: 80ms linear;
-      min-width: 15px;
-      padding: 0 6px;
-      background: colors.$bg-tertiary;
-      margin: 3px 0;
+    & > eventbox {
+      & > box {
+        margin: 3px 0;
+        border-radius: 16px;
+        transition: 80ms linear;
+        min-width: 15px;
+        padding: 0 6px;
+        background: colors.$bg-tertiary;
 
-      &:not(.focus) {
-        @include mixins.hover-shadow2;
+        & label.id {
+          font-weight: 600;
+          margin-right: 4px;
+          opacity: 0;
+        }
       }
 
-      &.focus {
+      &.focus > box {
         background: colors.$fg-primary;
         min-width: 32px;
 
@@ -81,29 +85,26 @@
         }
       }
 
-      &.show {
-        // Smooth showing
-        & label.id {
-          opacity: 1;
-        }
-      }
-
-      & label.id {
-        font-weight: 600;
-        margin-right: 4px;
-        opacity: 0;
-      }
-
       & icon {
         font-size: 16px;
+      }
+
+      &.show label.id {
+        opacity: 1;
+      }
+
+      &:hover > box {
+        box-shadow: inset 0 0 0 100px rgba($color: colors.$fg-primary, $alpha: .2);
       }
     }
 
     &.special-workspaces {
-      & button {
-        background: wal.$color4;
+      & > eventbox {
+        & box {
+          background: wal.$color4;
+        }
 
-        &:hover {
+        &:hover > box {
           background: functions.toRGB(color.adjust(wal.$color4, $lightness: -6%));
         }
       }
