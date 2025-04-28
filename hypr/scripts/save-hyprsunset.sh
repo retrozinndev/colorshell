@@ -23,7 +23,7 @@ fi
 
 output="$XDG_CONFIG_HOME/hypr/hyprsunset.conf"
 
-temperature=$(hyprctl hyprsunset temperature)
-gamma=$(hyprctl hyprsunset gamma)
+temperature=$(hyprctl hyprsunset temperature || 6000)
+gamma=$(hyprctl hyprsunset gamma || 100)
 
 printf "temperature = %d\ngamma = %d" "$temperature" "$gamma" > $output
