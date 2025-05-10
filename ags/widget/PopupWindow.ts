@@ -34,9 +34,7 @@ export function PopupWindow(props: PopupWindowProps): Widget.Window {
         },
         onKeyPressEvent: (self, event: Gdk.Event) => {
             if(event.get_keyval()[1] === Gdk.KEY_Escape) {
-                bgWindow.close();
                 self.close();
-
                 return;
             }
 
