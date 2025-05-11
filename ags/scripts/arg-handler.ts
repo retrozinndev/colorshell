@@ -2,9 +2,9 @@ import { Wireplumber } from "./volume";
 import { Windows } from "../windows";
 
 import { restartInstance } from "./reload-handler";
-import { runnerInstance, startRunnerDefault } from "../runner/Runner";
 import { showWorkspaceNumbers } from "../widget/bar/Workspaces";
 import { timeout } from "astal";
+import { Runner } from "../runner/Runner";
 
 
 export function handleArguments(request: string): any {
@@ -31,9 +31,9 @@ export function handleArguments(request: string): any {
                 `${name}: ${Windows.isVisible(name) ? "open" : "closed" }`).join('\n');
         
         case "runner":
-            !runnerInstance ? 
-                startRunnerDefault(args[1] || undefined)
-            : runnerInstance.close();
+            !Runner.instance ? 
+                Runner.openDefault(args[1] || undefined)
+            : Runner.close();
             return "Opening runner..."
 
         case "show-ws-numbers":
@@ -154,22 +154,21 @@ Options:
 }
 
 function getHelp(): string {
-    return `
-Manage Astal Windows and do more stuff. From
-retrozinndev's Hyprland Dots, using Astal and AGS by Aylur.
+    return `Manage Astal Windows and do more stuff. From
+        retrozinndev's Hyprland Dots, using Astal and AGS by Aylur.
 
-Options:
-  open [window_name]: sets specified window's visibility to true.
-  close [window_name]: sets specified window's visibility to false.
-  toggle [window_name]: toggles visibility of specified window.
-  windows: shows available windows to control.
-  reload: creates a new astal instance and removes this one.
-  volume: wireplumber volume controller, see "volume help".
-  runner: open the application runner.
-  show-ws-numbers: show or hide workspace numbers in bar.
-  h, help: shows this help message.
+        Options:
+          open [window_name]: sets specified window's visibility to true.
+          close [window_name]: sets specified window's visibility to false.
+          toggle [window_name]: toggles visibility of specified window.
+          windows: shows available windows to control.
+          reload: creates a new astal instance and removes this one.
+          volume: wireplumber volume controller, see "volume help".
+          runner [initial_text]: open the application runner.
+          show-ws-numbers: show or hide workspace numbers in bar.
+          h, help: shows this help message.
 
-2025 (c) retrozinndev's Hyprland-Dots, licensed under the MIT License.
-https://github.com/retrozinndev/Hyprland-Dots
-`.trim();
+        2025 (c) retrozinndev's Hyprland-Dots, licensed under the MIT License.
+        https://github.com/retrozinndev/Hyprland-Dots
+    `.split('\n').map(l => l.replace(/^ {8}/, "")).join('\n');
 }

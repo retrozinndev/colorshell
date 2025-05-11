@@ -26,9 +26,7 @@ export class PluginWallpapers implements Runner.Plugin {
     handle(search: string) {
         if(this.#files!.length > 0)
             return this.#files!.filter(file => // not the best way to search, but it works
-                new RegExp(`${search.split('').map(c => 
-                    `.*(${c.toLowerCase()}|${c.toUpperCase()}).*`).join('')}`
-                ).test(file.split('/')[file.split('/').length-1])
+                Runner.regExMatch(search, file.split('/')[file.split('/').length-1])
             ).map(path => new ResultWidget({
                 title: path.split('/')[path.split('/').length-1].replace(/\..*$/, ""),
                 onClick: () => Wallpaper.getDefault().setWallpaper(path)
