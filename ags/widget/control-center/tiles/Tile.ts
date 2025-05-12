@@ -53,7 +53,6 @@ export function Tile(props: TileProps): (() => Gtk.Widget) {
                 onClick: () => {
                     if(toggled.get()) {
                         toggled.set(false);
-                        console.log(toggled.get());
                         props.onToggledOff && props.onToggledOff();
                         return;
                     }

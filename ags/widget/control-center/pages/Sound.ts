@@ -33,6 +33,8 @@ export function PageSound(): Page {
             new Widget.Label({
                 className: "sub-header",
                 label: tr("apps"),
+                visible: endpoints.filter((ep) => ep.mediaClass === AstalWp.MediaClass.AUDIO_STREAM ||
+                ep.mediaClass === AstalWp.MediaClass.VIDEO_STREAM).length > 0,
                 setup: (self) => self.set_alignment(0, .5)
             } as Widget.LabelProps),
             ...endpoints.filter((ep) => ep.mediaClass === AstalWp.MediaClass.AUDIO_STREAM ||

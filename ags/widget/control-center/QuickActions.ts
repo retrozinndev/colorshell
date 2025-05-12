@@ -4,9 +4,6 @@ import AstalHyprland from "gi://AstalHyprland";
 import { Windows } from "../../windows";
 import { Wallpaper } from "../../scripts/wallpaper";
 
-const uptime = new Variable<string>("Just turned on").poll(1000, 
-    () => exec("uptime -p").replace(/^up /, "")
-);
 
 function LockButton(): Widget.Button {
     return new Widget.Button({
@@ -60,41 +57,47 @@ function LogoutButton(): Widget.Button {
     } as Widget.ButtonProps);
 }
 
-export const QuickActions = () => new Widget.Box({
-    className: "quickactions",
-    children: [
-        new Widget.Box({
-            orientation: Gtk.Orientation.VERTICAL,
-            halign: Gtk.Align.START,
-            hexpand: true,
-            className: "left",
-            children: [
-                new Widget.Label({
-                    className: "hostname",
-                    xalign: 0,
-                    tooltipText: "Host name",
-                    label: GLib.get_host_name()
-                } as Widget.LabelProps),
-                new Widget.Label({
-                    className: "uptime",
-                    xalign: 0,
-                    tooltipText: "Uptime",
-                    label: uptime().as((uptime: string) => `󰥔  ${uptime}`)
-                } as Widget.LabelProps)
-            ]
-        } as Widget.BoxProps),
-        new Widget.Box({
-            orientation: Gtk.Orientation.HORIZONTAL,
-            className: "right button-row",
-            halign: Gtk.Align.END,
-            hexpand: true,
-            children: [
-                LockButton(),
-                ColorPickerButton(),
-                ScreenshotButton(),
-                SelectWallpaperButton(),
-                LogoutButton()
-            ]
-        } as Widget.BoxProps)
-    ]
-} as Widget.BoxProps);
+export const QuickActions = () => {
+    const uptime = new Variable<string>("Just turned on").poll(1000, 
+        () => exec("uptime -p").replace(/^up /, "")); 
+
+    return new Widget.Box({
+        className: "quickactions",
+        children: [
+            new Widget.Box({
+                orientation: Gtk.Orientation.VERTICAL,
+                halign: Gtk.Align.START,
+                hexpand: true,
+                className: "left",
+                children: [
+                    new Widget.Label({
+                        className: "hostname",
+                        xalign: 0,
+                        tooltipText: "Host name",
+                        label: GLib.get_host_name()
+                    } as Widget.LabelProps),
+                    new Widget.Label({
+                        className: "uptime",
+                        xalign: 0,
+                        tooltipText: "Uptime",
+                        onDestroy: () => uptime.drop(),
+                        label: uptime().as((uptime: string) => `󰥔  ${uptime}`)
+                    } as Widget.LabelProps)
+                ]
+            } as Widget.BoxProps),
+            new Widget.Box({
+                orientation: Gtk.Orientation.HORIZONTAL,
+                className: "right button-row",
+                halign: Gtk.Align.END,
+                hexpand: true,
+                children: [
+                    LockButton(),
+                    ColorPickerButton(),
+                    ScreenshotButton(),
+                    SelectWallpaperButton(),
+                    LogoutButton()
+                ]
+            } as Widget.BoxProps)
+        ]
+    } as Widget.BoxProps);
+}
