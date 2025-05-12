@@ -64,7 +64,8 @@ None of the wallpapers available in this repo are made by me! You can find sourc
 You can see pre-configured bindings in the [Wiki/Bindings] page!
 
 ## 🌐 Internationalization
-Colorshell supports i18n! Currently, there is support for the following languages: 
+Colorshell supports i18n! The shell automatically matches the shell language with the system's, if available. <br>
+Currently, there's support for the following languages: 
 - English (United States), maintained by [@retrozinndev](https://github.com/retrozinndev)
 - Português (Brasil), maintained by [@retrozinndev](https://github.com/retrozinndev)
   
