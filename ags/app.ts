@@ -3,7 +3,6 @@ import AstalNotifd from "gi://AstalNotifd";
 import { App } from "astal/gtk3"
 import { Wireplumber } from "./scripts/volume";
 
-import { runStyleHandler } from "./scripts/style-handler";
 import { handleArguments } from "./scripts/arg-handler";
 import { Time, timeout } from "astal/time";
 
@@ -18,6 +17,10 @@ import { Windows } from "./windows";
 import { Notifications } from "./scripts/notifications";
 import { GObject } from "astal";
 import { PluginWallpapers } from "./runner/plugins/wallpapers";
+import { Wallpaper } from "./scripts/wallpaper";
+import { Stylesheet } from "./scripts/stylesheet";
+import { Clipboard } from "./scripts/clipboard";
+import { PluginClipboard } from "./runner/plugins/clipboard";
 
 
 let osdTimer: (Time|undefined);
@@ -29,7 +32,8 @@ const runnerPlugins: Array<Runner.Plugin> = [
     PluginShell,
     PluginWebSearch,
     PluginMedia,
-    new PluginWallpapers()
+    new PluginWallpapers(),
+    PluginClipboard
 ];
 
 App.start({
@@ -38,26 +42,23 @@ App.start({
         response(handleArguments(request));
     },
     main: (..._args: Array<string>) => {
-        console.log(`[LOG] Initialized astal instance as: ${ App.instanceName || "astal" }`);
+        console.log(`Initialized astal instance as: ${ App.instanceName || "astal" }`);
+
+        Stylesheet.getDefault().compileApply();
 
         App.vfunc_dispose = () => {
-            console.log("[LOG] Disconnecting stuff");
+            console.log("Disconnecting stuff");
             connections.forEach((v, k) => Array.isArray(v) ? 
                 v.map(id => k.disconnect(id))
             : k.disconnect(v));
         };
 
-
-        console.log("[LOG] Running Stylesheet handler");
-
-        runStyleHandler();
-
-        //console.log(`[LOG] Starting to monitor scripts to automatically reload instance`);
-        //monitorPaths(); // Only for debugging purposes(testing new widgets and stuff)
+        // Init clipboard module
+        Clipboard.getDefault();
 
         connections.set(Wireplumber.getDefault(), [
             Wireplumber.getDefault().getDefaultSink().connect("notify::volume", () => 
-                !Windows.isVisible("control-center") && triggerOSD(OSDModes.SINK))
+                triggerOSD(OSDModes.SINK))
         ]);
 
         connections.set(Notifications.getDefault(), [
@@ -69,10 +70,13 @@ App.start({
             })
         ]);
 
-        console.log(`[LOG] Adding runner plugins`);
+        console.log("Initializing wallpaper handler");
+        Wallpaper.getDefault();
+
+        console.log("Adding runner plugins");
         runnerPlugins.map(plugin => Runner.addPlugin(plugin));
 
-        console.log("[LOG] Opening default windows");
+        console.log("Opening default windows");
         // Open openOnStart windows
         defaultWindows.map(name => {
             if(Windows.isVisible(name)) return;
@@ -82,6 +86,8 @@ App.start({
 });
 
 function triggerOSD(osdModeParam: OSDModes) {
+    if(Windows.isVisible("control-center")) return;
+
     Windows.open("osd");
 
     if(!osdTimer) {
