@@ -1,15 +1,30 @@
 # colorshell
 <p>(previously retrozinndev/Hyprland-Dots)</p>
 
-> [!note]
-> This is a WIP Aylur's GTK Shell version of my dotfiles! Everything at the moment in<br>
-> this shell is working flawlessly, you can try it out if you want to! <br> <br>
-> Want the stable dotfiles? Go to the [`ryo`](https://github.com/retrozinndev/Hyprland-Dots/tree/ryo) branch! <br>
-
 My Hyprland desktop shell that I keep improving almost everyday! 🤩 (i love doing this) <br>
 
 This repository includes a desktop shell made with [GTK], using [Astal] and [AGS] + [TypeScript]. 
 It really took me a lot of time to make this, so please star the repo if you like it! :star:
+
+## 🌄 Screenshots
+![Kitty](repo/shots/desktop.png)
+![Widgets](repo/shots/widgets.png)
+![Runner](repo/shots/runner.png)
+![Browser + Neovim](repo/shots/browser-neovim.png)
+
+## 🎨 Colors
+All the shell colors are dynamically generated from your wallpaper! 
+This is possible by using [pywal16](fork of the archived [pywal](https://github.com/dylanaraps/pywal) project), a cli tool to generate color schemes on the fly.
+
+## 🖼️ Wallpapers
+When you're at the [Installation](#Installation) process, you can choose whether to install the wallpapers. 
+Or if you haven't, you can just create a directory `~/wallpapers` in your home `~` and put images you want to use as wallpapers!
+
+You can select any of the images inside `~/wallpapers` by pressing <kbd>SUPER</kbd> + <kbd>W</kbd> or by accessing the 
+Control Center and clicking in the image icon on top.
+
+### ℹ️ Source
+None of the wallpapers available in this repo are made by me! You can find sources inside the [`WALLPAPERS.md`](https://github.com/retrozinndev/Hyprland-Dots/blob/ryo/WALLPAPERS.md) file. (it took me a lot of time to make this sources list 😭)
 
 ### ✔️ What's included in this shell
 - Pretty Top-Bar
@@ -38,56 +53,33 @@ It really took me a lot of time to make this, so please star the repo if you lik
 - Localization(see [🌐 Internationalization](#-internationalization) for available languages)
 - Application Runner with support for plugins ([anyrun](https://github.com/anyrun-org/anyrun)-like)
   - Shell(`!`): Run shell commands with the user shell
+  - Clipboard(`>`): Search through your clipboard history
+  - Wallpapers(`#`): Search and select to change wallpaper
   - Media(`:`): Control playing media
   - Search(`?`): Search something on the internet with your default browser
 - Gnome-like application runner(the fullscreen one)
 - Support for your multiple monitors
 
-## 🔘 TODO
-Almost everything is done!! I'm just doing some polishing:
-- Stop using anyrun(make plugins for the **shell's runner**)
-  - Make a Clipboard plugin (ongoing)
-
-## 🌄 Screenshots
-![Kitty](repo/shots/desktop.png)
-![Widgets](repo/shots/widgets.png)
-![Runner](repo/shots/runner.png)
-![Browser + Neovim](repo/shots/browser-neovim.png)
-
-## 🎨 Colors
-All the colors of the interface are dynamically generated from your wallpaper! 
-This is possible by using [pywal16] (fork of pywal), a cli tool to generate color schemes on the fly.
-
-## 🖼️ Wallpapers
-When you're at the [Installation](#Installation) process, you can choose whether to install the wallpapers. 
-Or if you haven't, you can just create a directory `~/wallpapers` in your home `~` and put images you want to use as wallpapers!
-
-You can select any of the images inside `~/wallpapers` by pressing <kbd>SUPER</kbd> + <kbd>W</kbd> or by accessing the 
-Control Center and clicking in the image icon on top.
-
-### ℹ️ Source
-All wallpapers inside this repo are not made by me! You can find all sources inside the [`WALLPAPERS.md`](https://github.com/retrozinndev/Hyprland-Dots/blob/ryo/WALLPAPERS.md) file.
-
 ## ⌨️ Binds
 You can see pre-configured bindings in the [Wiki/Bindings] page!
 
 ## 🌐 Internationalization
-This Shell supports i18n. Currently, it supports the following languages: 
+Colorshell supports i18n! Currently, there is support for the following languages: 
 - English (United States), maintained by [@retrozinndev](https://github.com/retrozinndev)
 - Português (Brasil), maintained by [@retrozinndev](https://github.com/retrozinndev)
   
 Don't see your language here? You can contribute and make translations too! <br>
-To do so, fork this repository, translate your fork, then open a pull request to this repository, simple as that!
+You can do so by forking this repository, translating the shell in your fork and then opening a pull request to this repository, simple as that!
+(I'll create a more detailed guide for that soon)
 
 ## ⚙️ Installation
-See the Installation Guide on [Wiki/Installation].
+See the Installation Guide on [Wiki/Installation]. (needs updates, shell was just launched)
 
 ## 🎉 Tools
 - Browser: [Zen Browser]
 - Text Editor: [Neovim], my config is [here](https://github.com/retrozinndev/nvim-conf.lua)
 - Terminal Emulator: [Kitty]
-- Shell: [Nushell]
-- See more on the [wiki]!
+- Terminal shell: [Nushell]
 
 ## ❗ Issues
 Having issues? Please create a [new Issue] here, I'll be happy to help you out!
