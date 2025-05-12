@@ -29,7 +29,9 @@
     }
 
     & .uptime {
-      font-size: 12px;
+      font-size: 10.1px;
+      font-family: "Symbols Nerd Font Mono";
+      color: colors.$fg-disabled;
     }
 
     & .button-row {
