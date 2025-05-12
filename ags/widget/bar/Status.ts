@@ -7,6 +7,9 @@ import { Gtk, Widget } from "astal/gtk3";
 import { Wireplumber } from "../../scripts/volume";
 import { Notifications } from "../../scripts/notifications";
 import { Windows } from "../../windows";
+import { Recording } from "../../scripts/recording";
+import { getDateTime } from "../../scripts/time";
+import { tr } from "../../i18n/intl";
 
 
 export function Status(): Gtk.Widget {
@@ -57,42 +60,91 @@ function volumeStatus(props: { className?: string, endpoint: AstalWp.Endpoint, i
 }
 
 function StatusIcons(): Gtk.Widget {
+    const bluetoothIcon: Variable<string> = Variable.derive([
+        bind(AstalBluetooth.get_default(), "isPowered"),
+        bind(AstalBluetooth.get_default(), "isConnected")
+    ], (powered, connected) => {
+        return powered ? (
+            connected ? "󰂱"
+            : "󰂯"
+        ) : "󰂲"
+    });
+
+    const networkIcon: Variable<string> = Variable.derive([
+        bind(AstalNetwork.get_default(), "primary"),
+        bind(AstalNetwork.get_default(), "wired"),
+        bind(AstalNetwork.get_default(), "wifi")
+    ],
+    (primary, wired, wifi) => {
+        switch(primary) {
+            case AstalNetwork.Primary.WIRED: return wired ? 
+                    "󰛳"
+                : "󰛵";
+
+            case AstalNetwork.Primary.WIFI: return wifi ?
+                    "󰤨"
+                : "󰤭";
+        }
+
+        return "󰲊";
+    });
+
+    const recordingTimer: Variable<string> = Variable.derive([
+        bind(Recording.getDefault(), "recording"),
+        getDateTime()
+    ], (recording, dateTime) => {
+        if(!recording || !Recording.getDefault().startedAt) 
+            return "...";
+
+        const startedAtSeconds = dateTime.to_unix() - Recording.getDefault().startedAt!.to_unix();
+        if(startedAtSeconds <= 0) return "00:00";
+
+        const hours = Math.floor(startedAtSeconds / 120);
+        const minutes = Math.floor(startedAtSeconds / 60);
+        const seconds = Math.floor(startedAtSeconds % 60);
+
+        return `${ hours > 0 ? `${hours < 10 ? `0${hours}` : hours }:` : ""
+            }${ minutes < 10 ? `0${minutes}` : minutes 
+            }:${ seconds < 10 ? `0${seconds}` : seconds }`;
+    });
+
     return new Widget.Box({
         className: "status-icons",
         children: [
             new Widget.Label({
                 className: "bluetooth nf state",
-                label: Variable.derive([
-                    bind(AstalBluetooth.get_default(), "isPowered"),
-                    bind(AstalBluetooth.get_default(), "isConnected")
-                ], (powered, connected) => {
-                    return powered ? (
-                        connected ? "󰂱"
-                        : "󰂯"
-                    ) : "󰂲"
-                })()
+                label: bluetoothIcon(),
+                onDestroy: () => bluetoothIcon.drop()
             } as Widget.LabelProps),
             new Widget.Label({
                 className: "network nf state",
-                label: Variable.derive([
-                    bind(AstalNetwork.get_default(), "primary"),
-                    bind(AstalNetwork.get_default(), "wired"),
-                    bind(AstalNetwork.get_default(), "wifi")
-                ],
-                (primary, wired, wifi) => {
-                    switch(primary) {
-                        case AstalNetwork.Primary.WIRED: return wired ? 
-                                "󰛳"
-                            : "󰛵";
-
-                        case AstalNetwork.Primary.WIFI: return wifi ?
-                                "󰤨"
-                            : "󰤭";
-                    }
-
-                    return "󰲊";
-                })()
+                label: networkIcon(),
+                onDestroy: () => networkIcon.drop()
             } as Widget.LabelProps),
+            new Widget.Revealer({
+                revealChild: bind(Recording.getDefault(), "recording"),
+                transitionDuration: 500,
+                transitionType: Gtk.RevealerTransitionType.SLIDE_LEFT,
+                setup: (revealer) => revealer.add(
+                    new Widget.EventBox({
+                        onClick: () => Recording.getDefault().recording &&
+                            Recording.getDefault().stopRecording(),
+                        tooltipText: tr("control_center.tiles.recording.enabled_desc"),
+                        child: new Widget.Box({
+                            children: [
+                                new Widget.Label({
+                                    className: "recording nf state",
+                                    label: '󰻃'
+                                } as Widget.LabelProps),
+                                new Widget.Label({
+                                    className: "rec-time",
+                                    label: recordingTimer()
+                                } as Widget.LabelProps)
+                            ]
+                        } as Widget.BoxProps)
+                    } as Widget.EventBoxProps)
+                )
+            } as Widget.RevealerProps),
             new Widget.Label({
                 className: "bell nf state",
                 label: bind(Notifications.getDefault().getNotifd(), "dontDisturb").as((dnd: boolean) => 
