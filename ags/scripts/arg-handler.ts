@@ -2,10 +2,11 @@ import { Wireplumber } from "./volume";
 import { Windows } from "../windows";
 
 import { restartInstance } from "./reload-handler";
-import { showWorkspaceNumbers } from "../widget/bar/Workspaces";
-import { timeout } from "astal";
+import { AstalIO, timeout } from "astal";
 import { Runner } from "../runner/Runner";
+import { showWorkspaceNumber } from "../widget/bar/Workspaces";
 
+let wsTimeout: (AstalIO.Time|undefined);
 
 export function handleArguments(request: string): any {
     const args: Array<string> = request.split(" ");
@@ -36,12 +37,15 @@ export function handleArguments(request: string): any {
             : Runner.close();
             return "Opening runner..."
 
-        case "show-ws-numbers":
-            if(!showWorkspaceNumbers.get()) {
-                showWorkspaceNumbers.set(true);
-                timeout(2200, () => showWorkspaceNumbers.set(false));
-            }
-            return "Showing numbers";
+        case "peek-workspace-num":
+            if(wsTimeout) return "Workspace numbers are already showing";
+
+            showWorkspaceNumber(true);
+            wsTimeout = timeout(2200, () => {
+                showWorkspaceNumber(false);
+                wsTimeout = undefined;
+            });
+            return "Toggled workspace numbers";
 
         default:
             return "command not found! try checking help";
@@ -141,14 +145,10 @@ function handleVolumeArgs(args: Array<string>) {
         return `
 Control speaker and microphone volumes easily!
 Options:
-  sink-set [number]: set sink(speaker) volume with [number], 0 to ${Wireplumber.getDefault().getMaxSinkVolume() || 100}.
-  sink-mute: toggle mute for the sink(speaker) device.
-  sink-increase [number]: increases sink(speaker) volume with [number].
-  sink-decrease [number]: decreases sink(speaker) volume with [number].
-  source-set [number]: set source(microphone) volume with [number], 0 to ${Wireplumber.getDefault().getMaxSourceVolume() || 100}.
-  source-mute: toggle mute for the source(microphone) device.
-  source-increase [number]: increases source(microphone) volume with [number].
-  source-decrease [number]: decreases source(microphone) volume with [number]
+  (sink|source)-set [number]: set speaker/microphone volume.
+  (sink|source)-mute: toggle mute for the speaker/microphone device.
+  (sink|source)-increase [number]: increases speaker/microphone volume.
+  (sink|source)-decrease [number]: decreases speaker/microphone volume.
 `.trim();
     }
 }
@@ -157,16 +157,18 @@ function getHelp(): string {
     return `Manage Astal Windows and do more stuff. From
         retrozinndev's Hyprland Dots, using Astal and AGS by Aylur.
 
-        Options:
-          open [window_name]: sets specified window's visibility to true.
-          close [window_name]: sets specified window's visibility to false.
-          toggle [window_name]: toggles visibility of specified window.
-          windows: shows available windows to control.
-          reload: creates a new astal instance and removes this one.
-          volume: wireplumber volume controller, see "volume help".
-          runner [initial_text]: open the application runner.
-          show-ws-numbers: show or hide workspace numbers in bar.
+        Window and Audio options:
+          open   [window]: opens the specified window.
+          close  [window]: closes all instances of specified window.
+          toggle [window]: toggle-open/close the specified window.
+          windows: list shell windows.
+          reload: quit this instance and start a new one.
+          volume: speaker and microphone volume controller, see "volume help".
           h, help: shows this help message.
+        
+        Other options:
+          runner [initial_text]: open the application runner, optionally add an initial search.
+          peek-workspace-num: peek the workspace numbers on bar window.
 
         2025 (c) retrozinndev's Hyprland-Dots, licensed under the MIT License.
         https://github.com/retrozinndev/Hyprland-Dots
