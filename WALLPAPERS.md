@@ -478,6 +478,10 @@ in their source link.
 - [Gruvbox Wallpapers](https://gruvbox-wallpapers.pages.dev)
 
 <!---------------- -->
+## Gruvbox-styled Wallpapers
+
+- [Gruvbox Wallpapers](https://gruvbox-wallpapers.pages.dev)
+
 ## Genshin Impact Wallpaper(s)
 Those can be get on web events in Genshin Impact, and also on [HoYoLAB](https://hoyolab.com).
 <details>
