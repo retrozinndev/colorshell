@@ -7,6 +7,7 @@ import { TilesPages } from "../Tiles";
 
 export const TileBluetooth = Tile({
     title: "Bluetooth",
+    visible: bind(AstalBluetooth.get_default(), "adapter").as(Boolean),
     description: bind(AstalBluetooth.get_default(), "isConnected").as((connected) => {
         const connectedDev = AstalBluetooth.get_default().devices.filter(dev => dev.connected)?.[0];
         return connected && connectedDev ? connectedDev.get_alias() : ""

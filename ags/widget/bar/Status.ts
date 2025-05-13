@@ -2,7 +2,7 @@ import AstalBluetooth from "gi://AstalBluetooth";
 import AstalNetwork from "gi://AstalNetwork";
 import AstalWp from "gi://AstalWp";
 
-import { bind, Variable } from "astal";
+import { bind, Binding, Variable } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
 import { Wireplumber } from "../../scripts/volume";
 import { Notifications } from "../../scripts/notifications";
@@ -22,12 +22,14 @@ export function Status(): Gtk.Widget {
                 volumeStatus({
                     className: "sink",
                     endpoint: Wireplumber.getDefault().getDefaultSink(),
-                    icon: "󰕾"
+                    icon: bind(Wireplumber.getDefault().getDefaultSink(), "mute").as((muted) =>
+                        !muted ? "󰕾" : "󰖁")
                 }),
                 volumeStatus({
                     className: "source",
                     endpoint: Wireplumber.getDefault().getDefaultSource(),
-                    icon: "󰍬"
+                    icon: bind(Wireplumber.getDefault().getDefaultSource(), "mute").as((muted) => 
+                        !muted ? "󰍬" : "󰍭")
                 }),
                 StatusIcons()
             ]
@@ -35,7 +37,7 @@ export function Status(): Gtk.Widget {
     } as Widget.EventBoxProps);
 }
 
-function volumeStatus(props: { className?: string, endpoint: AstalWp.Endpoint, icon: string }): Gtk.Widget {
+function volumeStatus(props: { className?: string, endpoint: AstalWp.Endpoint, icon?: (string|Binding<string>) }): Gtk.Widget {
     return new Widget.EventBox({
         className: props.className,
         onScroll: (_, event) => 
@@ -47,6 +49,7 @@ function volumeStatus(props: { className?: string, endpoint: AstalWp.Endpoint, i
                 children: [
                     new Widget.Label({
                         className: "nf",
+                        visible: props.icon,
                         label: props.icon,
                     } as Widget.LabelProps),
                     new Widget.Label({
@@ -113,6 +116,7 @@ function StatusIcons(): Gtk.Widget {
         children: [
             new Widget.Label({
                 className: "bluetooth nf state",
+                visible: bind(AstalBluetooth.get_default(), "adapter").as(Boolean),
                 label: bluetoothIcon(),
                 onDestroy: () => bluetoothIcon.drop()
             } as Widget.LabelProps),

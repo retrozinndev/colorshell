@@ -5,6 +5,7 @@ import { TileDND } from "./tiles/DoNotDisturb";
 import { TileRecording } from "./tiles/Recording";
 import { TileNightLight } from "./tiles/NightLight";
 import { Pages } from "./Pages";
+import { GObject } from "astal";
 
 export const tileList: Array<() => Gtk.Widget> = [
     TileNetwork,
@@ -29,10 +30,19 @@ export function Tiles(): Gtk.Widget {
     } as Gtk.FlowBox.ConstructorProps);
 
     tileList.map((item: (() => Gtk.Widget)) => {
-        tilesFlowBox.insert(item(), -1);
+        const tile = item();
+        tilesFlowBox.insert(tile, -1);
 
         const children = tilesFlowBox.get_children();
         children[children.length-1]!.set_can_focus(false);
+        const binding: GObject.Binding = tile.bind_property("visible", 
+            children[children.length-1], "visible", 
+            GObject.BindingFlags.SYNC_CREATE);
+
+        const destroyId: number = tile.connect("destroy-event", (self: typeof tile) => {
+            binding.unbind();
+            self.disconnect(destroyId);
+        });
     });
 
     return new Widget.Box({
