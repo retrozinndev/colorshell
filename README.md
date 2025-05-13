@@ -1,68 +1,109 @@
-# Retrozinn's Hyprland Dots
-My customized Hyprland dotfiles that I keep improving almost everyday 🤩 !
+# colorshell
+<p>(previously retrozinndev/Hyprland-Dots)</p>
 
-> [!warning]
-> This is the branch for the Elkowar's Wacky Widgets(eww) edition! If you're <br>
-> here for the waybar version instead, go to the [`waybar-edition`](https://github.com/retrozinndev/Hyprland-Dots/tree/waybar-edition) branch!
+My Hyprland desktop shell that I keep improving almost everyday! 🤩 (i love doing this) <br>
 
-> [!note]
-> I'm currently developing an [AGS](https://aylur.github.io/ags)+[Astal](https://aylur.github.io/astal) version of these dots! Peek a little on <br>
-> how developement is going in the [`ryoland`](https://github.com/retrozinndev/Hyprland-Dots/tree/ryoland) branch. <br>
+This repository includes a desktop shell made with [GTK], using [Astal] and [AGS] + [TypeScript]. 
+It really took me a lot of time to make this, so please star the repo if you like it! :star:
 
 ## 🌄 Screenshots
-<div align="center"
- 
-  <img src="repo/shots/desktop.png" width="45%">
-  <img src="repo/shots/control_center.png" width="45%">
-  <img src="repo/shots/showing_off_rice.png" width="45%">
-  <img src="repo/shots/runner.png" width="45%">
-  <img src="repo/shots/floating_github.png" width="45%">
-  <img src="repo/shots/volume_control.png" width="45%">
-  <img src="repo/shots/floating_media.png" width="45%">
-  <img src="repo/shots/power_menu.png" width="45%">
-
-  more shots in [`repo/shots`](https://github.com/retrozinndev/Hyprland-Dots/tree/ryo/repo/shots)
-  
-</div>
-
+![Kitty](repo/shots/desktop.png)
+![Widgets](repo/shots/widgets.png)
+![Runner](repo/shots/runner.png)
+![Browser + Neovim](repo/shots/browser-neovim.png)
 
 ## 🎨 Colors
-All the colors of the interface are dynamically generated from your wallpaper! This is possible by using [pywal16] (fork of pywal), a cli tool to generate color schemes on the fly.
+All the shell colors are dynamically generated from your wallpaper! 
+This is possible by using [pywal16](fork of the archived [pywal](https://github.com/dylanaraps/pywal) project), a cli tool to generate color schemes on the fly.
 
 ## 🖼️ Wallpapers
-When you're at the [Installation](#Installation) process, you can choose whether to install my wallpapers. If you chose to install, you can select any of them by clicking to change wallpaper in the Control Center. Or if you haven't chose to install, you can create the directory `~/wallpapers` in your home directory `~` and put an image you want to use as wallpaper and choose it using the menu inside control center and also by pressing <kbd>SUPER</kbd> + <kbd>W</kbd>!
+When you're at the [Installation](#Installation) process, you can choose whether to install the wallpapers. 
+Or if you haven't, you can just create a directory `~/wallpapers` in your home `~` and put images you want to use as wallpapers!
 
-See more bindings inside the `~/.config/hypr/bindings.conf` file or check the [Wiki/Usage] page!
+You can select any of the images inside `~/wallpapers` by pressing <kbd>SUPER</kbd> + <kbd>W</kbd> or by accessing the 
+Control Center and clicking in the image icon on top.
 
 ### ℹ️ Source
-All wallpapers inside this repo are not made by me! You can find all sources inside the [`WALLPAPERS.md`](https://github.com/retrozinndev/Hyprland-Dots/blob/ryo/WALLPAPERS.md) file.
+None of the wallpapers available in this repo are made by me! You can find sources inside the [`WALLPAPERS.md`](https://github.com/retrozinndev/Hyprland-Dots/blob/ryo/WALLPAPERS.md) file. (it took me a lot of time to make this sources list 😭)
+
+### ✔️ What's included in this shell
+- Pretty Top-Bar
+  - Apps button(basically the "start menu", opens the full-screen app launcher)
+  - Workspace indicator(contains icon of last used application on each)
+  - Focused Client(Window) information(title, class and icon)
+  - Clock(with date)
+  - Media(shows only when media is being played)
+  - Tray(Applications running in the background)
+  - Status (volume information, bluetooth, network and notification status)
+- Control Center
+  - Volume Controls (Microphone and Speaker)
+    - Volume Mixer(per-app volume)
+  - Pages(the thing that shows up when you click the arrow on a tile)
+    - Bluetooth devices
+    - Network devices
+    - Night Light controls
+  - Tiles
+    - Screen Recording
+    - Bluetooth
+    - Night Light
+    - Network(wifi needs work, i don't have wifi in my machine)
+    - Don't Disturb(disables notification popups)
+- Center Window(clock, calendar + media management)
+- Notifications with support for application actions + Notification History
+- Localization(see [🌐 Internationalization](#-internationalization) for available languages)
+- Application Runner with support for plugins ([anyrun](https://github.com/anyrun-org/anyrun)-like)
+  - Shell(`!`): Run shell commands with the user shell
+  - Clipboard(`>`): Search through your clipboard history
+  - Wallpapers(`#`): Search and select to change wallpaper
+  - Media(`:`): Control playing media
+  - Search(`?`): Search something on the internet with your default browser
+- Gnome-like application runner(the fullscreen one)
+- Support for your multiple monitors
+
+## ⌨️ Binds
+You can see pre-configured bindings in the [Wiki/Bindings] page!
+
+## 🌐 Internationalization
+Colorshell supports i18n! The shell automatically matches the shell language with the system's, if available. <br>
+Currently, there's support for the following languages: 
+- English (United States), maintained by [@retrozinndev](https://github.com/retrozinndev)
+- Português (Brasil), maintained by [@retrozinndev](https://github.com/retrozinndev)
+  
+Don't see your language here? You can contribute and make translations too! <br>
+You can do so by forking this repository, translating the shell in your fork and then opening a pull request to this repository, simple as that!
+(I'll create a more detailed guide for that soon)
 
 ## ⚙️ Installation
-See the Installation Guide on [Wiki/Installation].
+See the Installation Guide on [Wiki/Installation]. (needs updates, shell was just launched)
 
-### 🎉 Tools
+## 🎉 Tools
 - Browser: [Zen Browser]
 - Text Editor: [Neovim], my config is [here](https://github.com/retrozinndev/nvim-conf.lua)
 - Terminal Emulator: [Kitty]
-- Shell: [Nushell]
-- See more on the [wiki]!
+- Terminal shell: [Nushell]
 
 ## ❗ Issues
 Having issues? Please create a [new Issue] here, I'll be happy to help you out!
 
 ## 📜 License
-This repo is licensed under the [MIT License].
+This repo is licensed under the [MIT License], project is made and maintained by [retrozinndev](https://github.com/retrozinndev).
 
-## 🌠 Stargazers Graph
-Thanks to everyone who starred my dotfiles! 💖
-[![Stargazers over time](https://starchart.cc/retrozinndev/Hyprland-Dots.svg?background=%2324292e&axis=%23fafbfc&line=%232dba4e)](https://starchart.cc/retrozinndev/Hyprland-Dots)
+## 🌠 Stargazers
+Thanks to everyone who starred my project! 💖
+[![Stargazers over time](
+  https://starchart.cc/retrozinndev/Hyprland-Dots.svg?background=%2324292e&axis=%23fafbfc&line=%232dba4e
+)](https://starchart.cc/retrozinndev/Hyprland-Dots)
 
 <!-- References of other projects -->
 [pywal16]: https://github.com/eylles/pywal16
 [zen browser]: https://zen-browser.app
 [neovim]: https://neovim.io
 [nushell]: https://nushell.sh
-[kitty]: https://sw.kovidgoyal.net/kitty/
+[kitty]: https://sw.kovidgoyal.net/kitty
+[ags]: https://aylur.github.io/ags
+[astal]: https://aylur.github.io/astal
+[typescript]: https://typescriptlang.org
+[gtk]: https://www.gtk.org
 
 <!--  Web refs -->
 [mit license]: https://en.wikipedia.org/wiki/MIT_License
@@ -75,6 +116,7 @@ Thanks to everyone who starred my dotfiles! 💖
 [wiki/dependencies]: https://github.com/retrozinndev/Hyprland-Dots/wiki/Dependencies
 [wiki/usage]: https://github.com/retrozinndev/Hyprland-Dots/wiki/Usage
 [wiki/installation]: https://github.com/retrozinndev/Hyprland-Dots/wiki/Installation
+[wiki/bindings]: https://github.com/retrozinndev/Hyprland-Dots/wiki/Bindings
 
-<!-- Action Links -->
+<!-- Actions -->
 [new issue]: https://github.com/retrozinndev/Hyprland-Dots/issues/new

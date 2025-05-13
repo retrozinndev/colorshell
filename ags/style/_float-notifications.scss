@@ -1,0 +1,14 @@
+@use "./colors";
+@use "./mixins";
+
+.floating-notifications-container {
+  padding: {
+    right: 6px;
+    top: 6px;
+  };
+
+  & .notification {
+    margin: 6px;
+    box-shadow: 0 0 4px .5px colors.$bg-primary;
+  }
+}

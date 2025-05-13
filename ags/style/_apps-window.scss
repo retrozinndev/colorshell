@@ -1,0 +1,44 @@
+@use "sass:color";
+@use "./mixins";
+@use "./colors";
+@use "./functions";
+
+.apps-window-container {
+  padding: 24px;
+  background: colors.$bg-translucent;
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+
+  & > entry {
+    background: rgba(colors.$bg-primary, .4);
+    margin-bottom: 32px;
+    min-width: 400px;
+  }
+
+  & flowbox {
+    padding: 16px 24px;
+
+    & > flowboxchild {
+      & > button {
+        padding: 8px;
+        border-radius: 24px;
+
+        & icon {
+          font-size: 64px;
+        }
+
+        & label {
+          margin-top: 6px;
+          text-shadow: 1px 1px 1px rgba(colors.$bg-primary, .2);
+          font-weight: 500;
+        }
+      }
+
+      &:focus > button, 
+      &:selected > button,
+      & > button:hover {
+        background-color: rgba($color: colors.$bg-secondary, $alpha: .5);
+      }
+    }
+  }
+}

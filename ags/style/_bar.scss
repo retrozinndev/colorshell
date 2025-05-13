@@ -1,0 +1,270 @@
+@use "sass:color";
+@use "./mixins";
+@use "./colors";
+@use "./wal";
+@use "./functions";
+
+.bar-container {
+  @include mixins.reset-props;
+
+  padding: 6px;
+  padding-bottom: 0px;
+
+  label {
+    @include mixins.reset-props;
+
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  // Style widget groups
+  & > .bar-centerbox > * {
+    $radius: 18px;
+    $color-hover: colors.$bg-primary;
+    $padding: 4px;
+
+    background: rgba(colors.$bg-translucent, .6);
+    border-radius: $radius;
+    padding: 0 $padding;
+
+    & > eventbox {
+      &:hover {
+        & > box:not(.workspaces):not(.special-workspaces) {
+          background: $color-hover;
+        }
+      }
+      & > box {
+        border-radius: calc($radius - $padding);
+        margin: $padding 0;
+      }
+
+      & > box:not(.workspaces):not(.special-workspaces) {
+        padding: 0 8px;
+      }
+    }
+
+    & > button,
+    & > box > button {
+      border-radius: calc($radius - $padding);
+      margin: $padding 0;
+      padding: 0 9px;
+
+      &:hover {
+        background: $color-hover;
+      }
+    }
+  }
+
+  .workspaces, .special-workspaces {
+    @include mixins.reset-props;
+    padding: 0 4px;
+
+    & > eventbox {
+      & > box {
+        margin: 3px 0;
+        border-radius: 16px;
+        transition: 80ms linear;
+        min-width: 15px;
+        padding: 0 6px;
+        background: colors.$bg-tertiary;
+
+        & label.id {
+          font-weight: 600;
+          margin-right: 4px;
+          opacity: 0;
+        }
+      }
+
+      &.focus > box {
+        background: colors.$fg-primary;
+        min-width: 32px;
+
+        & label.id {
+          color: colors.$fg-light;
+          margin-right: 0;
+        }
+      }
+
+      & icon {
+        font-size: 16px;
+      }
+
+      &.show label.id {
+        opacity: 1;
+      }
+
+      &:hover > box {
+        box-shadow: inset 0 0 0 100px rgba($color: colors.$fg-primary, $alpha: .2);
+      }
+    }
+
+    &.special-workspaces {
+      & > eventbox {
+        & box {
+          background: wal.$color4;
+        }
+
+        &:hover > box {
+          background: functions.toRGB(color.adjust(wal.$color4, $lightness: -6%));
+        }
+      }
+    }
+  }
+
+  .focused-client {
+    padding: 0 6px;
+
+    & > .icon {
+      margin-right: 6px;
+    }
+
+    & > .text-content {
+      & > .class {
+        font-size: 9px;
+        font-family: monospace;
+        font-weight: 600;
+        color: colors.$fg-disabled;
+        margin-top: 0px;
+      }
+      
+      & > .title {
+        font-size: 12px;
+        font-weight: 500;
+        margin-top: -2px;
+      }
+    }
+  }
+
+  .clock.open > button {
+    background-color: colors.$bg-primary;
+  }
+
+  .media-eventbox {
+    & > .media {
+      background: colors.$bg-primary;
+      padding: 0 8px;
+    }
+
+    &:hover > .media {
+      box-shadow: inset 0 0 0 300px rgba(colors.$fg-primary, .2);
+    }
+
+    & .icon {
+      font-size: 14px;
+    }
+
+    & .media-controls {
+        transition: none;
+        margin-left: 6px;
+        border-top-right-radius: 12px;
+        border-bottom-right-radius: 12px;
+
+        & > button {
+          margin: 4px 1px;
+
+          & label {
+            font-size: 8px;
+          }
+        }
+      }
+
+
+    &.reveal {
+      & .media > box {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+
+    }
+  }
+
+  .tray {
+    padding: 0 6px;
+
+    & .item {
+      all: unset;
+
+      &:hover {
+        background: none;
+      }
+
+      margin: 0 6px;
+      padding: 0;
+
+      &:first-child {
+        margin-left: 0;
+      }
+
+      &:last-child {
+        margin-right: 0;
+      }
+    }
+  }
+
+  .status {
+    @include mixins.reset-props;
+
+    &:hover > box,
+    &.open > box {
+      background: colors.$bg-primary;
+    }
+
+    & > box {
+      padding: 0 8px;
+
+      & > * > * {
+        margin: 0 2px;
+      }
+
+      & trough {
+        min-width: 65px;
+        min-height: 10px;
+        margin-right: 4px;
+      }
+
+      & slider {
+        min-width: 10px;
+        min-height: 10px;
+      }
+
+      & highlight {
+        min-height: 10px;
+      }
+
+      & .nf {
+        margin: {
+          right: 3px;
+          left: 2px;
+        };
+
+        font-size: 12px;
+      }
+
+      & .status-icons {
+        padding: 0 4px;
+
+        & > * {
+          margin: 0 4px;
+        }
+      }
+    }
+  }
+
+  .apps {
+    & > box {
+      min-width: 24px;
+
+      & > icon {
+        transition: 120ms linear;
+        font-size: 14px;
+      }
+    }
+    &.open > box {
+      background: colors.$bg-primary;
+    }
+
+    &:hover icon {
+      -gtk-icon-transform: scale(1.14);
+    }
+  }
+}

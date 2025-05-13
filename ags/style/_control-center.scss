@@ -1,0 +1,264 @@
+@use "sass:color";
+@use "./wal";
+@use "./colors";
+@use "./functions" as funs;
+@use "./mixins";
+
+.control-center-container {
+  @include mixins.reset-props;
+
+  background: colors.$bg-translucent;
+  border-radius: 28px;
+  padding: 20px;
+
+  & > * {
+    margin: 9px 0;
+
+    &:first-child {
+      margin-top: 0;
+    }
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  & .quickactions {
+    & .hostname {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    & .uptime {
+      font-size: 10.1px;
+      font-family: "Symbols Nerd Font Mono";
+      color: colors.$fg-disabled;
+    }
+
+    & .button-row {
+      & button {
+        padding: 7px;
+        margin: {
+          top: 2px;
+          bottom: 2px;
+        };
+      }
+    }
+  }
+
+  & .sliders {
+    padding: 0;
+    & > box {
+      margin: 8px 0;
+
+      &:first-child {
+        margin-top: 0;
+      }
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    label.nf,
+    button.nf label {
+      margin-right: 8px;
+      font-size: 15px;
+    }
+
+    button.more {
+      @include mixins.hover-shadow;
+
+      padding: 4px;
+      border-radius: 16px;
+      margin-left: 6px;
+    }
+
+    & .page .content {
+      & > eventbox > box {
+        margin: 6px 0;
+      }
+
+      & label.name {
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      & trough {
+        margin-right: 10px;
+      }
+
+      & label.sub-header {
+        margin-top: 6px;
+      }
+      
+      & button.default {
+        background: colors.$bg-tertiary;
+      }
+    }
+  }
+
+  & .page {
+    transition: 120ms linear;
+    background: colors.$bg-secondary;
+    padding: 14px;
+    border-radius: 24px;
+
+    & .header {
+      margin-bottom: 12px;
+
+      & .top > .title {
+        font-size: 20px;
+        font-weight: 600;
+      }
+
+      & > .description {
+        font-size: 12px;
+        font-weight: 500;
+        color: colors.$fg-disabled;
+      }
+    }
+
+    & .sub-header {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    & button {
+      @include mixins.hover-shadow;
+
+      padding: 6px;
+      border-radius: 12px;
+
+      & label {
+        font-size: 14px;
+      }
+    }
+
+    & .extra-buttons {
+      margin-left: 2px;
+      & > button {
+        border-radius: 12px;
+      }
+    }
+  }
+}
+
+box.history {
+  margin-top: 10px;
+  background: colors.$bg-translucent;
+  border-radius: 24px;
+  padding: 20px;
+  transition: 120ms linear;
+
+  &.hide {
+    opacity: 0;
+  }
+
+  & .notifications {
+    & .notification {
+      background: colors.$bg-primary;
+    }
+  }
+
+  & > .button-row {
+    margin-top: 12px;
+    & button {
+      padding: 6px;
+
+      & label.nf {
+        font-size: 16px;
+      }
+
+      & label:not(.nf) {
+        font-size: 12px;
+        font-weight: 600;
+      }
+    }
+  }
+}
+
+.tiles-container {
+  @include mixins.reset-props;
+
+  & > flowbox {
+    & > flowboxchild .tile {
+      $radius: 16px;
+
+      &:not(.toggled) > .toggle-button,
+      &:not(.toggled) > button.more {
+        @include mixins.hover-shadow;
+        background: colors.$bg-primary;
+      }
+
+      &.toggled .toggle-button:hover,
+      &.toggled button.more:hover {
+        background: colors.$bg-tertiary;
+      }
+
+      &.toggled > .toggle-button,
+      &.toggled > button.more {
+        background: colors.$bg-secondary;
+      }
+
+      &.has-more > .toggle-button {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+
+      & > .toggle-button {
+        border-radius: $radius;
+
+        & .content {
+          padding: 8px;
+
+          & > .icon {
+            margin-right: 6px;
+          }
+
+          & > .text {
+            & > .title {
+              font-weight: 600;
+              font-size: 15.1px;
+            }
+
+            & > .description {
+              font-size: 12px;
+              color: colors.$fg-disabled;
+              font-weight: 400;
+            }
+          }
+        }
+      }
+      
+      & > button.more {
+        border-top-right-radius: $radius;
+        border-bottom-right-radius: $radius;
+
+        & label {
+          font-size: 16px;
+        }
+      }
+    }
+  }
+}
+
+.tile-pages {
+  & > .page {
+    margin-top: 10px;
+
+    &.bluetooth {
+      button.connected {
+        background: colors.$bg-tertiary;
+      }
+
+      &.paired {
+        margin-bottom: 20px;
+      }
+    }
+  }
+
+  &.revealed {
+    padding-top: 12px;
+  }
+}

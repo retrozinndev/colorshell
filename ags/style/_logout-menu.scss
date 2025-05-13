@@ -1,0 +1,41 @@
+@use "./colors";
+
+.logout-menu {
+  .top {
+    .time {
+      font-size: 128px;
+      font-weight: 900;
+      text-shadow: 1px 1px 2px colors.$bg-translucent;
+    }
+    .date {
+      font-size: 24px;
+      font-weight: 500;
+      text-shadow: 1px 1px 2px colors.$bg-translucent;
+    }
+  }
+  .button-row {
+    margin: 0 150px;
+
+    & > button {
+      & label {
+        font-size: 96px;
+      }
+
+      margin: {
+        left: 4px;
+        right: 4px;
+      }
+      border-radius: 6px;
+
+      &:first-child {
+        border-top-left-radius: 28px;
+        border-bottom-left-radius: 28px;
+      }
+
+      &:last-child {
+        border-top-right-radius: 28px;
+        border-bottom-right-radius: 28px;
+      }
+    }
+  }
+}

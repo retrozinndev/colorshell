@@ -1,0 +1,46 @@
+@use "sass:color";
+@use "./wal";
+@use "./functions" as funs;
+
+.osd {
+  background: funs.toRGB(color.change($color: wal.$background, $alpha: 65%));
+  padding: 14px 16px;
+  border-radius: 20px;
+
+  .icon {
+    margin-right: 10px;
+    font-size: 24px;
+  }
+
+  .volume {
+    margin-top: -6px;
+
+    .device {
+      margin-bottom: 5px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    levelbar {
+      trough block {
+        border-radius: 2px;
+        background: funs.toRGB(color.adjust($color: wal.$color1, $lightness: -36%));
+
+        &.empty {
+          border-radius: 2px;
+        }
+
+        &.filled {
+          padding: 3px 0;
+          background: wal.$color1;
+        }
+      }
+    }
+
+    .value {
+      font-size: 11px;
+      font-weight: 400;
+      padding: 0 4px;
+    }
+  }
+}

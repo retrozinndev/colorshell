@@ -1,8 +1,0 @@
-(defwidget network []
-    (eventbox :class "button network-eventbox"
-              :onclick "hyprctl dispatch exec 'nm-connection-editor'"
-        (box :class "network" 
-          (label :text "${ network_status == 'full' ? ' ' : '󰤭 ' }")
-        )
-    )
-)

@@ -2,5 +2,7 @@
 # Ignore personal configurations (e.g.: hyprpaper.conf, input.conf)
 hypr/hyprpaper.conf
 hypr/input.conf
+hypr/hyprsunset.conf
+*_wal.scss
 
 *.log

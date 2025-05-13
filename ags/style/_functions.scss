@@ -1,0 +1,14 @@
+@use "sass:color";
+
+
+/**
+ * GTK3 only supports sRGB color space, unfortunatly
+ */
+@function toRGB($color) {
+  @return rgba(
+    color.channel($color, "red"), 
+    color.channel($color, "green"), 
+    color.channel($color, "blue"), 
+    color.alpha($color)
+  );
+}

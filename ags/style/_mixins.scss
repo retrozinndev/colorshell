@@ -1,0 +1,33 @@
+@use "sass:color";
+@use "./wal";
+@use "./colors";
+@use "./functions" as funs;
+
+@mixin reset-props {
+  all: unset;
+  transition: 120ms linear;
+  font-family: "Adwaita Sans", "Cantarell", "Noto Sans", 
+    "Noto Sans CJK JP", "Noto Sans CJK KR", 
+    "Noto Sans CJK HK", "Noto Sans CJK SC", 
+    "Noto Sans CJK TC", sans-serif, 
+    "Symbols Nerd Font Mono";
+  color: colors.$fg-primary;
+}
+
+@mixin hover-shadow {
+  &:hover {
+    box-shadow: inset 0 0 0 500px rgba(colors.$fg-primary, .1);
+  }
+}
+
+@mixin hover-shadow2 {
+  &:hover {
+    box-shadow: inset 0 0 0 500px rgba(colors.$fg-primary, .2);
+  }
+}
+
+@mixin hover-shadow3 {
+  &:hover {
+    box-shadow: inset 0 0 0 500px rgba(colors.$fg-primary, .3);
+  }
+}

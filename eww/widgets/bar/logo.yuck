@@ -1,5 +1,0 @@
-(defwidget logo []
-    (button :class "distro-logo"
-            :onclick "hyprctl dispatch exec anyrun"
-    " ")
-)

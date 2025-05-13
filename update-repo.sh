@@ -1,46 +1,11 @@
 #!/usr/bin/bash
 
-HYPRLAND_DOTS_DIRS=("hypr" "eww" "anyrun" "kitty" "wal" "fastfetch" "mako")
-WALLPAPERS_DIR="$HOME/wallpapers"
-
-printf "\n"
-
-echo "Running this script may override all data in current repo with current user dotfiles."
-echo "This script is intended to be used by repository owner(retrozinndev)"
-
-printf "\n"
-
-echo "Please run this script in it's current directory to avoid problems."
-echo "Tip: Press Ctrl + C to stop script at any time"
-
-printf "\n"
-
-Send_log() {
-    output_color=""
-
-    if [[ $1 =~ ^inf(o)$ ]]
-    then
-        output_color="\e[34m"
-    fi
-
-    if [[ $1 =~ ^warn(ing)$ ]]
-    then
-        output_color="\e[33m"
-    fi
-
-    if [[ $1 =~ ^err(or)$ ]]
-    then
-        output_color="\e[31m"
-    fi
-
-    echo -e "[${output_color}$1\e[0m] $2"
-}
+source ./utils.sh
 
 Check_current_dir() {
-    if ! [[ -f ./update-repo.sh ]]
-    then
-        Send_log "warning" "Looks like you're not in the repo dir! Please run this script from the repo to avoid problems."
-        printf "Quitting...\n"
+    if ! [[ -f ./utils.sh ]]; then
+        Send_log warn "Looks like you're not in the repository directory!\nPlease run this script from the repo to avoid problems."
+        Send_log "Exiting"
         sleep .5
         exit 1
     fi
@@ -48,8 +13,7 @@ Check_current_dir() {
 
 Clean_local() {
     Send_log "info" "Cleaning current repo dotfiles..."
-    # Modify dirs here when adding something new:
-    for dir in ${HYPRLAND_DOTS_DIRS[@]}; do
+    for dir in ${config_dirs[@]}; do
         if [[ -d "./$dir" ]]; then
             rm -rf ./$dir
         fi
@@ -61,30 +25,22 @@ Clean_local() {
     echo "Done cleaning."
 }
 
-Check_existance() {
-    if [[ -d "./$1" ]]; then
-        return 0
-    fi
-
-    return 1
-}
-
 Update_local() {
-    for dotsDir in ${HYPRLAND_DOTS_DIRS[@]}; do
-        if [[ -d "$HOME/.config/$dotsDir" ]]; then 
-            Send_log "info" "Trying to copy ${dotsDir^}..."
-            cp -r $HOME/.config/$dotsDir ./$dotsDir
+    for dir in ${config_dirs[@]}; do
+        if [[ -d "$XDG_CONFIG_HOME/$dir" ]]; then 
+            Send_log "Copying ${dir^}"
+            cp -r $XDG_CONFIG_HOME/$dir ./$dir
         else
-            Send_log "warn" "Looks like the ~/.config/$dotsDir dir is in fault! Skipping it..."
+            Send_log "warn" "Looks like the ~/.config/$dir dir is in fault! Skipping it..."
         fi
     done
 
-    if [[ -d $WALLPAPERS_DIR ]]; then
-        Send_log "info" "Copying wallpapers"
+    if [[ -d "$HOME/wallpapers" ]]; then
+        Send_log "Copying wallpapers"
         mkdir -p ./wallpapers
-        cp -rf $WALLPAPERS_DIR/* ./wallpapers
+        cp -rf $HOME/wallpapers/* ./wallpapers
     else
-        Send_log "warn" "Wallpapers dir could not be found in $HOME, skipping..."
+        Send_log warn "Wallpapers dir could not be found in $HOME, skipping..."
     fi
 
     printf "\nDone updating local repo!\n"
@@ -92,7 +48,7 @@ Update_local() {
 
 Update_remote() {
     echo "Git status:"
-    /usr/bin/env git status
+    git status
     echo "Please type one of the dotfiles you want to push now(only one dir):"
     ls --color=auto -d -- */
     printf "Directory: "
@@ -127,35 +83,40 @@ Update_remote() {
 
 Check_current_dir
 
-echo "Starting in 3... "
-sleep 1s
-echo "2..."
-sleep 1s
-echo "1..."
-sleep 1s
+Print_header
+
+printf "\n"
+echo "!!WARNING!! Running this script may override all data in current repo with host configurations."
+echo "This script is intended to be used only by retrozinndev/Hyprland-Dots repo owner"
+printf "\n"
+
+echo "Please run this script in it's current directory to avoid problems."
+echo "Tip: Press Ctrl + C to stop script at any time"
+
+printf "\n"
+
+echo -n "Do you want to update local repository with host configurations? [y/n] "
+read answer
+if ! [[ $answer =~ y ]]; then
+    Send_log "Exiting"
+    exit 1
+fi
 
 printf "\n"
 
 Clean_local
-
-# Updates local repository with current user dotfiles
 Update_local
 
-echo -n "Would you like to push selected changes to remote? (You will be prompted to select folders) [y/n] "
-read push_changes_to_remote
+echo -n "Would you like to commit to remote? (You will be prompted for each directory and commit messages) [y/n] "
+read answer
 
-if [[ $push_changes_to_remote =~ y ]]
-then
+if [[ $answer =~ y ]]; then
     Update_remote
-    echo "Looks like it's done! Bye bye, have a great day!"
+    echo "Looks like it's done! Have a great day!"
 else
-    echo "Ok, work has been finished here! Bye bye!"
+    echo "Ok, work's finished here! Have a great day!"
 fi
 
-if [[ -f "/usr/bin/git" ]]
-then
-    printf "\nGit status: \n"
-    git status
-fi
+env git status
 
 exit 0
