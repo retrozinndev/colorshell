@@ -5,12 +5,12 @@
 # ----------
 # Made by retrozinndev (João Dias)
 # Licensed under the MIT License
-# From: https://github.com/retrozinndev/Hyprland-dots
+# From: https://github.com/retrozinndev/colorshell
 
 
 # -------------
 # Array containing directory names to be used by 
-# retrozinndev/Hyprland-Dots install and update
+# retrozinndev/colorshell install and update
 # scripts.
 # -------------
 config_dirs=(
@@ -57,7 +57,7 @@ function Send_log() {
 }
 
 # -------------
-# Prints retrozinndev/Hyprland-Dots installation 
+# Prints retrozinndev/colorshell installation 
 # script's welcome header on stdout
 # -------------
 function Print_header() {
