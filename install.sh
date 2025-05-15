@@ -49,8 +49,9 @@ if [[ $1 == "dots" ]] || [[ $input =~ "y" ]]; then
         dest=$XDG_CONFIG_HOME/$dir
 
         echo "-> Installing $dir in $dest"
+        mkdir -p "$dest" # create parents
+
         if [[ -f "./$dir" ]]; then
-            mkdir -p "$dest" # create parents
             rm -f "$dest" # delete unused directory
             cp -f "./$dir" "$dest" # copy actual file
         else
