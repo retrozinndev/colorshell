@@ -25,7 +25,7 @@ function Apply_wallpapers() {
 }
 
 for dir in ${config_dirs[@]}; do
-    if ! [[ -d ./$dir ]]; then
+    if [[ ! -d "./$dir" ]] || [[ ! -f "./$dir" ]]; then
         Send_log error "$dir is in fault, or you didn't run this script in its directory!"
         exit 1
     fi
