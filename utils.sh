@@ -14,10 +14,13 @@
 # scripts.
 # -------------
 config_dirs=(
-    "hypr" 
+    "hypr/scripts" 
+    "hypr/shell" 
+    "hypr/hyprlock.conf" 
+    "hypr/hyprland.conf" 
+    "hypr/hypridle.conf" 
+    "kitty/kitty.conf" 
     "ags" 
-    "kitty" 
-    "wal" 
 )
 
 # -------------
