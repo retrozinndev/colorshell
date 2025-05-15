@@ -27,7 +27,7 @@ You can select any of the images inside `~/wallpapers` by pressing <kbd>SUPER</k
 Control Center and clicking in the image icon on top.
 
 ### ℹ️ Source
-None of the wallpapers available in this repo are made by me! You can find sources inside the [`WALLPAPERS.md`](https://github.com/retrozinndev/colorshell/blob/ryo/WALLPAPERS.md) file. (it took me a lot of time to make this sources list 😭)
+None of the wallpapers available in this repo are made by me! You can find sources inside the [`WALLPAPERS.md`](/WALLPAPERS.md) file. (it took me a lot of time to make this sources list 😭)
 
 ### ✔️ What's included in this shell
 - Pretty Top-Bar
