@@ -7,7 +7,7 @@
 # --------------
 # Licensed under the MIT License
 # Made by retrozinndev (João Dias)
-# From https://github.com/retrozinndev/Hyprland-Dots
+# From https://github.com/retrozinndev/colorshell
 
 [[ -z $XDG_CONFIG_HOME ]] && XDG_CONFIG_HOME="$HOME/.config"
 

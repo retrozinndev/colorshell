@@ -7,7 +7,7 @@
 # --------------
 # Licensed under the MIT License
 # Made by retrozinndev (João Dias)
-# From https://github.com/retrozinndev/Hyprland-Dots
+# From https://github.com/retrozinndev/colorshell
 
 style="lighten" # lighten / darken
 dmenu=$(sh "$XDG_CONFIG_HOME/hypr/scripts/get-dmenu.sh")

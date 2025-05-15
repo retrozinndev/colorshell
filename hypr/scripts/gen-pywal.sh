@@ -5,7 +5,7 @@
 # ----------
 # Licensed under the MIT License
 # Made by retrozinndev (João Dias)
-# From https://github.com/retrozinndev/Hyprland-Dots
+# From https://github.com/retrozinndev/colorshell
 
 if ! [[ -f "$HOME/.config/hypr/hyprpaper.conf" ]]; then
     notify-send -a "Wallpaper" "Couldn't load" "Wallpaper file not found! Please check for the wallpaper: $wallpaper."

@@ -5,7 +5,7 @@
 # --------------
 # Licensed under the MIT License
 # Made by retrozinndev (João Dias)
-# From https://github.com/retrozinndev/Hyprland-Dots
+# From https://github.com/retrozinndev/colorshell
 
 
 # exit slurp and quit if slurp(region selection) is running
