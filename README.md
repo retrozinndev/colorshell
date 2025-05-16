@@ -10,10 +10,10 @@ This repository includes a desktop shell made with [GTK], using [Astal] and [AGS
 It really took me a lot of time to make this, so please star the repo if you like it! :star:
 
 ## 🌄 Screenshots
-![Kitty](repo/shots/desktop.png)
-![Widgets](repo/shots/widgets.png)
-![Runner](repo/shots/runner.png)
-![Browser + Neovim](repo/shots/browser-neovim.png)
+![Kitty](repo/shots/kitty.png)
+![Widgets](repo/shots/control-center-runner.png)
+![Runner](repo/shots/clock-window.png)
+![Browser](repo/shots/browser.png)
 
 ## 🎨 Colors
 All the shell colors are dynamically generated from your wallpaper! 
@@ -60,11 +60,11 @@ None of the wallpapers available in this repo are made by me! You can find sourc
   - Wallpapers(`#`): Search and select to change wallpaper
   - Media(`:`): Control playing media
   - Search(`?`): Search something on the internet with your default browser
-- Gnome-like application runner(the fullscreen one)
+- Gnome-like application list
 - Support for your multiple monitors
 
 ## ⌨️ Binds
-You can see pre-configured bindings in the [Wiki/Bindings] page!
+You can see default bindings and usage information on the [Wiki/Usage] page!
 
 ## 🌐 Internationalization
 Colorshell supports i18n! The shell automatically matches the shell language with the system's, if available. <br>
@@ -119,7 +119,6 @@ Thanks to everyone who starred my project! 💖
 [wiki/dependencies]: https://github.com/retrozinndev/colorshell/wiki/Dependencies
 [wiki/usage]: https://github.com/retrozinndev/colorshell/wiki/Usage
 [wiki/installation]: https://github.com/retrozinndev/colorshell/wiki/Installation
-[wiki/bindings]: https://github.com/retrozinndev/colorshell/wiki/Bindings
 
 <!-- Actions -->
 [new issue]: https://github.com/retrozinndev/colorshell/issues/new
