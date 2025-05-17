@@ -54,11 +54,11 @@ class Pages extends Widget.Revealer {
             return;
         }
 
-        if(newPage) this.open(newPage);
+        newPage && this.open(newPage);
     }
 
     open(newPage: Page, onOpened?: () => void) {
-        if(this.isOpen) return;
+        if(this.get_child()) return;
 
         this.page = newPage;
         this.add(newPage);
@@ -67,7 +67,7 @@ class Pages extends Widget.Revealer {
     }
 
     close(onClosed?: () => void): void {
-        if(!this.isOpen) return;
+        if(!this.get_child()) return;
 
         this.revealChild = false;
         timeout(this.transitionDuration, () => {
