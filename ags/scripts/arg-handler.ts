@@ -18,7 +18,7 @@ export function handleArguments(request: string): any {
 
         case "help":
         case "h":
-            return getHelp(); // stop it, get some help
+            return getHelp();
 
         case "volume":
             return handleVolumeArgs(args);
