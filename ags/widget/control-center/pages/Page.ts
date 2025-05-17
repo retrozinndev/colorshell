@@ -99,14 +99,20 @@ export function PageButton(props: {
     title: string | Binding<string>;
     endWidget?: Gtk.Widget | Binding<Gtk.Widget>;
     extraButtons?: Array<Widget.Button> | Binding<Array<Gtk.Widget>>;
+    onDestroy?: (self: Widget.Box) => void;
     onClick?: (self: Widget.Button) => void;
+    tooltipText?: string | Binding<string>;
+    tooltipMarkup?: string | Binding<string>;
 }): Gtk.Widget {
     return new Widget.Box({
+        onDestroy: props.onDestroy,
         children: [
             new Widget.Button({
                 onClick: props.onClick,
                 className: props.className,
                 hexpand: true,
+                tooltipText: props.tooltipText,
+                tooltipMarkup: props.tooltipMarkup,
                 child: new Widget.Box({
                     className: "page-button",
                     orientation: Gtk.Orientation.HORIZONTAL,
@@ -135,7 +141,7 @@ export function PageButton(props: {
                 } as Widget.BoxProps)
             } as Widget.ButtonProps),
             new Widget.Box({
-                className: "button-row extra-buttons",
+                className: "extra-buttons button-row",
                 visible: (props.extraButtons instanceof Binding) ? 
                     props.extraButtons.as(extra => extra.length > 0)
                 : (props.extraButtons ? props.extraButtons.length > 0 : false),
