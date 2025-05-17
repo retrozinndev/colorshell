@@ -8,7 +8,8 @@ const hyprland = AstalHyprland.get_default();
 export function FocusedClient(): Gtk.Widget {
     return new Widget.Box({
         className: "focused-client",
-        visible: bind(hyprland, "focusedClient").as(Boolean),
+        visible: bind(hyprland, "focusedClient").as(fClient =>
+            !fClient ? false : (fClient?.initialClass == null ? false : true)),
         children: bind(hyprland, "focusedClient").as(focusedClient => focusedClient ? [
             new Widget.Icon({
                 className: "icon",
@@ -29,9 +30,10 @@ export function FocusedClient(): Gtk.Widget {
                         visible: bind(focusedClient, "class").as(Boolean),
                         maxWidthChars: 55,
                         truncate: true,
-                        tooltipText: bind(focusedClient, "class").as((clientClass: string) => 
-                            clientClass.length > 55 ? clientClass : ""),
-                        label: bind(focusedClient, "class")
+                        tooltipText: bind(focusedClient, "class").as(clientClass => 
+                            clientClass ?? ""),
+                        label: bind(focusedClient, "class").as(clientClass => 
+                            clientClass ?? "no_class")
                     } as Widget.LabelProps),
                     new Widget.Label({
                         className: "title",
@@ -40,8 +42,9 @@ export function FocusedClient(): Gtk.Widget {
                         visible: bind(focusedClient, "title").as(Boolean),
                         truncate: true,
                         tooltipText: bind(focusedClient, "title").as((clientTitle: string) => 
-                            clientTitle.length > 55 ? clientTitle : ""),
-                        label: bind(focusedClient, "title")
+                            clientTitle ?? ""),
+                        label: bind(focusedClient, "title").as(title => 
+                            title ?? "")
                     } as Widget.LabelProps)
                 ]
             })
