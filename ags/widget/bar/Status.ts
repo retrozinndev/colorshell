@@ -113,7 +113,31 @@ function StatusIcons(): Gtk.Widget {
 
     return new Widget.Box({
         className: "status-icons",
+        spacing: 3,
         children: [
+            new Widget.Revealer({
+                revealChild: bind(Recording.getDefault(), "recording"),
+                transitionDuration: 500,
+                transitionType: Gtk.RevealerTransitionType.SLIDE_LEFT,
+                onDestroy: () => recordingTimer.drop(),
+                child: new Widget.EventBox({
+                    onClick: () => Recording.getDefault().recording &&
+                        Recording.getDefault().stopRecording(),
+                    tooltipText: tr("control_center.tiles.recording.enabled_desc"),
+                    child: new Widget.Box({
+                        children: [
+                            new Widget.Label({
+                                className: "recording nf state",
+                                label: '󰻃'
+                            } as Widget.LabelProps),
+                            new Widget.Label({
+                                className: "rec-time",
+                                label: recordingTimer()
+                            } as Widget.LabelProps)
+                        ]
+                    } as Widget.BoxProps)
+                } as Widget.EventBoxProps)
+            } as Widget.RevealerProps),
             new Widget.Label({
                 className: "bluetooth nf state",
                 visible: bind(AstalBluetooth.get_default(), "adapter").as(Boolean),
@@ -125,35 +149,23 @@ function StatusIcons(): Gtk.Widget {
                 label: networkIcon(),
                 onDestroy: () => networkIcon.drop()
             } as Widget.LabelProps),
-            new Widget.Revealer({
-                revealChild: bind(Recording.getDefault(), "recording"),
-                transitionDuration: 500,
-                transitionType: Gtk.RevealerTransitionType.SLIDE_LEFT,
-                setup: (revealer) => revealer.add(
-                    new Widget.EventBox({
-                        onClick: () => Recording.getDefault().recording &&
-                            Recording.getDefault().stopRecording(),
-                        tooltipText: tr("control_center.tiles.recording.enabled_desc"),
-                        child: new Widget.Box({
-                            children: [
-                                new Widget.Label({
-                                    className: "recording nf state",
-                                    label: '󰻃'
-                                } as Widget.LabelProps),
-                                new Widget.Label({
-                                    className: "rec-time",
-                                    label: recordingTimer()
-                                } as Widget.LabelProps)
-                            ]
-                        } as Widget.BoxProps)
-                    } as Widget.EventBoxProps)
-                )
-            } as Widget.RevealerProps),
-            new Widget.Label({
-                className: "bell nf state",
-                label: bind(Notifications.getDefault().getNotifd(), "dontDisturb").as((dnd: boolean) => 
-                    dnd ? "󰂠" : "󰂚")
-            } as Widget.LabelProps),
+            new Widget.Box({
+                children: [
+                    new Widget.Label({
+                        className: "bell nf state",
+                        label: bind(Notifications.getDefault().getNotifd(), "dontDisturb").as((dnd: boolean) => 
+                            dnd ? "󰂠" : "󰂚")
+                    } as Widget.LabelProps),
+                    new Widget.Label({
+                        className: "notification-count nf",
+                        xalign: 0,
+                        yalign: 0.25,
+                        visible: bind(Notifications.getDefault(), "history").as(history => 
+                            history.length > 0),
+                        label: '󰧞'
+                    } as Widget.LabelProps)
+                ]
+            } as Widget.BoxProps)
         ]
     } as Widget.BoxProps);
 }

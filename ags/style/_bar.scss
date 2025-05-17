@@ -212,25 +212,6 @@
     & > box {
       padding: 0 8px;
 
-      & > * > * {
-        margin: 0 2px;
-      }
-
-      & trough {
-        min-width: 65px;
-        min-height: 10px;
-        margin-right: 4px;
-      }
-
-      & slider {
-        min-width: 10px;
-        min-height: 10px;
-      }
-
-      & highlight {
-        min-height: 10px;
-      }
-
       & .nf {
         margin: {
           right: 3px;
@@ -241,10 +222,12 @@
       }
 
       & .status-icons {
-        padding: 0 4px;
+        padding-left: 4px;
 
-        & > * {
-          margin: 0 4px;
+        & .notification-count {
+          font-size: 5px;
+          margin-left: -3px;
+          margin-top: 1px;
         }
       }
     }
