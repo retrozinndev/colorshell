@@ -36,6 +36,8 @@ export function getAppsByName(appName: string): (Array<AstalApps.Application>|un
 }
 
 export function getIconByAppName(appName: string): (string|undefined) {
+    if(!appName) return undefined;
+
     if(Astal.Icon.lookup_icon(appName))
        return appName;
 
@@ -54,6 +56,8 @@ export function getIconByAppName(appName: string): (string|undefined) {
 }
 
 export function getAppIcon(app: (string|AstalApps.Application)): (string|undefined) {
+    if(!app) return undefined;
+
     if(typeof app === "string")
         return getIconByAppName(app);
 
