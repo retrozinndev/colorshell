@@ -3,6 +3,9 @@ import { Recording } from "../../../scripts/recording";
 import { bind, Variable } from "astal";
 import { tr } from "../../../i18n/intl";
 import { getDateTime } from "../../../scripts/time";
+import { isInstalled } from "../../../scripts/utils";
+
+const wfRecorderInstalled = isInstalled("wf-recorder");
 
 export const TileRecording = Tile({
     title: tr("control_center.tiles.recording.title") || "Screen Recording",
@@ -25,6 +28,7 @@ export const TileRecording = Tile({
             }:${ seconds < 10 ? `0${seconds}` : seconds }`;
     })(),
     icon: "󰻂",
+    visible: wfRecorderInstalled,
     onToggledOff: () => Recording.getDefault().stopRecording(),
     onToggledOn: () => Recording.getDefault().startRecording(),
     toggleState: bind(Recording.getDefault(), "recording"),
