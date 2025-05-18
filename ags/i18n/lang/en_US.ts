@@ -12,6 +12,8 @@ export default {
     disconnected: "Disconnected",
     unknown: "Unknown",
     connecting: "Connecting",
+    none: "None",
+    limited: "Limited",
     apps: "Applications",
 
     connect: "Connect",

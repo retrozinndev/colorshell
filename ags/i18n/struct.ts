@@ -8,6 +8,8 @@ export type i18nStruct = {
     disconnected: string,
     connecting: string,
     unknown: string,
+    none: string,
+    limited: string,
 
     devices: string,
     others: string,

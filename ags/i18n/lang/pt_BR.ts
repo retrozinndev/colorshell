@@ -12,6 +12,9 @@ export default {
     disconnected: "Desconectado",
     unknown: "Desconhecido",
     connecting: "Conectando",
+    limited: "Limitado",
+    none: "Nenhum",
+
     disconnect: "Desconectar",
     connect: "Conectar",
 
