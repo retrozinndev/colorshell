@@ -148,7 +148,7 @@ export function openRunner(props?: RunnerProps, placeholder?: () => Array<Result
         primary_icon_name: "system-search"
     } as Widget.EntryProps);
 
-    const defaultHeight = 300;
+    const defaultHeight = 420;
 
     const resultsList: Gtk.ListBox = new Gtk.ListBox({
         visible: true,
