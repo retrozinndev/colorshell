@@ -81,7 +81,7 @@ Update_remote() {
             echo -n "Done! Do you want to push? If not, you'll go back to file selection [y/n] "
             read push_changes
 
-            if [[ $push_changes =~ ^y(es) ]]; then
+            if [[ $push_changes =~ "y" ]]; then
                 git push
                 echo "Done pushing!!"
             else
