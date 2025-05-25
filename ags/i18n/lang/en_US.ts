@@ -16,6 +16,8 @@ export default {
     limited: "Limited",
     apps: "Applications",
 
+    clear: "Clear",
+
     connect: "Connect",
     disconnect: "Disconnect",
 

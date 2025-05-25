@@ -18,6 +18,7 @@ export type i18nStruct = {
     connect: string,
 
     apps: string;
+    clear: string;
 
     control_center: {
         tiles: {

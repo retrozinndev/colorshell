@@ -19,6 +19,7 @@ export default {
     connect: "Conectar",
 
     apps: "Aplicativos",
+    clear: "Limpar",
 
     control_center: {
         tiles: {
