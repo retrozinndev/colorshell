@@ -23,15 +23,16 @@ export const BluetoothPage: (() => Page) = () => new Page({
                 : tr("control_center.pages.bluetooth.stop_discovering")),
             onClick: () => {
                 if(AstalBluetooth.get_default().adapter.discovering) {
-                    stopBluetoothDevicesWatch();
+                    AstalBluetooth.get_default().adapter.stop_discovery();
                     return;
                 }
 
-                watchNewDevices();
+                AstalBluetooth.get_default().adapter.start_discovery();
             }
         } as Widget.ButtonProps)
     ],
-    onClose: () => stopBluetoothDevicesWatch(),
+    onClose: () => AstalBluetooth.get_default().adapter.discovering && 
+        AstalBluetooth.get_default().adapter.stop_discovery(),
     spacing: 2,
     children: [
         new Widget.Box({
@@ -63,10 +64,11 @@ export const BluetoothPage: (() => Page) = () => new Page({
                 new Widget.Box({
                     className: "paired",
                     orientation: Gtk.Orientation.VERTICAL,
+                    spacing: 2,
                     visible: bind(AstalBluetooth.get_default(), "devices").as((devs) => 
                         devs.filter(dev => dev.paired || dev.connected).length > 0),
-                    children: bind(AstalBluetooth.get_default(), "devices").as((devs: Array<AstalBluetooth.Device>) => {
-                        const connectedDevices = devs.filter((dev: AstalBluetooth.Device) => dev.connected || dev.paired)
+                    children: bind(AstalBluetooth.get_default(), "devices").as((devs) => {
+                        const connectedDevices = devs.filter((dev) => dev.connected || dev.paired)
 
                         return [
                             new Widget.Label({
@@ -74,17 +76,18 @@ export const BluetoothPage: (() => Page) = () => new Page({
                                 label: tr("control_center.pages.bluetooth.paired_devices"),
                                 xalign: 0,
                             } as Widget.LabelProps),
-                            ...connectedDevices.map((dev: AstalBluetooth.Device) => DeviceWidget(dev))
+                            ...connectedDevices.map((dev) => DeviceWidget(dev))
                         ]
                     })
                 } as Widget.BoxProps),
                 new Widget.Box({
                     className: "discovered",
                     orientation: Gtk.Orientation.VERTICAL,
+                    spacing: 2,
                     visible: bind(AstalBluetooth.get_default(), "devices").as((devs) => 
                         devs.filter((dev) => !dev.connected && !dev.paired).length > 0),
-                    children: bind(AstalBluetooth.get_default(), "devices").as((devices: Array<AstalBluetooth.Device>) => {
-                        const discoveredDevices = devices.filter((dev: AstalBluetooth.Device) => !dev.connected && !dev.paired);
+                    children: bind(AstalBluetooth.get_default(), "devices").as((devices) => {
+                        const discoveredDevices = devices.filter((dev) => !dev.connected && !dev.paired);
 
                         return [
                             new Widget.Label({
@@ -179,14 +182,4 @@ function DeviceWidget(dev: AstalBluetooth.Device): Gtk.Widget {
         } as Widget.BoxProps),
         extraButtons: devActions()
     });
-}
-
-function watchNewDevices(): void {
-    !AstalBluetooth.get_default().adapter.discovering && 
-        AstalBluetooth.get_default().adapter.start_discovery();
-}
-
-export function stopBluetoothDevicesWatch(): void {
-    AstalBluetooth.get_default().adapter.discovering && 
-        AstalBluetooth.get_default().adapter.stop_discovery();
 }
