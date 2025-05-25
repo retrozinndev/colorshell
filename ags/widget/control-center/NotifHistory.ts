@@ -2,6 +2,7 @@ import { bind } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
 import { HistoryNotification, Notifications } from "../../scripts/notifications";
 import { NotificationWidget } from "../Notification";
+import { tr } from "../../i18n/intl";
 
 
 export const NotifHistory = () => {
@@ -52,7 +53,7 @@ export const NotifHistory = () => {
                                     label: "󰎟"
                                 } as Widget.LabelProps),
                                 new Widget.Label({
-                                    label: "Clear"
+                                    label: tr("clear")
                                 } as Widget.LabelProps)
                             ]
                         } as Widget.BoxProps),
