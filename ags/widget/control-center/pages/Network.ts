@@ -3,9 +3,8 @@ import { Page, PageButton } from "./Page";
 import AstalNetwork from "gi://AstalNetwork";
 import { bind } from "astal";
 import NM from "gi://NM";
-import { Separator, SeparatorProps } from "../../Separator";
 import { Windows } from "../../../windows";
-import AstalHyprland from "gi://AstalHyprland?version=0.1";
+import AstalHyprland from "gi://AstalHyprland";
 import { tr } from "../../../i18n/intl";
 
 export const PageNetwork: (() => Page) = () => new Page({
@@ -23,6 +22,13 @@ export const PageNetwork: (() => Page) = () => new Page({
             onClick: () => AstalNetwork.get_default().wifi.scan()
         } as Widget.ButtonProps)
     ],
+    bottomButtons: [{
+        title: tr("control_center.pages.more_settings"),
+        onClick: () => {
+            Windows.close("control-center");
+            AstalHyprland.get_default().dispatch("exec", "[animationstyle gnomed] nm-connection-editor");
+        }
+    }],
     children: [
         new Widget.Box({
             className: "devices",
@@ -93,20 +99,7 @@ export const PageNetwork: (() => Page) = () => new Page({
                         ]
                     } as Widget.BoxProps)
                 } as Widget.ButtonProps))) : [],
-        } as Widget.BoxProps),
-        Separator({
-            orientation: Gtk.Orientation.VERTICAL,
-            alpha: .2,
-            size: .2
-        } as SeparatorProps),
-        new Widget.Button({
-            label: tr("control_center.pages.more_settings"),
-            setup: (self) => self.set_alignment(0, 0.5),
-            onClick: () => {
-                Windows.close("control-center");
-                AstalHyprland.get_default().dispatch("exec", "[animationstyle gnomed] nm-connection-editor");
-            }
-        } as Widget.ButtonProps)
+        } as Widget.BoxProps)
     ]
 });
 

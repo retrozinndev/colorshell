@@ -121,7 +121,7 @@
     & .sub-header {
       font-size: 14px;
       font-weight: 500;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
 
     & button {
@@ -132,6 +132,19 @@
 
       & label {
         font-size: 14px;
+      }
+    }
+
+    & .bottom-buttons button {
+      & label.title {
+        font-size: 14px;
+        font-weight: 500;
+      }
+      & label.description {
+        font-size: 10px;
+        margin-top: -1px;
+        font-weight: 400;
+        color: colors.$fg-disabled;
       }
     }
 
@@ -250,10 +263,6 @@ box.history {
     &.bluetooth {
       button.connected {
         background: colors.$bg-tertiary;
-      }
-
-      &.paired {
-        margin-bottom: 20px;
       }
     }
   }

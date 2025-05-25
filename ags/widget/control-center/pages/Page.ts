@@ -1,32 +1,44 @@
 import { Binding, register } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
+import { Separator, SeparatorProps } from "../../Separator";
 
 export type PageProps = {
     setup?: () => void;
     onClose?: () => void;
-    onOpen?: () => void;
     id: string;
     className?: string | Binding<string>;
     title: string | Binding<string>;
     description?: string | Binding<string>;
     headerButtons?: Array<Gtk.Button> | Binding<Array<Gtk.Button>>;
+    bottomButtons?: Array<BottomButton> | Binding<Array<BottomButton>>;
     orientation?: Gtk.Orientation | Binding<Gtk.Orientation>;
     spacing?: number;
     child?: Gtk.Widget | Binding<Gtk.Widget>;
     children?: Array<Gtk.Widget> | Binding<Array<Gtk.Widget>>;
 };
 
+export type BottomButton = {
+    title: string | Binding<string>;
+    description?: string | Binding<string>;
+    tooltipText?: string | Binding<string>;
+    tooltipMarkup?: string | Binding<string>;
+    onClick?: () => void;
+};
+
 export { Page };
 
 @register({ GTypeName: "Page" })
 class Page extends Widget.Box {
-    readonly #id: string;
+    readonly #id: string | number;
+    readonly bottomButtons?: Array<BottomButton>;
+
     #title: string | Binding<string>;
-    #description: string | undefined | Binding<string>;
+    #description?: string | Binding<string>;
 
     public get title() { return this.#title; }
     public get description() { return this.#description; }
     public get id() { return this.#id; }
+    public onClose?: () => void;
 
     constructor(props: PageProps) {
         super({
@@ -35,6 +47,7 @@ class Page extends Widget.Box {
             className: (props.className instanceof Binding) ? 
                 props.className.as((clsName) => `page ${ clsName ?? "" }`)
             : `page ${props.className ?? ""}`,
+            setup: props.setup,
             children: [
                 new Widget.Box({
                     className: "header",
@@ -83,6 +96,70 @@ class Page extends Widget.Box {
                     setup: props.setup,
                     child: props.child,
                     children: props.children
+                } as Widget.BoxProps),
+                Separator({
+                    alpha: .2,
+                    spacing: 6,
+                    orientation: Gtk.Orientation.VERTICAL,
+                    visible: (props.bottomButtons instanceof Binding) ? 
+                        props.bottomButtons.as(buttons => buttons.length > 0)
+                    : (!props.bottomButtons ? false : props.bottomButtons.length > 0)
+                } as SeparatorProps),
+                new Widget.Box({
+                    className: "bottom-buttons",
+                    orientation: Gtk.Orientation.VERTICAL,
+                    visible: (props.bottomButtons instanceof Binding) ? 
+                        props.bottomButtons.as(buttons => buttons.length > 0)
+                    : (!props.bottomButtons ? false : props.bottomButtons.length > 0),
+                    spacing: 2,
+                    children: (props.bottomButtons instanceof Binding) ?
+                        props.bottomButtons.as(buttons => buttons.map(button => 
+                                new Widget.Button({
+                                    onClicked: button.onClick,
+                                    tooltipMarkup: button.tooltipMarkup,
+                                    tooltipText: button.tooltipText,
+                                    child: new Widget.Box({
+                                        orientation: Gtk.Orientation.VERTICAL,
+                                        children: [
+                                            new Widget.Label({
+                                                className: "title",
+                                                label: button.title,
+                                                xalign: 0
+                                            } as Widget.LabelProps),
+                                            new Widget.Label({
+                                                className: "description",
+                                                label: button.description,
+                                                visible: Boolean(button.description),
+                                                xalign: 0
+                                            } as Widget.LabelProps)
+                                        ]
+                                    } as Widget.BoxProps)
+                                } as Widget.ButtonProps)
+                            )
+                        )
+                    : (!props.bottomButtons ? [] : props.bottomButtons.map(button => 
+                        new Widget.Button({
+                            onClicked: button.onClick,
+                            tooltipMarkup: button.tooltipMarkup,
+                            tooltipText: button.tooltipText,
+                            child: new Widget.Box({
+                                orientation: Gtk.Orientation.VERTICAL,
+                                children: [
+                                    new Widget.Label({
+                                        className: "title",
+                                        label: button.title,
+                                        xalign: 0
+                                    } as Widget.LabelProps),
+                                    new Widget.Label({
+                                        className: "description",
+                                        label: button.description,
+                                        visible: Boolean(button.description),
+                                        xalign: 0
+                                    } as Widget.LabelProps)
+                                ]
+                            } as Widget.BoxProps)
+                        } as Widget.ButtonProps)
+                    ))
                 } as Widget.BoxProps)
             ]
         });
@@ -90,6 +167,9 @@ class Page extends Widget.Box {
         this.#id = props.id;
         this.#title = props.title;
         this.#description = props.description;
+
+        if(props.onClose)
+            this.onClose = props.onClose;
     }
 }
 

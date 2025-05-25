@@ -2,7 +2,6 @@ import { bind, Variable } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
 import AstalBluetooth from "gi://AstalBluetooth";
 import { Page, PageButton } from "./Page";
-import { Separator, SeparatorProps } from "../../Separator";
 import { tr } from "../../../i18n/intl";
 import AstalHyprland from "gi://AstalHyprland";
 import { Windows } from "../../../windows";
@@ -33,6 +32,13 @@ export const BluetoothPage: (() => Page) = () => new Page({
     ],
     onClose: () => AstalBluetooth.get_default().adapter.discovering && 
         AstalBluetooth.get_default().adapter.stop_discovery(),
+    bottomButtons: [{
+        title: tr("control_center.pages.more_settings"),
+        onClick: () => {
+            Windows.close("control-center");
+            AstalHyprland.get_default().dispatch("exec", "[float; animation slide right] overskride");
+        }
+    }],
     spacing: 2,
     children: [
         new Widget.Box({
@@ -98,22 +104,7 @@ export const BluetoothPage: (() => Page) = () => new Page({
                             ...discoveredDevices.map((dev: AstalBluetooth.Device) => DeviceWidget(dev))
                         ]
                     })
-                } as Widget.BoxProps),
-                Separator({
-                    size: .2,
-                    orientation: Gtk.Orientation.VERTICAL,
-                    cssColor: "gray",
-                    alpha: .2
-                } as SeparatorProps),
-                new Widget.Button({
-                    className: "more",
-                    label: tr("control_center.pages.more_settings"),
-                    onClick: () => {
-                        Windows.close("control-center");
-                        AstalHyprland.get_default().dispatch("exec", "[float; animation slide right] overskride");
-                    },
-                    setup: (self) => self.set_alignment(0, 0.5)
-                } as Widget.ButtonProps)
+                } as Widget.BoxProps)
             ]
         } as Widget.BoxProps)
     ]
