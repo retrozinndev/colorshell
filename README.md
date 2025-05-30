@@ -92,8 +92,12 @@ Having issues? Please create a [new Issue] here, I'll be happy to help you out!
 This repo is licensed under the [MIT License], project is made and maintained by [retrozinndev](https://github.com/retrozinndev).
 
 ## 🌠 Stargazers
-Thanks to everyone who starred my project! 💖
+<div align="center">
+  
 [![Star History Chart](https://api.star-history.com/svg?repos=retrozinndev/colorshell&type=Date)](https://www.star-history.com/#retrozinndev/colorshell&Date)
+<br>
+<p align="center">Thanks to everyone who starred my project! 💖</p>
+</div>
 
 <!-- References of other projects -->
 [pywal16]: https://github.com/eylles/pywal16
