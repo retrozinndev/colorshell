@@ -1,31 +1,37 @@
 import { Page, PageButton, PageProps } from "./Page";
-import { bind } from "astal";
+import { bind, Variable } from "astal";
 import { Astal, Gtk, Widget } from "astal/gtk3";
-import AstalWp from "gi://AstalWp";
 import { getAppIcon } from "../../../scripts/apps";
 import { Wireplumber } from "../../../scripts/volume";
 import { tr } from "../../../i18n/intl";
 
 export function PageSound(): Page {
+    const endpoints = Variable.derive([
+        bind(Wireplumber.getWireplumber().get_audio()!, "speakers"),
+        bind(Wireplumber.getWireplumber().get_audio()!, "streams")
+    ]);
+
     return new Page({
         id: "sound",
         title: tr("control_center.pages.sound.title"),
         description: tr("control_center.pages.sound.description"),
-        children: bind(Wireplumber.getWireplumber(), "endpoints").as((endpoints) => [
+        onClose: endpoints.drop,
+        children: endpoints(([speakers, streams]) => [
             new Widget.Label({
                 className: "sub-header",
                 label: tr("devices"),
-                setup: (self) => self.set_alignment(0, .5)
+                xalign: 0
             } as Widget.LabelProps),
-            ...endpoints.filter(ep => ep.mediaClass === AstalWp.MediaClass.AUDIO_SPEAKER).map((ep) =>
+            ...speakers.map((speaker) =>
                 PageButton({
-                    className: bind(ep, "isDefault").as(isDefault => isDefault ? "default" : ""),
-                    icon: Astal.Icon.lookup_icon(ep.icon) ? ep.icon : "audio-card-symbolic",
-                    title: ep.name ?? "Speaker",
-                    onClick: () => ep.set_is_default(true),
+                    className: bind(speaker, "isDefault").as(isDefault => isDefault ? "default" : ""),
+                    icon: bind(speaker, "icon").as(icon => 
+                        Astal.Icon.lookup_icon(icon)? icon : "audio-card-symbolic"),
+                    title: speaker.name ?? "Speaker",
+                    onClick: () => speaker.set_is_default(true),
                     endWidget: new Widget.Icon({
                         icon: "object-select-symbolic",
-                        visible: bind(ep, "isDefault"),
+                        visible: bind(speaker, "isDefault"),
                         css: "font-size: 18px;"
                     } as Widget.IconProps)
                 })
@@ -33,21 +39,21 @@ export function PageSound(): Page {
             new Widget.Label({
                 className: "sub-header",
                 label: tr("apps"),
-                visible: endpoints.filter((ep) => ep.mediaClass === AstalWp.MediaClass.AUDIO_STREAM ||
-                ep.mediaClass === AstalWp.MediaClass.VIDEO_STREAM).length > 0,
-                setup: (self) => self.set_alignment(0, .5)
+                visible: streams.length > 0,
+                xalign: 0
             } as Widget.LabelProps),
-            ...endpoints.filter((ep) => ep.mediaClass === AstalWp.MediaClass.AUDIO_STREAM ||
-                ep.mediaClass === AstalWp.MediaClass.VIDEO_STREAM).map((ep) => 
+            ...streams.map((stream) => 
                     new Widget.EventBox({
                         hexpand: true,
                         setup: (eventbox) => {
                             const connections: Array<number> = [];
+
                             eventbox.add(new Widget.Box({
                                 orientation: Gtk.Orientation.HORIZONTAL,
                                 children: [
                                     new Widget.Icon({
-                                        icon: getAppIcon(ep.name.split(' ')[0]) || "application-x-executable-symbolic",
+                                        icon: bind(stream, "name").as(name => 
+                                            getAppIcon(name.split(' ')[0]) ?? "application-x-executable-symbolic"),
                                         css: "font-size: 18px; margin-right: 6px;"
                                     } as Widget.IconProps),
                                     new Widget.Box({
@@ -63,9 +69,9 @@ export function PageSound(): Page {
                                                 ),
                                                 onDestroy: () => connections.map(id => eventbox.disconnect(id)),
                                                 child: new Widget.Label({
-                                                    label: ep.name || "Unknown",
+                                                    label: bind(stream, "name").as(name => name || "Unknown"),
                                                     truncate: true,
-                                                    tooltipText: ep.name,
+                                                    tooltipText: bind(stream, "name"),
                                                     className: "name",
                                                     xalign: 0
                                                 } as Widget.LabelProps)
@@ -74,9 +80,9 @@ export function PageSound(): Page {
                                                 min: 0,
                                                 drawValue: false,
                                                 max: 100,
-                                                setup: (self) => self.value = Math.floor(ep.volume * 100),
-                                                value: bind(ep, "volume").as((vol) => Math.floor(vol * 100)),
-                                                onDragged: (self) => ep.volume = self.value / 100
+                                                setup: (self) => self.value = Math.floor(stream.volume * 100),
+                                                value: bind(stream, "volume").as((vol) => Math.floor(vol * 100)),
+                                                onDragged: (self) => stream.volume = self.value / 100
                                             } as Widget.SliderProps)
                                         ]
                                     } as Widget.BoxProps)
