@@ -1,10 +1,10 @@
 # Retrozinn's Hyprland Dots
 My customized Hyprland dotfiles that I keep improving almost everyday 🤩 !
 
-> [!note]
-> Finally, the Eww edition is ready! You can now use it if you want to! :heart: <br>
-> If you're searching for the previous dotfiles with Waybar and Swaync, go
-> to the [`waybar-edition`](https://github.com/retrozinndev/Hyprland-Dots/tree/waybar-edition) branch!
+> [!warning]
+> This is a previous version of colorshell(it wasn't even called that yet!) made with <br>
+> Elkowar's Wacky Widgets(EWW), that's no more maintained and may not work <br>
+> out-of-the-box. Please use the newest version available in the [`ryo`](https://github.com/retrozinndev/colorshell/tree/ryo) branch.
 
 ## 🌄 Screenshots
 <div align="center"
@@ -52,7 +52,7 @@ This repo is licensed under the [MIT License].
 
 ## 🌠 Stargazers Graph
 Thanks to everyone who starred my dotfiles! 💖
-[![Stargazers over time](https://starchart.cc/retrozinndev/Hyprland-Dots.svg?background=%2324292e&axis=%23fafbfc&line=%232dba4e)](https://starchart.cc/retrozinndev/Hyprland-Dots)
+[![Stargazers over time](https://starchart.cc/retrozinndev/colorshell.svg?background=%2324292e&axis=%23fafbfc&line=%232dba4e)](https://starchart.cc/retrozinndev/colorshell)
 
 <!-- References of other projects -->
 [pywal16]: https://github.com/eylles/pywal16
