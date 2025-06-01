@@ -256,14 +256,13 @@ box.history {
   }
 }
 
-.tile-pages {
-  & > .page {
-    margin-top: 10px;
+.tile-pages .page {
+  transition: 180ms linear;
+  margin-top: 10px;
 
-    &.bluetooth {
-      button.connected {
-        background: colors.$bg-tertiary;
-      }
+  &.bluetooth {
+    button.connected {
+      background: colors.$bg-tertiary;
     }
   }
 
