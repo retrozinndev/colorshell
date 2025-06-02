@@ -168,8 +168,7 @@ class Page extends Widget.Box {
         this.#title = props.title;
         this.#description = props.description;
 
-        if(props.onClose)
-            this.onClose = props.onClose;
+        this.onClose = props.onClose;
     }
 }
 

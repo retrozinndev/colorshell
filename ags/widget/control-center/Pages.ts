@@ -1,4 +1,4 @@
-import { property, register, timeout } from "astal";
+import { register, timeout } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
 import { Page } from "./pages/Page";
 
@@ -7,26 +7,21 @@ export { Pages };
 export type PagesProps = {
     initialPage?: Page;
     className?: string;
-    transitionType?: Gtk.RevealerTransitionType;
     transitionDuration?: number;
 };
 
 @register({ GTypeName: "Pages" })
-class Pages extends Widget.Revealer {
+class Pages extends Widget.Box {
     #page: (Page|undefined);
+    #transDuration: number;
+    #transType: Gtk.RevealerTransitionType = Gtk.RevealerTransitionType.SLIDE_DOWN;
 
-    @property(Page)
-    get page(): Page | undefined { return this.#page; }
-    private set page(newPage: Page | undefined) {
-        this.#page = newPage;
-        this.notify("page");
-    }
-
-    get isOpen() { return this.revealChild; }
+    get isOpen() { return (this.get_children().length > 0); }
 
     constructor(props?: PagesProps) {
         super({
-            className: props?.className
+            className: props?.className,
+            orientation: Gtk.Orientation.VERTICAL
         });
 
         this.name = "pages";
@@ -34,47 +29,57 @@ class Pages extends Widget.Revealer {
         if(props?.className !== null && props?.className !== undefined)
             this.className = props?.className;
 
-        this.transitionType = props?.transitionType ?? 
-            Gtk.RevealerTransitionType.SLIDE_DOWN;
-        
-        this.transitionDuration = props?.transitionDuration ?? 350;
+        this.#transDuration = props?.transitionDuration ?? 280;
 
         if(props?.initialPage) 
             this.open(props.initialPage);
     }
 
-    toggle(newPage?: Page): void {
-        if(this.isOpen) {
-            if(newPage && this.#page!.id !== newPage.id) {
-                this.close(() => this.open(newPage));
-                return;
-            }
-
-            this.close();
+    toggle(newPage?: Page, onToggled?: () => void): void {
+        if(!newPage || (this.#page?.id === newPage?.id)) {
+            this.close(onToggled);
             return;
         }
 
-        newPage && this.open(newPage);
+        if(!this.isOpen) {
+            newPage && this.open(newPage, onToggled);
+            return;
+        }
+
+        if(this.#page?.id !== newPage.id) {
+            this.close();
+            this.open(newPage, onToggled);
+        }
     }
 
     open(newPage: Page, onOpened?: () => void) {
-        if(this.get_child()) return;
+        this.add(new Widget.Revealer({
+            transitionDuration: this.#transDuration,
+            transitionType: this.#transType,
+            revealChild: false,
+            child: newPage
+        } as Widget.RevealerProps));
+        this.#page = newPage;
 
-        this.page = newPage;
-        this.add(newPage);
-        this.revealChild = true;
-        onOpened && timeout(this.transitionDuration, onOpened);
+        this.reorder_child(this.get_children()[this.get_children().length - 1], 0);
+        (this.get_children()[0] as Widget.Revealer).set_reveal_child(true);
+        onOpened?.();
     }
 
     close(onClosed?: () => void): void {
-        if(!this.get_child()) return;
+        (this.get_children() as Array<Widget.Revealer>).forEach((pageRevealer, i, pageRevealers) => {
+            pageRevealer.set_reveal_child(false);
+            if(this.#page?.id === (pageRevealer.get_child() as Page).id)
+                this.#page = undefined;
 
-        this.revealChild = false;
-        this.#page!.onClose?.();
-        timeout(this.transitionDuration, () => {
-            this.remove(this.#page!);
-            this.page = undefined;
-            onClosed?.();
+            timeout(this.#transDuration, () => {
+                pageRevealer.ref();
+                this.remove(pageRevealer);
+                pageRevealer.destroy();
+
+                i === (pageRevealers.length - 1) && 
+                    onClosed?.();
+            });
         });
     }
 }
