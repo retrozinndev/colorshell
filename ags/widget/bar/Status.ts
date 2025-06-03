@@ -22,14 +22,14 @@ export function Status(): Gtk.Widget {
                 volumeStatus({
                     className: "sink",
                     endpoint: Wireplumber.getDefault().getDefaultSink(),
-                    icon: bind(Wireplumber.getDefault().getDefaultSink(), "mute").as((muted) =>
-                        !muted ? "󰕾" : "󰖁")
+                    icon: bind(Wireplumber.getDefault().getDefaultSink(), "volumeIcon").as(icon => 
+                        !Wireplumber.getDefault().isMutedSink() && Wireplumber.getDefault().getSinkVolume() > 0 ? icon : "audio-volume-muted-symbolic"),
                 }),
                 volumeStatus({
                     className: "source",
                     endpoint: Wireplumber.getDefault().getDefaultSource(),
-                    icon: bind(Wireplumber.getDefault().getDefaultSource(), "mute").as((muted) => 
-                        !muted ? "󰍬" : "󰍭")
+                    icon: bind(Wireplumber.getDefault().getDefaultSource(), "volumeIcon").as(icon => 
+                        !Wireplumber.getDefault().isMutedSource() && Wireplumber.getDefault().getSourceVolume() > 0 ? icon : "microphone-sensitivity-muted-symbolic"),
                 }),
                 StatusIcons()
             ]

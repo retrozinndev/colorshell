@@ -46,7 +46,8 @@ export const OSD = (mon: number) => {
             children: [
                 new Widget.Icon({
                     className: "icon",
-                    icon: bind(Wireplumber.getDefault().getDefaultSink(), "volumeIcon")
+                    icon: bind(Wireplumber.getDefault().getDefaultSink(), "volumeIcon").as(icon => 
+                        !Wireplumber.getDefault().isMutedSink() && Wireplumber.getDefault().getSinkVolume() > 0 ? icon : "audio-volume-muted-symbolic"),
                 } as Widget.IconProps),
                 new Widget.Box({
                     className: "volume",
