@@ -3,7 +3,8 @@ import { GLib } from "astal";
 
 const i18nKeys = {
     "en_US": (await import("./lang/en_US")).default,
-    "pt_BR": (await import("./lang/pt_BR")).default
+    "pt_BR": (await import("./lang/pt_BR")).default,
+    "ru_RU": (await import("./lang/ru_RU")).default
 };
 
 const languages: Array<string> = Object.keys(i18nKeys);

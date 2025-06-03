@@ -15,8 +15,9 @@ export function Tray(): Gtk.Widget {
     return new Widget.Box({
         className: "tray",
         visible: bind(astalTray, "items").as((items: Array<AstalTray.TrayItem>) => items.length > 0),
-        children: bind(astalTray, "items").as((items: Array<AstalTray.TrayItem>) => 
-            items.map((item: AstalTray.TrayItem) => 
+        children: bind(astalTray, "items").as((items: Array<AstalTray.TrayItem>) => items
+            .filter(item => item?.gicon)
+            .map((item: AstalTray.TrayItem) => 
                 new Widget.Box({
                     className: "item",
                     child: Variable.derive(

@@ -44,10 +44,10 @@ export const OSD = (mon: number) => {
         child: new Widget.Box({
             className: "osd",
             children: [
-                new Widget.Label({
+                new Widget.Icon({
                     className: "icon",
-                    label: osdIcon
-                } as Widget.LabelProps),
+                    icon: bind(Wireplumber.getDefault().getDefaultSink(), "volumeIcon")
+                } as Widget.IconProps),
                 new Widget.Box({
                     className: "volume",
                     orientation: Gtk.Orientation.VERTICAL,
