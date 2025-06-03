@@ -69,8 +69,9 @@ You can see default bindings and usage information on the [Wiki/Usage] page!
 ## 🌐 Internationalization
 Colorshell supports i18n! The shell automatically matches the shell language with the system's, if available. <br>
 Currently, there's support for the following languages: 
-- English (United States), maintained by [@retrozinndev](https://github.com/retrozinndev)
-- Português (Brasil), maintained by [@retrozinndev](https://github.com/retrozinndev)
+- **English** (English, United States), maintained by [@retrozinndev](https://github.com/retrozinndev)
+- **Português** (Portuguese, Brazil), maintained by [@retrozinndev](https://github.com/retrozinndev)
+- **русский** (Russian), maintained by [@NotMephisto](https://github.com/NotMephisto)
   
 Don't see your language here? You can contribute and make translations too! <br>
 You can do so by forking this repository, translating the shell in your fork and then opening a pull request to this repository, simple as that!
