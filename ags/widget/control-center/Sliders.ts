@@ -18,8 +18,14 @@ export function Sliders() {
                 children: bind(Wireplumber.getWireplumber(), "defaultSpeaker").as((sink) => [
                     new Widget.Button({
                         className: "nf",
-                        label: bind(sink, "mute").as((muted) => !muted ? "󰕾" : "󰖁"),
-                        onClick: () => Wireplumber.getDefault().toggleMuteSink()
+                        onClick: () => Wireplumber.getDefault().toggleMuteSink(),
+                        children: [
+                            new Widget.Icon ({
+                                icon: bind(sink, "volumeIcon").as((icon) => 
+                                    !Wireplumber.getDefault().isMutedSink() && Wireplumber.getDefault().getSinkVolume() > 0 ? icon : "audio-volume-muted-symbolic"),
+                                css: "margin-right: 10px;"
+                            } as Widget.IconProps),
+                        ]
                     } as Widget.ButtonProps),
                     new Widget.Slider({
                         drawValue: false,
@@ -43,8 +49,14 @@ export function Sliders() {
                 children: bind(Wireplumber.getWireplumber(), "defaultMicrophone").as((source) => [
                     new Widget.Button({
                         className: "nf",
-                        label: bind(source, "mute").as((muted) => !muted ? "󰍬" : "󰍭"),
-                        onClick: () => Wireplumber.getDefault().toggleMuteSource()
+                        onClick: () => Wireplumber.getDefault().toggleMuteSource(),
+                        children: [
+                            new Widget.Icon ({
+                                icon: bind(source, "volumeIcon").as((icon) => 
+                                    !Wireplumber.getDefault().isMutedSource() && Wireplumber.getDefault().getSourceVolume() > 0 ? icon : "microphone-sensitivity-muted-symbolic"),
+                                css: "margin-right: 10px;"
+                            } as Widget.IconProps),
+                        ]
                     } as Widget.ButtonProps),
                     new Widget.Slider({
                         drawValue: false,
