@@ -1,16 +1,15 @@
 import {  GObject, register } from "astal";
 import AstalWp from "gi://AstalWp";
 
-export { WireplumberClass as Wireplumber };
-
+export { Wireplumber };
 
 @register({ GTypeName: "Wireplumber" })
-class WireplumberClass extends GObject.Object {
+class Wireplumber extends GObject.Object {
     private static astalWireplumber: (AstalWp.Wp|null) = AstalWp.get_default();
-    private static inst: WireplumberClass;
+    private static inst: Wireplumber;
 
-    private defaultSink: AstalWp.Endpoint = WireplumberClass.astalWireplumber!.get_default_speaker()!;
-    private defaultSource: AstalWp.Endpoint = WireplumberClass.astalWireplumber!.get_default_microphone()!;
+    private defaultSink: AstalWp.Endpoint = Wireplumber.astalWireplumber!.get_default_speaker()!;
+    private defaultSource: AstalWp.Endpoint = Wireplumber.astalWireplumber!.get_default_microphone()!;
 
     private maxSinkVolume: number = 100;
     private maxSourceVolume: number = 100;
@@ -18,21 +17,21 @@ class WireplumberClass extends GObject.Object {
     constructor() {
         super();
 
-        if(!WireplumberClass.astalWireplumber) 
+        if(!Wireplumber.astalWireplumber) 
             throw new Error("Audio features will not work correctly! Please install wireplumber first", {
                 cause: "Wireplumber library not found"
             });
     }
 
-    public static getDefault(): WireplumberClass {
-        if(!WireplumberClass.inst) 
-            WireplumberClass.inst = new WireplumberClass();
+    public static getDefault(): Wireplumber {
+        if(!Wireplumber.inst) 
+            Wireplumber.inst = new Wireplumber();
 
-        return WireplumberClass.inst;
+        return Wireplumber.inst;
     }
 
     public static getWireplumber(): AstalWp.Wp {
-        return WireplumberClass.astalWireplumber!;
+        return Wireplumber.astalWireplumber!;
     }
 
     public getMaxSinkVolume(): number {
@@ -74,7 +73,7 @@ class WireplumberClass extends GObject.Object {
     public increaseEndpointVolume(endpoint: AstalWp.Endpoint, volumeIncrease: number): void {
         volumeIncrease = Math.abs(volumeIncrease) / 100;
 
-        if((endpoint.get_volume() + volumeIncrease) > this.maxSinkVolume) {
+        if((endpoint.get_volume() + volumeIncrease) > (this.maxSinkVolume / 100)) {
             endpoint.set_volume(1.0);
             return;
         }
