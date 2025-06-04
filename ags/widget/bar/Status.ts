@@ -18,6 +18,7 @@ export function Status(): Gtk.Widget {
             Object.hasOwn(openWins, "control-center") ? "open status" : "status"),
         onClick: () => Windows.toggle("control-center"),
         child: new Widget.Box({
+            spacing: 5,
             children: [
                 volumeStatus({
                     className: "sink",
@@ -46,12 +47,12 @@ function volumeStatus(props: { className?: string, endpoint: AstalWp.Endpoint, i
             :
                 Wireplumber.getDefault().increaseEndpointVolume(props.endpoint, 5),
             child: new Widget.Box({
+                spacing: 2,
                 children: [
-                    new Widget.Label({
-                        className: "nf",
+                    new Widget.Icon({
                         visible: props.icon,
-                        label: props.icon,
-                    } as Widget.LabelProps),
+                        icon: props.icon,
+                    } as Widget.IconProps),
                     new Widget.Label({
                         className: "volume",
                         label: bind(props.endpoint, "volume").as((volume: number) => 
