@@ -13,27 +13,72 @@ import { tr } from "../../i18n/intl";
 
 
 export function Status(): Gtk.Widget {
+    const recordingTimer: Variable<string> = Variable.derive([
+        bind(Recording.getDefault(), "recording"),
+        getDateTime()
+    ], (recording, dateTime) => {
+        if(!recording || !Recording.getDefault().startedAt) 
+            return "...";
+
+        const startedAtSeconds = dateTime.to_unix() - Recording.getDefault().startedAt!.to_unix();
+        if(startedAtSeconds <= 0) return "00:00";
+
+        const minutes = Math.floor(startedAtSeconds / 60);
+        const seconds = Math.floor(startedAtSeconds % 60);
+
+        return `${ minutes < 10 ? `0${minutes}` : minutes }:${ seconds < 10 ? `0${seconds}` : seconds }`;
+    });
+
     return new Widget.EventBox({
         className: bind(Windows, "openWindows").as((openWins) => 
             Object.hasOwn(openWins, "control-center") ? "open status" : "status"),
         onClick: () => Windows.toggle("control-center"),
         child: new Widget.Box({
-            spacing: 5,
             children: [
-                volumeStatus({
-                    className: "sink",
-                    endpoint: Wireplumber.getDefault().getDefaultSink(),
-                    icon: bind(Wireplumber.getDefault().getDefaultSink(), "volumeIcon").as(icon => 
-                        !Wireplumber.getDefault().isMutedSink() && Wireplumber.getDefault().getSinkVolume() > 0 ? 
-                            icon : "audio-volume-muted-symbolic"),
-                }),
-                volumeStatus({
-                    className: "source",
-                    endpoint: Wireplumber.getDefault().getDefaultSource(),
-                    icon: bind(Wireplumber.getDefault().getDefaultSource(), "volumeIcon").as(icon => 
-                        !Wireplumber.getDefault().isMutedSource() && Wireplumber.getDefault().getSourceVolume() > 0 ? 
-                            icon : "microphone-sensitivity-muted-symbolic"),
-                }),
+                new Widget.Box({
+                    className: "volume-indicators",
+                    spacing: 5,
+                    children: [
+                        volumeStatus({
+                            className: "sink",
+                            endpoint: Wireplumber.getDefault().getDefaultSink(),
+                            icon: bind(Wireplumber.getDefault().getDefaultSink(), "volumeIcon").as(icon => 
+                                !Wireplumber.getDefault().isMutedSink() && Wireplumber.getDefault().getSinkVolume() > 0 ? 
+                                    icon : "audio-volume-muted-symbolic"),
+                        }),
+                        volumeStatus({
+                            className: "source",
+                            endpoint: Wireplumber.getDefault().getDefaultSource(),
+                            icon: bind(Wireplumber.getDefault().getDefaultSource(), "volumeIcon").as(icon => 
+                                !Wireplumber.getDefault().isMutedSource() && Wireplumber.getDefault().getSourceVolume() > 0 ? 
+                                    icon : "microphone-sensitivity-muted-symbolic"),
+                        })
+                    ]
+                } as Widget.BoxProps),
+                new Widget.Revealer({
+                    revealChild: bind(Recording.getDefault(), "recording"),
+                    transitionDuration: 500,
+                    transitionType: Gtk.RevealerTransitionType.SLIDE_LEFT,
+                    onDestroy: () => recordingTimer.drop(),
+                    child: new Widget.EventBox({
+                        onClick: () => Recording.getDefault().recording &&
+                            Recording.getDefault().stopRecording(),
+                        tooltipText: tr("control_center.tiles.recording.enabled_desc"),
+                        child: new Widget.Box({
+                            children: [
+                                new Widget.Icon({
+                                    className: "recording state",
+                                    icon: "media-record-symbolic",
+                                    css: "margin-right: 4px;"
+                                } as Widget.IconProps),
+                                new Widget.Label({
+                                    className: "rec-time",
+                                    label: recordingTimer()
+                                } as Widget.LabelProps)
+                            ]
+                        } as Widget.BoxProps)
+                    } as Widget.EventBoxProps)
+                } as Widget.RevealerProps),
                 StatusIcons()
             ]
         } as Widget.BoxProps)
@@ -46,8 +91,7 @@ function volumeStatus(props: { className?: string, endpoint: AstalWp.Endpoint, i
         onScroll: (_, event) => 
             event.delta_y > 0 ?
                 Wireplumber.getDefault().decreaseEndpointVolume(props.endpoint, 5)
-            :
-                Wireplumber.getDefault().increaseEndpointVolume(props.endpoint, 5),
+            : Wireplumber.getDefault().increaseEndpointVolume(props.endpoint, 5),
             child: new Widget.Box({
                 spacing: 2,
                 children: [
@@ -92,50 +136,10 @@ function StatusIcons(): Gtk.Widget {
         return "network-no-route-symbolic";
     });
 
-    const recordingTimer: Variable<string> = Variable.derive([
-        bind(Recording.getDefault(), "recording"),
-        getDateTime()
-    ], (recording, dateTime) => {
-        if(!recording || !Recording.getDefault().startedAt) 
-            return "...";
-
-        const startedAtSeconds = dateTime.to_unix() - Recording.getDefault().startedAt!.to_unix();
-        if(startedAtSeconds <= 0) return "00:00";
-
-        const minutes = Math.floor(startedAtSeconds / 60);
-        const seconds = Math.floor(startedAtSeconds % 60);
-
-        return `${ minutes < 10 ? `0${minutes}` : minutes }:${ seconds < 10 ? `0${seconds}` : seconds }`;
-    });
-
     return new Widget.Box({
         className: "status-icons",
         spacing: 8,
         children: [
-            new Widget.Revealer({
-                revealChild: bind(Recording.getDefault(), "recording"),
-                transitionDuration: 500,
-                transitionType: Gtk.RevealerTransitionType.SLIDE_LEFT,
-                onDestroy: () => recordingTimer.drop(),
-                child: new Widget.EventBox({
-                    onClick: () => Recording.getDefault().recording &&
-                        Recording.getDefault().stopRecording(),
-                    tooltipText: tr("control_center.tiles.recording.enabled_desc"),
-                    child: new Widget.Box({
-                        children: [
-                            new Widget.Icon({
-                                className: "recording state",
-                                icon: "media-record-symbolic",
-                                css: "margin-right: 4px;"
-                            } as Widget.IconProps),
-                            new Widget.Label({
-                                className: "rec-time",
-                                label: recordingTimer()
-                            } as Widget.LabelProps)
-                        ]
-                    } as Widget.BoxProps)
-                } as Widget.EventBoxProps)
-            } as Widget.RevealerProps),
             new Widget.Icon({
                 className: "bluetooth state",
                 visible: bind(AstalBluetooth.get_default(), "adapter").as(Boolean),
