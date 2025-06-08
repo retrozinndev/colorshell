@@ -4,19 +4,25 @@ import { Separator } from "./Separator";
 import { HistoryNotification, Notifications } from "../scripts/notifications";
 import { GLib } from "astal";
 import { getAppIcon } from "../scripts/apps";
+import Pango from "gi://Pango?version=1.0";
 
+
+export let NOTIFICATION_MAX_WORD_CHAR_SIZE = 25;
 
 function getNotificationImage(notif: AstalNotifd.Notification|HistoryNotification): (string|undefined) {
-    const img = notif.image ?? notif.appIcon;
-    if(!img) return undefined;
+    const img = notif.image || notif.appIcon;
 
-    if(!img.includes('/')) return undefined;
+    if(!img) 
+        return undefined;
 
-    if(img.startsWith('/')) 
-        return `file://${img}`;
+    switch(true) {
+        case /^[/]/.test(img): 
+            return `file://${img}`;
 
-    if(img.startsWith('~') || img.startsWith("file://~"))
-        return `file://${GLib.get_home_dir()}/${img.replace(/^(file\:\/\/|\~|file\:\/\/~)/g, "")}`;
+        case /^[~]/.test(img):
+        case /^file:\/\/[~]/i.test(img):
+            return `file://${GLib.get_home_dir()}/${img.replace(/^(file\:\/\/|[~]|file\:\/\[~])/i, "")}`;
+    }
 
     return img;
 }
@@ -29,14 +35,6 @@ export function NotificationWidget(notification: AstalNotifd.Notification|number
     notification = (typeof notification === "number") ? 
         AstalNotifd.get_default().get_notification(notification)
     : notification;
-
-    const body: string = notification.body.split(' ').map(strPart => {
-        if(/^\<(.*)\>/.test(strPart) || /<\/(.*)\>$/.test(strPart)) 
-            return strPart;
-
-        return strPart.length >= 25 ? `${strPart.substring(0, 22)}...`
-        : strPart
-    }).join(' ');
 
     return new Widget.EventBox({
         onClick: () => {
@@ -139,7 +137,9 @@ export function NotificationWidget(notification: AstalNotifd.Notification|number
                                     xalign: 0,
                                     truncate: false,
                                     wrap: true,
-                                    label: body.replace(/\&/g, "&amp;")
+                                    singleLineMode: false,
+                                    wrapMode: Pango.WrapMode.WORD_CHAR,
+                                    label: notification.body.replace(/&/g, "&amp;")
                                 } as Widget.LabelProps)
                             ]
                         } as Widget.BoxProps)
