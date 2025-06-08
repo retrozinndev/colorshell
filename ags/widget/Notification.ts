@@ -4,10 +4,8 @@ import { Separator } from "./Separator";
 import { HistoryNotification, Notifications } from "../scripts/notifications";
 import { GLib } from "astal";
 import { getAppIcon } from "../scripts/apps";
-import Pango from "gi://Pango?version=1.0";
+import Pango from "gi://Pango";
 
-
-export let NOTIFICATION_MAX_WORD_CHAR_SIZE = 25;
 
 function getNotificationImage(notif: AstalNotifd.Notification|HistoryNotification): (string|undefined) {
     const img = notif.image || notif.appIcon;
