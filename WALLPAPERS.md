@@ -171,6 +171,46 @@ in their source link.
 
 <details>
   <summary>
+    <b>Gumi Forest Sunlight</b>
+  </summary>
+  
+<img src="wallpapers/Gumi Forest Sunlight.jpg"></img>
+
+- Source: [Alpha Coders](https://wall.alphacoders.com/big.php?i=930443)
+</details>
+
+<details>
+  <summary>
+    <b>Miku Balloons</b>
+  </summary>
+  
+<img src="wallpapers/Miku Balloons.jpg"></img>
+
+- Source: [Alpha Coders](https://wall.alphacoders.com/big.php?i=768576)
+</details>
+
+<details>
+  <summary>
+    <b>Miku Green Hair Glasses</b>
+  </summary>
+  
+<img src="wallpapers/Miku Green Hair Glasses.png"></img>
+
+- Source: [Alpha Coders](https://wall.alphacoders.com/big.php?i=858278)
+</details>
+
+<details>
+  <summary>
+    <b>Kagamine Rin Yellow Tapes</b>
+  </summary>
+  
+<img src="wallpapers/Kagamine Rin Yellow Tapes.png"></img>
+
+- Source: [Alpha Coders](https://wall.alphacoders.com/big.php?i=1292852)
+</details>
+
+<details>
+  <summary>
     <b>Gumi VOCALOID</b>
   </summary>
   
