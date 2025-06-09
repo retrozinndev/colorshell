@@ -39,11 +39,17 @@ const plugins = new Set<Runner.Plugin>();
 
 export function close() { instance?.close(); }
 
-export function regExMatch(search: string, item: string): boolean {
+export function regExMatch(search: string, item: (string|number)): boolean {
     search = search.replace(/[\\^$.*?()[\]{}|]/g, "\\$&");
+
+    if(typeof item === "number")
+        return new RegExp(`${search.split('').map(c => 
+            `.*${c}.*`).join('')}`,
+        "g").test(item.toString());
+
     return new RegExp(`${search.split('').map(c => 
-        `.*(${c.toLowerCase()}|${c.toUpperCase()}).*`).join('')}`
-    ).test(item);
+        `.*${c}.*`).join('')}`,
+    "gi").test(item);
 }
 
 
