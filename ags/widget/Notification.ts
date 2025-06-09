@@ -10,7 +10,7 @@ import Pango from "gi://Pango";
 function getNotificationImage(notif: AstalNotifd.Notification|HistoryNotification): (string|undefined) {
     const img = notif.image || notif.appIcon;
 
-    if(!img) 
+    if(!img || !img.includes('/')) 
         return undefined;
 
     switch(true) {
