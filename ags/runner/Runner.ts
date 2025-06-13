@@ -1,4 +1,4 @@
-import { AstalIO, timeout } from "astal";
+import { AstalIO, GObject, timeout } from "astal";
 import { Astal, Gdk, Gtk, Widget } from "astal/gtk3";
 import { PopupWindow, PopupWindowProps } from "../widget/PopupWindow";
 import { updateApps } from "../scripts/apps";
@@ -44,11 +44,11 @@ export function regExMatch(search: string, item: (string|number)): boolean {
 
     if(typeof item === "number")
         return new RegExp(`${search.split('').map(c => 
-            `.*${c}.*`).join('')}`,
+            `${c}`).join('')}`,
         "g").test(item.toString());
 
     return new RegExp(`${search.split('').map(c => 
-        `.*${c}.*`).join('')}`,
+        `${c}`).join('')}`,
     "gi").test(item);
 }
 
@@ -82,7 +82,6 @@ export function setEntryText(text: string): void {
 export function openDefault(initialText?: string) {
     return Runner.openRunner({
         entryPlaceHolder: "Start typing...",
-        showResultsPlaceHolderOnStartup: false,
         initialText,
         resultsLimit: 24
     } as Runner.RunnerProps,
@@ -132,16 +131,28 @@ export function openDefault(initialText?: string) {
     ]);
 }
 
-export function openRunner(props?: RunnerProps, placeholder?: () => Array<ResultWidget>): Widget.Window {
+export function openRunner(props: RunnerProps, placeholder?: () => Array<ResultWidget>): Widget.Window {
     let onClickTimeout: (AstalIO.Time|undefined);
+    const connections: Map<GObject.Object, number> = new Map();
+
+    props.width ??= 780;
+    props.height ??= 420;
 
     gtkEntry = new Widget.Entry({
         className: "search",
         placeholderText: props?.entryPlaceHolder || "",
-        onChanged: (self) => {
+        onChanged: async (self) => {
             updateResultsList(self.text);
             resultsList.get_row_at_index(0) && 
                 resultsList.select_row(resultsList.get_row_at_index(0));
+
+            if(self.text.trim().length < 1 && !mainBox.get_style_context().has_class("empty-input")) {
+                mainBox.get_style_context().add_class("empty-input");
+                return;
+            }
+
+            mainBox.get_style_context().has_class("empty-input") &&
+                mainBox.get_style_context().remove_class("empty-input");
         },
         onActivate: (entry) => {
             const resultWidget = resultsList.get_selected_row()?.get_child();
@@ -154,12 +165,31 @@ export function openRunner(props?: RunnerProps, placeholder?: () => Array<Result
         primary_icon_name: "system-search"
     } as Widget.EntryProps);
 
-    const defaultHeight = 420;
+    const mainBox = new Widget.Box({
+        className: `runner main ${props.showResultsPlaceHolderOnStartup ? "empty" : ""}`,
+        orientation: Gtk.Orientation.VERTICAL,
+        hexpand: true,
+        valign: Gtk.Align.START,
+        children: [
+            gtkEntry,
+            new Widget.Scrollable({
+                className: "results-scrollable",
+                vscroll: Gtk.PolicyType.AUTOMATIC,
+                hscroll: Gtk.PolicyType.NEVER,
+                expand: true,
+                visible: props.showResultsPlaceHolderOnStartup ?? false,
+                propagateNaturalHeight: true,
+                maxContentHeight: props.height,
+                child: new Gtk.ListBox({
+                    visible: true,
+                    expand: true,
+                } as Gtk.ListBox.ConstructorProps)
+            })
+        ]
+    } as Widget.BoxProps);
 
-    const resultsList: Gtk.ListBox = new Gtk.ListBox({
-        visible: true,
-        expand: true
-    } as Gtk.ListBox.ConstructorProps);
+    const scrollable = mainBox.get_children()[1] as Widget.Scrollable;
+    const resultsList = scrollable.get_child() as Gtk.ListBox;
 
     if(props?.showResultsPlaceHolderOnStartup && placeholder) {
         const placeholderWidgets = placeholder();
@@ -211,27 +241,38 @@ export function openRunner(props?: RunnerProps, placeholder?: () => Array<Result
         widgets.map((resultWidget: ResultWidget) => {
             resultsList.insert(resultWidget, -1);
 
-            resultsList.connect("row-activated", (_, row: Gtk.ListBoxRow) => {
-                const rWidget = row.get_child();
-                if(rWidget instanceof ResultWidget) {
-                    if(onClickTimeout) return;
+            const conns: Array<number> = [];
 
-                    // Timeout, so it doesn't fire the event a hundred times :skull:
-                    onClickTimeout = timeout(500, () => onClickTimeout = undefined);
-                    rWidget.onClick();
-                    rWidget.closeOnClick && Runner.close();
-                }
-            });
+            conns.push(
+                resultsList.connect("row-activated", (_, row: Gtk.ListBoxRow) => {
+                    const rWidget = row.get_child();
+                    if(rWidget instanceof ResultWidget) {
+                        if(onClickTimeout) return;
+
+                        // Timeout, so it doesn't fire the event a hundred times :skull:
+                        onClickTimeout = timeout(500, () => onClickTimeout = undefined);
+                        rWidget.onClick();
+                        rWidget.closeOnClick && Runner.close();
+                    }
+                }),
+                resultsList.connect("destroy", () => 
+                    conns.forEach((id) => resultsList.disconnect(id))
+                )
+            );
         });
+
+        widgets.length > 0 ? 
+            (!scrollable.visible && scrollable.show())
+        : scrollable.hide();
     }
 
     if(!instance)
         instance = Windows.createWindowForFocusedMonitor((mon: number): (Widget.Window) => PopupWindow({
             namespace: "runner",
             monitor: mon,
-            widthRequest: props?.width ?? 780,
-            heightRequest: props?.height ?? defaultHeight,
-            marginTop: (AstalHyprland.get_default().get_monitor(mon)?.height / 2) - 220,
+            widthRequest: props.width,
+            heightRequest: props.height,
+            marginTop: (AstalHyprland.get_default().get_monitor(mon)?.height / 2) - (props.height! / 2),
             exclusivity: Astal.Exclusivity.IGNORE,
             halign: Gtk.Align.CENTER,
             valign: Gtk.Align.START,
@@ -256,29 +297,17 @@ export function openRunner(props?: RunnerProps, placeholder?: () => Array<Result
                     updateApps();
             },
             onDestroy: () => {
+                connections.forEach((id, obj) => GObject.signal_handler_is_connected(obj, id) &&
+                    obj.disconnect(id));
+
                 gtkEntry = null;
-                [...plugins.values()].map(plugin =>
+
+                [...plugins.values()].forEach(plugin =>
                     plugin && plugin.onClose && plugin.onClose());
+
                 instance = null;
             },
-            child: new Widget.Box({
-                className: "runner main",
-                orientation: Gtk.Orientation.VERTICAL,
-                hexpand: true,
-                valign: Gtk.Align.START,
-                children: [
-                    gtkEntry,
-                    new Widget.Scrollable({
-                        className: "results-scrollable",
-                        vscroll: Gtk.PolicyType.AUTOMATIC,
-                        hscroll: Gtk.PolicyType.NEVER,
-                        expand: true,
-                        propagateNaturalHeight: true,
-                        maxContentHeight: props?.height ?? defaultHeight,
-                        child: resultsList
-                    })
-                ]
-            } as Widget.BoxProps)
+            child: mainBox
         } as PopupWindowProps))();
 
     return instance!;
