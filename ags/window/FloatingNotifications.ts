@@ -16,11 +16,15 @@ export const FloatingNotifications = (mon: number) => new Widget.Window({
         className: "floating-notifications-container",
         orientation: Gtk.Orientation.VERTICAL,
         homogeneous: false,
+        spacing: 12,
         visible: bind(Notifications.getDefault(), "notifications").as(notifs => notifs.length > 0),
         children: bind(Notifications.getDefault(), "notifications").as((notifs) => 
-            notifs.map((item) => NotificationWidget(item, 
-                () => Notifications.getDefault().removeNotification(item),
-                false, true))
+            notifs.map((item) => new Widget.Box({
+                className: "float-notification",
+                child: NotificationWidget(item, 
+                    () => Notifications.getDefault().removeNotification(item),
+                    false, true)
+            } as Widget.BoxProps))
         ),
     } as Widget.BoxProps)
 } as Widget.WindowProps);

@@ -2,13 +2,17 @@
 @use "./mixins";
 
 .floating-notifications-container {
-  padding: {
-    right: 6px;
-    top: 6px;
-  };
+  padding: 16px;
 
-  & .notification {
-    margin: 6px;
-    box-shadow: 0 0 4px .5px colors.$bg-primary;
+  & .float-notification {
+    $radius: 18px;
+
+    box-shadow: 0 0 8px 1px colors.$bg-translucent;
+    border-radius: $radius;
+
+    & .notification {
+      padding: 4px;
+      border-radius: $radius;
+    }
   }
 }
