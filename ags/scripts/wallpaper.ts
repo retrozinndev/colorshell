@@ -68,7 +68,7 @@ class Wallpaper extends GObject.Object {
 
                     switch(key) {
                         case "splash": 
-                            this.splash = /(yes|true|on|enable|enabled)/.test(value) ? true : false;
+                            this.splash = (/(yes|true|on|enable|enabled|1).*/.test(value)) ? true : false;
                             break;
 
                         case "wallpaper":
