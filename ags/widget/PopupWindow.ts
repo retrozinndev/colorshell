@@ -45,8 +45,14 @@ export function PopupWindow(props: PopupWindowProps): Widget.Window {
         css: props.cssBackgroundWindow,
     }) : undefined;
 
+    const winProps: Widget.WindowProps = {};
+    for(const key of Object.keys(props).filter(k => k !== "onClickedOutside")) {
+        // @ts-ignore ignore the `onClickedOutside()` method because astal thinks it's a signal
+        winProps[key as keyof typeof winProps] = props[key as keyof typeof props];
+    }
+
     return new Widget.Window({
-        ...props,
+        ...winProps,
         namespace: props?.namespace ?? "popup-window",
         className: `popup-window ${(props.namespace instanceof Binding ?
             props.namespace.get() : props.namespace) || ""}`,
