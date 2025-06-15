@@ -25,7 +25,7 @@ export const PageNightLight: (() => Page) = () => new Page({
             value: bind(NightLight.getDefault(), "temperature"),
             tooltipText: bind(NightLight.getDefault(), "temperature").as((temp) => `${temp}K`),
             min: 1000,
-            max: bind(NightLight.getDefault(), "maxTemperature"),
+            max: NightLight.getDefault().maxTemperature,
             onDragged: (slider) => 
                 NightLight.getDefault().temperature = (Math.floor(slider.value)),
         } as Widget.SliderProps),
@@ -42,7 +42,7 @@ export const PageNightLight: (() => Page) = () => new Page({
                 addSliderMarksFromMinMax(slider, 5, "{}%");
             },
             value: bind(NightLight.getDefault(), "gamma"),
-            max: bind(NightLight.getDefault(), "maxGamma"),
+            max: NightLight.getDefault().maxGamma,
             tooltipText: bind(NightLight.getDefault(), "gamma").as((gamma) => `${gamma}%`),
             onDragged: (slider) => 
                 NightLight.getDefault().gamma = (Math.floor(slider.value)),

@@ -3,10 +3,10 @@ import { Gtk, Widget } from "astal/gtk3";
 import AstalBluetooth from "gi://AstalBluetooth";
 import { Page, PageButton } from "./Page";
 import { tr } from "../../../i18n/intl";
-import AstalHyprland from "gi://AstalHyprland";
 import { Windows } from "../../../windows";
 import { Notifications } from "../../../scripts/notifications";
 import AstalNotifd from "gi://AstalNotifd";
+import { execApp } from "../../../scripts/apps";
 
 export const BluetoothPage: (() => Page) = () => new Page({
     id: "bluetooth",
@@ -42,7 +42,7 @@ export const BluetoothPage: (() => Page) = () => new Page({
         title: tr("control_center.pages.more_settings"),
         onClick: () => {
             Windows.close("control-center");
-            AstalHyprland.get_default().dispatch("exec", "[float; animation slide right] overskride");
+            execApp("overskride", "[float; animation slide right]");
         }
     }],
     spacing: 2,

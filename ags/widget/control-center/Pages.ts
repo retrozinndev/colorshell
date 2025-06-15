@@ -73,7 +73,6 @@ class Pages extends Widget.Box {
                 this.#page = undefined;
 
             timeout(this.#transDuration, () => {
-                pageRevealer.ref();
                 this.remove(pageRevealer);
                 pageRevealer.destroy();
 

@@ -4,7 +4,7 @@ import { exec, execAsync, Gio, GLib } from "astal";
 import { AskPopup } from "../widget/AskPopup";
 import { Windows } from "../windows";
 import { Notifications } from "../scripts/notifications";
-import AstalNotifd from "gi://AstalNotifd?version=0.1";
+import AstalNotifd from "gi://AstalNotifd";
 
 
 const { TOP, LEFT, RIGHT, BOTTOM } = Astal.WindowAnchor;

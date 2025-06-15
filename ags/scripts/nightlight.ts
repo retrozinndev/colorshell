@@ -22,11 +22,10 @@ class NightLight extends GObject.Object {
     public get gamma() { return this.#gamma; }
     public set gamma(newValue: number) { this.setGamma(newValue); }
 
-    @property(Number)
-    public get maxTemperature() { return 20000; }
-
-    @property(Number)
-    public get maxGamma() { return 100; }
+    public readonly maxTemperature = 20000;
+    public readonly minTemperature = 1000;
+    public readonly identityTemperature = 6000;
+    public readonly maxGamma = 100;
 
     @property(Boolean)
     public get identity() { return this.#identity; }
@@ -72,7 +71,7 @@ class NightLight extends GObject.Object {
         return this.instance;
     }
 
-    private async setTemperature(value: number): Promise<void> {
+    private setTemperature(value: number): void {
         if(value === this.temperature) return;
 
         if(value > this.maxTemperature || value < 1000) {
@@ -93,7 +92,7 @@ class NightLight extends GObject.Object {
         ));
     }
 
-    private async setGamma(value: number) {
+    private setGamma(value: number): void {
         if(value === this.gamma) return;
 
         if(value > this.maxGamma || value < 0) {
@@ -114,14 +113,14 @@ class NightLight extends GObject.Object {
         ));
     }
 
-    private applyIdentity(): void {
+    public applyIdentity(): void {
         if(this.#identity) return;
 
         this.#prevGamma = this.#gamma;
         this.#prevTemperature = this.#temperature;
 
         this.#identity = true;
-        this.temperature = 6000;
+        this.temperature = this.identityTemperature;
         this.gamma = this.maxGamma;
     }
 
@@ -129,8 +128,8 @@ class NightLight extends GObject.Object {
         if(!this.#identity) return;
 
         this.#identity = false;
-        this.setTemperature(this.#prevTemperature ?? 1000);
-        this.setGamma(this.#prevGamma ?? 100);
+        this.setTemperature(this.#prevTemperature ?? this.identityTemperature);
+        this.setGamma(this.#prevGamma ?? this.maxGamma);
 
         this.#prevTemperature = null;
         this.#prevGamma = null;

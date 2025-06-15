@@ -18,13 +18,15 @@ export type TileProps = {
 }
 
 export function Tile(props: TileProps): (() => Gtk.Widget) {
-    const toggled = new Variable<boolean>(props.toggleState instanceof Binding ?
-        (props.toggleState.get() || false) : (props.toggleState || false));
-
-    let subscription: () => void;
+    const subs: Array<() => void> = [];
+    const toggled = new Variable<boolean>(((props.toggleState instanceof Binding) ? 
+            props.toggleState.get()
+        : props.toggleState) ?? false);
 
     if(props?.toggleState instanceof Binding) 
-        subscription = props.toggleState.subscribe(val => toggled.set(val || false));
+        subs.push(props.toggleState.subscribe((state) => 
+            toggled.set(state ?? false)
+        ));
 
     return () => new Widget.Box({
         className: (props.className instanceof Binding) ? 
@@ -37,15 +39,15 @@ export function Tile(props: TileProps): (() => Gtk.Widget) {
                 }`
             )()
         : toggled().as((state: boolean) => 
-            `tile ${state ? "toggled" : ""} ${
-                props.onClickMore ? "has-more" : ""
+            `tile${state ? " toggled" : ""}${
+                props.onClickMore ? " has-more" : ""
             }`
         ),
         expand: true,
         visible: props.visible,
         onDestroy: () => {
+            subs.map(sub => sub?.());
             props.onDestroy?.();
-            subscription?.();
         },
         children: [
             new Widget.Button({

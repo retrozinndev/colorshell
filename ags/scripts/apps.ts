@@ -2,8 +2,12 @@ import { Astal } from "astal/gtk3";
 
 import AstalApps from "gi://AstalApps";
 import AstalHyprland from "gi://AstalHyprland";
+import { execAsync } from "astal";
+
 
 const astalApps: AstalApps.Apps = new AstalApps.Apps();
+const uwsmIsActive: boolean = await execAsync("uwsm check is-active").then((stdout) =>
+    /hyprland/gi.test(stdout)).catch(() => false);
 let appsList: Array<AstalApps.Application> = astalApps.get_list();
 
 export function getApps(): Array<AstalApps.Application> {
@@ -19,8 +23,14 @@ export function getAstalApps(): AstalApps.Apps {
     return astalApps;
 }
 
-export function cleanExec(app: AstalApps.Application): void {
-    AstalHyprland.get_default().dispatch("exec", app.executable.replace(/(%f|%F|%u|%U|%i|%c|%k)/g, ""));
+/** handles running with uwsm if it's installed */
+export function execApp(app: AstalApps.Application|string, dispatchExecArgs?: string) {
+    const executable = (typeof app === "string") ? app 
+        : app.executable.replace(/(%f|%F|%u|%U|%i|%c|%k)/g, "");
+
+    AstalHyprland.get_default().dispatch("exec", 
+        `${dispatchExecArgs ? `${dispatchExecArgs} ` : ""}${uwsmIsActive ? "uwsm app -- " : ""}${executable}`
+    );
 }
 
 export function getAppsByName(appName: string): (Array<AstalApps.Application>|undefined) {

@@ -21,7 +21,7 @@ export function PageMicrophone(): Page {
                     className: bind(microphone, "isDefault").as(isDefault => isDefault ? "default" : ""),
                     icon: bind(microphone, "icon").as(icon => 
                         Astal.Icon.lookup_icon(icon) ? icon : "audio-input-microphone-symbolic"),
-                    title: bind(microphone, "name").as(name => name ?? "Microphone"),
+                    title: bind(microphone, "description").as(desc => desc ?? "Microphone"),
                     onClick: () => microphone.set_is_default(true),
                     endWidget: new Widget.Icon({
                         icon: "object-select-symbolic",
