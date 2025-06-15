@@ -4,14 +4,18 @@
 @use "./functions";
 
 .apps-window-container {
-  padding: 24px;
+  $radius: 48px;
+
+  padding: 28px;
   background: colors.$bg-translucent;
-  border-radius: 32px 32px 0 0;
+  border-radius: $radius $radius 0 0;
 
   & > entry {
     background: rgba(colors.$bg-primary, .4);
     margin-bottom: 32px;
-    min-width: 400px;
+    min-width: 450px;
+    padding: 14px;
+    border-radius: 18px;
   }
 
   & flowbox {
