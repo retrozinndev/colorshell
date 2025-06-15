@@ -1,7 +1,7 @@
-# About Walppapers
+# About
 
-None of them are made by me. You can find their artists, and more wallpapers 
-in their source link.
+None of them are made by me. You can view and find their source 
+by expanding them below.
 
 ## Bocchi The Rock!
 
@@ -146,7 +146,7 @@ in their source link.
 - Source: [Gruvbox Wallpapers](https://gruvbox-wallpapers.pages.dev)
 </details>
 
-<!----------------- -->
+<!---------------- -->
 ## Vocaloid Wallpapers
 
 <details>
@@ -399,7 +399,7 @@ in their source link.
 - Source: [WallHaven](https://wallhaven.cc/w/o3r8z9)
 </details>
 
-<!----------------- -->
+<!---------------- -->
 ## Frieren: Beyond Journey's End
 <details>
   <summary>
@@ -481,7 +481,7 @@ in their source link.
 - Source: [Alpha Coders](https://wall.alphacoders.com/big.php?i=1357998)
 </details>
 
-<!----------------- -->
+<!---------------- -->
 ## Oshi no Ko
 <details>
   <summary>
@@ -518,10 +518,6 @@ in their source link.
 - [Gruvbox Wallpapers](https://gruvbox-wallpapers.pages.dev)
 
 <!---------------- -->
-## Gruvbox-styled Wallpapers
-
-- [Gruvbox Wallpapers](https://gruvbox-wallpapers.pages.dev)
-
 ## Genshin Impact Wallpaper(s)
 Those can be get on web events in Genshin Impact, and also on [HoYoLAB](https://hoyolab.com).
 <details>
@@ -534,7 +530,7 @@ Those can be get on web events in Genshin Impact, and also on [HoYoLAB](https://
 - Source: Genshin Impact Web Event (not available anymore)
 </details>
 
-
+<!---------------- -->
 ## Others
 <details>
   <summary>

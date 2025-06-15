@@ -11,11 +11,11 @@ export const AppsWindow = (mon: number): (Widget.Window) => {
     });
 
     let results: Array<AstalApps.Application> = [];
-    const flowboxConnections: Array<number> = [];
 
+    const flowboxConnections: Array<number> = [];
     const flowbox = new Gtk.FlowBox({
-        rowSpacing: 6,
-        columnSpacing: 6,
+        rowSpacing: 60,
+        columnSpacing: 60,
         homogeneous: true,
         visible: true,
         minChildrenPerLine: 1,
@@ -36,17 +36,14 @@ export const AppsWindow = (mon: number): (Widget.Window) => {
             a.name > b.name ? 1 : -1);
         else results = getAstalApps().fuzzy_query(str);
 
-        // Destroy is handled by GnomeJS
-        flowbox.get_children().map(flowboxChild => flowbox.remove(flowboxChild));
+        flowbox.get_children().map(flowboxChild => 
+            flowbox.remove(flowboxChild));
 
         results.map(app => {
             flowbox.insert(AppWidget(app), -1);
 
-            const flowboxchild = flowbox.get_child_at_index(flowbox.get_children().length-1)!.get_child();
-            if(!flowboxchild) return;
-
-            flowboxchild.set_valign(Gtk.Align.START);
-            flowboxchild.set_halign(Gtk.Align.START);
+            const child = flowbox.get_child_at_index(flowbox.get_children().length - 1);
+            child?.set_valign(Gtk.Align.START);
         });
 
         const firstChild = flowbox.get_child_at_index(0);
@@ -58,9 +55,9 @@ export const AppsWindow = (mon: number): (Widget.Window) => {
         // Astal3.Button doesn't work the way I need, so I'll use normal GtkButton
         const button = new Gtk.Button({
             visible: true,
-            widthRequest: 180,
+            // widthRequest: 180,
             heightRequest: 140,
-            expand: false,
+            expand: true,
             tooltipMarkup: `${app.name}${app.description ? 
                 `\n<span foreground="#7f7f7f">${app.description}</span>`
             : ""}`.replace(/\&/g, "&amp;"),
