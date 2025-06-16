@@ -5,9 +5,11 @@ import AstalHyprland from "gi://AstalHyprland";
 import { execAsync } from "astal";
 
 
+export const uwsmIsActive: boolean = await execAsync(
+    "uwsm check is-active hyprland-uwsm.desktop"
+).then(() => true).catch(() => false);
 const astalApps: AstalApps.Apps = new AstalApps.Apps();
-const uwsmIsActive: boolean = await execAsync("uwsm check is-active").then((stdout) =>
-    /hyprland/gi.test(stdout)).catch(() => false);
+
 let appsList: Array<AstalApps.Application> = astalApps.get_list();
 
 export function getApps(): Array<AstalApps.Application> {
