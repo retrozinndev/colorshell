@@ -172,7 +172,7 @@ class Page extends Widget.Box {
     }
 }
 
-export function PageButton(props: {
+export function PageButton({ onDestroy, ...props }: {
     className?: string | Binding<string>;
     icon?: string | Binding<string>;
     title: string | Binding<string>;
@@ -185,7 +185,7 @@ export function PageButton(props: {
     tooltipMarkup?: string | Binding<string>;
 }): Gtk.Widget {
     return new Widget.Box({
-        onDestroy: props.onDestroy,
+        onDestroy,
         children: [
             new Widget.Button({
                 onClick: props.onClick,
@@ -202,17 +202,26 @@ export function PageButton(props: {
                             className: "icon",
                             icon: props.icon,
                             visible: props.icon,
+                            hexpand: false,
                             css: "font-size: 20px; margin-right: 6px;"
                         } as Widget.IconProps),
                         new Widget.Box({
                             orientation: Gtk.Orientation.VERTICAL,
-                            expand: true,
+                            hexpand: true,
+                            vexpand: false,
                             children: [ 
                                 new Widget.Label({
                                     className: "title",
                                     xalign: 0,
+                                    // truncating is not working, so I had to do this
+                                    label: (props.title instanceof Binding) ? 
+                                        props.title.as((title) => 
+                                            `${title.substring(0, 35)}${
+                                                title.length > 35 ? '…' : ""}`)
+                                    : `${props.title.substring(0, 35)}${
+                                        props.title.length > 35 ? '…' : ""}`,
+                                    tooltipText: props.title,
                                     truncate: true,
-                                    label: props.title
                                 } as Widget.LabelProps),
                                 new Widget.Label({
                                     className: "description",
@@ -230,6 +239,7 @@ export function PageButton(props: {
                             visible: (props.endWidget instanceof Binding) ? 
                                 props.endWidget.as(Boolean)
                             : props.endWidget,
+                            halign: Gtk.Align.END,
                             child: props.endWidget
                         } as Widget.BoxProps)
                     ]

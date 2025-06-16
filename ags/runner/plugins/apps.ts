@@ -1,6 +1,6 @@
 import { ResultWidget, ResultWidgetProps } from "../../widget/runner/ResultWidget";
 import AstalApps from "gi://AstalApps";
-import { cleanExec, getAstalApps, updateApps } from "../../scripts/apps";
+import { execApp, getAstalApps, updateApps } from "../../scripts/apps";
 import { Runner } from "../Runner";
 import { Astal } from "astal/gtk3";
 
@@ -15,7 +15,7 @@ export const PluginApps = {
                 title: app.get_name(),
                 description: app.get_description(),
                 icon: Astal.Icon.lookup_icon(app.iconName) ? app.iconName : "application-x-executable-symbolic",
-                onClick: () => cleanExec(app)
+                onClick: () => execApp(app)
             } as ResultWidgetProps)
         );
     }

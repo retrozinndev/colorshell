@@ -4,10 +4,18 @@ import AstalMpris from "gi://AstalMpris";
 import { getSymbolicIcon } from "../../scripts/apps";
 import { Separator, SeparatorProps } from "../Separator";
 import { Windows } from "../../windows";
-import { Clipboard } from "../../scripts/clipboard";
 
+<<<<<<< ryo
+=======
+
+const playerIcons = {
+    spotify: "spotify-symbolic",
+    mpv: "mpv-symbolic",
+    Clapper: "com.github.rafostar.Clapper-symbolic"
+};
+
+>>>>>>> ryo
 export function Media(): Gtk.Widget {
-    
     const connections: Array<number> = [];
 
     const mediaControlsRevealer: Widget.Revealer = new Widget.Revealer({
@@ -26,11 +34,9 @@ export function Media(): Gtk.Widget {
                             icon: "edit-paste-symbolic"
                         } as Widget.IconProps),
                         tooltipText: "Copy link to Clipboard",
-                        visible: bind(players[0], "metadata").as((meta) => 
-                            Boolean(meta["xesam:url"]?.get_string()[0])),
-                        onClick: () => Clipboard.getDefault().copyAsync(
-                            players[0].metadata["xesam:url"].get_string()[0]
-                        )
+                        visible: bind(players[0], "metadata").as((metadata) => 
+                            metadata["xesam:url"]?.get_string()[0] != null),
+                        onClick: () => console.log(players[0].metadata["xesam:url"]?.get_string()[0]!)
                     } as Widget.ButtonProps),
                     new Widget.Button({
                         className: "previous",

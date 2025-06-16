@@ -1,6 +1,8 @@
 @use "./colors";
 
 .logout-menu {
+  background: rgba($color: colors.$bg-translucent-primary, $alpha: .4);
+
   .top {
     .time {
       font-size: 128px;

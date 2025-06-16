@@ -7,19 +7,16 @@ import { TilesPages } from "../Tiles";
 import { isInstalled } from "../../../scripts/utils";
 import { Widget } from "astal/gtk3";
 
-export const TileNightLight = () => isInstalled("hyprsunset") ? 
-    Tile({
+export const TileNightLight = () => isInstalled("hyprsunset") ? Tile({
         title: tr("control_center.tiles.night_light.title"),
         icon: "weather-clear-night-symbolic",
         description: Variable.derive([
             bind(NightLight.getDefault(), "temperature"),
             bind(NightLight.getDefault(), "gamma")
-        ], (temp, gamma) => 
-            (temp === 6000 ? tr("control_center.tiles.night_light.default_desc") 
-                : `${temp}K`) + (gamma < NightLight.getDefault().maxGamma ? 
-                    ` (${gamma}%)` : "")
+        ], (temp, gamma) => `${temp === NightLight.getDefault().identityTemperature ? 
+                tr("control_center.tiles.night_light.default_desc") : `${temp}K`} ${
+            gamma < NightLight.getDefault().maxGamma ? `(${gamma}%)` : ""}`
         )(),
-        iconSize: 16,
         onToggledOff: () => NightLight.getDefault().identity = true,
         onToggledOn: () => NightLight.getDefault().identity = false,
         enableOnClickMore: true,

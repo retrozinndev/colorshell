@@ -1,8 +1,8 @@
-import { exec, execAsync, GLib, Variable } from "astal";
+import { exec, GLib, Variable } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
-import AstalHyprland from "gi://AstalHyprland";
 import { Windows } from "../../windows";
 import { Wallpaper } from "../../scripts/wallpaper";
+import { execApp } from "../../scripts/apps";
 
 
 function LockButton(): Widget.Button {
@@ -12,7 +12,7 @@ function LockButton(): Widget.Button {
         } as Widget.IconProps),
         onClick: () => {
             Windows.close("control-center");
-            AstalHyprland.get_default().dispatch("exec", "hyprlock");
+            execApp("hyprlock");
         }
     } as Widget.ButtonProps)
 }
@@ -22,10 +22,10 @@ function ColorPickerButton(): Widget.Button {
         image: new Widget.Icon({
             icon: "color-select-symbolic"
         } as Widget.IconProps),
-        onClick: () => AstalHyprland.get_default().dispatch(
-            "exec", 
-            "sh $HOME/.config/hypr/scripts/color-picker.sh"
-        )
+        onClick: () => {
+            Windows.close("control-center");
+            execApp("sh $HOME/.config/hypr/scripts/color-picker.sh");
+        }
     } as Widget.ButtonProps)
 }
 
@@ -36,7 +36,7 @@ function ScreenshotButton(): Widget.Button {
         } as Widget.IconProps),
         onClick: () => {
             Windows.close("control-center");
-            execAsync(`sh ${GLib.get_user_config_dir()}/hypr/scripts/screenshot.sh`);
+            execApp(`sh ${GLib.get_user_config_dir()}/hypr/scripts/screenshot.sh`);
         }
     } as Widget.ButtonProps);
 }
@@ -58,7 +58,10 @@ function LogoutButton(): Widget.Button {
         image: new Widget.Icon({
             icon: "system-shutdown-symbolic"
         } as Widget.IconProps),
-        onClick: () => Windows.open("logout-menu")
+        onClick: () => {
+            Windows.close("control-center");
+            Windows.open("logout-menu");
+        }
     } as Widget.ButtonProps);
 }
 

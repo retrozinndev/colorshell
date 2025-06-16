@@ -27,7 +27,7 @@ export function PageSound(): Page {
                     className: bind(speaker, "isDefault").as(isDefault => isDefault ? "default" : ""),
                     icon: bind(speaker, "icon").as(icon => 
                         Astal.Icon.lookup_icon(icon)? icon : "audio-card-symbolic"),
-                    title: speaker.name ?? "Speaker",
+                    title: bind(speaker, "description").as(desc => desc ?? "Speaker"),
                     onClick: () => speaker.set_is_default(true),
                     endWidget: new Widget.Icon({
                         icon: "object-select-symbolic",

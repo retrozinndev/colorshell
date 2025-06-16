@@ -12,12 +12,12 @@ export const PluginClipboard = {
         if(Clipboard.getDefault().history.length < 1) 
             return new ResultWidget({
                 icon: "edit-paste-symbolic",
-                title: "No clipboard items found!",
-                description: "When something is copied, it'll be shown right here!"
+                title: "Clipboard is empty",
+                description: "Copy something and it will be shown right here!"
             } as ResultWidgetProps);
         
         return Clipboard.getDefault().history.filter(item => // not the best way to search, but it works
-                Runner.regExMatch(search, item.id.toString()) || Runner.regExMatch(search, item.preview)).map((item) =>
+                Runner.regExMatch(search, item.id) || Runner.regExMatch(search, item.preview)).map((item) =>
             new ResultWidget({
                 icon: new Widget.Label({
                     label: item.id.toString(),

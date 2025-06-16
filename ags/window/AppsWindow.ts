@@ -1,6 +1,6 @@
 import { GObject, Variable } from "astal";
 import { Astal, Gdk, Gtk, Widget } from "astal/gtk3";
-import { cleanExec, getAppIcon, getApps, getAstalApps } from "../scripts/apps";
+import { execApp, getAppIcon, getApps, getAstalApps } from "../scripts/apps";
 import AstalApps from "gi://AstalApps";
 import { PopupWindow } from "../widget/PopupWindow";
 
@@ -83,7 +83,7 @@ export const AppsWindow = (mon: number): (Widget.Window) => {
         button.set_can_focus(false);
 
         const openFun = () => {
-            cleanExec(app);
+            execApp(app);
             window.close();
         };
 
