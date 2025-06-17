@@ -92,7 +92,7 @@ export const PageNetwork: (() => Page) = () => new Page({
                             new Widget.Label({
                                 className: "ssid",
                                 halign: Gtk.Align.START,
-                                label: getDecoded(ap.ssid.get_data()) ?? "Wi-Fi"
+                                label: (getDecoded(ap.ssid.get_data()) ?? ap.ssid.get_data().toString()) ?? "Wi-Fi"
                             } as Widget.LabelProps),
                             new Widget.Label({
                                 className: "status",
