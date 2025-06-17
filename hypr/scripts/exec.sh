@@ -8,9 +8,9 @@
 # From: https://github.com/retrozinndev/colorshell
 
 
-if uwsm check is-active; then
-    hyprctl dispatch exec "uwsm app -- $@" > /dev/null
+if uwsm check is-active "hyprland-uwsm.desktop"; then
+    exec uwsm app -- "$@"
     exit 0
 fi
 
-hyprctl dispatch exec "$@" > /dev/null
+exec "$@"
