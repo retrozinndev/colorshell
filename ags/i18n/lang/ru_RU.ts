@@ -42,7 +42,7 @@ export default {
             },
             night_light: {
                 title: "Ночной свет",
-                default_desc: "Точность"
+                default_desc: "Тонн"
             }
         },
         pages: {
@@ -69,10 +69,10 @@ export default {
                 paired_devices: "Привязанные устройства",
                 start_discovering: "Начать поиск",
                 stop_discovering: "Остановить поиск",
-                untrust_device: "Не доверять устройству",
-                unpair_device: "Отвязать устройство",
-                trust_device: "Доверять устройству",
-                pair_device: "Привязать устройство"
+                untrust_device: "Недоверенное устройство",
+                unpair_device: "Отвязанное устройство",
+                trust_device: "Доверенное устройство",
+                pair_device: "Привязанное устройство"
             },
             network: {
                 title: "Интернет",

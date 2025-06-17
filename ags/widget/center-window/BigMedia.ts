@@ -189,7 +189,7 @@ export function BigMedia(): Gtk.Widget {
                         halign: Gtk.Align.END,
                         label: bind(players[0], "length").as((len/* bananananananana */: number) => {
                             const sec: number = Math.floor(len % 60);
-                            return len > 0 ? 
+                            return (len > 0 && Number.isFinite(len)) ? 
                                 `${Math.floor(len / 60)}:${sec < 10 ? "0" : ""}${sec}`
                             : "0:00";
                         })

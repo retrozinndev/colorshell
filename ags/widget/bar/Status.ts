@@ -123,18 +123,12 @@ function StatusIcons(): Gtk.Widget {
 
     const networkIcon: Variable<string> = Variable.derive([
         bind(AstalNetwork.get_default(), "primary"),
-        bind(AstalNetwork.get_default(), "wired"),
-        bind(AstalNetwork.get_default(), "wifi")
     ],
-    (primary, wired, wifi) => {
+    (primary) => {
         switch(primary) {
-            case AstalNetwork.Primary.WIRED: return wired ? 
-                    "network-wired-symbolic"
-                : "network-wired-no-route-symbolic";
+            case AstalNetwork.Primary.WIRED: return AstalNetwork.get_default().wired.get_icon_name();
 
-            case AstalNetwork.Primary.WIFI: return wifi ?
-                    "network-wireless-signal-excellent-symbolic"
-                : "network-wireless-offline-symbolic";
+            case AstalNetwork.Primary.WIFI: return AstalNetwork.get_default().wifi.get_icon_name();
         }
 
         return "network-no-route-symbolic";

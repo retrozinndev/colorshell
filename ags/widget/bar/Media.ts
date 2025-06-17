@@ -1,15 +1,9 @@
 import { bind } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
 import AstalMpris from "gi://AstalMpris";
+import { getSymbolicIcon } from "../../scripts/apps";
 import { Separator, SeparatorProps } from "../Separator";
 import { Windows } from "../../windows";
-
-
-const playerIcons = {
-    spotify: "spotify-symbolic",
-    mpv: "mpv-symbolic",
-    Clapper: "com.github.rafostar.Clapper-symbolic"
-};
 
 export function Media(): Gtk.Widget {
     const connections: Array<number> = [];
@@ -88,13 +82,12 @@ export function Media(): Gtk.Widget {
                         players[0] ? [
                             new Widget.Icon({
                                 icon: bind(players[0], "busName").as((busName: string) => {
-                                    const splitName = busName.split('.').filter(str => str !== "");
-
-                                    return playerIcons[
-                                        Object.keys(playerIcons).filter(icon =>
-                                            splitName[splitName.length - 1].includes(icon))?.[0] as keyof typeof playerIcons
-                                        ] 
-                                    ?? "folder-music-symbolic";
+                                    const splitName = busName.split('.').filter(str => str !== "" && !str.toLowerCase().includes('instance'));
+                                    if (getSymbolicIcon(splitName[splitName.length - 1])) {
+                                        return getSymbolicIcon(splitName[splitName.length - 1]);
+                                    } else {
+                                        return "folder-music-symbolic"
+                                    };
                                 })
                             } as Widget.IconProps),
                             new Widget.Label({

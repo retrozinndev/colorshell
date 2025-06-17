@@ -1,7 +1,7 @@
 import { bind, Variable } from "astal";
 import { Gtk, Widget } from "astal/gtk3"
 import AstalHyprland from "gi://AstalHyprland";
-import { getAppIcon } from "../../scripts/apps";
+import { getSymbolicIcon } from "../../scripts/apps";
 
 export const SpecialWorkspaces: (() => Gtk.Widget) = () => new Widget.EventBox({
     className: "special-ws-eventbox",
@@ -28,9 +28,7 @@ export const SpecialWorkspaces: (() => Gtk.Widget) = () => new Widget.EventBox({
                             ], (lastClient, focusedWorkspace) => focusedWorkspace?.id === workspace.id ?
                                  false : Boolean(lastClient))(),
                             icon: bind(workspace, "lastClient").as((lastClient) =>
-                                lastClient ? 
-                                    getAppIcon(lastClient.initialClass) || "image-missing"
-                                : "image-missing")
+                                getSymbolicIcon(lastClient) ?? "image-missing")
                         } as Widget.IconProps)
                     } as Widget.BoxProps),
                     onClickRelease: () => AstalHyprland.get_default().dispatch(
