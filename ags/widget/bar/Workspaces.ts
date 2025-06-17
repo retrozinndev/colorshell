@@ -1,7 +1,7 @@
 import { bind, Variable } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
 import AstalHyprland from "gi://AstalHyprland";
-import { getAppIcon } from "../../scripts/apps";
+import { getSymbolicIcon } from "../../scripts/apps";
 
 let showWsNum: (Variable<boolean>|undefined);
 export const showWorkspaceNumber = (show: boolean) => 
@@ -73,7 +73,7 @@ export function Workspaces(): Gtk.Widget {
                                         : Boolean(lastClient)),
                                     icon: lastClient ?
                                         bind(lastClient, "class").as((clss) =>
-                                            getAppIcon(clss) ?? "application-x-executable-symbolic")
+                                            getSymbolicIcon(clss) ?? "application-x-executable-symbolic")
                                     : undefined
                                 } as Widget.IconProps)
                             ])
