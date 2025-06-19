@@ -2,11 +2,11 @@
 <p>(previously retrozinndev/Hyprland-Dots)</p>
 
 > [!note]
-> personal dotfiles moved to another repo! see [retrozinndev/Hyprland-Dots](https://github.com/retrozinndev/Hyprland-Dots)
+> My personal dotfiles are now on [retrozinndev/Hyprland-Dots](https://github.com/retrozinndev/Hyprland-Dots)
 
-My Hyprland desktop shell that I keep improving almost everyday! 🤩 (i love doing this) <br>
+My Hyprland Desktop Shell that I love to keep improving every day! 🤩 <br>
 
-This repository includes a desktop shell made with [GTK], using [Astal] and [AGS] + [TypeScript]. 
+This is the repository for my desktop shell, made with [GTK], [Astal] and [AGS] + [TypeScript]. <br>
 It really took me a lot of time to make this, so please star the repo if you like it! :star:
 
 ## 🌄 Screenshots
@@ -20,8 +20,8 @@ All the shell colors are dynamically generated from your wallpaper!
 This is possible by using [pywal16](fork of the archived [pywal](https://github.com/dylanaraps/pywal) project), a cli tool to generate color schemes on the fly.
 
 ## 🖼️ Wallpapers
-When you're at the [Installation](#%EF%B8%8F-installation) process, you can choose whether to install the wallpapers. 
-Or if you haven't, you can just create a directory `~/wallpapers` in your home `~` and put images you want to use as wallpapers!
+When you're at the [Installation](#%EF%B8%8F-installation) process, you can choose whether you want to install the wallpapers or not. <br>
+If you chose to not, either define the `$WALLPAPERS` variable in your hyprland user configuration to your wallpapers folder, or create the `~/wallpapers` directory.
 
 You can select any of the images inside `~/wallpapers` by pressing <kbd>SUPER</kbd> + <kbd>W</kbd> or by accessing the 
 Control Center and clicking in the image icon on top.
@@ -62,6 +62,7 @@ None of the wallpapers available in this repo are made by me! You can find sourc
   - Search(`?`): Search something on the internet with your default browser
 - Gnome-like application list
 - Support for your multiple monitors
+- Dynamic support for [UWSM](https://github.com/Vladimir-csp/uwsm)(dinamically enabled if current session is using UWSM)
 
 ## ⌨️ Binds
 You can see default bindings and usage information on the [Wiki/Usage] page!
