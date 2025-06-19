@@ -9,7 +9,7 @@ export const showWorkspaceNumber = (show: boolean) =>
 
 
 export function Workspaces(): Gtk.Widget {
-    showWsNum = new Variable<boolean>(false);
+    showWsNum ??= new Variable<boolean>(false);
 
     return new Widget.EventBox({
         onScroll: (_, event) => 
@@ -26,10 +26,26 @@ export function Workspaces(): Gtk.Widget {
             className: "workspaces",
             spacing: 4,
             children: bind(AstalHyprland.get_default(), "workspaces").as((workspaces) => 
-                workspaces.filter((ws) => ws.id > 0).sort((a, b) => a.id - b.id).map((workspace) => {
+                workspaces.filter((ws) => ws.id > 0).sort((a, b) => a.id - b.id).map((workspace, wsIndex, workspaces) => {
+
+                    const transformFn = (showNum: boolean) => {
+                        const previousWorkspace = workspaces[wsIndex-1];
+                        const nextWorkspace = workspaces[wsIndex+1];
+
+                        if((workspaces.filter((_, i) => i < wsIndex).length > 0 && 
+                            previousWorkspace?.id < (workspace.id-1)) || 
+                           (workspaces.filter((_, i) => i > wsIndex).length > 0 && 
+                            nextWorkspace?.id > (workspace.id+1))) {
+
+                            return true;
+                        }
+
+                        return showNum;
+                    }
+
                     const className = Variable.derive([
                         bind(AstalHyprland.get_default(), "focusedWorkspace"),
-                        showWsNum!()
+                        showWsNum!(transformFn)
                     ], (focusedWs, showWsNumbers) =>
                         `${focusedWs.id === workspace.id ? "focus" : ""} ${showWsNumbers ? "show" : ""}`
                     );
@@ -58,7 +74,7 @@ export function Workspaces(): Gtk.Widget {
                                 new Widget.Revealer({
                                     transitionDuration: 200,
                                     transitionType: Gtk.RevealerTransitionType.SLIDE_LEFT,
-                                    revealChild: showWsNum!(),
+                                    revealChild: showWsNum!(transformFn),
                                     child: new Widget.Label({
                                         label: bind(workspace, "id").as(String),
                                         className: "id",
