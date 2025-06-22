@@ -78,9 +78,9 @@ export const BluetoothPage: (() => Page) = () => new Page({
                     orientation: Gtk.Orientation.VERTICAL,
                     spacing: 2,
                     visible: bind(AstalBluetooth.get_default(), "devices").as((devs) => 
-                        devs.filter(dev => dev.paired || dev.connected).length > 0),
+                        devs.filter(dev => dev.paired || dev.connected || dev.trusted).length > 0),
                     children: bind(AstalBluetooth.get_default(), "devices").as((devs) => {
-                        const connectedDevices = devs.filter((dev) => (dev.connected || dev.paired) && dev.trusted)
+                        const connectedDevices = devs.filter((dev) => dev.connected || dev.paired || dev.trusted)
 
                         return [
                             new Widget.Label({
@@ -97,7 +97,7 @@ export const BluetoothPage: (() => Page) = () => new Page({
                     orientation: Gtk.Orientation.VERTICAL,
                     spacing: 2,
                     visible: bind(AstalBluetooth.get_default(), "devices").as((devs) => 
-                        devs.filter((dev) => !dev.connected && !dev.paired).length > 0),
+                        devs.filter((dev) => !dev.connected && !dev.paired && !dev.trusted).length > 0),
                     children: bind(AstalBluetooth.get_default(), "devices").as((devices) => {
                         const discoveredDevices = devices.filter((dev) => !dev.connected && !dev.paired && !dev.trusted);
 
