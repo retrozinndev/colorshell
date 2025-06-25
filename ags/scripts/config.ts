@@ -48,7 +48,7 @@ class Config extends GObject.Object implements Subscribable {
     private readonly defaultFile = Gio.File.new_for_path(
         `${GLib.get_user_config_dir()}/colorshell/config.json`);
 
-    /** Frozen-object(immutable) with default entries. User-values are stored 
+    /** unmodified object with default entries. User-values are stored 
     * in the `entries` field */
     public readonly defaults: ConfigEntries = {
         notifications: {
@@ -81,8 +81,6 @@ class Config extends GObject.Object implements Subscribable {
 
     constructor(filePath?: (Gio.File|string)) {
         super();
-
-        Object.freeze(this.defaults);
 
         this.#file = (typeof filePath === "string") ? 
             Gio.File.new_for_path(filePath)
@@ -173,6 +171,14 @@ class Config extends GObject.Object implements Subscribable {
             }
 
             this.notifySubs();
+        }).catch((e: Gio.IOErrorEnum) => {
+            Notifications.getDefault().sendNotification({
+                    urgency: AstalNotifd.Urgency.NORMAL,
+                    appName: "colorshell",
+                    summary: "Config read error",
+                    body: `An error occurred while reading colorshell's config file: \nFile: ${`${
+                        this.#file.get_path()!}\n${e.message ? `${e.message}\n` : ""}${e.stack}`.replace(/[<>]/g, "\\&")}`
+                });
         });
     }
 
@@ -195,35 +201,26 @@ class Config extends GObject.Object implements Subscribable {
         return this._getProperty(path, this.defaults, expectType);
     }
 
-    private _getProperty(propertyPath: string, entries: ConfigEntries, expectType?: ValueTypes): (any|undefined) {
+    private _getProperty(path: string, entries: ConfigEntries, expectType?: ValueTypes): (any|undefined) {
         let property: any = entries;
-        const pathArray = propertyPath.split('.').filter(str => str);
+        const pathArray = path.split('.').filter(str => str);
 
         for(let i = 0; i < pathArray.length; i++) {
-            const path = propertyPath[i];
+            const currentPath = pathArray[i];
 
-            if(i < pathArray.length-2 && property?.[path] === undefined) {
-                console.error(`Config: property with path \`${
-                    pathArray.filter((_, idx) => idx <= i).join('.')
-                }\` either could not be found in config entries or its value is \`undefined\`, returning default value`);
-
-                property = undefined;
-                break;
-            }
-
-            property = property[path as keyof typeof property];
+            property = property[currentPath as keyof typeof property];
         }
 
         if(expectType !== "any" && typeof property !== expectType) {
-            console.error(`Config: property with path \`${propertyPath
+            console.error(`Config: property with path \`${path
                 }\` is either \`undefined\` or not in the expected value type \`${expectType
                 }\`, returning default value`);
 
-            property = this.getPropertyDefault(propertyPath);
+            property = this.getPropertyDefault(path);
         }
 
         if(expectType !== "any" && typeof property !== expectType) {
-            console.error(`Config: property with path \`${propertyPath}\` not found in defaults/user-entries, returning \`undefined\``);
+            console.error(`Config: property with path \`${path}\` not found in defaults/user-entries, returning \`undefined\``);
             property = undefined;
         }
 
