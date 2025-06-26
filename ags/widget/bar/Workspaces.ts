@@ -1,7 +1,9 @@
 import { bind, Variable } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
 import AstalHyprland from "gi://AstalHyprland";
-import { getSymbolicIcon } from "../../scripts/apps";
+import { getAppIcon, getSymbolicIcon } from "../../scripts/apps";
+import { Windows } from "../../windows";
+import { Config } from "../../scripts/config";
 
 let showWsNum: (Variable<boolean>|undefined);
 export const showWorkspaceNumber = (show: boolean) => 
@@ -19,35 +21,45 @@ export function Workspaces(): Gtk.Widget {
         onHover: () => showWorkspaceNumber(true),
         onHoverLost: () => showWorkspaceNumber(false),
         onDestroy: () => {
-            showWsNum?.drop();
-            showWsNum = undefined;
+            // check if the current widgets is from the only bar
+            if((Windows.openWindows["bar"] as (Array<Widget.Window>|undefined))?.length === 1) {
+                showWsNum?.drop();
+                showWsNum = undefined;
+            }
         },
         child: new Widget.Box({
             className: "workspaces",
             spacing: 4,
             children: bind(AstalHyprland.get_default(), "workspaces").as((workspaces) => 
                 workspaces.filter((ws) => ws.id > 0).sort((a, b) => a.id - b.id).map((workspace, wsIndex, workspaces) => {
+                    
+                    const showIds: Variable<boolean> = Variable.derive([
+                        Config.getDefault().bindProperty("workspaces.always_show_id", "boolean").as(Boolean),
+                        Config.getDefault().bindProperty("workspaces.enable_helper", "boolean").as(Boolean),
+                        showWsNum!()
+                    ], (alwaysShowIds, enableHelper, showIds) => {
+                        if(enableHelper && !alwaysShowIds) {
+                            const previousWorkspace = workspaces[wsIndex-1];
+                            const nextWorkspace = workspaces[wsIndex+1];
 
-                    const transformFn = (showNum: boolean) => {
-                        const previousWorkspace = workspaces[wsIndex-1];
-                        const nextWorkspace = workspaces[wsIndex+1];
+                            if((workspaces.filter((_, i) => i < wsIndex).length > 0 && 
+                                previousWorkspace?.id < (workspace.id-1)) || 
+                               (workspaces.filter((_, i) => i > wsIndex).length > 0 && 
+                                nextWorkspace?.id > (workspace.id+1))) {
 
-                        if((workspaces.filter((_, i) => i < wsIndex).length > 0 && 
-                            previousWorkspace?.id < (workspace.id-1)) || 
-                           (workspaces.filter((_, i) => i > wsIndex).length > 0 && 
-                            nextWorkspace?.id > (workspace.id+1))) {
-
-                            return true;
+                                return true;
+                            }
                         }
 
-                        return showNum;
-                    }
+                        return alwaysShowIds || showIds;
+                    });
 
                     const className = Variable.derive([
                         bind(AstalHyprland.get_default(), "focusedWorkspace"),
-                        showWsNum!(transformFn)
+                        showIds!()
                     ], (focusedWs, showWsNumbers) =>
-                        `${focusedWs.id === workspace.id ? "focus" : ""} ${showWsNumbers ? "show" : ""}`
+                        `${focusedWs.id === workspace.id ? "focus" : ""} ${
+                            showWsNumbers ? "show" : ""}`
                     );
 
                     const tooltipText = Variable.derive([
@@ -66,6 +78,7 @@ export function Workspaces(): Gtk.Widget {
                         onClickRelease: () => workspace.focus(),
                         tooltipText: tooltipText(),
                         onDestroy: () => {
+                            showIds.drop();
                             className.drop();
                             tooltipText.drop();
                         },
@@ -74,7 +87,7 @@ export function Workspaces(): Gtk.Widget {
                                 new Widget.Revealer({
                                     transitionDuration: 200,
                                     transitionType: Gtk.RevealerTransitionType.SLIDE_LEFT,
-                                    revealChild: showWsNum!(transformFn),
+                                    revealChild: showIds!(),
                                     child: new Widget.Label({
                                         label: bind(workspace, "id").as(String),
                                         className: "id",
@@ -89,7 +102,7 @@ export function Workspaces(): Gtk.Widget {
                                         : Boolean(lastClient)),
                                     icon: lastClient ?
                                         bind(lastClient, "class").as((clss) =>
-                                            getSymbolicIcon(clss) ?? "application-x-executable-symbolic")
+                                            getSymbolicIcon(clss) ?? getAppIcon(clss) ?? "application-x-executable-symbolic")
                                     : undefined
                                 } as Widget.IconProps)
                             ])
