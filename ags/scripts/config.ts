@@ -113,15 +113,17 @@ class Config extends GObject.Object implements Subscribable {
         }
 
         monitorFile(this.#file.get_path()!, 
-            async () => {
+            () => {
                 if(this.timeout) return;
-                this.timeout = timeout(300, () => this.timeout = undefined);
+                this.timeout = timeout(500, () => this.timeout = undefined);
 
                 if(this.#file.query_exists(null)) {
                     this.timeout?.cancel();
                     this.timeout = true;
 
-                    this.readFile();
+                    this.readFile().finally(() => 
+                        this.timeout = undefined);
+
                     return;
                 }
 
