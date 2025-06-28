@@ -2,7 +2,7 @@ import AstalBluetooth from "gi://AstalBluetooth";
 import AstalNetwork from "gi://AstalNetwork";
 import AstalWp from "gi://AstalWp";
 
-import { bind, Binding, Variable } from "astal";
+import { bind, Binding, Variable, GLib } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
 import { Wireplumber } from "../../scripts/volume";
 import { Notifications } from "../../scripts/notifications";
@@ -10,7 +10,9 @@ import { Windows } from "../../windows";
 import { Recording } from "../../scripts/recording";
 import { getDateTime } from "../../scripts/time";
 import { tr } from "../../i18n/intl";
+import { Time, timeout, idle } from "astal/time";
 
+import { IconStatus } from "../../scripts/icons";
 
 export function Status(): Gtk.Widget {
     const recordingTimer: Variable<string> = Variable.derive([
@@ -88,24 +90,64 @@ export function Status(): Gtk.Widget {
 function volumeStatus(props: { className?: string, endpoint: AstalWp.Endpoint, icon?: (string|Binding<string>) }): Gtk.Widget {
     return new Widget.EventBox({
         className: props.className,
-        onScroll: (_, event) => 
-            event.delta_y > 0 ?
+            onScroll: (_, event) => //ugh.....
+                event.delta_y > 0 ?
                 Wireplumber.getDefault().decreaseEndpointVolume(props.endpoint, 5)
             : Wireplumber.getDefault().increaseEndpointVolume(props.endpoint, 5),
-            child: new Widget.Box({
-                spacing: 2,
-                children: [
-                    new Widget.Icon({
-                        visible: props.icon,
-                        icon: props.icon,
-                    } as Widget.IconProps),
-                    new Widget.Label({
-                        className: "volume",
-                        label: bind(props.endpoint, "volume").as((volume: number) => 
-                            Math.floor(volume * 100) + "%")
-                    } as Widget.LabelProps),
-                ]
-            } as Widget.BoxProps)
+            setup: (eventbox) => {
+                let timer: (Time|undefined);
+                const connections: Array<number> = [];
+
+                const showRevealer = (self: any) => {
+                    self.revealChild = true;
+
+                    if (timer) {
+                        timer.cancel();
+                    }
+                                    
+                    timer = timeout(3000, () => {
+                        self.revealChild = false
+                        timer = undefined;
+                    });
+                }
+                
+                eventbox.add(new Widget.Box({
+                    spacing: 2,
+                    children: [
+                        new Widget.Icon({
+                            visible: props.icon,
+                            icon: props.icon,
+                        }),
+                        new Widget.Revealer({
+                            transitionDuration: 180,
+                            transitionType: Gtk.RevealerTransitionType.SLIDE_LEFT,
+                            setup: (self) => {
+                                
+                                connections.push(
+                                    eventbox.connect("hover", () => self.revealChild = true),
+                                    eventbox.connect("hover-lost", () => {
+                                        timeout(20, () => { //for smoothness (do not change it)
+                                            self.revealChild = false
+                                        })
+                                    }),
+                                    Wireplumber.getDefault().getDefaultSink().connect("notify::volume", () => {
+                                        showRevealer(self)
+                                    }),
+                                    Wireplumber.getDefault().getDefaultSource().connect("notify::volume", () => {
+                                        showRevealer(self)
+                                    }),
+                                )
+                            },
+                            onDestroy: () => connections.map(id => eventbox.disconnect(id)),
+                            child: new Widget.Label({
+                                className: "volume",
+                                label: bind(props.endpoint, "volume").as((volume: number) => 
+                                    Math.floor(volume * 100) + "%")
+                                } as Widget.LabelProps),
+                        } as Widget.RevealerProps)
+                    ]
+                } as Widget.BoxProps))
+            }
     } as Widget.EventBoxProps)
 }
 
