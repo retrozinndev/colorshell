@@ -5,8 +5,6 @@
 @use "./functions";
 
 .bar-container {
-  @include mixins.reset-props;
-
   padding: 6px;
   padding-bottom: 0px;
 
@@ -29,7 +27,7 @@
 
     & > eventbox {
       &:hover {
-        & > box:not(.workspaces):not(.special-workspaces) {
+        & > box {
           background: $color-hover;
         }
       }
@@ -38,7 +36,7 @@
         margin: $padding 0;
       }
 
-      & > box:not(.workspaces):not(.special-workspaces) {
+      & > box {
         padding: 0 8px;
       }
     }
@@ -55,16 +53,15 @@
     }
   }
 
-  .workspaces, .special-workspaces {
-    @include mixins.reset-props;
-    padding: 0 4px;
+  .workspaces-row {
+    padding: 4px;
 
-    & > eventbox {
+    & eventbox > box > eventbox {
       & > box {
         margin: 3px 0;
         border-radius: 16px;
         transition: 80ms linear;
-        min-width: 15px;
+        min-width: 16px;
         padding: 0 6px;
         background: colors.$bg-tertiary;
 
@@ -182,8 +179,6 @@
     padding: 0 6px;
 
     & .item {
-      all: unset;
-
       &:hover {
         background: none;
       }

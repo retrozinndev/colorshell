@@ -7,10 +7,6 @@ import { Media } from "../widget/bar/Media";
 import { Apps } from "../widget/bar/Apps";
 import { Clock } from "../widget/bar/Clock";
 import { Status } from "../widget/bar/Status";
-import { SpecialWorkspaces } from "../widget/bar/SpecialWorkspaces";
-import { Separator, SeparatorProps } from "../widget/Separator";
-import AstalHyprland from "gi://AstalHyprland?version=0.1";
-import { bind } from "astal";
 
 export const Bar = (mon: number) => {
     const widgetSpacing = 4;
@@ -36,14 +32,6 @@ export const Bar = (mon: number) => {
                     spacing: widgetSpacing,
                     children: [
                         Apps(),
-                        SpecialWorkspaces(),
-                        Separator({
-                            alpha: .2,
-                            orientation: Gtk.Orientation.HORIZONTAL,
-                            margin: 14,
-                            visible: bind(AstalHyprland.get_default(), "workspaces").as(wss => 
-                                wss.filter(ws => ws.id < 0).length > 0)
-                        } as SeparatorProps),
                         Workspaces(),
                         FocusedClient()
                     ]
