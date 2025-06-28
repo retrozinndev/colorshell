@@ -70,7 +70,7 @@ export function PageSound(): Page {
                                                 ),
                                                 onDestroy: () => connections.map(id => eventbox.disconnect(id)),
                                                 child: new Widget.Label({
-                                                    label: bind(stream, "description").as(desc => { //need to add filter for "audio stream1", ""
+                                                    label: bind(stream, "description").as(desc => { //need to add filter for "audio stream1" and etc...
                                                         const maxLength = (35 - (desc.length + 3));
                                                         let title = `${stream.name.substring(0, maxLength)}${stream.name.length >= maxLength ? '...' : ""}`
                                                         return `${desc} - ${title}`;
