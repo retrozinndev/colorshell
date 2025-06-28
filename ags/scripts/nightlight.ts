@@ -1,4 +1,4 @@
-import { AstalIO, execAsync, GObject, interval, property, register } from "astal";
+import { AstalIO, exec, execAsync, GLib, GObject, interval, property, register } from "astal";
 
 export { NightLight };
 
@@ -133,5 +133,13 @@ class NightLight extends GObject.Object {
 
         this.#prevTemperature = null;
         this.#prevGamma = null;
+    }
+
+    public saveData(): void {
+        exec(`sh ${GLib.get_user_config_dir()}/hypr/scripts/save-hyprsunset.sh`);
+    }
+
+    public loadData(): void {
+        exec(`sh ${GLib.get_user_config_dir()}/hypr/scripts/load-hyprsunset.sh`);
     }
 }

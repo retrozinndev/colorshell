@@ -1,7 +1,7 @@
 import { AstalIO, bind, Binding, exec, timeout } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
 import AstalMpris from "gi://AstalMpris";
-import { Players } from "../../scripts/player";
+import { Clipboard } from "../../scripts/clipboard";
 
 export function BigMedia(): Gtk.Widget {
     let dragTimer: (AstalIO.Time|undefined);
@@ -107,6 +107,7 @@ export function BigMedia(): Gtk.Widget {
                                     const link = exec(`playerctl --player=${
                                         players[0].busName.replace(/^org\.mpris\.MediaPlayer2\./i, "")
                                     } metadata xesam:url`);
+
                                     link && Clipboard.getDefault().copyAsync(link);
                                 }
                             } as Widget.ButtonProps),

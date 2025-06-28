@@ -1,5 +1,6 @@
 import { AstalIO, execAsync, Gio, GObject, property, register, signal, timeout } from "astal";
 import AstalNotifd from "gi://AstalNotifd";
+import { Config } from "./config";
 
 
 export interface HistoryNotification {
@@ -22,11 +23,6 @@ class Notifications extends GObject.Object {
     #notificationsOnHold: Set<number> = new Set<number>();
     #connections: Array<number> = [];
     #historyLimit: number = 10;
-
-    public static NOTIFICATION_TIMEOUT_CRITICAL: number = 0;
-    public static NOTIFICATION_TIMEOUT_NORMAL: number = 6000;
-    public static NOTIFICATION_TIMEOUT_LOW: number = 4000;
-
 
     @property()
     public get notifications() { return this.#notifications };
@@ -65,9 +61,9 @@ class Notifications extends GObject.Object {
         this.#connections.push(
             AstalNotifd.get_default().connect("notified", (notifd, id) => {
                 const notification = notifd.get_notification(id);
-                const notifTimeout = Notifications[`NOTIFICATION_TIMEOUT_${
-                    this.getUrgencyString(notification.urgency).toUpperCase()
-                }` as keyof typeof Notifications] as number;
+                const notifTimeout = Config.getDefault().getProperty(
+                    `notifications.timeout_${this.getUrgencyString(notification.urgency).toLowerCase()}`, 
+                    "number") as number;
 
                 if(this.getNotifd().dontDisturb) {
                     this.addHistory(notification, () => notification.dismiss());

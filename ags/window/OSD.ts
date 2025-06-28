@@ -1,4 +1,4 @@
-import { bind, Binding, Variable } from "astal";
+import { bind, Variable } from "astal";
 import { Astal, Gtk, Widget } from "astal/gtk3";
 import { Wireplumber } from "../scripts/volume";
 import AstalWp from "gi://AstalWp";
@@ -115,13 +115,12 @@ export const OSD = (mon: number) => {
         layer: Astal.Layer.OVERLAY,
         anchor: Astal.WindowAnchor.BOTTOM,
         canFocus: false,
-        marginBottom: 80,
-        focusOnClick: false,
         clickThrough: true,
+        focusOnClick: false,
+        marginBottom: 80,
         monitor: mon,
         onDestroy: () => {
             osdMode?.drop();
-
             osdMode = null;
         },
         child: new Widget.Stack({

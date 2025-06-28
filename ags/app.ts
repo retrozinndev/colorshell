@@ -21,6 +21,7 @@ import { Wallpaper } from "./scripts/wallpaper";
 import { Stylesheet } from "./scripts/stylesheet";
 import { Clipboard } from "./scripts/clipboard";
 import { PluginClipboard } from "./runner/plugins/clipboard";
+import { Config } from "./scripts/config";
 
 
 let osdTimer: (Time|undefined);
@@ -44,6 +45,9 @@ App.start({
     },
     main: (..._args: Array<string>) => {
         console.log(`Initialized astal instance as: ${ App.instanceName || "astal" }`);
+
+        console.log("Config: initializing configuration file");
+        Config.getDefault();
 
         Stylesheet.getDefault().compileApply();
 

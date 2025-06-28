@@ -32,6 +32,7 @@ export function Media(): Gtk.Widget {
                             const link = exec(`playerctl --player=${
                                 players[0].busName.replace(/^org\.mpris\.MediaPlayer2\./i, "")
                             } metadata xesam:url`);
+
                             link && Clipboard.getDefault().copyAsync(link);
                         }
                     } as Widget.ButtonProps),

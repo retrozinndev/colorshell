@@ -1,10 +1,12 @@
 import { Astal, Gdk, Gtk, Widget } from "astal/gtk3";
 import { getDateTime } from "../scripts/time";
-import { exec, execAsync, Gio, GLib } from "astal";
-import { AskPopup } from "../widget/AskPopup";
+import { execAsync, Gio, GLib } from "astal";
+import { AskPopup, AskPopupProps } from "../widget/AskPopup";
 import { Windows } from "../windows";
 import { Notifications } from "../scripts/notifications";
 import AstalNotifd from "gi://AstalNotifd";
+import { NightLight } from "../scripts/nightlight";
+import { Config } from "../scripts/config";
 
 
 const { TOP, LEFT, RIGHT, BOTTOM } = Astal.WindowAnchor;
@@ -58,77 +60,32 @@ export const LogoutMenu = (mon: number) => new Widget.Window({
                             image: new Widget.Icon({
                                 icon: "system-shutdown-symbolic"
                             } as Widget.IconProps),
-                            onClick: () => AskPopup({
-                                title: "Power Off",
-                                text: "Are you sure you want to power off? Unsaved work will be lost.",
-                                onAccept: () => {
-                                    exec(`sh "${GLib.getenv("XDG_CONFIG_HOME")}/hypr/scripts/save-hyprsunset.sh"`);
-                                    execAsync("systemctl poweroff");
-                                }
-                            })
+                            onClick: () => AskPopup(poweroffAsk),
+                            onActivate: () => AskPopup(poweroffAsk)
                         } as Widget.ButtonProps),
                         new Widget.Button({
                             className: "reboot",
                             image: new Widget.Icon({
                                 icon: "arrow-circular-top-right-symbolic"
                             } as Widget.IconProps),
-                            onClick: () => AskPopup({
-                                title: "Reboot",
-                                text: "Are you sure you want to Reboot? Unsaved work will be lost.",
-                                onAccept: () => {
-                                    exec(`sh "${GLib.getenv("XDG_CONFIG_HOME")}/hypr/scripts/save-hyprsunset.sh"`);
-                                    execAsync("systemctl reboot");
-                                }
-                            })
+                            onClick: () => AskPopup(rebootAsk),
+                            onActivate: () => AskPopup(rebootAsk)
                         } as Widget.ButtonProps),
                         new Widget.Button({
                             className: "suspend",
                             image: new Widget.Icon({
                                 icon: "weather-clear-night-symbolic"
                             } as Widget.IconProps),
-                            onClick: () => AskPopup({
-                                title: "Suspend",
-                                text: "Are you sure you want to Suspend?",
-                                onAccept: () => execAsync("systemctl suspend")
-                            })
+                            onClick: () => AskPopup(suspendAsk),
+                            onActivate: () => AskPopup(suspendAsk)
                         } as Widget.ButtonProps),
                         new Widget.Button({
                             className: "logout",
                             image: new Widget.Icon({
                                 icon: "system-log-out-symbolic"
                             } as Widget.IconProps),
-                            onClick: () => AskPopup({
-                                title: "Log out",
-                                text: "Are you sure you want to log out? Your session will be ended.",
-                                onAccept: () => {
-                                    execAsync(
-                                        `sh "${GLib.getenv("XDG_CONFIG_HOME")}/hypr/scripts/save-hyprsunset.sh"`
-                                    ).finally(() => 
-                                        execAsync(`hyprctl dispatch exit`).catch((err: Gio.IOErrorEnum) => 
-                                            Notifications.getDefault().sendNotification({
-                                                appName: "colorshell",
-                                                summary: "Couldn't exit Hyprland",
-                                                body: `An error occurred and colorshell couldn't exit Hyprland. Stderr: \n${
-                                                    err.message ? `${err.message}\n` : ""}${err.stack}`,
-                                                urgency: AstalNotifd.Urgency.NORMAL,
-                                                actions: [{
-                                                    text: "Report Issue on colorshell",
-                                                    onAction: () => execAsync(
-                                                        `xdg-open https://github.com/retrozinndev/colorshell/issues/new`
-                                                    ).catch((err: Gio.IOErrorEnum) => 
-                                                        Notifications.getDefault().sendNotification({
-                                                            appName: "colorshell",
-                                                            summary: "Couldn't open link",
-                                                            body: `Do you have \`xdg-utils\` installed? Stderr: \n${
-                                                                err.message ? `${err.message}\n` : ""}${err.stack}`
-                                                        })
-                                                    )
-                                                }]
-                                            })
-                                        )
-                                    );
-                                }
-                            })
+                            onClick: () => AskPopup(logoutAsk),
+                            onActivate: () => AskPopup(logoutAsk)
                         } as Widget.ButtonProps),
                     ]
                 } as Widget.BoxProps)
@@ -136,3 +93,63 @@ export const LogoutMenu = (mon: number) => new Widget.Window({
         })
     } as Widget.EventBoxProps)
 } as Widget.WindowProps);
+
+const logoutAsk: AskPopupProps = {
+    title: "Log out",
+    text: "Are you sure you want to log out? Your session will be ended.",
+    onAccept: () => {
+        Config.getDefault().getProperty("night_light.save_on_shutdown", "boolean") && 
+            NightLight.getDefault().saveData();
+
+        execAsync(`hyprctl dispatch exit`).catch((err: Gio.IOErrorEnum) => 
+            Notifications.getDefault().sendNotification({
+                appName: "colorshell",
+                summary: "Couldn't exit Hyprland",
+                body: `An error occurred and colorshell couldn't exit Hyprland. Stderr: \n${
+                    err.message ? `${err.message}\n` : ""}${err.stack}`,
+                urgency: AstalNotifd.Urgency.NORMAL,
+                actions: [{
+                    text: "Report Issue on colorshell",
+                    onAction: () => execAsync(
+                        `xdg-open https://github.com/retrozinndev/colorshell/issues/new`
+                    ).catch((err: Gio.IOErrorEnum) => 
+                        Notifications.getDefault().sendNotification({
+                            appName: "colorshell",
+                            summary: "Couldn't open link",
+                            body: `Do you have \`xdg-utils\` installed? Stderr: \n${
+                                err.message ? `${err.message}\n` : ""}${err.stack}`
+                        })
+                    )
+                }]
+            })
+        )
+    }
+};
+
+const suspendAsk: AskPopupProps = {
+    title: "Suspend",
+    text: "Are you sure you want to Suspend?",
+    onAccept: () => execAsync("systemctl suspend")
+};
+
+const rebootAsk: AskPopupProps = {
+    title: "Reboot",
+    text: "Are you sure you want to Reboot? Unsaved work will be lost.",
+    onAccept: () => {
+        Config.getDefault().getProperty("night_light.save_on_shutdown", "boolean") && 
+            NightLight.getDefault().saveData();
+
+        execAsync("systemctl reboot");
+    }
+};
+
+const poweroffAsk: AskPopupProps = {
+    title: "Power Off",
+    text: "Are you sure you want to power off? Unsaved work will be lost.",
+    onAccept: () => {
+        Config.getDefault().getProperty("night_light.save_on_shutdown", "boolean") && 
+            NightLight.getDefault().saveData();
+
+        execAsync("systemctl poweroff");
+    }
+};

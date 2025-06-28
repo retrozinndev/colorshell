@@ -1,9 +1,7 @@
 import { exec, execAsync, Gio, GLib } from "astal";
 
-export function getDecoded(text: (Uint8Array)): string {
-    const decoder = new TextDecoder('utf-8');
-    return decoder.decode(text);
-}
+export const decoder = new TextDecoder("utf-8"),
+    encoder = new TextEncoder();
 
 export function getHyprlandInstanceSig(): (string|null) {
     return GLib.getenv("HYPRLAND_INSTANCE_SIGNATURE");
