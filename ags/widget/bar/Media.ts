@@ -1,11 +1,13 @@
-import { bind } from "astal";
+import { bind, exec } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
 import AstalMpris from "gi://AstalMpris";
 import { getSymbolicIcon } from "../../scripts/apps";
 import { Separator, SeparatorProps } from "../Separator";
 import { Windows } from "../../windows";
+import { Clipboard } from "../../scripts/clipboard";
 
 export function Media(): Gtk.Widget {
+    
     const connections: Array<number> = [];
 
     const mediaControlsRevealer: Widget.Revealer = new Widget.Revealer({
@@ -24,9 +26,14 @@ export function Media(): Gtk.Widget {
                             icon: "edit-paste-symbolic"
                         } as Widget.IconProps),
                         tooltipText: "Copy link to Clipboard",
-                        visible: bind(players[0], "metadata").as((metadata) => 
-                            metadata["xesam:url"]?.get_string()[0] != null),
-                        onClick: () => console.log(players[0].metadata["xesam:url"]?.get_string()[0]!)
+                        // AstalMpris.Player.metadata works only sometimes, so I'm not using it
+                        visible: bind(players[0], "metadata").as(Boolean),
+                        onClick: async () => {
+                            const link = exec(`playerctl --player=${
+                                players[0].busName.replace(/^org\.mpris\.MediaPlayer2\./i, "")
+                            } metadata xesam:url`);
+                            link && Clipboard.getDefault().copyAsync(link);
+                        }
                     } as Widget.ButtonProps),
                     new Widget.Button({
                         className: "previous",
@@ -97,17 +104,18 @@ export function Media(): Gtk.Widget {
                                 truncate: true
                             } as Widget.LabelProps),
                             Separator({
+                                visible: bind(players[0], "artist").as(artist => artist ? true : false),
                                 orientation: Gtk.Orientation.HORIZONTAL,
                                 size: 1,
                                 margin: 5,
-                                //cssColor: `rgb(180, 180, 180)`,
                                 alpha: .3
                             } as SeparatorProps),
                             new Widget.Label({
                                 className: "artist",
-                                label: bind(players[0], "artist").as((artist: string) => artist || "No Artist"),
+                                visible: bind(players[0], "artist").as(artist => artist ? true : false),
+                                label: bind(players[0], "artist").as((artist: string) => artist),
                                 maxWidthChars: 18,
-                                truncate: true
+                                truncate: true,
                             } as Widget.LabelProps)
                         ] : new Widget.Label({
                             label: "Crazy to think this widget haven't disappeared yet!"
