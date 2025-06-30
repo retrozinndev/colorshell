@@ -1,10 +1,12 @@
 import { Wireplumber } from "./volume";
 import { Windows } from "../windows";
-
 import { restartInstance } from "./reload-handler";
-import { AstalIO, timeout } from "astal";
+import { timeout } from "ags/time";
 import { Runner } from "../runner/Runner";
 import { showWorkspaceNumber } from "../widget/bar/Workspaces";
+
+import AstalIO from "gi://AstalIO";
+
 
 let wsTimeout: (AstalIO.Time|undefined);
 
@@ -28,8 +30,8 @@ export function handleArguments(request: string): any {
             return "Restarting instance..."
 
         case "windows":
-            return Object.keys(Windows.windows).map(name =>
-                `${name}: ${Windows.isVisible(name) ? "open" : "closed" }`).join('\n');
+            return Object.keys(Windows.getDefault().windows).map(name =>
+                `${name}: ${Windows.getDefault().isVisible(name) ? "open" : "closed" }`).join('\n');
         
         case "runner":
             !Runner.instance ? 
@@ -59,33 +61,33 @@ function handleWindowArgs(args: Array<string>): string {
 
     const specifiedWindow: string = args[1];
 
-    if(!Windows.hasWindow(specifiedWindow)) 
+    if(!Windows.getDefault().hasWindow(specifiedWindow)) 
         return `Name "${specifiedWindow}" not found windows map! Make sure to add new Windows on the Map!`
 
     switch(args[0]) {
         case "open":
-            if(!Windows.isVisible(specifiedWindow)) {
-                Windows.open(specifiedWindow);
+            if(!Windows.getDefault().isVisible(specifiedWindow)) {
+                Windows.getDefault().open(specifiedWindow);
                 return `Setting visibility of window "${args[1]}" to true`;
             }
 
             return `Window is already open, ignored`;
 
         case "close":
-            if(Windows.isVisible(specifiedWindow)) {
-                Windows.close(specifiedWindow);
+            if(Windows.getDefault().isVisible(specifiedWindow)) {
+                Windows.getDefault().close(specifiedWindow);
                 return `Setting visibility of window "${args[1]}" to false`
             }
 
             return `Window is already closed, ignored`
 
         case "toggle":
-            if(!Windows.isVisible(specifiedWindow)) {
-                Windows.open(specifiedWindow);
+            if(!Windows.getDefault().isVisible(specifiedWindow)) {
+                Windows.getDefault().open(specifiedWindow);
                 return `Toggle opening window "${args[1]}"`;
             }
 
-            Windows.close(specifiedWindow);
+            Windows.getDefault().close(specifiedWindow);
             return `Toggle closing window "${args[1]}"`
     }
 

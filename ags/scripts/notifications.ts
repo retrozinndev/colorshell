@@ -1,6 +1,11 @@
-import { AstalIO, execAsync, Gio, GObject, property, register, signal, timeout } from "astal";
-import AstalNotifd from "gi://AstalNotifd";
 import { Config } from "./config";
+import { timeout } from "ags/time";
+import { execAsync } from "ags/process";
+
+import GObject, { getter, property, register, signal } from "ags/gobject";
+import AstalNotifd from "gi://AstalNotifd";
+import Gio from "gi://Gio?version=2.0";
+import AstalIO from "gi://AstalIO";
 
 
 export interface HistoryNotification {
@@ -22,38 +27,22 @@ class Notifications extends GObject.Object {
     #history: Array<HistoryNotification> = [];
     #notificationsOnHold: Set<number> = new Set<number>();
     #connections: Array<number> = [];
-    #historyLimit: number = 10;
 
-    @property()
+    @getter(Array<AstalNotifd.Notification>)
     public get notifications() { return this.#notifications };
 
-    @property()
+    @getter(Array<HistoryNotification>)
     public get history() { return this.#history };
 
-    @property()
-    public get historyLimit() { return this.#historyLimit };
-
-    public set historyLimit(newValue: number) {
-        this.#historyLimit = newValue;
-        this.notify("historyLimit");
-    }
+    @property(Number)
+    public historyLimit: number = 10;
 
 
-    @signal(AstalNotifd.Notification)
-    declare notificationAdded: (notification: AstalNotifd.Notification) => void;
-
-    @signal(Number)
-    declare notificationRemoved: (id: number) => void;
-
-    @signal(Object) // It's an Object, beacuase HistoryNotification is just an interface
-    declare historyAdded: (notification: AstalNotifd.Notification) => void;
-
-    @signal(Number)
-    declare historyRemoved: (id: number) => void;
-
-    @signal(Number)
-    declare notificationReplaced: (id: number) => void;
-
+    @signal(AstalNotifd.Notification) notificationAdded(_notification: AstalNotifd.Notification) {};
+    @signal(Number) notificationRemoved(_id: number) {};
+    @signal(Object) historyAdded(_notification: Object) {};
+    @signal(Number) historyRemoved(_id: number) {};
+    @signal(Number) notificationReplaced(_id: number) {};
 
     constructor() {
         super();
@@ -188,7 +177,7 @@ class Notifications extends GObject.Object {
     private addHistory(notif: AstalNotifd.Notification, onAdded?: (notif: AstalNotifd.Notification) => void): void {
         if(!notif) return;
 
-        this.#history.length === this.#historyLimit &&
+        this.#history.length === this.historyLimit &&
             this.removeHistory(this.#history[this.#history.length - 1]);
 
         this.#history.map((notifb, i) => 

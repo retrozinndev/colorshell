@@ -1,15 +1,33 @@
-import { AstalIO, execAsync, Gio, GLib, GObject, monitorFile, property, readFile, register, signal, timeout } from "astal";
+import AstalIO from "gi://AstalIO";
+import GLib from "gi://GLib?version=2.0";
+import Gio from "gi://Gio?version=2.0";
 
+import GObject, { getter, register, signal } from "ags/gobject";
+import { timeout } from "ags/time";
+import { monitorFile, readFile } from "ags/file"; 
+import { execAsync } from "ags/process";
+
+
+interface ClipboardSignals extends GObject.Object.SignalSignatures {
+    copied: Clipboard["copied"];
+    wiped: Clipboard["wiped"];
+};
 
 export enum ClipboardItemType {
     TEXT = 0,
     IMAGE = 1
 }
 
-export type ClipboardItem = {
+export class ClipboardItem {
     id: number;
     type: ClipboardItemType;
     preview: string;
+
+    constructor(id: number, type: ClipboardItemType, preview: string) {
+        this.id = id;
+        this.type = type;
+        this.preview = preview;
+    }
 }
 
 export { Clipboard };
@@ -20,6 +38,8 @@ export { Clipboard };
 class Clipboard extends GObject.Object {
     private static instance: Clipboard;
 
+    declare $signals: ClipboardSignals;
+
     #dbFile: Gio.File;
     #dbMonitor: Gio.FileMonitor;
     #updateDone: boolean = false;
@@ -27,14 +47,11 @@ class Clipboard extends GObject.Object {
     #changesTimeout: (AstalIO.Time|undefined);
     #ignoreChanges: boolean = false;
 
-    @signal(Object)
-    declare copied: () => ClipboardItem;
-
-    @signal()
-    declare wiped: () => void;
+    @signal(GObject.TYPE_JSOBJECT) copied(_item: object) {}
+    @signal() wiped() {};
 
 
-    @property()
+    @getter(Array)
     public get history() { return this.#history; }
 
 

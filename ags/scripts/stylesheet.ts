@@ -1,8 +1,14 @@
-// handles stylesheet compiling and reloading
+import { monitorFile, readFile } from "ags/file";
+import { timeout } from "ags/time";
+import { exec, execAsync } from "ags/process";
 
-import { monitorFile, AstalIO, timeout, GLib, Gio, execAsync, exec, readFile } from "astal";
-import { App } from "astal/gtk3";
+import AstalIO from "gi://AstalIO";
+import App from "ags/gtk4/app";
+import Gio from "gi://Gio?version=2.0";
+import GLib from "gi://GLib?version=2.0";
 
+
+/** handles stylesheet compiling and reloading */
 export class Stylesheet {
     private static instance: Stylesheet;
     #watchDelay: (AstalIO.Time|undefined);

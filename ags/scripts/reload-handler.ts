@@ -1,6 +1,10 @@
-import { execAsync, Gio, monitorFile } from "astal";
-import { App } from "astal/gtk3";
+import { monitorFile } from "ags/file";
+import { execAsync } from "ags/process";
 import { uwsmIsActive } from "./apps";
+
+import App from "ags/gtk4/app";
+import Gio from "gi://Gio?version=2.0";
+
 
 const monitoringPaths = [ "./scripts", "./window", "./app.ts", "env.d.ts" ];
 

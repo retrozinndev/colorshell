@@ -1,4 +1,4 @@
-import {  GObject, register } from "astal";
+import GObject, { register } from "ags/gobject";
 import AstalWp from "gi://AstalWp";
 
 export { Wireplumber };

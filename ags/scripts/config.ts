@@ -1,8 +1,14 @@
-import { AstalIO, Gio, GLib, GObject, monitorFile, readFileAsync, register, timeout } from "astal";
-import Binding, { bind, Subscribable } from "astal/binding";
+import { timeout } from "ags/time";
+import { monitorFile, readFileAsync } from "ags/file";
 import { Notifications } from "./notifications";
-import AstalNotifd from "gi://AstalNotifd";
 import { encoder } from "./utils";
+import GObject, { getter, register } from "ags/gobject";
+
+import GLib from "gi://GLib?version=2.0";
+import Gio from "gi://Gio?version=2.0";
+import AstalIO from "gi://AstalIO";
+import AstalNotifd from "gi://AstalNotifd";
+import { Accessor, createConnection } from "ags";
 
 
 export { Config };
@@ -40,10 +46,14 @@ export type ConfigEntries = Partial<{
 
 type ValueTypes = "string" | "boolean" | "object" | "number" | "undefined" | "any";
 
-
 @register({ GTypeName: "Config" })
-class Config extends GObject.Object implements Subscribable {
+class Config extends GObject.Object {
     private static instance: Config;
+
+    $signals = {
+        "notify": () => {},
+        "notify::entries": (_: ConfigEntries) => {}
+    };
 
     private readonly defaultFile = Gio.File.new_for_path(
         `${GLib.get_user_config_dir()}/colorshell/config.json`);
@@ -71,11 +81,12 @@ class Config extends GObject.Object implements Subscribable {
         }
     };
 
-    private readonly entries: ConfigEntries = this.defaults;
+    @getter(Object)
+    public get entries() { return this.#entries; }
 
-
-    #subs: Set<(entries: ConfigEntries) => void> = new Set();
     #file: Gio.File;
+    #entries: ConfigEntries = this.defaults;
+
     private timeout: (AstalIO.Time|boolean|undefined);
     public get file() { return this.#file; };
 
@@ -172,7 +183,7 @@ class Config extends GObject.Object implements Subscribable {
                 this.entries[k as keyof typeof this.entries] = config[k as keyof typeof config];
             }
 
-            this.notifySubs();
+            this.notify("entries");
         }).catch((e: Gio.IOErrorEnum) => {
             Notifications.getDefault().sendNotification({
                     urgency: AstalNotifd.Urgency.NORMAL,
@@ -184,15 +195,9 @@ class Config extends GObject.Object implements Subscribable {
         });
     }
 
-    private notifySubs(): void {
-        for(const sub of this.#subs) {
-            sub(this.entries);
-        }
-    }
-
-    public bindProperty(propertyPath: (keyof ConfigEntries|string), expectType?: ValueTypes): Binding<any|undefined> {
-        return bind(this).as(() => 
-            this.getProperty(propertyPath, expectType));
+    public bindProperty(propertyPath: (keyof ConfigEntries|string), expectType?: ValueTypes): Accessor<any|undefined> {
+        return createConnection(this.getProperty(propertyPath), [(this as typeof Config.instance), "notify::entries", () => 
+            this.getProperty(propertyPath, expectType)]);
     }
 
     public getProperty(path: string, expectType?: ValueTypes): (any|undefined) {
@@ -233,17 +238,5 @@ class Config extends GObject.Object implements Subscribable {
         }
 
         return property;
-    }
-
-    public get(): ConfigEntries {
-        return this.entries;
-    }
-
-    public subscribe(callback: (entries: ConfigEntries) => void): () => void {
-        this.#subs.add(callback);
-
-        return () => {
-            this.#subs.delete(callback);
-        };
     }
 }

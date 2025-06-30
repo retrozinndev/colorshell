@@ -1,9 +1,14 @@
-import { execAsync, Gio, GLib, GObject } from "astal";
-import { property, register, signal } from "astal/gobject";
-import { Gdk } from "astal/gtk3";
-import { getDateTime } from "./time";
+import { execAsync } from "ags/process";
+import { getter, register, signal } from "ags/gobject";
+import { Gdk } from "ags/gtk4";
 import { makeDirectory } from "./utils";
 import { Notifications } from "./notifications";
+import { time } from "./utils";
+
+import GObject from "ags/gobject";
+import GLib from "gi://GLib?version=2.0";
+import Gio from "gi://Gio?version=2.0";
+
 
 export { Recording };
 
@@ -11,10 +16,8 @@ export { Recording };
 class Recording extends GObject.Object {
     private static instance: Recording;
 
-    @signal()
-    declare started: () => void;
-    @signal()
-    declare stopped: () => void;
+    @signal() started() {};
+    @signal() stopped() {};
 
     #recording: boolean = false;
     #path: string = "~/Recordings";
@@ -23,15 +26,16 @@ class Recording extends GObject.Object {
     #extension: string = "mp4";
     #recordAudio: boolean = false;
     #area: (Gdk.Rectangle|null) = null;
-    #startedAt: (GLib.DateTime|null) = null;
+    #startedAt: number = -1;
     #process: (Gio.Subprocess|null) = null;
     #output: (string|null) = null;
 
-    @property()
-    /** GLib.DateTime of when recording started */
+    /** GLib.DateTime of when recording started 
+    * its value can be `-1` if undefined(no recording is happening) */
+    @getter(Number)
     public get startedAt() { return this.#startedAt; }
 
-    @property(Boolean)
+    @getter(Boolean)
     public get recording() { return this.#recording; }
     private set recording(newValue: boolean) {
         (!newValue && this.#recording) ? 
@@ -42,7 +46,7 @@ class Recording extends GObject.Object {
         this.notify("recording");
     }
 
-    @property(String)
+    @getter(String)
     public get path() { return this.#path; }
     public set path(newPath: string) {
         if(this.recording) return;
@@ -51,7 +55,7 @@ class Recording extends GObject.Object {
         this.notify("path");
     }
 
-    @property(String)
+    @getter(String)
     public get extension() { return this.#extension; }
     public set extension(newExt: string) {
         if(this.recording) return;
@@ -89,7 +93,7 @@ class Recording extends GObject.Object {
         if(this.recording) 
             throw new Error("Screen Recording is already running!");
 
-        this.#output = `${getDateTime().get().format("%Y-%m-%d-%H%M%S")}_rec.${this.extension || "mp4"}`;
+        this.#output = `${time.get().format("%Y-%m-%d-%H%M%S")}_rec.${this.extension || "mp4"}`;
         this.#recording = true;
         this.notify("recording");
         this.emit("started");
@@ -111,7 +115,7 @@ class Recording extends GObject.Object {
             this.stopRecording();
         });
 
-        this.#startedAt = getDateTime().get();
+        this.#startedAt = time.get().to_unix();
     }
 
     public stopRecording() {
@@ -126,7 +130,7 @@ class Recording extends GObject.Object {
 
         this.#process = null;
         this.#recording = false;
-        this.#startedAt = null;
+        this.#startedAt = -1;
         this.#output = null;
         this.notify("recording");
         this.emit("stopped");

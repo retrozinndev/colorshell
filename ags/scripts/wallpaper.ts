@@ -1,4 +1,12 @@
-import { AstalIO, execAsync, Gio, GLib, GObject, monitorFile, property, register, timeout } from "astal";
+import { execAsync } from "ags/process";
+import { timeout } from "ags/time";
+import GObject, { register, getter } from "ags/gobject";
+import { monitorFile } from "ags/file";
+
+import AstalIO from "gi://AstalIO";
+import Gio from "gi://Gio?version=2.0";
+import GLib from "gi://GLib?version=2.0";
+
 
 export { Wallpaper };
 
@@ -12,15 +20,17 @@ class Wallpaper extends GObject.Object {
     #wallpapersPath: string;
     #ignoreWatch: boolean = false;
 
-    @property(Boolean)
+    @getter(Boolean)
     public get splash() { return this.#splash; }
     public set splash(showSplash: boolean) {
         this.#splash = showSplash;
         this.notify("splash");
     }
 
-    @property(String)
-    public get wallpaper(): (string|undefined) { return this.#wallpaper; }
+    /** current wallpaper's complete path
+    * can be an empty string if undefined */
+    @getter(String)
+    public get wallpaper() { return this.#wallpaper ?? ""; }
     public set wallpaper(newValue: string) { this.setWallpaper(newValue); }
 
     public get wallpapersPath() { return this.#wallpapersPath; }
@@ -28,8 +38,12 @@ class Wallpaper extends GObject.Object {
     constructor() {
         super();
 
-        this.#wallpapersPath = GLib.getenv("WALLPAPERS") ?? `${GLib.get_home_dir()}/wallpapers`;
-        this.#hyprpaperFile = Gio.File.new_for_path(`${GLib.get_user_config_dir()}/hypr/hyprpaper.conf`);
+        this.#wallpapersPath = GLib.getenv("WALLPAPERS") ?? 
+            `${GLib.get_home_dir()}/wallpapers`;
+
+        this.#hyprpaperFile = Gio.File.new_for_path(`${
+            GLib.get_user_config_dir()}/hypr/hyprpaper.conf`);
+
         this.getWallpaper().then((wall) => {
             if(wall?.trim()) this.#wallpaper = wall.trim();
         });

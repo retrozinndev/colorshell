@@ -1,6 +1,6 @@
-import { Gtk, Widget } from "astal/gtk3";
+import { Gtk, Astal } from "ags/gtk4";
 
-export function addSliderMarksFromMinMax(slider: Widget.Slider, amountOfMarks: number = 2, markup?: (string | null)) {
+export function addSliderMarksFromMinMax(slider: Astal.Slider, amountOfMarks: number = 2, markup?: (string | null)) {
     if(markup && !markup.includes("{}")) 
         markup = `${markup}{}`
 

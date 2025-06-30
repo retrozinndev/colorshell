@@ -1,8 +1,8 @@
-import { Astal } from "astal/gtk3";
+import { Gdk, Gtk } from "ags/gtk4";
+import { execAsync } from "ags/process";
 
 import AstalApps from "gi://AstalApps";
 import AstalHyprland from "gi://AstalHyprland";
-import { execAsync } from "astal";
 
 
 export const uwsmIsActive: boolean = await execAsync(
@@ -35,6 +35,10 @@ export function execApp(app: AstalApps.Application|string, dispatchExecArgs?: st
     );
 }
 
+export function lookupIcon(name: string): boolean {
+    return Gtk.IconTheme.get_for_display(Gdk.Display.get_default()!)?.has_icon(name);
+}
+
 export function getAppsByName(appName: string): (Array<AstalApps.Application>|undefined) {
     let found: Array<AstalApps.Application> = [];
 
@@ -50,14 +54,14 @@ export function getAppsByName(appName: string): (Array<AstalApps.Application>|un
 export function getIconByAppName(appName: string): (string|undefined) {
     if(!appName) return undefined;
 
-    if(Astal.Icon.lookup_icon(appName))
+    if(lookupIcon(appName))
        return appName;
 
-    if(Astal.Icon.lookup_icon(appName.toLowerCase()))
+    if(lookupIcon(appName.toLowerCase()))
        return appName.toLowerCase();
    
     const nameReverseDNS = appName.split('.');
-    if(Astal.Icon.lookup_icon(nameReverseDNS[nameReverseDNS.length - 1]))
+    if(lookupIcon(nameReverseDNS[nameReverseDNS.length - 1]))
        return nameReverseDNS[nameReverseDNS.length - 1];
 
     const found: (AstalApps.Application|undefined) = getAppsByName(appName)?.[0];
@@ -73,7 +77,7 @@ export function getAppIcon(app: (string|AstalApps.Application)): (string|undefin
     if(typeof app === "string")
         return getIconByAppName(app);
 
-    if(app.iconName && Astal.Icon.lookup_icon(app.iconName))
+    if(app.iconName && lookupIcon(app.iconName))
         return app.iconName;
 
     if(app.wmClass)
@@ -85,7 +89,7 @@ export function getAppIcon(app: (string|AstalApps.Application)): (string|undefin
 export function getSymbolicIcon(app: (string|AstalApps.Application)): (string|undefined) {
     const icon = getAppIcon(app);
 
-    return (icon && Astal.Icon.lookup_icon(`${icon}-symbolic`)) ?
+    return (icon && lookupIcon(`${icon}-symbolic`)) ?
         `${icon}-symbolic`
     : undefined;
 }

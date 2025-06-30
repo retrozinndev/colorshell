@@ -1,4 +1,9 @@
-import { AstalIO, exec, execAsync, GLib, GObject, interval, property, register } from "astal";
+import AstalIO from "gi://AstalIO";
+import GLib from "gi://GLib?version=2.0";
+
+import GObject, { getter, register } from "ags/gobject";
+import { execAsync, exec } from "ags/process";
+import { interval } from "ags/time";
 
 export { NightLight };
 
@@ -14,11 +19,11 @@ class NightLight extends GObject.Object {
     #prevTemperature: (number|null) = null;
     #prevGamma: (number|null) = null;
 
-    @property(Number)
+    @getter(Number)
     public get temperature() { return this.#temperature; }
     public set temperature(newValue: number) { this.setTemperature(newValue); }
 
-    @property(Number)
+    @getter(Number)
     public get gamma() { return this.#gamma; }
     public set gamma(newValue: number) { this.setGamma(newValue); }
 
@@ -27,7 +32,7 @@ class NightLight extends GObject.Object {
     public readonly identityTemperature = 6000;
     public readonly maxGamma = 100;
 
-    @property(Boolean)
+    @getter(Boolean)
     public get identity() { return this.#identity; }
     public set identity(newValue: boolean) {
         newValue ? this.applyIdentity() : this.filter();
