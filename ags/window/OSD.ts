@@ -80,7 +80,7 @@ function createOSDLevelBar(
                         children: [
                             new Widget.LevelBar({
                                 className: "levelbar",
-                                width_request: 120,
+                                width_request: 140,
                                 value: valueOSD,
                                 maxValue: maxValueOSD,
                                 expand: true,
