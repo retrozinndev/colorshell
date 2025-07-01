@@ -1,7 +1,7 @@
 import { Page, PageButton, PageProps } from "./Page";
 import { bind, Variable } from "astal";
 import { Astal, Gtk, Widget } from "astal/gtk3";
-import { getAppIcon, getSymbolicIcon } from "../../../scripts/apps";
+import { getAppIcon, getIconByAppName, getSymbolicIcon } from "../../../scripts/apps";
 import { Wireplumber } from "../../../scripts/volume";
 import { tr } from "../../../i18n/intl";
 import { analyser } from "../../../scripts/utils";
@@ -54,8 +54,8 @@ export function PageSound(): Page {
                                 children: [
                                     new Widget.Icon({
                                         icon: bind(stream, "description").as(icon =>
-                                            getSymbolicIcon(icon) ?? "application-x-executable-symbolic"),
-                                        css: "font-size: 18px; margin-right: 6px;"
+                                            getSymbolicIcon(icon) ?? getIconByAppName(icon)),
+                                        css: "font-size: 20px; margin-right: 6px;"
                                     } as Widget.IconProps),
                                     new Widget.Box({
                                         orientation: Gtk.Orientation.VERTICAL,
@@ -70,7 +70,7 @@ export function PageSound(): Page {
                                                 ),
                                                 onDestroy: () => connections.map(id => eventbox.disconnect(id)),
                                                 child: new Widget.Label({
-                                                    label: bind(stream, "description").as(desc => { //need to add filter for "audio stream1" and etc...
+                                                    label: bind(stream, "description").as(desc => { //need to add filter for "audio stream1"
                                                         const maxLength = (35 - (desc.length + 3));
                                                         let title = `${stream.name.substring(0, maxLength)}${stream.name.length >= maxLength ? '...' : ""}`
                                                         return `${desc} - ${title}`;
