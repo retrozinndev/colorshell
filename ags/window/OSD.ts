@@ -1,15 +1,22 @@
-import { bind, Variable } from "astal";
+import { bind, Binding, Variable } from "astal";
 import { Astal, Gtk, Widget } from "astal/gtk3";
 import { Wireplumber } from "../scripts/volume";
 import AstalWp from "gi://AstalWp";
+import AstalHyprland from "gi://AstalHyprland";
 
 export enum OSDModes {
     SINK,
     SOURCE,
+    LAYOUT,
     BRIGHTNESS
 }
 
 let osdMode: (Variable<OSDModes>|null);
+const layoutVar = new Variable("");
+
+export function updateLayout(layout: string) {
+    layoutVar.set(layout.substring(0, 2).toUpperCase());
+}
 
 export function setOSDMode(newMode: OSDModes): void {
     if(!osdMode) return;
@@ -18,6 +25,28 @@ export function setOSDMode(newMode: OSDModes): void {
 }
 
 function createOSD(
+    props: Widget.BoxProps,
+    iconName: string | Binding<string>,
+    labelOSD?: string | Binding<string>
+) {
+    return new Widget.Box({
+        ...props,
+        className: `osd ${props.className || ''}`,
+        expand: true,
+        children: [
+            new Widget.Icon({
+                className: "icon",
+                icon: iconName,
+            } as Widget.IconProps),
+            new Widget.Label({
+                className: "action",
+                label: labelOSD,
+            } as Widget.LabelProps)
+        ]
+    } as Widget.BoxProps)
+}
+
+function createOSDLevelBar(
     props: Widget.BoxProps,
     bindable: AstalWp.Endpoint,
     iconName: string | Binding<string>,
@@ -74,7 +103,7 @@ function createOSD(
 
 function OSDSink() {
     const audio = Wireplumber.getDefault().getDefaultSink();
-    return createOSD(
+    return createOSDLevelBar(
         { name: "sink" },
         audio,
         bind(audio, "volumeIcon").as(icon => 
@@ -91,7 +120,7 @@ function OSDSink() {
 
 function OSDSource() {
     const source = Wireplumber.getDefault().getDefaultSource();
-    return createOSD(
+    return createOSDLevelBar(
         { name: "source" },
         source,
         bind(source, "volumeIcon").as(icon => 
@@ -106,6 +135,15 @@ function OSDSource() {
     )
 }
 
+function OSDLayout() {
+    const hyprland = AstalHyprland.get_default();
+    return createOSD(
+        { name: "layout" },
+        "input-keyboard-symbolic",
+        bind(layoutVar, "value")
+    )
+}
+
 export const OSD = (mon: number) => {
     osdMode = new Variable<OSDModes>(OSDModes.SINK);
 
@@ -115,27 +153,34 @@ export const OSD = (mon: number) => {
         layer: Astal.Layer.OVERLAY,
         anchor: Astal.WindowAnchor.BOTTOM,
         canFocus: false,
-        clickThrough: true,
-        focusOnClick: false,
         marginBottom: 80,
+        focusOnClick: false,
+        clickThrough: true,
         monitor: mon,
         onDestroy: () => {
             osdMode?.drop();
             osdMode = null;
+            //currenntLayout = null;
         },
         child: new Widget.Stack({
+            hhomogeneous: false,
+            vhomogeneous: false,
             visibleChildName: bind(osdMode, "value").as((mode: OSDModes) => {
                 switch (mode) {
                     case OSDModes.SINK: return "sink";
                     case OSDModes.SOURCE: return "source";
+                    case OSDModes.LAYOUT: return "layout";
+                    //default: return "sink";
                 }
             }),
             onDestroy: () => {
-                osdMode = null
+                osdMode = null;
+                //currenntLayout = null;
             },
             children: [
                 OSDSink(),
                 OSDSource(),
+                OSDLayout()
             ]
         } as Widget.BoxProps)
     } as Widget.WindowProps);
