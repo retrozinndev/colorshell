@@ -7,7 +7,7 @@ import { Wireplumber } from "./scripts/volume";
 import { handleArguments } from "./scripts/arg-handler";
 import { Time, timeout } from "astal/time";
 
-import { OSDModes, setOSDMode, updateLayout } from "./window/OSD";
+import { OSDModes, setOSDMode } from "./window/OSD";
 
 import { Runner } from "./runner/Runner";
 import { PluginApps } from "./runner/plugins/apps";
