@@ -7,7 +7,7 @@ import { Wireplumber } from "./scripts/volume";
 import { handleArguments } from "./scripts/arg-handler";
 import { Time, timeout } from "astal/time";
 
-import { OSDModes, setOSDMode } from "./window/OSD";
+import { OSDModes, setOSDMode, updateLayout } from "./window/OSD";
 
 import { Runner } from "./runner/Runner";
 import { PluginApps } from "./runner/plugins/apps";
@@ -66,6 +66,13 @@ App.start({
         // Init clipboard module
         Clipboard.getDefault();
 
+        connections.set(AstalHyprland.get_default(), [
+            AstalHyprland.get_default().connect("keyboard-layout", (_, Keyboard, layout) => {
+                updateLayout(layout);
+                triggerOSD(OSDModes.LAYOUT);
+            })
+        ]);
+
         connections.set(Wireplumber.getDefault(), [
             Wireplumber.getDefault().getDefaultSink().connect("notify::volume", () => 
                 triggerOSD(OSDModes.SINK)),
@@ -85,7 +92,6 @@ App.start({
                 _.notifications.length === 0 && Windows.close("floating-notifications");
             })
         ]);
-        
 
         console.log("Initializing wallpaper handler");
         Wallpaper.getDefault();
