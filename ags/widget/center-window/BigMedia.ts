@@ -1,7 +1,7 @@
 import { AstalIO, bind, Binding, exec, timeout } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
 import AstalMpris from "gi://AstalMpris";
-import { Clipboard } from "../../scripts/clipboard";
+import { Players } from "../../scripts/player";
 
 export function BigMedia(): Gtk.Widget {
     let dragTimer: (AstalIO.Time|undefined);
@@ -44,8 +44,8 @@ export function BigMedia(): Gtk.Widget {
                         } as Widget.LabelProps),
                         new Widget.Label({
                             className: "artist",
-                            tooltipText: bind(players[0], "artist").as((artist: string) => !artist ? "No Artist" : artist),
-                            label: bind(players[0], "artist").as((artist: string) => !artist ? "No Artist" : artist),
+                            tooltipText: bind(players[0], "artist").as((artist: string) => !artist ? (players[0].get_identity() ?? "No Artist") : artist),
+                            label: bind(players[0], "artist").as((artist: string) => !artist ? (players[0].get_identity() ?? "No Artist") : artist),
                             maxWidthChars: 28,
                             truncate: true,
                         } as Widget.LabelProps)
@@ -88,9 +88,11 @@ export function BigMedia(): Gtk.Widget {
                         halign: Gtk.Align.START,
                         label: bind(players[0], "position").as((pos: number) => {
                             const sec: number = Math.floor(pos % 60);
+                            const min = Math.floor((pos % 3600) / 60);
+                            const hours: number = Math.floor(pos / 3600);
                             return pos > 0 && players[0].length > 0 ? 
-                                `${Math.floor(pos / 60)}:${sec < 10 ? "0" : ""}${sec}`
-                            : `0:00`;
+                                `${hours > 0 ? `${hours}:` : ''}${min < 10 && hours > 0 ? `0${min}` : `${min}`}:${sec < 10 ? `0${sec}` : `${sec}`}`
+                                    : `0:00`;
                         })
                     } as Widget.LabelProps),
                     centerWidget: new Widget.Box({
@@ -107,7 +109,6 @@ export function BigMedia(): Gtk.Widget {
                                     const link = exec(`playerctl --player=${
                                         players[0].busName.replace(/^org\.mpris\.MediaPlayer2\./i, "")
                                     } metadata xesam:url`);
-
                                     link && Clipboard.getDefault().copyAsync(link);
                                 }
                             } as Widget.ButtonProps),
@@ -195,34 +196,14 @@ export function BigMedia(): Gtk.Widget {
                         halign: Gtk.Align.END,
                         label: bind(players[0], "length").as((len/* bananananananana */: number) => {
                             const sec: number = Math.floor(len % 60);
-                            console.log(len);
-                            return (len > 0 && len < 129600000) ?
-                                `${Math.floor(len / 60)}:${sec < 10 ? "0" : ""}${sec}`
-                            : "0:00";
+                            const min = Math.floor((len % 3600) / 60);
+                            const hours: number = Math.floor(len / 3600);
+                            return (len > 0 && hours < 32) ?
+                                `${hours > 0 ? `${hours}:` : ''}${min < 10 && hours > 0 ? `0${min}` : `${min}`}:${sec < 10 ? `0${sec}` : `${sec}`}`
+                                    : `0:00`;
                         })
                     } as Widget.LabelProps)
                 })
             ])
     } as Widget.BoxProps);
-}
-
-
-/**
- * This function handles album art/cover of playing media. If a file is provided
- * by the player, it adds the "file://" uri as a prefix, so you can use it in css.
- *
- * @param player the player you want to pull album art from
- * @returns Binding to player.artUrl containing the album art uri, or an undefined binding ig none was found.
-* */
-function getAlbumArt(player: AstalMpris.Player): Binding<string | undefined> {
-    return bind(player, "artUrl").as((artUrl: string) => {
-
-        if(!artUrl) 
-            return undefined;
-
-        if(artUrl.startsWith("/")) 
-            return "file://" + artUrl;
-
-        return artUrl;
-    });
 }
