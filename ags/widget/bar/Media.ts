@@ -89,7 +89,9 @@ export function Media(): Gtk.Widget {
                     children: bind(AstalMpris.get_default(), "players").as((players: Array<AstalMpris.Player>) =>
                         players[0] ? [
                             new Widget.Icon({
-                                icon: getSymbolicIcon(players[0].get_entry()) ?? "folder-music-symbolic"
+                                icon: getSymbolicIcon(players[0].get_entry()) ?? 
+                                    getSymbolicIcon(players[0].get_bus_name().split('.').filter(str => !str.toLowerCase().includes('instance')).join('.')) ??
+                                        "folder-music-symbolic"
                             } as Widget.IconProps),
                             new Widget.Label({
                                 className: "title",
