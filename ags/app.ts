@@ -68,7 +68,7 @@ App.start({
 
         connections.set(AstalHyprland.get_default(), [
             AstalHyprland.get_default().connect("keyboard-layout", (_, Keyboard, layout) => {
-                updateLayout(layout);
+                variableHandler(OSDModes.LAYOUT, layout);
                 triggerOSD(OSDModes.LAYOUT);
             })
         ]);
