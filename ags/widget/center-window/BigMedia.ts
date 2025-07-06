@@ -11,10 +11,10 @@ export function BigMedia(): Gtk.Widget {
         orientation: Gtk.Orientation.VERTICAL,
         homogeneous: false,
         width_request: 250,
-        visible: bind(AstalPlayers.getDefault(), "activePlayer").as((player: AstalMpris.Player) => 
-            player ? true : false),
-        children: bind(AstalPlayers.getDefault(), "activePlayer").as((player: AstalMpris.Player) =>
-            player && [
+        visible: bind(AstalPlayers.getDefault(), "activePlayer").as((actviePlayer: AstalMpris.Player) => 
+            actviePlayer ? true : false),
+        children: bind(AstalPlayers.getDefault(), "activePlayer").as((actviePlayer: AstalMpris.Player) =>
+            actviePlayer && [
                 new Widget.Box({
                     halign: Gtk.Align.CENTER,
                     child: new Widget.Box({
@@ -22,8 +22,8 @@ export function BigMedia(): Gtk.Widget {
                         hexpand: false,
                         orientation: Gtk.Orientation.VERTICAL,
                         marginTop: 6,
-                        visible: AstalPlayers.getDefault().getAlbumArt(player).as(Boolean),
-                        css: AstalPlayers.getDefault().getAlbumArt(player).as((artUrl: string|undefined) => 
+                        visible: AstalPlayers.getDefault().getAlbumArt(actviePlayer).as(Boolean),
+                        css: AstalPlayers.getDefault().getAlbumArt(actviePlayer).as((artUrl: string|undefined) => 
                             artUrl ? `.image { background-image: url('${artUrl}'); }` : undefined),
                         width_request: 132,
                         height_request: 128
@@ -37,15 +37,15 @@ export function BigMedia(): Gtk.Widget {
                     children: [
                         new Widget.Label({
                             className: "title",
-                            tooltipText: bind(player, "title").as((title: string) => !title ? "No Title" : title),
-                            label: bind(player, "title").as((title: string) => !title ? "No Title" : title),
+                            tooltipText: bind(actviePlayer, "title").as((title: string) => !title ? "No Title" : title),
+                            label: bind(actviePlayer, "title").as((title: string) => !title ? "No Title" : title),
                             truncate: true,
                             maxWidthChars: 25,
                         } as Widget.LabelProps),
                         new Widget.Label({
                             className: "artist",
-                            tooltipText: bind(player, "artist").as((artist: string) => !artist ? (player.get_identity() ?? "No Artist") : artist),
-                            label: bind(player, "artist").as((artist: string) => !artist ? (player.get_identity() ?? "No Artist") : artist),
+                            tooltipText: bind(actviePlayer, "artist").as((artist: string) => !artist ? (actviePlayer.get_identity() ?? "No Artist") : artist),
+                            label: bind(actviePlayer, "artist").as((artist: string) => !artist ? (actviePlayer.get_identity() ?? "No Artist") : artist),
                             maxWidthChars: 28,
                             truncate: true,
                         } as Widget.LabelProps)
@@ -54,24 +54,24 @@ export function BigMedia(): Gtk.Widget {
                 new Widget.Box({
                     className: "progress",
                     hexpand: true,
-                    visible: bind(player, "canSeek"),
+                    visible: bind(actviePlayer, "canSeek"),
                     children: [
                         new Widget.Slider({
                             min: 0,
                             hexpand: true,
-                            max: bind(player, "length").as((length: number) =>
-                                (length > 129600000) ? Math.floor(player.get_position())
+                            max: bind(actviePlayer, "length").as((length: number) =>
+                                (length > 129600000) ? Math.floor(actviePlayer.get_position())
                                     : Math.floor(length)), // for streams and players whitch dont have a length
-                            value: bind(player, "position").as((position: number) =>
+                            value: bind(actviePlayer, "position").as((position: number) =>
                                 Math.floor(position)),
                             onDragged: (slider: Widget.Slider) => {
                                 if(dragTimer === undefined) 
                                     dragTimer = timeout(600, () =>
-                                        player.set_position(Math.round(slider.value)));
+                                        actviePlayer.set_position(Math.round(slider.value)));
                                 else {
                                     dragTimer.cancel();
                                     dragTimer = timeout(600, () =>
-                                        player.set_position(Math.round(slider.value)));
+                                        actviePlayer.set_position(Math.round(slider.value)));
                                 }
                             }
                         })
@@ -86,11 +86,11 @@ export function BigMedia(): Gtk.Widget {
                         className: "elapsed",
                         valign: Gtk.Align.START,
                         halign: Gtk.Align.START,
-                        label: bind(player, "position").as((pos: number) => {
+                        label: bind(actviePlayer, "position").as((pos: number) => {
                             const sec: number = Math.floor(pos % 60);
                             const min = Math.floor((pos % 3600) / 60);
                             const hours: number = Math.floor(pos / 3600);
-                            return pos > 0 && player.length > 0 ? 
+                            return pos > 0 && actviePlayer.length > 0 ? 
                                 `${hours > 0 ? `${hours}:` : ''}${min < 10 && hours > 0 ? `0${min}` : `${min}`}:${sec < 10 ? `0${sec}` : `${sec}`}`
                                     : `0:00`;
                         })
@@ -104,29 +104,29 @@ export function BigMedia(): Gtk.Widget {
                                     icon: "edit-paste-symbolic"
                                 } as Widget.IconProps),
                                 tooltipText: "Copy link to Clipboard",
-                                visible: bind(player, "metadata").as(Boolean),
+                                visible: bind(actviePlayer, "metadata").as(Boolean),
                                 onClick: async () => {
                                     const link = exec(`playerctl --player=${
-                                        player.busName.replace(/^org\.mpris\.MediaPlayer2\./i, "")
+                                        actviePlayer.busName.replace(/^org\.mpris\.MediaPlayer2\./i, "")
                                     } metadata xesam:url`);
                                     link && Clipboard.getDefault().copyAsync(link);
                                 }
                             } as Widget.ButtonProps),
                             new Widget.Button({
                                 className: "shuffle",
-                                visible: bind(player, "shuffleStatus").as((shuffleStatus) =>
+                                visible: bind(actviePlayer, "shuffleStatus").as((shuffleStatus) =>
                                     shuffleStatus !== AstalMpris.Shuffle.UNSUPPORTED),
                                 image: new Widget.Icon({
-                                    icon: bind(player, "shuffleStatus").as((shuffleStatus) =>
+                                    icon: bind(actviePlayer, "shuffleStatus").as((shuffleStatus) =>
                                         shuffleStatus === AstalMpris.Shuffle.ON ? 
                                             "media-playlist-shuffle-symbolic"
                                         : "media-playlist-consecutive-symbolic")
                                 } as Widget.IconProps),
-                                tooltipText: bind(player, "shuffleStatus").as((shuffleStatus) =>
+                                tooltipText: bind(actviePlayer, "shuffleStatus").as((shuffleStatus) =>
                                     shuffleStatus === AstalMpris.Shuffle.ON ? 
                                         "Shuffle"
                                     : "No shuffle"),
-                                onClick: () => player.shuffle()
+                                onClick: () => actviePlayer.shuffle()
                             } as Widget.ButtonProps),
                             new Widget.Button({
                                 className: "previous",
@@ -134,21 +134,21 @@ export function BigMedia(): Gtk.Widget {
                                     icon: "media-skip-backward-symbolic"
                                 } as Widget.IconProps),
                                 tooltipText: "Previous",
-                                onClick: () => player.canGoPrevious && player.previous()
+                                onClick: () => actviePlayer.canGoPrevious && actviePlayer.previous()
                             } as Widget.ButtonProps),
                             new Widget.Button({
                                 className: "pause",
-                                tooltipText: bind(player, "playback_status").as((status) =>
+                                tooltipText: bind(actviePlayer, "playback_status").as((status) =>
                                     status === AstalMpris.PlaybackStatus.PLAYING ? "Pause" : "Play"),
                                 image: new Widget.Icon({
-                                    icon: bind(player, "playbackStatus").as((status) => 
+                                    icon: bind(actviePlayer, "playbackStatus").as((status) => 
                                         status === AstalMpris.PlaybackStatus.PLAYING ? 
                                             "media-playback-pause-symbolic"
                                         : "media-playback-start-symbolic"),
                                 } as Widget.IconProps),
-                                onClick: () => player.playbackStatus === AstalMpris.PlaybackStatus.PAUSED ?
-                                    player.play()
-                                : player.pause()
+                                onClick: () => actviePlayer.playbackStatus === AstalMpris.PlaybackStatus.PAUSED ?
+                                    actviePlayer.play()
+                                : actviePlayer.pause()
                             } as Widget.ButtonProps),
                             new Widget.Button({
                                 className: "next",
@@ -156,14 +156,14 @@ export function BigMedia(): Gtk.Widget {
                                     icon: "media-skip-forward-symbolic"
                                 } as Widget.IconProps),
                                 tooltipText: "Next",
-                                onClick: () => player.canGoNext && player.next()
+                                onClick: () => actviePlayer.canGoNext && actviePlayer.next()
                             } as Widget.ButtonProps),
                             new Widget.Button({
                                 className: "repeat",
-                                visible: bind(player, "loopStatus").as((loopStatus) =>
+                                visible: bind(actviePlayer, "loopStatus").as((loopStatus) =>
                                     loopStatus !== AstalMpris.Loop.UNSUPPORTED),
                                 image: new Widget.Icon({
-                                    icon: bind(player, "loopStatus").as((loopStatus) => {
+                                    icon: bind(actviePlayer, "loopStatus").as((loopStatus) => {
                                         switch(loopStatus) {
                                             case AstalMpris.Loop.TRACK: 
                                                 return "media-playlist-repeat-song-symbolic";
@@ -175,7 +175,7 @@ export function BigMedia(): Gtk.Widget {
                                         return "loop-arrow-symbolic";
                                     })
                                 } as Widget.IconProps),
-                                tooltipText: bind(player, "loopStatus").as((loopStatus) => {
+                                tooltipText: bind(actviePlayer, "loopStatus").as((loopStatus) => {
                                     switch(loopStatus) {
                                         case AstalMpris.Loop.TRACK: 
                                             return "Loop song";
@@ -186,7 +186,7 @@ export function BigMedia(): Gtk.Widget {
 
                                     return "No loop";
                                 }),
-                                onClick: () => player.loop()
+                                onClick: () => actviePlayer.loop()
                             } as Widget.ButtonProps)
                         ]
                     } as Widget.BoxProps),
@@ -194,7 +194,7 @@ export function BigMedia(): Gtk.Widget {
                         className: "length",
                         valign: Gtk.Align.START,
                         halign: Gtk.Align.END,
-                        label: bind(player, "length").as((len/* bananananananana */: number) => {
+                        label: bind(actviePlayer, "length").as((len/* bananananananana */: number) => {
                             const maxLen: number = 9223372036854;
 
                             const sec: number = Math.floor(len % 60);
