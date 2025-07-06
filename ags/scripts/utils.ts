@@ -2,6 +2,13 @@ import { createPoll } from "ags/time";
 import { exec, execAsync } from "ags/process";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
+import { Accessor, For, With } from "ags";
+import GObject from "gi://GObject?version=2.0";
+import { Astal, Gtk } from "ags/gtk4";
+
+
+/** gnim doesn't export this, so we need to do it again */
+export type WidgetNodeType = Array<GObject.Object> | GObject.Object | number | string | boolean | null | undefined;
 
 export const decoder = new TextDecoder("utf-8"),
     encoder = new TextEncoder();
@@ -18,9 +25,63 @@ export function getHyprlandVersion(): string {
 }
 
 export function omitObjectKeys<ObjT = object>(obj: ObjT, keys: keyof ObjT|Array<keyof ObjT>): ObjT {
-    for(const objKey of Object.keys(obj)) {
-        for(const omitKey of keys) {}
+    const finalObject = obj;
+
+    for(const objKey of Object.keys(obj as object)) {
+        if(!Array.isArray(keys)) {
+            if(objKey === keys) {
+                delete finalObject[keys as keyof typeof finalObject];
+                break;
+            }
+            continue;
+        }
+
+        for(const omitKey of keys) {
+            if(objKey === omitKey) {
+                delete finalObject[objKey as keyof typeof finalObject];
+                break;
+            }
+        }
     }
+
+    return finalObject;
+}
+
+export function variableToBoolean(variable: any|Accessor<any>|Accessor<Array<any>>): boolean|Accessor<boolean> {
+    return (variable instanceof Accessor) ?
+        variable.as(v => Array.isArray(v) ?
+            (v as Array<any>).length > 0
+        : Boolean(v))
+    : Boolean(variable);
+}
+
+export function transform<ValueType = any|Array<any>, RType = any>(
+    v: Accessor<ValueType>|ValueType, fn: (v: ValueType) => RType
+): RType|Accessor<RType> {
+
+    return (v instanceof Accessor) ?
+        v.as(fn)
+    : fn(v);
+}
+
+export function transformWidget<ValueType = unknown>(
+    v: Accessor<ValueType|Array<ValueType>>|ValueType|Array<ValueType>, 
+    fn: (v: ValueType, i?: Accessor<number>|number) => JSX.Element
+): WidgetNodeType {
+
+    return (v instanceof Accessor) ?
+        Array.isArray(v.get()) ?
+            For({
+                each: v as Accessor<Array<ValueType>>,
+                children: (cval, i) => fn(cval, i)
+            })
+        : With({
+            value: v as Accessor<ValueType>,
+            children: fn
+        })
+    : (Array.isArray(v) ?
+        v.map(val => fn(val))
+    : fn(v));
 }
 
 export function makeDirectory(dir: string): void {
@@ -40,4 +101,27 @@ export function isInstalled(commandName: string): boolean {
         return true;
 
     return false;
+}
+
+export function addSliderMarksFromMinMax(slider: Astal.Slider, amountOfMarks: number = 2, markup?: (string | null)) {
+    if(markup && !markup.includes("{}")) 
+        markup = `${markup}{}`
+
+    slider.add_mark(slider.min, Gtk.PositionType.BOTTOM, markup ? 
+        markup.replaceAll("{}", `${slider.min}`) : null);
+
+    const num = (amountOfMarks - 1);
+    for(let i = 1; i <= num; i++) {
+        const part = (slider.max / num) | 0;
+
+        if(i > num) {
+            slider.add_mark(slider.max, Gtk.PositionType.BOTTOM, `${slider.max}K`);
+            break;
+        }
+
+        slider.add_mark(part*i, Gtk.PositionType.BOTTOM, markup ? 
+            markup.replaceAll("{}", `${part*i}`) : null);
+    }
+
+    return slider;
 }

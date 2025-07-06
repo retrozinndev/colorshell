@@ -1,6 +1,14 @@
 {
+    "$schema": "https://www.schemastore.org/package.json",
     "name": "colorshell",
+    "packageManager": "pnpm@10.12.1",
+    "scripts": {
+        "start": "ags run",
+        "restart": "ags request reload",
+        "stop": "ags quit",
+        "bundle": "ags bundle"
+    },
     "dependencies": {
-        "astal": "/usr/share/astal/gjs"
+        "ags": "link:../../.local/share/pnpm/global/5/node_modules/ags"
     }
 }

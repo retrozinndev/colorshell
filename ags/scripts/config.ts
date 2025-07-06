@@ -8,7 +8,7 @@ import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import AstalIO from "gi://AstalIO";
 import AstalNotifd from "gi://AstalNotifd";
-import { Accessor, createConnection } from "ags";
+import { Accessor } from "ags";
 
 
 export { Config };
@@ -46,14 +46,15 @@ export type ConfigEntries = Partial<{
 
 type ValueTypes = "string" | "boolean" | "object" | "number" | "undefined" | "any";
 
+interface ConfigSignals extends GObject.Object.SignalSignatures {
+    "notify::entries": (entries: ConfigEntries) => void;
+}
+
 @register({ GTypeName: "Config" })
 class Config extends GObject.Object {
     private static instance: Config;
 
-    $signals = {
-        "notify": () => {},
-        "notify::entries": (_: ConfigEntries) => {}
-    };
+    declare $signals: ConfigSignals;
 
     private readonly defaultFile = Gio.File.new_for_path(
         `${GLib.get_user_config_dir()}/colorshell/config.json`);
@@ -196,8 +197,10 @@ class Config extends GObject.Object {
     }
 
     public bindProperty(propertyPath: (keyof ConfigEntries|string), expectType?: ValueTypes): Accessor<any|undefined> {
-        return createConnection(this.getProperty(propertyPath), [(this as typeof Config.instance), "notify::entries", () => 
-            this.getProperty(propertyPath, expectType)]);
+        return new Accessor<ConfigEntries>(() => this.getProperty(propertyPath, expectType), (callback: () => void) => {
+            const id = this.connect("notify::entries", () => callback());
+            return () => this.disconnect(id);
+        });
     }
 
     public getProperty(path: string, expectType?: ValueTypes): (any|undefined) {

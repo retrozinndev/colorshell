@@ -1,14 +1,8 @@
 import App from "ags/gtk4/app"
-import { Bar } from "./window/Bar";
-import { OSD } from "./window/OSD";
-import { ControlCenter } from "./window/ControlCenter";
-import { CenterWindow } from "./window/CenterWindow";
-import { LogoutMenu } from "./window/LogoutMenu";
-import { FloatingNotifications } from "./window/FloatingNotifications";
-import { AppsWindow } from "./window/AppsWindow";
 import AstalHyprland from "gi://AstalHyprland";
-import GObject, { getter, register } from "ags/gobject";
+import GObject, { getter, register, signal } from "ags/gobject";
 import { Astal } from "ags/gtk4";
+import { ControlCenter } from "./window/ControlCenter";
 
 
 export { Windows };
@@ -28,14 +22,17 @@ class Windows extends GObject.Object {
     #windowConnections: Record<string, (Array<number> | Array<Array<number>>)> = {};
     #appConnections: Array<number> = [];
     #windows: Record<string, (() => (Astal.Window | Array<Astal.Window>))> = {
-        "bar": this.createWindowForMonitors(Bar),
-        "osd": this.createWindowForFocusedMonitor(OSD),
+        //"bar": this.createWindowForMonitors(Bar),
+        //"osd": this.createWindowForFocusedMonitor(OSD),
         "control-center": this.createWindowForFocusedMonitor(ControlCenter),
-        "center-window": this.createWindowForFocusedMonitor(CenterWindow),
+        /*"center-window": this.createWindowForFocusedMonitor(CenterWindow),
         "logout-menu": this.createWindowForFocusedMonitor(LogoutMenu),
         "floating-notifications": this.createWindowForFocusedMonitor(FloatingNotifications),
-        "apps-window": this.createWindowForFocusedMonitor(AppsWindow)
+        "apps-window": this.createWindowForFocusedMonitor(AppsWindow)*/
     };
+
+    @signal(String) opened(_name: string) {}
+    @signal(String) closed(_name: string) {}
 
     get windows() { return this.#windows; }
 
@@ -187,7 +184,7 @@ class Windows extends GObject.Object {
                 cause: `No focused monitor found (${typeof focusedMonitor})` 
             });
 
-        return () => windowFun(focusedMonitor.id) as Astal.Window;
+        return () => (windowFun(focusedMonitor.id) as Astal.Window);
     }
 
     public addWindow(name: string, window: (() => (Astal.Window | Array<Astal.Window>))): void {

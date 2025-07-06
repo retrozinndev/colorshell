@@ -1,13 +1,6 @@
-import AstalNotifd from "gi://AstalNotifd";
-
-import { App } from "astal/gtk3"
 import { Wireplumber } from "./scripts/volume";
-
 import { handleArguments } from "./scripts/arg-handler";
-import { Time, timeout } from "astal/time";
-
-import { OSDModes, setOSDMode } from "./window/OSD";
-
+import { Time, timeout } from "ags/time";
 import { Runner } from "./runner/Runner";
 import { PluginApps } from "./runner/plugins/apps";
 import { PluginShell } from "./runner/plugins/shell";
@@ -15,7 +8,6 @@ import { PluginWebSearch } from "./runner/plugins/websearch";
 import { PluginMedia } from "./runner/plugins/media";
 import { Windows } from "./windows";
 import { Notifications } from "./scripts/notifications";
-import { GObject } from "astal";
 import { PluginWallpapers } from "./runner/plugins/wallpapers";
 import { Wallpaper } from "./scripts/wallpaper";
 import { Stylesheet } from "./scripts/stylesheet";
@@ -23,17 +15,21 @@ import { Clipboard } from "./scripts/clipboard";
 import { PluginClipboard } from "./runner/plugins/clipboard";
 import { Config } from "./scripts/config";
 
+import App from "ags/gtk4/app"
+import GObject from "ags/gobject";
+import AstalNotifd from "gi://AstalNotifd";
 
-let osdTimer: (Time|undefined);
+
+let osdTimer: (Time|undefined), osdTimeout = 3500;
 let connections = new Map<GObject.Object, (Array<number> | number)>();
 
-const defaultWindows: Array<keyof typeof Windows.windows> = [ "bar" ];
+const defaultWindows: Array<keyof typeof Windows.prototype.windows> = [ "bar" ];
 const runnerPlugins: Array<Runner.Plugin> = [
     PluginApps,
     PluginShell,
     PluginWebSearch,
     PluginMedia,
-    new PluginWallpapers(),
+    PluginWallpapers,
     PluginClipboard
 ];
 
@@ -63,15 +59,15 @@ App.start({
 
         connections.set(Wireplumber.getDefault(), [
             Wireplumber.getDefault().getDefaultSink().connect("notify::volume", () => 
-                triggerOSD(OSDModes.SINK))
+                triggerOSD())
         ]);
 
         connections.set(Notifications.getDefault(), [
             Notifications.getDefault().connect("notification-added", (_, _notif: AstalNotifd.Notification) => {
-                Windows.open("floating-notifications");
+                Windows.getDefault().open("floating-notifications");
             }),
             Notifications.getDefault().connect("notification-removed", (_: Notifications, _id: number) => {
-                _.notifications.length === 0 && Windows.close("floating-notifications");
+                _.notifications.length === 0 && Windows.getDefault().close("floating-notifications");
             })
         ]);
 
@@ -82,32 +78,31 @@ App.start({
         runnerPlugins.map(plugin => Runner.addPlugin(plugin));
 
         console.log("Opening default windows");
-        // Open openOnStart windows
+        /* Open openOnStart windows
         defaultWindows.map(name => {
-            if(Windows.isVisible(name)) return;
-            Windows.open(name);
-        });
+            if(Windows.getDefault().isVisible(name)) return;
+            Windows.getDefault().open(name);
+        });*/
     }
 });
 
-function triggerOSD(osdModeParam: OSDModes) {
-    if(Windows.isVisible("control-center")) return;
+function triggerOSD() {
+    if(Windows.getDefault().isVisible("control-center")) return;
 
-    Windows.open("osd");
+    Windows.getDefault().open("osd");
 
     if(!osdTimer) {
-        setOSDMode(osdModeParam);
-        osdTimer = timeout(3000, () => {
+        osdTimer = timeout(osdTimeout, () => {
             osdTimer = undefined;
-            Windows.close("osd");
+            Windows.getDefault().close("osd");
         });
 
         return;
     }
 
     osdTimer.cancel();
-    osdTimer = timeout(3000, () => {
-        Windows.close("osd");
+    osdTimer = timeout(osdTimeout, () => {
+        Windows.getDefault().close("osd");
         osdTimer = undefined;
     });
 }

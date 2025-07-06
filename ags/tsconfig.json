@@ -1,14 +1,13 @@
 {
-    "$schema": "https://json.schemastore.org/tsconfig",
-    "compilerOptions": {
-        "experimentalDecorators": true,
-        "strict": true,
-        "target": "ES2022",
-        "module": "ES2022",
-        "moduleResolution": "Bundler",
-        "checkJs": true,
-        "allowJs": false,
-        "jsx": "react-jsx",
-        "jsxImportSource": "astal/gtk3"
-    }
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "allowJs": false,
+    "checkJs": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "ags/gtk4",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "target": "esnext"
+  }
 }
