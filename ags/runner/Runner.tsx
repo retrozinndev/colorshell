@@ -1,10 +1,14 @@
-import { AstalIO, GObject, timeout } from "astal";
-import { Astal, Gdk, Gtk, Widget } from "astal/gtk3";
-import { PopupWindow, PopupWindowProps } from "../widget/PopupWindow";
+import { Astal, Gdk, Gtk } from "ags/gtk4";
+import { timeout } from "ags/time";
+import { PopupWindow } from "../widget/PopupWindow";
 import { updateApps } from "../scripts/apps";
 import { ResultWidget, ResultWidgetProps } from "../widget/runner/ResultWidget";
 import { Windows } from "../windows";
+
+import GObject from "ags/gobject";
 import AstalHyprland from "gi://AstalHyprland";
+import AstalIO from "gi://AstalIO";
+
 
 export namespace Runner {
 export type RunnerProps = {
@@ -33,8 +37,8 @@ export interface Plugin {
     prioritize?: boolean;
 }
 
-export let instance: (Widget.Window|null) = null;
-let gtkEntry: (Widget.Entry|null) = null;
+export let instance: (Astal.Window|null) = null;
+let gtkEntry: (Gtk.SearchEntry|null) = null;
 const plugins = new Set<Runner.Plugin>();
 
 export function close() { instance?.close(); }
@@ -74,9 +78,9 @@ export function removePlugin(plugin: Plugin): boolean {
 
 export function setEntryText(text: string): void {
     gtkEntry?.set_text(text);
-    gtkEntry?.set_position(gtkEntry.textLength);
+    gtkEntry?.set_position(gtkEntry.text.length);
 
-    gtkEntry?.grab_focus_without_selecting();
+    gtkEntry?.grab_focus();
 }
 
 export function openDefault(initialText?: string) {
@@ -131,76 +135,55 @@ export function openDefault(initialText?: string) {
     ]);
 }
 
-export function openRunner(props: RunnerProps, placeholder?: () => Array<ResultWidget>): Widget.Window {
+export function openRunner(props: RunnerProps, placeholder?: () => Array<ResultWidget>): Astal.Window {
     let onClickTimeout: (AstalIO.Time|undefined);
     const connections: Map<GObject.Object, number> = new Map();
 
     props.width ??= 780;
     props.height ??= 420;
 
-    gtkEntry = new Widget.Entry({
-        className: "search",
-        placeholderText: props?.entryPlaceHolder || "",
-        onChanged: async (self) => {
-            updateResultsList(self.text);
-            resultsList.get_row_at_index(0) && 
-                resultsList.select_row(resultsList.get_row_at_index(0));
+    gtkEntry = <Gtk.SearchEntry class={"search"} placeholderText={props.entryPlaceHolder ?? ""}
+      onSearchChanged={async (self) => {
+          updateResultsList(self.text);
+          resultsList.get_row_at_index(0) && 
+              resultsList.select_row(resultsList.get_row_at_index(0));
 
-            if(self.text.trim().length < 1 && !mainBox.get_style_context().has_class("empty-input")) {
-                mainBox.get_style_context().add_class("empty-input");
-                return;
-            }
+          if(self.text.trim().length < 1 && !mainBox.get_style_context().has_class("empty-input")) {
+              mainBox.get_style_context().add_class("empty-input");
+              return;
+          }
 
-            mainBox.get_style_context().has_class("empty-input") &&
-                mainBox.get_style_context().remove_class("empty-input");
-        },
-        onActivate: (entry) => {
-            const resultWidget = resultsList.get_selected_row()?.get_child();
-            if(resultWidget instanceof ResultWidget) {
-                entry.isFocus = false;
-                resultWidget.onClick();
-                resultWidget.closeOnClick && Runner.close();
-            }
-        },
-        primary_icon_name: "system-search"
-    } as Widget.EntryProps);
+          mainBox.get_style_context().has_class("empty-input") &&
+              mainBox.get_style_context().remove_class("empty-input");
+      }} onActivate={() => {
+          const resultWidget = resultsList.get_selected_row()?.get_child();
+          if(resultWidget instanceof ResultWidget) {
+              resultWidget.onClick();
+              resultWidget.closeOnClick && Runner.close();
+          }
+      }}
+    /> as Gtk.SearchEntry;
 
-    const mainBox = new Widget.Box({
-        className: `runner main ${props.showResultsPlaceHolderOnStartup ? "empty" : ""}`,
-        orientation: Gtk.Orientation.VERTICAL,
-        hexpand: true,
-        valign: Gtk.Align.START,
-        children: [
-            gtkEntry,
-            new Widget.Scrollable({
-                className: "results-scrollable",
-                vscroll: Gtk.PolicyType.AUTOMATIC,
-                hscroll: Gtk.PolicyType.NEVER,
-                expand: true,
-                visible: props.showResultsPlaceHolderOnStartup ?? false,
-                propagateNaturalHeight: true,
-                maxContentHeight: props.height,
-                child: new Gtk.ListBox({
-                    visible: true,
-                    expand: true,
-                } as Gtk.ListBox.ConstructorProps)
-            })
-        ]
-    } as Widget.BoxProps);
+    const mainBox = <Gtk.Box class={`runner main ${props.showResultsPlaceHolderOnStartup ? 
+          "empty" : ""}`} orientation={Gtk.Orientation.VERTICAL} hexpand={true}
+      valign={Gtk.Align.START}>
+        {gtkEntry}
+        <Gtk.ScrolledWindow class={"results-scrollable"} vscrollbarPolicy={Gtk.PolicyType.AUTOMATIC}
+          hscrollbarPolicy={Gtk.PolicyType.NEVER} hexpand={true} vexpand={true}
+          visible={props.showResultsPlaceHolderOnStartup ?? false}
+          propagateNaturalHeight={true} maxContentHeight={props.height}>
 
-    const scrollable = mainBox.get_children()[1] as Widget.Scrollable;
-    const resultsList = scrollable.get_child() as Gtk.ListBox;
+            <Gtk.ListBox hexpand={true} vexpand={true} />
+        </Gtk.ScrolledWindow>
+    </Gtk.Box> as Gtk.Box;
+
+    const scrollable = mainBox.get_last_child() as Gtk.ScrolledWindow;
+    const resultsList = scrollable.get_first_child() as Gtk.ListBox;
 
     if(props?.showResultsPlaceHolderOnStartup && placeholder) {
-        const placeholderWidgets = placeholder();
-        placeholderWidgets.map(widget =>
+        const placeholderGtks = placeholder();
+        placeholderGtks.map(widget =>
             resultsList.insert(widget, -1));
-    }
-
-    function cleanResults() {
-        resultsList.get_children().map((listItem) => {
-            resultsList.remove(listItem);
-        });
     }
 
     function getPluginResults(input: string): Array<ResultWidget> {
@@ -229,7 +212,7 @@ export function openRunner(props: RunnerProps, placeholder?: () => Array<ResultW
         const widgets: Array<ResultWidget> = [];
 
         // Remove all previous results
-        cleanResults();
+        resultsList.remove_all();
 
         widgets.push(...getPluginResults(entryText))
 
@@ -238,21 +221,21 @@ export function openRunner(props: RunnerProps, placeholder?: () => Array<ResultW
             widgets.push(...placeholder());
 
         // Insert results inside GtkListBox
-        widgets.map((resultWidget: ResultWidget) => {
-            resultsList.insert(resultWidget, -1);
+        widgets.map((resultGtk: ResultWidget) => {
+            resultsList.insert(resultGtk, -1);
 
             const conns: Array<number> = [];
 
             conns.push(
                 resultsList.connect("row-activated", (_, row: Gtk.ListBoxRow) => {
-                    const rWidget = row.get_child();
-                    if(rWidget instanceof ResultWidget) {
+                    const rGtk = row.get_child();
+                    if(rGtk instanceof ResultWidget) {
                         if(onClickTimeout) return;
 
                         // Timeout, so it doesn't fire the event a hundred times :skull:
                         onClickTimeout = timeout(500, () => onClickTimeout = undefined);
-                        rWidget.onClick();
-                        rWidget.closeOnClick && Runner.close();
+                        rGtk.onClick();
+                        rGtk.closeOnClick && Runner.close();
                     }
                 }),
                 resultsList.connect("destroy", () => 
@@ -267,48 +250,39 @@ export function openRunner(props: RunnerProps, placeholder?: () => Array<ResultW
     }
 
     if(!instance)
-        instance = Windows.createWindowForFocusedMonitor((mon: number): (Widget.Window) => PopupWindow({
-            namespace: "runner",
-            monitor: mon,
-            widthRequest: props.width,
-            heightRequest: props.height,
-            marginTop: (AstalHyprland.get_default().get_monitor(mon)?.height / 2) - (props.height! / 2),
-            exclusivity: Astal.Exclusivity.IGNORE,
-            halign: Gtk.Align.CENTER,
-            valign: Gtk.Align.START,
-            setup: () => {
-                // Init plugins
-                plugins.forEach(plugin => plugin.init && plugin.init());
+        instance = Windows.getDefault().createWindowForFocusedMonitor((mon: number) => <PopupWindow 
+          namespace={"runner"} monitor={mon} widthRequest={props.width} heightRequest={props.height}
+          marginTop={(AstalHyprland.get_default().get_monitor(mon)?.height / 2) - (props.height! / 2)}
+          exclusivity={Astal.Exclusivity.IGNORE} halign={Gtk.Align.CENTER} valign={Gtk.Align.START}
+          $={() => {
+              plugins.forEach(plugin => 
+                  plugin.init?.());
 
-                if(props?.initialText) 
-                    Runner.setEntryText(props.initialText);
-            },
-            onKeyPressEvent: (_, event: Gdk.Event) => {
-                const keyVal = event.get_keyval()[1];
-
-                if(!gtkEntry!.has_focus && keyVal !== Gdk.KEY_F5 
-                   && keyVal !== Gdk.KEY_Down && keyVal !== Gdk.KEY_Up
-                   && keyVal !== Gdk.KEY_Return) {
-                    gtkEntry!.grab_focus_without_selecting();
+              props.initialText && 
+                  Runner.setEntryText(props.initialText);
+          }} actionKeyPressed={(_, keyval) => {
+              if(!gtkEntry!.has_focus && keyval !== Gdk.KEY_F5 
+                   && keyval !== Gdk.KEY_Down && keyval !== Gdk.KEY_Up
+                   && keyval !== Gdk.KEY_Return) {
+                    gtkEntry!.grab_focus();
                     return;
                 }
 
-                event.get_keyval()[1] === Gdk.KEY_F5 &&
+                keyval === Gdk.KEY_F5 &&
                     updateApps();
-            },
-            onDestroy: () => {
-                connections.forEach((id, obj) => GObject.signal_handler_is_connected(obj, id) &&
-                    obj.disconnect(id));
+          }} onDestroy={() => {
+              connections.forEach((id, obj) => GObject.signal_handler_is_connected(obj, id) &&
+                  obj.disconnect(id));
 
-                gtkEntry = null;
+              gtkEntry = null;
 
-                [...plugins.values()].forEach(plugin =>
-                    plugin && plugin.onClose && plugin.onClose());
+              [...plugins.values()].forEach(plugin =>
+                  plugin && plugin.onClose && plugin.onClose());
 
-                instance = null;
-            },
-            child: mainBox
-        } as PopupWindowProps))();
+              instance = null;
+          }}>
+            {mainBox}
+        </PopupWindow> as Astal.Window)();
 
     return instance!;
 }

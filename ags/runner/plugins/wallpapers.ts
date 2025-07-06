@@ -1,10 +1,11 @@
-import { Gio } from "astal";
 import { Wallpaper } from "../../scripts/wallpaper";
 import { Runner } from "../Runner";
 import { ResultWidget, ResultWidgetProps } from "../../widget/runner/ResultWidget";
 
+import Gio from "gi://Gio?version=2.0";
 
-export class PluginWallpapers implements Runner.Plugin {
+
+class _PluginWallpapers implements Runner.Plugin {
     prefix = "#";
     prioritize = true;
     #files: (Array<string>|undefined);
@@ -39,3 +40,5 @@ export class PluginWallpapers implements Runner.Plugin {
         } as ResultWidgetProps);
     }
 }
+
+export const PluginWallpapers = new _PluginWallpapers();
