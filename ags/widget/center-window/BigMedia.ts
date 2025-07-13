@@ -22,8 +22,8 @@ export function BigMedia(): Gtk.Widget {
                         hexpand: false,
                         orientation: Gtk.Orientation.VERTICAL,
                         marginTop: 6,
-                        visible: AstalPlayers.getDefault().getAlbumArt(actviePlayer).as(Boolean),
-                        css: AstalPlayers.getDefault().getAlbumArt(actviePlayer).as((artUrl: string|undefined) => 
+                        visible: bind(actviePlayer, "coverArt").as(Boolean),
+                        css: bind(actviePlayer, "coverArt").as((artUrl: string|undefined) => 
                             artUrl ? `.image { background-image: url('${artUrl}'); }` : undefined),
                         width_request: 132,
                         height_request: 128
