@@ -1,5 +1,6 @@
 import AstalNotifd from "gi://AstalNotifd";
 import AstalHyprland from "gi://AstalHyprland";
+import AstalMpris from "gi://AstalMpris";
 
 import { App, Astal } from "astal/gtk3"
 import { Wireplumber } from "./scripts/volume";
@@ -23,10 +24,11 @@ import { Stylesheet } from "./scripts/stylesheet";
 import { Clipboard } from "./scripts/clipboard";
 import { PluginClipboard } from "./runner/plugins/clipboard";
 import { Config } from "./scripts/config";
+import { AstalPlayers } from "./scripts/player";
 
-
-import { Players } from "./scripts/player";
-
+const hyprland = AstalHyprland.get_default();
+const audio = Wireplumber.getDefault();
+const player = AstalPlayers.getDefault();
 
 let osdTimer: (Time|undefined);
 let connections = new Map<GObject.Object, (Array<number> | number)>();
@@ -66,23 +68,36 @@ App.start({
         // Init clipboard module
         Clipboard.getDefault();
 
-        connections.set(AstalHyprland.get_default(), [
-            AstalHyprland.get_default().connect("keyboard-layout", (_, Keyboard, layout) => {
+        //OSD Layout
+        connections.set(hyprland, [
+            hyprland.connect("keyboard-layout", (_, Keyboard, layout) => {
                 variableHandler(OSDModes.LAYOUT, layout);
                 triggerOSD(OSDModes.LAYOUT);
             })
         ]);
-
-        connections.set(Wireplumber.getDefault(), [
-            Wireplumber.getDefault().getDefaultSink().connect("notify::volume", () => 
-                triggerOSD(OSDModes.SINK)),
-            Wireplumber.getDefault().getDefaultSink().connect("notify::mute", () => 
-                triggerOSD(OSDModes.SINK)),
-            Wireplumber.getDefault().getDefaultSource().connect("notify::volume", () => 
-                triggerOSD(OSDModes.SOURCE)),
-            Wireplumber.getDefault().getDefaultSource().connect("notify::mute", () => 
-                triggerOSD(OSDModes.SOURCE)),
+        
+        const audioHandler = () => triggerOSD(OSDModes.SINK);
+        const sinkHandler = () => triggerOSD(OSDModes.SOURCE);
+        //OSD Wireplumber
+        connections.set(audio, [
+            audio.getDefaultSink().connect("notify::volume", audioHandler),
+            audio.getDefaultSink().connect("notify::mute", audioHandler),
+            audio.getDefaultSource().connect("notify::volume", sinkHandler),
+            audio.getDefaultSource().connect("notify::mute", sinkHandler),
         ]);
+
+        //OSD Player
+        /*connections.set(player, [
+            AstalPlayers.getDefault().activePlayer.connect("notify::title", () =>           
+                triggerOSD(OSDModes.PLAYER)
+            ),
+            player.activePlayer.connect("notify::playback-status", (s) => {
+                if (s.playbackStatus === AstalMpris.PlaybackStatus.PLAYING && 
+                    hyprland.get_focused_client().get_fullscreen() === AstalHyprland.Fullscreen.FULLSCREEN &&
+                    hyprland.get_focused_client().get_class().toLowerCase() !== player.activePlayer.get_enrty().toLowerCase()) 
+                    triggerOSD(OSDModes.PLAYER); 
+            })
+        ])*/
 
         connections.set(Notifications.getDefault(), [
             Notifications.getDefault().connect("notification-added", (_, _notif: AstalNotifd.Notification) => {
