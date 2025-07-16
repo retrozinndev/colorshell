@@ -1,4 +1,4 @@
-import { GObject, register, property, signal, Binding, bind } from "astal";
+import { GObject, register, property } from "astal";
 import AstalMpris from "gi://AstalMpris";
 
 export { AstalPlayers };
@@ -10,7 +10,7 @@ class AstalPlayers extends GObject.Object {
 
     #players: AstalMpris.Player[] = [];
     #activePlayer: AstalMpris.Player | null = null;
-    #playerConnections: Map<AstalMpris.Player, number> = new Map();
+    #playerConnections: Map<AstalMpris.Player, number[]> = new Map();
 
     @property(AstalMpris.Player)
     get activePlayer() {
@@ -38,26 +38,39 @@ class AstalPlayers extends GObject.Object {
     }
     
     private _addPlayerSignals(player: AstalMpris.Player) {
-        const handlerId = player.connect("notify::playback-status", () => {
-            this._updateActivePlayer();
-        });
-        this.#playerConnections.set(player, handlerId);
+        const handler = () => this._onPlayerStateChanged(player);
+
+        const ids = [
+            player.connect("notify::playback-status", handler),
+            player.connect("notify::metadata", handler)
+        ];
+
+        this.#playerConnections.set(player, ids);
     }
     
     private _removePlayer(player: AstalMpris.Player) {
         this.#players = this.#players.filter(p => p !== player);
 
         if (this.#playerConnections.has(player)) {
-            player.disconnect(this.#playerConnections.get(player)!);
+            const ids = this.#playerConnections.get(player)!;
+            ids.forEach(id => player.disconnect(id));
             this.#playerConnections.delete(player);
         }
 
         this._updateActivePlayer();
     }
 
-    private _updateActivePlayer() {
-        const playingPlayer = this.#players.find(p => p.playback_status === AstalMpris.PlaybackStatus.PLAYING);
+    private _onPlayerStateChanged(player: AstalMpris.Player) {
+        const wasActivePlayer = this.#activePlayer;
+        this._updateActivePlayer();
 
+        if (this.#activePlayer === wasActivePlayer && this.#activePlayer === player) {
+            this.notify("active-player");
+        }
+    }
+
+    private _updateActivePlayer() {
+        const playingPlayer = this.#players.find(p => p.playbackStatus === AstalMpris.PlaybackStatus.PLAYING);
         let newActivePlayer;
 
         if (playingPlayer) {
@@ -75,29 +88,17 @@ class AstalPlayers extends GObject.Object {
     }
 
     public static getDefault(): AstalPlayers {
-        if (!AstalPlayers.inst)
+        if (!AstalPlayers.inst) {
             AstalPlayers.inst = new AstalPlayers();
-
+        }
         return AstalPlayers.inst;
     }
+    
+    public connect(signal: string, callback: (...args: any[]) => void): number {
+        return super.connect(signal, callback);
+    }
 
-    /**
-     * This function handles album art/cover of playing media. If a file is provided
-     * by the player, it adds the "file://" uri as a prefix, so you can use it in css.
-     *
-     * @param player the player you want to pull album art from
-     * @returns Binding to player.artUrl containing the album art uri, or an undefined binding if none was found.
-     */
-    public getAlbumArt(player: AstalMpris.Player): Binding<string | undefined> {
-        return bind(player, "artUrl").as((artUrl: string) => {
-
-            if (!artUrl)
-                return undefined;
-
-            if (artUrl.startsWith("/"))
-                return "file://" + artUrl;
-
-            return artUrl;
-        });
+    public disconnect(id: number): void {
+        super.disconnect(id);
     }
 }
