@@ -5,7 +5,7 @@ import { getDateTime } from "../scripts/time";
 import { Separator, SeparatorProps } from "../widget/Separator";
 import { PopupWindow, PopupWindowProps } from "../widget/PopupWindow";
 import { BigMedia } from "../widget/center-window/BigMedia";
-import AstalMpris from "gi://AstalMpris";
+import { AstalPlayers } from "../scripts/player";
 
 export const CenterWindow = (mon: number) => PopupWindow({
     namespace: "center-window",
@@ -60,7 +60,7 @@ export const CenterWindow = (mon: number) => PopupWindow({
                 margin: 5,
                 spacing: 8,
                 alpha: .3,
-                visible: bind(AstalMpris.get_default(), "players").as(players => players.length > 0),
+                visible: bind(AstalPlayers.getDefault(), "activePlayer").as(players => players ? true : false),
             } as SeparatorProps),
             BigMedia()
         ]
