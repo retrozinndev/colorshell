@@ -81,15 +81,16 @@ export const Workspaces = () => {
                     const showId = createComputed([
                         Config.getDefault().bindProperty("workspaces.always_show_id", "boolean").as(Boolean),
                         Config.getDefault().bindProperty("workspaces.enable_helper", "boolean").as(Boolean),
-                        showNumbers
-                    ], (alwaysShowIds, enableHelper, showIds) => {
+                        showNumbers,
+                        i
+                    ], (alwaysShowIds, enableHelper, showIds, i) => {
                         if(enableHelper && !alwaysShowIds) {
-                            const previousWorkspace = defaultWorkspaces.get()[i.get()-1];
-                            const nextWorkspace = defaultWorkspaces.get()[i.get()+1];
+                            const previousWorkspace = defaultWorkspaces.get()[i-1];
+                            const nextWorkspace = defaultWorkspaces.get()[i+1];
 
-                            if((defaultWorkspaces.get().filter((_, ii) => ii < i.get()).length > 0 && 
+                            if((defaultWorkspaces.get().filter((_, ii) => ii < i).length > 0 && 
                                 previousWorkspace?.id < (ws.id-1)) || 
-                               (defaultWorkspaces.get().filter((_, ii) => ii > i.get()).length > 0 && 
+                               (defaultWorkspaces.get().filter((_, ii) => ii > i).length > 0 && 
                                 nextWorkspace?.id > (ws.id+1))) {
 
                                 return true;

@@ -1,8 +1,9 @@
 import { Astal, Gdk, Gtk } from "ags/gtk4";
 import { BackgroundWindow } from "./BackgroundWindow";
-import GObject from "gi://GObject?version=2.0";
 import { Accessor, CCProps, createComputed } from "ags";
 import { omitObjectKeys, WidgetNodeType } from "../scripts/utils";
+
+import GObject from "ags/gobject";
 
 
 type PopupWindowSpecificProps = {
@@ -73,7 +74,7 @@ export function PopupWindow(props: PopupWindowProps): GObject.Object {
           props.onDestroy?.(self);
       }}
       $={(self) => {
-          props.actionClickedOutside ??= self.close;
+          props.actionClickedOutside ??= (_: Astal.Window) => self.close();
 
           const conns: Map<GObject.Object, number> = new Map();
           const gestureClick = Gtk.GestureClick.new();
@@ -114,21 +115,24 @@ export function PopupWindow(props: PopupWindowProps): GObject.Object {
 
           props.$?.(self);
       }}>
-          <Gtk.Box
-            halign={props.halign}
-            valign={props.valign}
-            hexpand vexpand
-            css={`box {
+          <Gtk.Box halign={props.halign} valign={props.valign} hexpand vexpand css={`box {
                 margin-left: ${props.marginLeft ?? 0}px;
                 margin-right: ${props.marginRight ?? 0}px;
                 margin-top: ${props.marginTop ?? 0}px;
                 margin-bottom: ${props.marginBottom ?? 0}px;
-            }`}>
+            }`
+          }>
           
               <Gtk.Box widthRequest={props.widthRequest} heightRequest={props.heightRequest}
                 $={(self) => {
                     const gestureClick = Gtk.GestureClick.new();
                     self.add_controller(gestureClick);
+
+                    const clickConn = gestureClick.connect("released", () => true);
+                    const destroyConn = self.connect("destroy", () => {
+                        gestureClick.disconnect(clickConn);
+                        self.disconnect(destroyConn);
+                    });
                 }}>
                   {props.children}
               </Gtk.Box>

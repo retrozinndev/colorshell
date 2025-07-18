@@ -17,15 +17,15 @@
 
   // Style widget groups
   & > .bar-centerbox > * {
-    $radius: 18px;
+    $radius: 18px !global;
+    $padding: 4px !global;
     $color-hover: colors.$bg-primary;
-    $padding: 4px;
 
     background: rgba(colors.$bg-translucent, .6);
     border-radius: $radius;
     padding: 0 $padding;
 
-    & > box:not(.workspaces-row):not(.tray):not(.focused-client), 
+    & > box:not(.workspaces-row):not(.tray):not(.focused-client):not(.media), 
     & > button {
       border-radius: calc($radius - $padding);
       margin: $padding 0;
@@ -41,10 +41,10 @@
     padding: 4px;
 
     & .workspace {
+      transition: 80ms linear;
       margin: 3px 0;
       border-radius: 16px;
-      transition: 80ms linear;
-      min-width: 16px;
+      min-width: 14px;
       padding: 0 6px;
       background: colors.$bg-tertiary;
 
@@ -73,7 +73,7 @@
       }
 
       &:hover:not(.last-client-icon):not(.focus) {
-        box-shadow: inset 0 0 0 14px rgba($color: colors.$fg-primary, $alpha: .2);
+        background: color.scale($color: colors.$bg-tertiary, $lightness: 10%);
       }
     }
   }
@@ -108,30 +108,30 @@
   }
 
   .media {
+    $spacing: 5px;
     background: colors.$bg-primary;
-    padding: 0 2px;
+    border-radius: calc($radius - $padding);
+    margin: $padding 0;
+    padding: 0 calc($padding + 3px);
 
     &:hover {
-      box-shadow: inset 0 0 0 300px rgba(colors.$fg-primary, .2);
+      background: color.scale($color: colors.$bg-primary, $lightness: 15%);
     }
 
-    & image {
+    & image.player-icon {
       -gtk-icon-size: 14px;
-      margin-right: 4px;
+      margin-right: $spacing;
     }
 
     & .media-controls {
-      transition: none;
-      margin-left: 6px;
       border-top-right-radius: 12px;
       border-bottom-right-radius: 12px;
+      padding: 4px 0;
+      margin-left: $spacing;
 
-      & > button {
-        margin: 4px 1px;
-
-        & icon {
-          font-size: 10px;
-        }
+      & > button image {
+        margin: 0;
+        -gtk-icon-size: 10px;
       }
     }
   }
@@ -166,8 +166,8 @@
     & .status-icons {
       padding-left: 4px;
 
-      & icon.notification-count {
-        font-size: 6px;
+      & image.notification-count {
+        -gtk-icon-size: 6px;
         margin-top: -14px;
       }
     }
@@ -182,10 +182,6 @@
 
     &.open {
       background: colors.$bg-primary;
-    }
-
-    &:hover image {
-      -gtk-icon-transform: scale(1.01);
     }
   }
 }

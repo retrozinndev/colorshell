@@ -40,7 +40,7 @@ export function NotificationWidget({ notification, actionClicked, holdOnHover, s
 
     const conns: Map<GObject.Object, Array<number>> = new Map();
 
-    return <Gtk.Box hexpand={false} vexpand={false} class={`notification ${
+    return <Gtk.Box hexpand class={`notification ${
           Notifications.getDefault().getUrgencyString(notification.urgency)
       }`} orientation={Gtk.Orientation.VERTICAL} spacing={5}
       $={(self) => {
@@ -67,7 +67,7 @@ export function NotificationWidget({ notification, actionClicked, holdOnHover, s
           conns.forEach((ids, obj) => ids.forEach(id => obj.disconnect(id)));
       }}>
 
-        <Gtk.Box class={"top"} hexpand={true}>
+        <Gtk.Box class={"top"} hexpand>
             <Gtk.Image css={"font-size: 16px;"} $={(self) => {
                   const icon = getSymbolicIcon(notification.appIcon ?? notification.appName) ?? 
                       getSymbolicIcon(notification.appName) ?? getAppIcon(notification.appName);
@@ -99,16 +99,14 @@ export function NotificationWidget({ notification, actionClicked, holdOnHover, s
             <Gtk.Box class={"text"} orientation={Gtk.Orientation.VERTICAL}
               vexpand={true}>
 
-                <Gtk.Label class={"summary"} useMarkup={true} xalign={0}
-                  ellipsize={Pango.EllipsizeMode.END} label={
-                      notification.summary.replace(/[&]/g, "&amp;")
-                  }
+                <Gtk.Label class={"summary"} useMarkup={true} hexpand={false} xalign={0}
+                  vexpand ellipsize={Pango.EllipsizeMode.END} label={
+                      notification.summary.replace(/[&]/g, "&amp;")}
                 />
 
-                <Gtk.Label class={"body"} useMarkup={true} xalign={0} wrap={true} 
-                  wrapMode={Pango.WrapMode.WORD_CHAR} label={
-                      notification.body.replace(/[&]/g, "&amp;")
-                  }
+                <Gtk.Label class={"body"} useMarkup={true} xalign={0} wrap={true} hexpand={false}
+                  vexpand wrapMode={Pango.WrapMode.WORD_CHAR} label={
+                      notification.body.replace(/[&]/g, "&amp;")}
                 />
             </Gtk.Box>
         </Gtk.Box>

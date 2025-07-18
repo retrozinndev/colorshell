@@ -7,6 +7,9 @@ import Pango from "gi://Pango?version=1.0";
 
 const hyprland = AstalHyprland.get_default();
 
+// Fix empty focused-client on opening a window on an empty workspace
+hyprland.connect("client-added", () => hyprland.notify("focused-client"));
+
 export const FocusedClient = () => {
     const focusedClient = createBinding(hyprland, "focusedClient");
 

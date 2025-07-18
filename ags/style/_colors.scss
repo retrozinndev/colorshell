@@ -1,14 +1,13 @@
 @use "sass:color";
 @use "./wal";
-@use "./functions";
 
-$bg-primary: functions.toRGB(color.adjust($color: wal.$color1, $lightness: -34%));
-$bg-secondary: functions.toRGB(color.adjust($color: wal.$color1, $lightness: -16%));
-$bg-tertiary: functions.toRGB(color.adjust($color: $bg-secondary, $lightness: 10%));
+$bg-primary: color.adjust($color: wal.$color1, $lightness: -34%);
+$bg-secondary: color.adjust($color: wal.$color1, $lightness: -16%);
+$bg-tertiary: color.adjust($color: $bg-secondary, $lightness: 10%);
 $bg-light: wal.$foreground;
-$bg-translucent: functions.toRGB(color.change($color: $bg-primary, $alpha: 75%));
+$bg-translucent: color.change($color: $bg-primary, $alpha: 75%);
 $bg-translucent-primary: $bg-translucent;
-$bg-translucent-secondary: functions.toRGB(color.change($color: $bg-translucent, $alpha: 78%));
+$bg-translucent-secondary: color.change($color: $bg-translucent, $alpha: 78%);
 $fg-primary: wal.$foreground;
 $fg-light: $bg-primary;
-$fg-disabled: functions.toRGB(color.adjust($color: wal.$foreground, $lightness: -11%));
+$fg-disabled: color.adjust($color: wal.$foreground, $lightness: -11%);

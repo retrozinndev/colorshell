@@ -200,26 +200,33 @@ tooltip > box {
   }
 }
 
-popover {
-  padding: 4px;
+popover.menu {
   background: wal.$background;
   border-radius: 14px;
-  & contents {
-    & * {
-      padding: 2px 4px;
-      border-radius: 10px;
-      font-size: 12px;
-      font-weight: 600;
-                                 
-      &:hover, &:focus {
-        background: wal.$color1;
-      }
-    }
+  $padding: 4px;
 
-    & separator {
-      all: unset;
-      margin: 0 4px;
-      color: wal.$background;
+  & contents {
+    & viewport > stack > * {
+      padding: 4px;
+      padding-top: 0;
+
+      & > * > * {
+        & > separator {
+          min-height: .5px;
+          margin: 3px 2px;
+          background: rgba(colors.$fg-disabled, .1);
+        }
+        & > *:not(separator) > * {
+          padding: 6px;
+          border-radius: 10px;
+          font-size: 12px;
+          font-weight: 600;
+                                     
+          &:hover, &:focus {
+            background: wal.$color1;
+          }
+        }
+      }
     }
   }
 }
