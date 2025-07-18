@@ -99,7 +99,7 @@ export const Media = () => {
         <Gtk.Box spacing={4} visible={player(pl => pl.available)}>
             <With value={player(pl => pl.available)}>
                 {(available: boolean) => available && <Gtk.Box>
-                    <Gtk.Image iconName={createBinding(player.get(), "busName").as((busName) => {
+                    <Gtk.Image class={"player-icon"} iconName={createBinding(player.get(), "busName").as((busName) => {
                           const splitName = busName.split('.').filter(str => str !== "" && !str.toLowerCase().includes('instance'));
                           return getSymbolicIcon(splitName[splitName.length - 1]) ?
                               getSymbolicIcon(splitName[splitName.length - 1])!
@@ -144,7 +144,7 @@ export const Media = () => {
                       tooltipText={
                           createBinding(player.get(), "playbackStatus").as(status =>
                               status === AstalMpris.PlaybackStatus.PAUSED ? "Play" : "Pause")
-                      } onClicked={player.get().play_pause}
+                      } onClicked={() => player.get().play_pause()}
                     />
                     <Gtk.Button class={"next"} iconName={"media-skip-forward-symbolic"}
                       tooltipText={"Next"} onClicked={() => player.get().canGoNext &&
