@@ -1,14 +1,14 @@
 import { createPoll } from "ags/time";
 import { exec, execAsync } from "ags/process";
+import { Accessor, For, With } from "ags";
+import { Astal, Gtk } from "ags/gtk4";
+
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
-import { Accessor, For, With } from "ags";
-import GObject from "gi://GObject?version=2.0";
-import { Astal, Gtk } from "ags/gtk4";
 
 
 /** gnim doesn't export this, so we need to do it again */
-export type WidgetNodeType = Array<GObject.Object> | GObject.Object | number | string | boolean | null | undefined;
+export type WidgetNodeType = Array<JSX.Element> | JSX.Element | number | string | boolean | null | undefined;
 
 export const decoder = new TextDecoder("utf-8"),
     encoder = new TextEncoder();
@@ -25,9 +25,9 @@ export function getHyprlandVersion(): string {
 }
 
 export function omitObjectKeys<ObjT = object>(obj: ObjT, keys: keyof ObjT|Array<keyof ObjT>): ObjT {
-    const finalObject = obj;
+    const finalObject = { ...obj };
 
-    for(const objKey of Object.keys(obj as object)) {
+    for(const objKey of Object.keys(finalObject as object)) {
         if(!Array.isArray(keys)) {
             if(objKey === keys) {
                 delete finalObject[keys as keyof typeof finalObject];
@@ -47,11 +47,13 @@ export function omitObjectKeys<ObjT = object>(obj: ObjT, keys: keyof ObjT|Array<
     return finalObject;
 }
 
-export function variableToBoolean(variable: any|Accessor<any>|Accessor<Array<any>>): boolean|Accessor<boolean> {
+export function variableToBoolean(variable: any|Array<any>|Accessor<Array<any>|any>): boolean|Accessor<boolean> {
     return (variable instanceof Accessor) ?
         variable.as(v => Array.isArray(v) ?
             (v as Array<any>).length > 0
         : Boolean(v))
+    : Array.isArray(variable) ?
+        variable.length > 0
     : Boolean(variable);
 }
 
