@@ -133,10 +133,8 @@ export function progressBar(player: AstalMpris.Player): Gtk.Widget {
             cr.fill();
 
             // Progress
-            // Рисуем прогресс, только если он больше нуля
-            cr.save(); // Сохраняем состояние контекста рисования
+            cr.save(); 
 
-            // Устанавливаем прямоугольную область отсечения по ширине прогресса
             cr.rectangle(0, 0, width * displayProgress, height);
             cr.clip();
 
@@ -144,7 +142,7 @@ export function progressBar(player: AstalMpris.Player): Gtk.Widget {
             drawRoundedRectangle(cr, 0, centerY - barHeight / 2, width, barHeight, barRadius);
             cr.fill();
 
-            cr.restore(); // Восстанавливаем контекст, убирая маску отсечения
+            cr.restore();
 
             // Handle
             //rgba.parse('#ffffff');
