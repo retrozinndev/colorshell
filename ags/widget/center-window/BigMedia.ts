@@ -1,11 +1,11 @@
-import { AstalIO, bind, Binding, exec, timeout } from "astal";
+import { AstalIO, bind, Binding, exec, timeout, GLib } from "astal";
 import { Gtk, Widget } from "astal/gtk3";
 import AstalMpris from "gi://AstalMpris";
 import { AstalPlayers } from "../../scripts/player";
+import { Stylesheet } from "../../scripts/stylesheet";
+import { progressBar } from "./Slider";
 
 export function BigMedia(): Gtk.Widget {
-    let dragTimer: (AstalIO.Time|undefined);
-
     return new Widget.Box({
         className: "big-media",
         orientation: Gtk.Orientation.VERTICAL,
@@ -56,25 +56,7 @@ export function BigMedia(): Gtk.Widget {
                     hexpand: true,
                     visible: bind(actviePlayer, "canSeek"),
                     children: [
-                        new Widget.Slider({
-                            min: 0,
-                            hexpand: true,
-                            max: bind(actviePlayer, "length").as((length: number) =>
-                                (length > 129600000) ? Math.floor(actviePlayer.get_position())
-                                    : Math.floor(length)), // for streams and players whitch dont have a length
-                            value: bind(actviePlayer, "position").as((position: number) =>
-                                Math.floor(position)),
-                            onDragged: (slider: Widget.Slider) => {
-                                if(dragTimer === undefined) 
-                                    dragTimer = timeout(600, () =>
-                                        actviePlayer.set_position(Math.round(slider.value)));
-                                else {
-                                    dragTimer.cancel();
-                                    dragTimer = timeout(600, () =>
-                                        actviePlayer.set_position(Math.round(slider.value)));
-                                }
-                            }
-                        })
+                        progressBar(actviePlayer)
                     ]
                 }),
                 new Widget.CenterBox({
@@ -105,7 +87,7 @@ export function BigMedia(): Gtk.Widget {
                                 } as Widget.IconProps),
                                 tooltipText: "Copy link to Clipboard",
                                 visible: bind(actviePlayer, "metadata").as(Boolean),
-                                onClick: async () => {
+                                onClickRelease: async () => {
                                     const link = exec(`playerctl --player=${
                                         actviePlayer.busName.replace(/^org\.mpris\.MediaPlayer2\./i, "")
                                     } metadata xesam:url`);
@@ -126,7 +108,7 @@ export function BigMedia(): Gtk.Widget {
                                     shuffleStatus === AstalMpris.Shuffle.ON ? 
                                         "Shuffle"
                                     : "No shuffle"),
-                                onClick: () => actviePlayer.shuffle()
+                                onClickRelease: () => actviePlayer.shuffle()
                             } as Widget.ButtonProps),
                             new Widget.Button({
                                 className: "previous",
@@ -134,7 +116,7 @@ export function BigMedia(): Gtk.Widget {
                                     icon: "media-skip-backward-symbolic"
                                 } as Widget.IconProps),
                                 tooltipText: "Previous",
-                                onClick: () => actviePlayer.canGoPrevious && actviePlayer.previous()
+                                onClickRelease: () => actviePlayer.canGoPrevious && actviePlayer.previous()
                             } as Widget.ButtonProps),
                             new Widget.Button({
                                 className: "pause",
@@ -146,7 +128,7 @@ export function BigMedia(): Gtk.Widget {
                                             "media-playback-pause-symbolic"
                                         : "media-playback-start-symbolic"),
                                 } as Widget.IconProps),
-                                onClick: () => actviePlayer.playbackStatus === AstalMpris.PlaybackStatus.PAUSED ?
+                                onClickRelease: () => actviePlayer.playbackStatus === AstalMpris.PlaybackStatus.PAUSED ?
                                     actviePlayer.play()
                                 : actviePlayer.pause()
                             } as Widget.ButtonProps),
@@ -156,7 +138,7 @@ export function BigMedia(): Gtk.Widget {
                                     icon: "media-skip-forward-symbolic"
                                 } as Widget.IconProps),
                                 tooltipText: "Next",
-                                onClick: () => actviePlayer.canGoNext && actviePlayer.next()
+                                onClickRelease: () => actviePlayer.canGoNext && actviePlayer.next()
                             } as Widget.ButtonProps),
                             new Widget.Button({
                                 className: "repeat",
@@ -186,7 +168,7 @@ export function BigMedia(): Gtk.Widget {
 
                                     return "No loop";
                                 }),
-                                onClick: () => actviePlayer.loop()
+                                onClickRelease: () => actviePlayer.loop()
                             } as Widget.ButtonProps)
                         ]
                     } as Widget.BoxProps),
@@ -195,14 +177,13 @@ export function BigMedia(): Gtk.Widget {
                         valign: Gtk.Align.START,
                         halign: Gtk.Align.END,
                         label: bind(actviePlayer, "length").as((len/* bananananananana */: number) => {
-                            const maxLen: number = 9223372036854;
 
                             const sec: number = Math.floor(len % 60);
                             const min = Math.floor((len % 3600) / 60);
                             const hours: number = Math.floor(len / 3600);
 
                             //console.log("Len:", len, "\nLen in hours:", hours);
-                            return (len > 0 && hours < maxLen / 10000000) ? // && Number.isFinite(len) <-- this shit doesn't work!
+                            return (len > 0 && len < GLib.MAXINT64 / 10000000) ?
                                 `${hours > 0 ? `${hours}:` : ''}${min < 10 && hours > 0 ? `0${min}` : `${min}`}:${sec < 10 ? `0${sec}` : `${sec}`}`
                                     : ( len <= 0 ? `0:00` : "Live");
                         })
