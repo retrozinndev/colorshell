@@ -21,7 +21,41 @@ export function getHyprlandInstanceSig(): (string|null) {
 }
 
 export function getHyprlandVersion(): string {
-    return exec(`${GLib.getenv("HYPRLAND_CMD") || "Hyprland"} --version | head -n1`).split(" ")[1];
+    return exec(`${GLib.getenv("HYPRLAND_CMD") ?? "Hyprland"} --version | head -n1`).split(" ")[1];
+}
+
+export function escapeUnintendedMarkup(input: string): string {
+    return input.replace(/(?<!<[^>]*)[<>&"]/g, (s) => {
+        switch(s) {
+            case "<": return "&lt;";
+            case ">": return "&gt;";
+            case "&": return "&amp;";
+            case "\"": return "&quot;";
+        }
+
+        return `\\${s}`;
+    });
+}
+
+export function getChildren(widget: Gtk.Widget): Array<Gtk.Widget> {
+    const firstChild = widget.get_first_child();
+    if(!firstChild) 
+        return [];
+
+    const children: Array<Gtk.Widget> = [ firstChild ];
+
+    let child: Gtk.Widget = firstChild.get_next_sibling()!;
+    if(!child) 
+        return children;
+
+    do {
+        child = (child ?? children[0]).get_next_sibling()!;
+        if(!child) return children;
+
+        children.unshift(child);
+    } while(child != null);
+
+    return children;
 }
 
 export function omitObjectKeys<ObjT = object>(obj: ObjT, keys: keyof ObjT|Array<keyof ObjT>): ObjT {
@@ -55,6 +89,19 @@ export function variableToBoolean(variable: any|Array<any>|Accessor<Array<any>|a
     : Array.isArray(variable) ?
         variable.length > 0
     : Boolean(variable);
+}
+
+export function pathToURI(path: string): string {
+    switch(true) {
+        case (/^[/]/).test(path): 
+            return `file://${path}`;
+
+        case (/^[~]/).test(path):
+        case (/^file:\/\/[~]/i).test(path):
+            return `file://${GLib.get_home_dir()}/${path.replace(/^(file\:\/\/|[~]|file\:\/\[~])/i, "")}`;
+    }
+
+    return path;
 }
 
 export function transform<ValueType = any|Array<any>, RType = any>(
