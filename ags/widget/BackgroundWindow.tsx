@@ -23,6 +23,10 @@ export type BackgroundWindowProps = {
     actionClickSecondary?: (window: Astal.Window) => void;
     keymode?: Astal.Keymode;
     exclusivity?: Astal.Exclusivity;
+
+    /** attach this window as a background for another window
+    * background-window will close when the attached window triggers ::close-request) */
+    attach?: Astal.Window;
 };
 
 /** Creates a fullscreen GtkWindow that is used for making
@@ -31,22 +35,20 @@ export type BackgroundWindowProps = {
  *
  * @param props Properties for background-window
  *
- * @returns The generated background window
+ * @returns The generated background-window
  */
 export function BackgroundWindow(props: BackgroundWindowProps): Astal.Window {
     const conns: Map<GObject.Object, number> = new Map();
 
-    return <Astal.Window namespace={"background-window"}
-        css={props.css ?? "background: rgba(0, 0, 0, .2);"}
-        monitor={props.monitor}
-        layer={props.layer ?? Astal.Layer.OVERLAY}
-        anchor={TOP | LEFT | BOTTOM | RIGHT}
-        keymode={props.keymode}
-        exclusivity={props.exclusivity ?? Astal.Exclusivity.IGNORE}
-        onDestroy={(_) => conns.forEach((id, obj) => obj.disconnect(id))}
+    return <Astal.Window namespace={"background-window"} monitor={props.monitor} visible
+        layer={props.layer ?? Astal.Layer.OVERLAY} keymode={props.keymode ?? Astal.Keymode.EXCLUSIVE}
+        exclusivity={props.exclusivity ?? Astal.Exclusivity.IGNORE} 
+        anchor={TOP | LEFT | BOTTOM | RIGHT} css={props.css ?? "background: rgba(0, 0, 0, .2);"}
         $={(self) => {
             const gestureClick = Gtk.GestureClick.new(),
                 eventControllerKey = Gtk.EventControllerKey.new();
+
+            gestureClick.set_button(0);
 
             self.add_controller(gestureClick);
             self.add_controller(eventControllerKey);
@@ -75,6 +77,13 @@ export function BackgroundWindow(props: BackgroundWindowProps): Astal.Window {
 
                 props.actionFired?.(self);
             }));
-        }} 
-    /> as Astal.Window;
+
+            props.attach &&
+                conns.set(props.attach, (props.attach as Gtk.Widget).connect("close-request", () => 
+                    self.close()
+                ));
+
+            conns.set(self, self.connect("destroy", () => conns.forEach((id, obj) => 
+                obj.disconnect(id))));
+        }} /> as Astal.Window;
 }
