@@ -45,7 +45,6 @@ export function createUnifiedSlider(model: SliderOptions): Gtk.Widget {
                 const width = self.get_allocated_width();
                 if (width === 0) return;
                 dragProgress = Math.max(0, Math.min(x / width, 1));
-                console.log('DragProgress', dragProgress);
             };
 
             self.connect('button-press-event', (_, event) => {
@@ -68,7 +67,6 @@ export function createUnifiedSlider(model: SliderOptions): Gtk.Widget {
                 if (isDragging && dragProgress !== null) {
                     const maxValue = model.getMaxValue();
                     if (maxValue > 0) {
-                        console.log('Set Value', dragProgress * maxValue);
                         model.setValue(dragProgress * maxValue);
                     }
 
@@ -124,7 +122,7 @@ export function createUnifiedSlider(model: SliderOptions): Gtk.Widget {
 
             const fg = styleContext.get_property('color', Gtk.StateFlags.NORMAL);
             const handleX = Math.max(animatedHandleRadius, Math.min(width * displayProgress, width - animatedHandleRadius));
-
+                    
             // 1. Background
             cr.setSourceRGBA(fg.red, fg.green, fg.blue, 0.3);
             drawRoundedRectangle(cr, 0, centerY - barHeight / 2, width, barHeight, barRadius);
