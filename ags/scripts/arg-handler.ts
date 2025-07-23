@@ -33,7 +33,7 @@ export function handleArguments(request: string): any {
 
         case "windows":
             return Object.keys(Windows.getDefault().windows).map(name =>
-                `${name}: ${Windows.getDefault().isVisible(name) ? "open" : "closed" }`).join('\n');
+                `${name}: ${Windows.getDefault().isOpen(name) ? "open" : "closed" }`).join('\n');
         
         case "runner":
             !Runner.instance ? 
@@ -68,7 +68,7 @@ function handleWindowArgs(args: Array<string>): string {
 
     switch(args[0]) {
         case "open":
-            if(!Windows.getDefault().isVisible(specifiedWindow)) {
+            if(!Windows.getDefault().isOpen(specifiedWindow)) {
                 Windows.getDefault().open(specifiedWindow);
                 return `Setting visibility of window "${args[1]}" to true`;
             }
@@ -76,7 +76,7 @@ function handleWindowArgs(args: Array<string>): string {
             return `Window is already open, ignored`;
 
         case "close":
-            if(Windows.getDefault().isVisible(specifiedWindow)) {
+            if(Windows.getDefault().isOpen(specifiedWindow)) {
                 Windows.getDefault().close(specifiedWindow);
                 return `Setting visibility of window "${args[1]}" to false`
             }
@@ -84,7 +84,7 @@ function handleWindowArgs(args: Array<string>): string {
             return `Window is already closed, ignored`
 
         case "toggle":
-            if(!Windows.getDefault().isVisible(specifiedWindow)) {
+            if(!Windows.getDefault().isOpen(specifiedWindow)) {
                 Windows.getDefault().open(specifiedWindow);
                 return `Toggle opening window "${args[1]}"`;
             }
