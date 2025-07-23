@@ -1,6 +1,5 @@
 import { Wallpaper } from "../../scripts/wallpaper";
 import { Runner } from "../Runner";
-import { ResultWidget, ResultWidgetProps } from "../../widget/runner/ResultWidget";
 
 import Gio from "gi://Gio?version=2.0";
 
@@ -26,18 +25,19 @@ class _PluginWallpapers implements Runner.Plugin {
 
     handle(search: string) {
         if(this.#files!.length > 0)
-            return this.#files!.filter(file => // not the best way to search, but it works
+            return this.#files!.filter(file => 
+                // also not the best way to search, but it works
                 Runner.regExMatch(search, file.split('/')[file.split('/').length-1])
-            ).map(path => new ResultWidget({
+            ).map(path => ({
                 title: path.split('/')[path.split('/').length-1].replace(/\..*$/, ""),
-                onClick: () => Wallpaper.getDefault().setWallpaper(path)
-            } as ResultWidgetProps));
+                actionClick: () => Wallpaper.getDefault().setWallpaper(path)
+            }));
 
-        return new ResultWidget({
+        return {
             title: "No wallpapers found!",
             description: "Define the $WALLPAPERS variable on Hyprland or create a ~/wallpapers directory",
             icon: "image-missing-symbolic"
-        } as ResultWidgetProps);
+        };
     }
 }
 

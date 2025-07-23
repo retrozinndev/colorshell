@@ -1,6 +1,6 @@
 import AstalHyprland from "gi://AstalHyprland";
-import { ResultWidget, ResultWidgetProps } from "../../widget/runner/ResultWidget";
 import { Runner } from "../Runner";
+
 
 const searchEngines = {
     duckduckgo: "https://duckduckgo.com/?q=",
@@ -15,15 +15,13 @@ export const PluginWebSearch = {
     name: "Web Search",
     prioritize: true,
 
-    handle: (search: string): ResultWidget => {
-        return new ResultWidget({
-            icon: "system-search-symbolic",
-            title: search || "Type your search...",
-            description: `Search the Web`,
-            onClick: () => AstalHyprland.get_default().dispatch(
-                "exec", 
-                `xdg-open \"${engine + search}\"`
-            )
-        } as ResultWidgetProps);
-    }
+    handle: (search) => ({
+        icon: "system-search-symbolic",
+        title: search || "Type your search...",
+        description: `Search the Web`,
+        actionClick: () => AstalHyprland.get_default().dispatch(
+            "exec", 
+            `xdg-open \"${engine + search}\"`
+        )
+    })
 } as Runner.Plugin;

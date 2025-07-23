@@ -1,4 +1,3 @@
-import { ResultWidget, ResultWidgetProps } from "../../widget/runner/ResultWidget";
 import { Runner } from "../Runner";
 import { Notifications } from "../../scripts/notifications";
 
@@ -17,7 +16,7 @@ export const PluginShell = (() => {
     return {
         prefix: '!',
         prioritize: true,
-        handle: (input: string): ResultWidget => {
+        handle: (input) => {
             let showOutputNotif: boolean = false;
             if(input.startsWith('!')) {
                 input = input.replace('!', "");
@@ -26,8 +25,8 @@ export const PluginShell = (() => {
 
             const command = input ? GLib.shell_parse_argv(input) : undefined;
 
-            return new ResultWidget({
-                onClick: () => {
+            return {
+                actionClick: () => {
                     if(!command || !command[0]) return;
 
                     const proc = procLauncher.spawnv([ shell, "-c", `${input}` ]);
@@ -56,7 +55,7 @@ export const PluginShell = (() => {
                 title: `Run ${input ? ` \`${input}\`` : `with ${shell.split('/')[shell.split('/').length-1]}`}`,
                 description: (input || showOutputNotif) && `${input ? `${shell}\t` : ""}${ showOutputNotif ? "(showing output on notification)" : "" }`,
                 icon: "utilities-terminal-symbolic"
-            } as ResultWidgetProps)
+            };
         }
     } as Runner.Plugin
 })();
