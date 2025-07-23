@@ -3,12 +3,14 @@ import { Astal, Gtk, Widget } from "astal/gtk3";
 import { Wireplumber } from "../scripts/volume";
 import AstalWp from "gi://AstalWp";
 import AstalHyprland from "gi://AstalHyprland";
+import { AstalPlayers } from "../scripts/player";
+import { getSymbolicIcon } from "../scripts/apps";
 
 export enum OSDModes {
     SINK,
     SOURCE,
     LAYOUT,
-    BRIGHTNESS
+    //BRIGHTNESS,
     //CAPSLOCK,
     //NUMLOCK,
     //PLAYER
@@ -16,13 +18,23 @@ export enum OSDModes {
 
 let osdMode: (Variable<OSDModes>|null);
 const layoutVar = new Variable("");
+let WireplumberObject: object|null;
 
-//It can be used to get values from connected elements and further process them. 
 export function variableHandler(mode: OSDModes, value: any) {
-    console.log(`Got value ${value}`);
     switch (mode) {
         case OSDModes.LAYOUT:
+            if (layoutVar === value) return; 
             layoutVar.set(value.substring(0, 2).toUpperCase());
+            break;
+
+        case OSDModes.SINK:
+            WireplumberObject = value;
+            console.log(`Sink mute status: ${typeof value}`);
+            break;
+
+        case OSDModes.SOURCE:
+            WireplumberObject = value;
+            console.log(`Source mute status: ${typeof value}`);
             break;
     }
 }
@@ -36,7 +48,7 @@ export function setOSDMode(newMode: OSDModes): void {
 function createOSD(
     props: Widget.BoxProps,
     iconName: string | Binding<string>,
-    labelOSD?: string | Binding<string>
+    labelOSD?: string | Binding<string>,
 ) {
     return new Widget.Box({
         ...props,
@@ -49,8 +61,43 @@ function createOSD(
             } as Widget.IconProps),
             new Widget.Label({
                 className: "action",
+                visible: labelOSD ? true : false,
                 label: labelOSD,
-            } as Widget.LabelProps)
+            } as Widget.LabelProps),
+        ]
+    } as Widget.BoxProps)
+}
+
+function createOSDSublabel(
+    props: Widget.BoxProps,
+    iconName: string | Binding<string>,
+    labelOSD?: string | Binding<string>,
+    sublabelOSD?: string | Binding<string>
+) {
+    return new Widget.Box({
+        ...props,
+        className: `osd ${props.className || ''}`,
+        expand: true,
+        children: [
+            new Widget.Icon({
+                className: "icon",
+                icon: iconName,
+            } as Widget.IconProps),
+            new Widget.Box({
+                vertical: true,
+                children: [
+                    new Widget.Label({
+                        className: "action",
+                        visible: labelOSD ? true : false,
+                        label: labelOSD,
+                    } as Widget.LabelProps),
+                    new Widget.Label({
+                        className: "sublabel",
+                        visible: sublabelOSD ? true : false,
+                        label: sublabelOSD,
+                    } as Widget.LabelProps)
+                ]
+            })
         ]
     } as Widget.BoxProps)
 }
@@ -144,6 +191,29 @@ function OSDSource() {
     )
 }
 
+//need to do more work here
+function OSDPlayer() {
+    const player = AstalPlayers.getDefault().activePlayer;
+    return createOSDSublabel(
+        { name: "player" },
+        bind(AstalPlayers.getDefault(), "activePlayer").as(activePlayer => getSymbolicIcon(activePlayer.get_entry()) || 
+            getSymbolicIcon(activePlayer.get_bus_name().split('.').filter(str => !str.toLowerCase().includes('instance')).join('.')) ||
+                "folder-music-symbolic"),
+        bind(player, "title").as(title => title ? title : ""),
+        bind(player, "artist").as(artist => artist ? artist : (player.get_identity() || ""))
+    )
+    /*return createOSDLevelBar(
+        { name: "player" },
+        player,
+        bind(AstalPlayers.getDefault(), "activePlayer").as(activePlayer => getSymbolicIcon(activePlayer.get_entry()) ?? 
+            getSymbolicIcon(activePlayer.get_bus_name().split('.').filter(str => !str.toLowerCase().includes('instance')).join('.')) ??
+                "folder-music-symbolic"),
+        bind(player, "title"),
+        bind(player, "position"),
+        bind(player, "length")
+    )*/
+}
+
 function OSDLayout() {
     const hyprland = AstalHyprland.get_default();
     return createOSD(
@@ -154,7 +224,7 @@ function OSDLayout() {
 }
 
 export const OSD = (mon: number) => {
-    osdMode = new Variable<OSDModes>(OSDModes.SINK);
+    osdMode = new Variable<OSDModes>();
 
     return new Widget.Window({
         namespace: "osd",
@@ -169,28 +239,15 @@ export const OSD = (mon: number) => {
         onDestroy: () => {
             osdMode?.drop();
             osdMode = null;
-            //currenntLayout = null;
+            WireplumberObject = null;
         },
-        child: new Widget.Stack({
-            hhomogeneous: false,
-            vhomogeneous: false,
-            visibleChildName: bind(osdMode, "value").as((mode: OSDModes) => {
-                switch (mode) {
-                    case OSDModes.SINK: return "sink";
-                    case OSDModes.SOURCE: return "source";
-                    case OSDModes.LAYOUT: return "layout";
-                    //default: return "sink";
-                }
-            }),
-            onDestroy: () => {
-                osdMode = null;
-                //currenntLayout = null;
-            },
-            children: [
-                OSDSink(),
-                OSDSource(),
-                OSDLayout()
-            ]
-        } as Widget.BoxProps)
+        children: bind(osdMode, "value").as((mode: OSDModes) => {
+            switch (mode) {
+                case OSDModes.SINK: return OSDSink();
+                case OSDModes.SOURCE: return OSDSource();
+                case OSDModes.LAYOUT: return OSDLayout();
+                case OSDModes.PLAYER: return OSDPlayer();
+            }
+        }),
     } as Widget.WindowProps);
 }
