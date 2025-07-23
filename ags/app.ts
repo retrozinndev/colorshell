@@ -23,7 +23,6 @@ import AstalNotifd from "gi://AstalNotifd";
 let osdTimer: (Time|undefined), osdTimeout = 3500;
 let connections = new Map<GObject.Object, (Array<number> | number)>();
 
-const defaultWindows: Array<keyof typeof Windows.prototype.windows> = [ "bar" ];
 const runnerPlugins: Array<Runner.Plugin> = [
     PluginApps,
     PluginShell,
@@ -33,6 +32,8 @@ const runnerPlugins: Array<Runner.Plugin> = [
     PluginClipboard
 ];
 
+const defaultWindows: Array<string> = [ "bar" ];
+
 App.start({
     instanceName: "astal",
     icons: "icons/",
@@ -41,7 +42,6 @@ App.start({
     },
     main: (..._args: Array<string>) => {
         console.log(`Initialized astal instance as: ${ App.instanceName || "astal" }`);
-
         console.log("Config: initializing configuration file");
         Config.getDefault();
 
@@ -57,6 +57,12 @@ App.start({
         // Init clipboard module
         Clipboard.getDefault();
 
+        console.log("Initializing wallpaper handler");
+        Wallpaper.getDefault();
+
+        console.log("Adding runner plugins");
+        runnerPlugins.map(plugin => Runner.addPlugin(plugin));
+
         connections.set(Wireplumber.getDefault(), [
             Wireplumber.getDefault().getDefaultSink().connect("notify::volume", () => 
                 triggerOSD())
@@ -71,23 +77,12 @@ App.start({
             })
         ]);
 
-        console.log("Initializing wallpaper handler");
-        Wallpaper.getDefault();
-
-        console.log("Adding runner plugins");
-        runnerPlugins.map(plugin => Runner.addPlugin(plugin));
-
-        console.log("Opening default windows");
-        // Open openOnStart windows
-        defaultWindows.map(name => {
-            if(Windows.getDefault().isVisible(name)) return;
-            Windows.getDefault().open(name);
-        });
+        defaultWindows.forEach(w => Windows.getDefault().open(w));
     }
 });
 
 function triggerOSD() {
-    if(Windows.getDefault().isVisible("control-center")) return;
+    if(Windows.getDefault().isOpen("control-center")) return;
 
     Windows.getDefault().open("osd");
 
