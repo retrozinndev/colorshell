@@ -3,11 +3,13 @@ import { Gtk } from "ags/gtk4";
 import { Separator } from "../../Separator";
 import { Accessor, For } from "ags";
 import { transform, transformWidget, variableToBoolean, WidgetNodeType } from "../../../scripts/utils";
+
 import Pango from "gi://Pango?version=1.0";
+
 
 export type PageProps = {
     $?: () => void;
-    onClose?: () => void;
+    actionClose?: () => void;
     id: string;
     class?: string | Accessor<string>;
     title: string | Accessor<string>;
@@ -31,27 +33,23 @@ export { Page };
 
 @register({ GTypeName: "Page" })
 class Page extends Gtk.Box {
-    readonly #id: string | number;
-    readonly bottomButtons?: Array<BottomButton>;
+    #id: string | number = "";
+    readonly bottomButtons?: Array<BottomButton> = [];
 
     #subs: Array<() => void> = [];
-    #title: string | Accessor<string>;
+    #title: string | Accessor<string> = "";
     #description?: string | Accessor<string>;
 
     public get title() { return this.#title; }
     public get description() { return this.#description; }
     public get id() { return this.#id; }
-    public onClose?: () => void;
+    public actionClose?: () => void = () => {};
 
     constructor(props: PageProps) {
-        super({
-            hexpand: true,
-            orientation: Gtk.Orientation.VERTICAL
-        });
+        super();
 
-        this.#id = props.id;
-        this.#title = props.title;
-        this.#description = props.description;
+        this.set_hexpand(true);
+        this.set_orientation(Gtk.Orientation.VERTICAL);
 
         if(props.class instanceof Accessor) {
             this.#subs.push(props.class.subscribe(() => {
@@ -66,6 +64,11 @@ class Page extends Gtk.Box {
             else
                 this.add_css_class("page");
         }
+
+        this.#id = props.id;
+        this.#title = props.title;
+        this.#description = props.description;
+        this.actionClose = props.actionClose;
 
         this.prepend(<Gtk.Box class={"header"} orientation={Gtk.Orientation.VERTICAL}
             hexpand={true}>
@@ -117,7 +120,6 @@ class Page extends Gtk.Box {
             )}
         </Gtk.Box> as Gtk.Box);
 
-        this.onClose = props.onClose;
         props.$?.();
     }
 }

@@ -7,8 +7,8 @@ import AstalWp from "gi://AstalWp?version=0.1";
 import { lookupIcon } from "../../../scripts/apps";
 
 
-export function PageMicrophone(): Page {
-    return <Page id={"microphone"} title={tr("control_center.pages.microphone.title")}
+export const PageMicrophone = () => 
+    <Page id={"microphone"} title={tr("control_center.pages.microphone.title")}
       description={tr("control_center.pages.microphone.description")}>
 
         <Gtk.Label class={"sub-header"} label={tr("devices")} xalign={0} />
@@ -27,4 +27,3 @@ export function PageMicrophone(): Page {
             />}
         </For>
     </Page> as Page;
-}

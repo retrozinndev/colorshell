@@ -34,7 +34,7 @@ export const BluetoothPage = () => <Page
           }}
         />
     ]}
-    onClose={() => AstalBluetooth.get_default().adapter.discovering && 
+    actionClose={() => AstalBluetooth.get_default().adapter.discovering && 
         AstalBluetooth.get_default().adapter.stop_discovery()}
     bottomButtons={[{
         title: tr("control_center.pages.more_settings"),

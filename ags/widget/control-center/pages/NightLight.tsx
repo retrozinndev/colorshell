@@ -5,7 +5,7 @@ import { Astal, Gtk } from "ags/gtk4";
 import { addSliderMarksFromMinMax } from "../../../scripts/utils";
 import { createBinding } from "ags";
 
-export const PageNightLight: (() => Page) = () => 
+export const PageNightLight = () => 
     <Page id={"night-light"} title={tr("control_center.pages.night_light.title")}
       description={tr("control_center.pages.night_light.description")}
       class={"night-light"}>

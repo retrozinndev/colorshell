@@ -13,7 +13,7 @@ import AstalNetwork from "gi://AstalNetwork";
 import { createBinding, For, With } from "ags";
 
 
-export const PageNetwork = () => 
+export const PageNetwork = () =>
     <Page id={"network"} title={tr("control_center.pages.network.title")}
       class={"network"} headerButtons={[
           <Gtk.Button class={"reload"} iconName={"arrow-circular-top-right-symbolic"}
