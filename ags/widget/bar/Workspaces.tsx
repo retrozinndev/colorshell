@@ -91,7 +91,8 @@ export const Workspaces = () => {
                             if((defaultWorkspaces.get().filter((_, ii) => ii < i).length > 0 && 
                                 previousWorkspace?.id < (ws.id-1)) || 
                                (defaultWorkspaces.get().filter((_, ii) => ii > i).length > 0 && 
-                                nextWorkspace?.id > (ws.id+1))) {
+                                nextWorkspace?.id > (ws.id+1))
+                              || (i === 0 && ws.id > 1)) {
 
                                 return true;
                             }
@@ -121,9 +122,11 @@ export const Workspaces = () => {
                         <With value={createBinding(ws, "lastClient")}>
                             {(lastClient: AstalHyprland.Client) => 
                                 <Gtk.Box class={"last-client"} hexpand>
-                                    <Gtk.Revealer transitionDuration={200} revealChild={showId}
-                                      transitionType={Gtk.RevealerTransitionType.SLIDE_LEFT}
-                                      hexpand>
+                                    <Gtk.Revealer transitionDuration={280} revealChild={showId}
+                                      transitionType={createBinding(AstalHyprland.get_default(), "focusedWorkspace")
+                                          .as(fws => fws.id !== ws.id ? 
+                                               Gtk.RevealerTransitionType.SLIDE_LEFT
+                                             : Gtk.RevealerTransitionType.SLIDE_RIGHT)}>
 
                                         <Gtk.Label label={createBinding(ws, "id").as(String)}
                                           class={"id"} hexpand />
@@ -132,7 +135,8 @@ export const Workspaces = () => {
                                       createBinding(lastClient, "initialClass").as(initialClass =>
                                           getSymbolicIcon(initialClass) ?? getAppIcon(initialClass) ??
                                               "application-x-executable-symbolic")} 
-                                      hexpand={true} vexpand={true}
+                                      hexpand vexpand visible={createBinding(AstalHyprland.get_default(), "focusedWorkspace")
+                                          .as(fws => fws.id !== ws.id)}
                                     />}
                                 </Gtk.Box>
                             }
