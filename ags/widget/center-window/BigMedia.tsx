@@ -4,67 +4,53 @@ import { Astal, Gtk } from "ags/gtk4";
 import { Clipboard } from "../../scripts/clipboard";
 import { player } from "../bar/Media";
 import { createBinding, With } from "ags";
+import { pathToURI } from "../../scripts/utils";
 
 import AstalMpris from "gi://AstalMpris";
 import AstalIO from "gi://AstalIO";
-import Gio from "gi://Gio?version=2.0";
 import Pango from "gi://Pango?version=1.0";
 
 
 export const BigMedia = () => {
     let dragTimer: (AstalIO.Time|undefined);
 
-    return <Gtk.Box class={"big-media"} orientation={Gtk.Orientation.VERTICAL} widthRequest={250}
+    return <Gtk.Box class={"big-media"} orientation={Gtk.Orientation.VERTICAL} widthRequest={265}
       visible={player(pl => pl.available)}>
 
         <With value={player}>
             {(player: AstalMpris.Player) => player.available &&
-                <Gtk.Box halign={Gtk.Align.CENTER} $={(self) => {
-                      const artSub = createBinding(player, "artUrl").subscribe(() => {
-                          const firstChild = self.get_first_child();
-                          const albumArt = getAlbumArt(player);
+                <Gtk.Box halign={Gtk.Align.CENTER} orientation={Gtk.Orientation.VERTICAL}>
 
-                          if(!albumArt) {
-                              if(firstChild instanceof Gtk.Picture)
-                                  self.remove(firstChild);
+                    <Gtk.Revealer hexpand={false} revealChild={
+                        createBinding(player, "artUrl").as(Boolean)
+                    } transitionType={Gtk.RevealerTransitionType.SLIDE_DOWN} transitionDuration={250}>
 
-                              return;
-                          }
-
-                          if(firstChild instanceof Gtk.Picture) {
-                              firstChild.set_filename(albumArt);
-                              return;
-                          }
-
-                          self.prepend(
-                              <Gtk.Picture file={Gio.File.new_for_path(albumArt)} 
-                                hexpand={false} vexpand={false} marginTop={6}
-                                widthRequest={132} heightRequest={128}
-                              /> as Gtk.Picture
-                          );
-                      });
-
-                      const destroyId = self.connect("destroy", () => {
-                          self.disconnect(destroyId);
-                          artSub();
-                      });
-                  }}>
-
+                        <Gtk.Box class={"image"} css={createBinding(player, "artUrl").as((art) => 
+                              `background-image: url("${pathToURI(art)}");`)} 
+                          hexpand={false} vexpand={false} widthRequest={132} heightRequest={128}
+                          valign={Gtk.Align.START} halign={Gtk.Align.CENTER}
+                        />
+                    </Gtk.Revealer>
+                    
                     <Gtk.Box class={"info"} orientation={Gtk.Orientation.VERTICAL}
-                      valign={Gtk.Align.CENTER} vexpand={true}>
+                      valign={Gtk.Align.CENTER} vexpand hexpand>
 
                         <Gtk.Label class={"title"} tooltipText={
+                              createBinding(player, "title").as(title => title ?? "No Title")
+                          } label={
                               createBinding(player, "title").as(title => title ?? "No Title")
                           } ellipsize={Pango.EllipsizeMode.END} maxWidthChars={25}
                         />
                         <Gtk.Label class={"artist"} tooltipText={
                               createBinding(player, "artist").as(artist => artist ?? "No Artist")
+                          } label={
+                              createBinding(player, "artist").as(artist => artist ?? "No Artist")
                           } ellipsize={Pango.EllipsizeMode.END} maxWidthChars={28} 
                         />
                     </Gtk.Box>
 
-                    <Gtk.Box class={"progress"} hexpand={true} visible={createBinding(player, "canSeek")}>
-                        <Astal.Slider hexpand={true} max={createBinding(player, "length").as(Math.floor)}
+                    <Gtk.Box class={"progress"} hexpand visible={createBinding(player, "canSeek")}>
+                        <Astal.Slider hexpand max={createBinding(player, "length").as(Math.floor)}
                           value={createBinding(player, "position").as(Math.floor)}
                           onChangeValue={(_, type, value) => {
                               if(type === undefined || type === null) 
@@ -84,9 +70,9 @@ export const BigMedia = () => {
                         />
                     </Gtk.Box>
                     
-                    <Gtk.CenterBox class={"bottom"} hexpand={true} marginBottom={6}>
-                        <Gtk.Label class={"elapsed"} valign={Gtk.Align.START} halign={Gtk.Align.START} 
-                          label={createBinding(player, "position").as(pos => {
+                    <Gtk.CenterBox class={"bottom"} hexpand marginBottom={6}>
+                        <Gtk.Label class={"elapsed"} xalign={0} yalign={0}
+                          halign={Gtk.Align.START} label={createBinding(player, "position").as(pos => {
                               const sec = Math.floor(pos % 60);
                               return pos > 0 && player.length > 0 ? 
                                   `${Math.floor(pos / 60)}:${sec < 10 ? "0" : ""}${sec}`
@@ -114,7 +100,7 @@ export const BigMedia = () => {
                                 : "media-playlist-consecutive-symbolic")} tooltipText={
                               createBinding(player, "shuffleStatus").as(status => status === AstalMpris.Shuffle.ON ? 
                                     "Shuffle"
-                                : "No shuffle")} onClicked={player.shuffle} 
+                                : "No shuffle")} onClicked={() => player.shuffle()} 
                             />
                             <Gtk.Button class={"previous"} iconName={"media-skip-backward-symbolic"}
                               tooltipText={"Previous"} onClicked={() => player.canGoPrevious && player.previous()}
@@ -125,7 +111,7 @@ export const BigMedia = () => {
                               iconName={createBinding(player, "playbackStatus").as(status => 
                                   status === AstalMpris.PlaybackStatus.PLAYING ? 
                                       "media-playback-pause-symbolic"
-                                  : "media-playback-start-symbolic")} onClicked={player.play_pause}
+                                  : "media-playback-start-symbolic")} onClicked={() => player.play_pause()}
                             />
                             <Gtk.Button class={"next"} iconName={"media-skip-forward-symbolic"} 
                               tooltipText={"Next"} onClicked={() => player.canGoNext && player.next()}
@@ -148,11 +134,11 @@ export const BigMedia = () => {
                                       return "Loop playlist";
 
                                   return "No loop";
-                              })} onClicked={player.loop}
+                              })} onClicked={() => player.loop()}
                             />
                         </Gtk.Box>
-                        <Gtk.Label class={"length"} valign={Gtk.Align.START} halign={Gtk.Align.END}
-                          label={createBinding(player, "length").as(len => { /* bananananananana */
+                        <Gtk.Label class={"length"} xalign={1} yalign={0}
+                          halign={Gtk.Align.END} label={createBinding(player, "length").as(len => { /* bananananananana */
                               const sec = Math.floor(len % 60);
                               return (len > 0 && Number.isFinite(len)) ? 
                                   `${Math.floor(len / 60)}:${sec < 10 ? "0" : ""}${sec}`
@@ -164,23 +150,4 @@ export const BigMedia = () => {
             }
         </With>
     </Gtk.Box> as Gtk.Box;
-}
-
-/**
- * This function handles album art/cover of playing media. If a file is provided
- * by the player, it adds the "file://" uri as a prefix, so you can use it in css.
- *
- * @param player the player you want to pull album art from
- * @returns Binding to player.artUrl containing the album art uri, or an undefined binding ig none was found.
-* */
-function getAlbumArt(player: AstalMpris.Player): string|undefined {
-    const artUrl = player.artUrl;
-
-    if(!artUrl) 
-        return undefined;
-
-    if(artUrl.startsWith("/")) 
-        return "file://" + artUrl;
-
-    return artUrl;
 }
