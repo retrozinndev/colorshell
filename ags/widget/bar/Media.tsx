@@ -1,4 +1,4 @@
-import { createBinding, createState, With } from "ags";
+import { createBinding, createState, onCleanup, With } from "ags";
 import { execAsync } from "ags/process";
 import { Gtk } from "ags/gtk4";
 import { getSymbolicIcon } from "../../scripts/apps";
@@ -12,7 +12,6 @@ import Pango from "gi://Pango?version=1.0";
 
 
 export const dummyPlayer = AstalMpris.Player.new("colorshellDummy");
-
 export let [player, setPlayer] = createState(dummyPlayer);
 
 export const Media = () => {
@@ -21,17 +20,26 @@ export const Media = () => {
     if(AstalMpris.get_default().players[0])
         setPlayer(AstalMpris.get_default().players[0]);
 
+    onCleanup(() => connections.forEach((id, obj) => 
+        Array.isArray(id) ? 
+            id.forEach(id => obj.disconnect(id))
+        : obj.disconnect(id)
+    ));
+
     connections.set(AstalMpris.get_default(), [
         AstalMpris.get_default().connect("player-added", (_, player) => 
             player.available && setPlayer(player)),
 
         AstalMpris.get_default().connect("player-closed", (_, closedPlayer) => {
-            const players = AstalMpris.get_default().players.filter(pl => pl?.available);
+            const players = AstalMpris.get_default().players.filter(pl => pl?.available && 
+                pl.busName !== closedPlayer.busName);
 
             if(players.length > 0) {
                 setPlayer(players[0]);
                 return;
-            } else setPlayer(dummyPlayer);
+            } 
+            
+            setPlayer(dummyPlayer);
         })
     ]);
 
