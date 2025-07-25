@@ -1,6 +1,9 @@
-import { Binding } from "astal";
+import { Binding, bind } from "astal";
 import { Astal, Gdk, Gtk, Widget } from "astal/gtk3";
 import { BackgroundWindow } from "./BackgroundWindow";
+import AstalHyprland from "gi://AstalHyprland";
+
+const hyprland = AstalHyprland.get_default();
 
 type PopupWindowSpecificProps = {
     onDestroy?: (self: Widget.Window) => void;
@@ -50,13 +53,17 @@ export function PopupWindow(props: PopupWindowProps): Widget.Window {
         // @ts-ignore ignore the `onClickedOutside()` method because astal thinks it's a signal
         winProps[key as keyof typeof winProps] = props[key as keyof typeof props];
     }
-
+    
     return new Widget.Window({
         ...winProps,
         namespace: props?.namespace ?? "popup-window",
         className: `popup-window ${(props.namespace instanceof Binding ?
             props.namespace.get() : props.namespace) || ""}`,
-        keymode: Astal.Keymode.EXCLUSIVE,
+        keymode: bind(hyprland, 'focusedWorkspace').as(fw => 
+            fw.last_client.fullscreen === AstalHyprland.Fullscreen.FULLSCREEN && fw.last_client.workspace === fw
+                ? Astal.Keymode.EXCLUSIVE
+                : Astal.Keymode.ON_DEMAND
+        ),
         anchor: TOP | LEFT | RIGHT | BOTTOM,
         exclusivity: props.exclusivity ?? Astal.Exclusivity.NORMAL,
         halign: undefined,
