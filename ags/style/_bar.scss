@@ -1,8 +1,18 @@
 @use "sass:color";
 @use "./mixins";
 @use "./colors";
-@use "./wal";
-@use "./functions";
+
+
+$radius: 18px;
+$padding: 4px;
+$color-hover: colors.$bg-primary;
+
+
+@mixin button-reactivity {
+  &:active {
+    box-shadow: 0 0 0 2px $color-hover;
+  }
+}
 
 .bar-container {
   padding: 6px;
@@ -17,16 +27,14 @@
 
   // Style widget groups
   & > .bar-centerbox > * {
-    $radius: 18px !global;
-    $padding: 4px !global;
-    $color-hover: colors.$bg-primary;
-
     background: rgba(colors.$bg-translucent, .6);
     border-radius: $radius;
     padding: 0 $padding;
 
     & > box:not(.workspaces-row):not(.tray):not(.focused-client):not(.media), 
     & > button {
+      @include button-reactivity;
+
       border-radius: calc($radius - $padding);
       margin: $padding 0;
       padding: 0 8px;
@@ -47,6 +55,10 @@
       min-width: 14px;
       padding: 0 6px;
       background: colors.$bg-tertiary;
+
+      &:active {
+        border-radius: 10px;
+      }
 
       & label.id {
         font-weight: 600;
@@ -110,14 +122,12 @@
 
   .media {
     $spacing: 5px;
+    $hover-color: color.scale($color: colors.$bg-primary, $lightness: 15%);
+
     background: colors.$bg-primary;
     border-radius: calc($radius - $padding);
     margin: $padding 0;
     padding: 0 calc($padding + 3px);
-
-    &:hover {
-      background: color.scale($color: colors.$bg-primary, $lightness: 15%);
-    }
 
     & image.player-icon {
       -gtk-icon-size: 14px;
@@ -134,6 +144,15 @@
         margin: 0;
         -gtk-icon-size: 10px;
       }
+    }
+
+    
+    &:hover {
+      background: $hover-color;
+    }
+
+    &:active {
+      box-shadow: 0 0 0 2px $hover-color;
     }
   }
 

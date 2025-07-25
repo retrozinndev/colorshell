@@ -2,9 +2,9 @@ import { timeout } from "ags/time";
 import { execAsync } from "ags/process";
 import { Astal, Gtk } from "ags/gtk4";
 import { Clipboard } from "../../scripts/clipboard";
-import { player } from "../bar/Media";
-import { createBinding, With } from "ags";
-import { pathToURI } from "../../scripts/utils";
+import { player, setPlayer } from "../bar/Media";
+import { Accessor, createBinding, createConnection, For, With } from "ags";
+import { getPlayerIconFromBusName, pathToURI } from "../../scripts/utils";
 
 import AstalMpris from "gi://AstalMpris";
 import AstalIO from "gi://AstalIO";
@@ -23,13 +23,16 @@ export const BigMedia = () => {
 
                     <Gtk.Revealer hexpand={false} revealChild={
                         createBinding(player, "artUrl").as(Boolean)
-                    } transitionType={Gtk.RevealerTransitionType.SLIDE_DOWN} transitionDuration={250}>
+                    } transitionType={Gtk.RevealerTransitionType.SLIDE_LEFT} transitionDuration={300}>
 
                         <Gtk.Box class={"image"} css={createBinding(player, "artUrl").as((art) => 
                               `background-image: url("${pathToURI(art)}");`)} 
                           hexpand={false} vexpand={false} widthRequest={132} heightRequest={128}
-                          valign={Gtk.Align.START} halign={Gtk.Align.CENTER}
-                        />
+                          valign={Gtk.Align.START} halign={Gtk.Align.CENTER}>
+
+                            <PlayerSelectButton player={player} halign={Gtk.Align.END}
+                              valign={Gtk.Align.END} />
+                        </Gtk.Box>
                     </Gtk.Revealer>
                     
                     <Gtk.Box class={"info"} orientation={Gtk.Orientation.VERTICAL}
@@ -47,6 +50,16 @@ export const BigMedia = () => {
                               createBinding(player, "artist").as(artist => artist ?? "No Artist")
                           } ellipsize={Pango.EllipsizeMode.END} maxWidthChars={28} 
                         />
+                    </Gtk.Box>
+
+                    <Gtk.Box>
+                        <With value={createBinding(player, "artUrl").as(Boolean)}>
+                            {(hasAlbumArt) => !hasAlbumArt &&
+                                <PlayerSelectButton player={player} reveal={true} 
+                                  halign={Gtk.Align.CENTER} valign={Gtk.Align.CENTER} 
+                                />
+                            }
+                        </With>
                     </Gtk.Box>
 
                     <Gtk.Box class={"progress"} hexpand visible={createBinding(player, "canSeek")}>
@@ -150,4 +163,83 @@ export const BigMedia = () => {
             }
         </With>
     </Gtk.Box> as Gtk.Box;
+}
+
+export function PlayerSelectButton({ player, reveal, halign = Gtk.Align.CENTER, valign = Gtk.Align.CENTER }: {
+    player: AstalMpris.Player, 
+    reveal?: Accessor<boolean>|boolean,
+    halign?: Gtk.Align;
+    valign?: Gtk.Align;
+}) {
+    const availablePlayers = createBinding(AstalMpris.get_default(), "players").as(players =>
+        players.filter(p => p.available));
+
+    return <Gtk.Box vexpand={false} valign={valign} halign={halign}> 
+        <With value={availablePlayers.as(apls => apls.length > 1)}>
+            {(show: boolean) => show &&
+                <Gtk.MenuButton halign={Gtk.Align.CENTER} hexpand
+                  class={"player-select"} popover={
+                    <Gtk.Popover class={"players-list"} hasArrow={false}>
+                        <Gtk.Box orientation={Gtk.Orientation.VERTICAL}>
+                            <For each={availablePlayers}>
+                                {(pl: AstalMpris.Player) => 
+                                    <Gtk.Button class={"player"} onClicked={() => setPlayer(pl)}>
+                                        <Gtk.Box>
+                                            <Gtk.Image iconName={createBinding(player, "busName").as(
+                                                getPlayerIconFromBusName
+                                            )} />
+                                            <Gtk.Label label={createBinding(player, "identity")} 
+                                              hexpand={false} class={"identity"} singleLineMode
+                                              maxWidthChars={8}
+                                            />
+                                        </Gtk.Box>
+                                    </Gtk.Button>
+                                }
+                            </For>
+                        </Gtk.Box>
+                    </Gtk.Popover> as Gtk.Popover
+                  } $={(self) => {
+                      const controllerMotion = Gtk.EventControllerMotion.new();
+                      self.add_controller(controllerMotion);
+
+                      self.set_child(
+                          <Gtk.Box class={"player"}>
+                              <Gtk.Image iconName={createBinding(player, "busName").as(
+                                  getPlayerIconFromBusName)} 
+                              />
+                              <Gtk.Revealer transitionType={Gtk.RevealerTransitionType.SLIDE_LEFT}
+                                transitionDuration={280} revealChild={reveal ?? createConnection(false,
+                                      [controllerMotion, "enter", () => {
+                                          self.add_css_class("reveal");
+                                          return true;
+                                      }],
+                                      [controllerMotion, "leave", () => {
+                                          self.remove_css_class("reveal");
+                                          return false;
+                                      }]
+                                  )
+                                }>
+
+                                  <Gtk.Box>
+                                      <Gtk.Label label={createBinding(player, "identity")} 
+                                        class={"identity"} maxWidthChars={6} 
+                                        ellipsize={Pango.EllipsizeMode.END} 
+                                        tooltipText={createBinding(player, "identity")}
+                                      />
+                                      <Gtk.Image iconName={
+                                            createConnection("go-next-symbolic",
+                                                [self.popover, "show", () => "go-down-symbolic"],
+                                                [self.popover, "closed", () => "go-next-symbolic"]
+                                            )
+                                        } class={"arrow"} iconSize={Gtk.IconSize.NORMAL} 
+                                      />
+                                  </Gtk.Box>
+                              </Gtk.Revealer>
+                          </Gtk.Box> as Gtk.Box
+                      );
+                  }}
+                />
+            }
+        </With>
+    </Gtk.Box>;
 }

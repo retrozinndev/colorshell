@@ -1,7 +1,5 @@
 @use "sass:color";
-@use "./wal";
 @use "./colors";
-@use "./functions" as funs;
 
 @mixin reset-props {
   all: unset;
@@ -14,20 +12,30 @@
   color: colors.$fg-primary;
 }
 
-@mixin hover-shadow {
+@mixin button-reactive-primary {
+  background: colors.$bg-primary;
+  border-radius: 14px;
+  padding: 6px;
+
   &:hover {
-    box-shadow: inset 0 0 0 500px rgba(colors.$fg-primary, .1);
+    background: colors.$bg-secondary;
+  }
+
+  &:active {
+    border-radius: 10px;
   }
 }
 
-@mixin hover-shadow2 {
-  &:hover {
-    box-shadow: inset 0 0 0 500px rgba(colors.$fg-primary, .2);
-  }
-}
+@mixin button-reactive-secondary {
+  background: colors.$bg-secondary;
+  border-radius: 12px;
+  padding: 6px;
 
-@mixin hover-shadow3 {
   &:hover {
-    box-shadow: inset 0 0 0 500px rgba(colors.$fg-primary, .3);
+    background: colors.$bg-tertiary;
+  }
+
+  &:active {
+    border-radius: 9px;
   }
 }

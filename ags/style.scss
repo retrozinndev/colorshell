@@ -198,32 +198,26 @@ tooltip > box {
   }
 }
 
-popover.menu {
+popover.menu contents {
   background: wal.$background;
   border-radius: 14px;
-  $padding: 4px;
+  padding: 4px;
 
-  & contents {
-    & viewport > stack > * {
-      padding: 4px;
-      padding-top: 0;
+  & viewport > stack > * > * > * {
+    & > separator {
+      min-height: .5px;
+      margin: 3px 2px;
+      background: rgba(colors.$fg-disabled, .1);
+    }
 
-      & > * > * {
-        & > separator {
-          min-height: .5px;
-          margin: 3px 2px;
-          background: rgba(colors.$fg-disabled, .1);
-        }
-        & > *:not(separator) > * {
-          padding: 6px;
-          border-radius: 10px;
-          font-size: 12px;
-          font-weight: 600;
-                                     
-          &:hover, &:focus {
-            background: wal.$color1;
-          }
-        }
+    & > *:not(separator) > * {
+      padding: 6px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+                                 
+      &:hover, &:focus {
+        background: wal.$color1;
       }
     }
   }
@@ -231,25 +225,39 @@ popover.menu {
 
 .button-row {
   & > button {
+    $active-radius: 8px;
+    $corner-radius: calc($active-radius + 2px);
+
     background: colors.$bg-secondary;
     margin: 0 1px;
     padding: 4px 6px;
     border-radius: 2px;
+    transition: 120ms linear;
 
     &:hover {
       background: colors.$bg-tertiary;
     }
 
+    &:active {
+      border-radius: $active-radius;
+    }
+
     &:first-child {
-      border-top-left-radius: 10px;
-      border-bottom-left-radius: 10px;
       margin-left: 0;
+
+      &:not(:active) {
+        border-top-left-radius: $corner-radius;
+        border-bottom-left-radius: $corner-radius;
+      }
     }
 
     &:last-child {
-      border-top-right-radius: 10px;
-      border-bottom-right-radius: 10px;
       margin-right: 0;
+
+      &:not(:active) {
+        border-top-right-radius: $corner-radius;
+        border-bottom-right-radius: $corner-radius;
+      }
     }
   }
 }

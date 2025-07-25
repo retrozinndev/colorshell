@@ -63,13 +63,15 @@
     }
 
     button {
-      @include mixins.hover-shadow2;
-
       padding: 4px;
       border-radius: 16px;
 
       icon {
         font-size: 14px;
+      }
+
+      &:hover {
+        background: rgba(colors.$fg-primary, .2);
       }
     }
 
@@ -125,8 +127,6 @@
     }
 
     & button {
-      @include mixins.hover-shadow;
-
       padding: 6px;
       border-radius: 12px;
 
@@ -142,6 +142,10 @@
 
       & icon {
         font-size: 16px;
+      }
+
+      &:hover {
+        background: rgba(colors.$fg-primary, .1);
       }
     }
 
@@ -194,13 +198,18 @@
         background: colors.$bg-secondary;
       }
 
-      &.has-more > .toggle-button {
+      &.has-more > .toggle-button, 
+      &.has-more > button.toggle-button:active {
         border-top-right-radius: 0;
         border-bottom-right-radius: 0;
       }
 
-      & > .toggle-button {
+      & > button.toggle-button {
         border-radius: $radius;
+
+        &:active {
+          border-radius: calc($radius - 4px);
+        }
 
         & .content {
           padding: 8px;
@@ -227,6 +236,11 @@
       & > button.more {
         border-top-right-radius: $radius;
         border-bottom-right-radius: $radius;
+
+        &:active {
+          border-top-right-radius: calc($radius - 4px);
+          border-bottom-right-radius: calc($radius - 4px);
+        }
 
         & label {
           font-size: 16px;
@@ -272,6 +286,7 @@ box.notif-history {
     margin-top: 12px;
 
     & button {
+      @include mixins.button-reactive-secondary;
       padding: 7px;
 
       & label {

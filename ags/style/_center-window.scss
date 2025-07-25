@@ -1,6 +1,7 @@
 @use "sass:color";
 @use "./wal";
 @use "./colors";
+@use "./mixins";
 
 
 .popup-window.center-window .center-window-container {
@@ -31,6 +32,44 @@
         font-size: 14px;
         font-weight: 600;
         color: colors.$fg-disabled;
+      }
+    }
+
+    & .player-select {
+      @include mixins.button-reactive-secondary;
+
+      border-radius: 14px;
+
+      & revealer label {
+        margin-left: 4px;
+      }
+
+      margin-right: 2px;
+      margin-bottom: 2px;
+
+      image.arrow {
+        -gtk-icon-size: 12px;
+        margin-left: 6px;
+        margin-top: 1px;
+      }
+    }
+
+    & popover contents {
+      background: colors.$bg-primary;
+      border-radius: 16px;
+      padding: 4px;
+
+      & button {
+        padding: 6px;
+        border-radius: 12px;
+
+        & image {
+          margin-right: 4px;
+        }
+
+        &:hover {
+          background: colors.$bg-secondary;
+        }
       }
     }
 
