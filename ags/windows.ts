@@ -12,6 +12,7 @@ import GObject, { getter, register, signal } from "ags/gobject";
 
 import AstalHyprland from "gi://AstalHyprland";
 import { Scope } from "../../../../usr/share/ags/js/gnim/src/jsx/scope";
+import { appScope } from "./app";
 
 
 export { Windows };
@@ -60,25 +61,16 @@ class Windows extends GObject.Object {
     constructor() {
         super();
 
-        createRoot((_) => {
-            // Listen to monitor events
-            const hyprConnections = [
-                AstalHyprland.get_default().connect("monitor-added", () => 
-                    this.reopen()),
-                AstalHyprland.get_default().connect("monitor-removed", () => 
-                    AstalHyprland.get_default().get_monitors().length > 0 &&
-                        this.reopen())
-            ];
+        // Listen to monitor events
+        const hyprConnections = [
+            AstalHyprland.get_default().connect("monitor-added", () => 
+                this.reopen()),
+            AstalHyprland.get_default().connect("monitor-removed", () => 
+                AstalHyprland.get_default().get_monitors().length > 0 &&
+                    this.reopen())
+        ];
 
-            onCleanup(() => {
-                hyprConnections.forEach(id => 
-                    GObject.signal_handler_is_connected(AstalHyprland.get_default(), id) && 
-                        AstalHyprland.get_default().disconnect(id)
-                );
-
-                this.openWindows.forEach(name => this.disconnectWindow(name));
-            });
-
+        appScope.run(() => {
             // open windows with the "open" status on startup
             Object.keys(this.#windows).filter((key) => 
                 this.#windows[key].status === "open"
@@ -86,6 +78,15 @@ class Windows extends GObject.Object {
                 this.open(name, true);
                 console.log(`Windows: opening window \`${name}\` on startup`);
             });
+        });
+
+        onCleanup(() => {
+            hyprConnections.forEach(id => 
+                GObject.signal_handler_is_connected(AstalHyprland.get_default(), id) && 
+                    AstalHyprland.get_default().disconnect(id)
+            );
+
+            this.openWindows.forEach(name => this.disconnectWindow(name));
         });
     }
 
@@ -157,7 +158,7 @@ class Windows extends GObject.Object {
             window.instance.forEach(inst => inst.connections = [
                 inst.instance!.connect("close-request", () => {
                     this.disconnectWindow(name);
-                    inst.instance = undefined;
+                    delete window.instance;
                     window.status = "closed";
                     this.notify("open-windows");
                 })
@@ -169,7 +170,7 @@ class Windows extends GObject.Object {
         window.instance.connections = [
             window.instance.instance!.connect("close-request", () => {
                 this.disconnectWindow(name);
-                (window.instance as WindowInstance).instance = undefined;
+                delete window.instance;
                 window.status = "closed";
                 this.notify("open-windows");
             })

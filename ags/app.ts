@@ -14,11 +14,14 @@ import { Stylesheet } from "./scripts/stylesheet";
 import { Clipboard } from "./scripts/clipboard";
 import { PluginClipboard } from "./runner/plugins/clipboard";
 import { Config } from "./scripts/config";
+import { onCleanup, Scope } from "/usr/share/ags/js/gnim/src/jsx/scope";
 
 import App from "ags/gtk4/app"
 import GObject from "ags/gobject";
 import AstalNotifd from "gi://AstalNotifd";
 
+
+export const appScope: Scope = new Scope(null);
 
 let osdTimer: (Time|undefined), osdTimeout = 3500;
 let connections = new Map<GObject.Object, (Array<number> | number)>();
@@ -40,8 +43,10 @@ App.start({
     requestHandler: (request: string, response: (result: any) => void): void => {
         response(handleArguments(request));
     },
-    main: (..._args: Array<string>) => {
+    main: (..._args: Array<string>) => appScope.run(() => {
         console.log(`Initialized astal instance as: ${ App.instanceName || "astal" }`);
+        App.connect("shutdown", () => appScope.dispose());
+
         console.log("Config: initializing configuration file");
         Config.getDefault();
 
@@ -63,10 +68,10 @@ App.start({
         console.log("Adding runner plugins");
         runnerPlugins.map(plugin => Runner.addPlugin(plugin));
 
-        connections.set(Wireplumber.getDefault(), [
+        connections.set(Wireplumber.getDefault(), 
             Wireplumber.getDefault().getDefaultSink().connect("notify::volume", () => 
                 triggerOSD())
-        ]);
+        );
 
         connections.set(Notifications.getDefault(), [
             Notifications.getDefault().connect("notification-added", (_, _notif: AstalNotifd.Notification) => {
@@ -78,7 +83,11 @@ App.start({
         ]);
 
         defaultWindows.forEach(w => Windows.getDefault().open(w));
-    }
+
+        onCleanup(() => connections.forEach((ids, obj) => Array.isArray(ids) ?
+            ids.forEach(id => obj.disconnect(id))
+        : obj.disconnect(ids)));
+    })
 });
 
 function triggerOSD() {
