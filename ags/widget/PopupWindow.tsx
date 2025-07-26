@@ -7,12 +7,12 @@ import GObject from "ags/gobject";
 
 
 type PopupWindowSpecificProps = {
-    $?: (self: Astal.Window, container: Gtk.Box) => void;
+    $?: (self: Astal.Window) => void;
     children?: WidgetNodeType;
     /** Stylesheet for the background of the popup-window */
     cssBackgroundWindow?: string;
     class?: string | Accessor<string>;
-    onCloseRequest?: (self: Astal.Window) => void|boolean;
+    actionClosed?: (self: Astal.Window) => void|boolean;
     actionClickedOutside?: (self: Astal.Window) => void;
     actionKeyPressed?: (self: Astal.Window, keyval: number, keycode: number) => void;
 };
@@ -64,7 +64,11 @@ export function PopupWindow(props: PopupWindowProps): GObject.Object {
         "visible",
         "marginLeft",
         "marginRight",
-        "marginBottom"
+        "marginBottom",
+        "hexpand",
+        "vexpand",
+        "actionClosed",
+        "$"
     ])} namespace={props.namespace ?? "popup-window"} class={
           (props.class instanceof Accessor) ? 
               ((props.namespace instanceof Accessor) ?
@@ -73,7 +77,8 @@ export function PopupWindow(props: PopupWindowProps): GObject.Object {
                : props.class.as(clss => `popup-window ${clss} ${props.namespace ?? ""}`))
           : `popup-window ${props.class ?? ""} ${props.namespace ?? ""}`
       } keymode={Astal.Keymode.EXCLUSIVE} exclusivity={props.exclusivity ?? Astal.Exclusivity.NORMAL}
-      anchor={TOP | LEFT | BOTTOM | RIGHT} visible={false} onCloseRequest={props.onCloseRequest}
+      anchor={TOP | LEFT | BOTTOM | RIGHT} visible={false} 
+      onCloseRequest={(self) => props.actionClosed?.(self)}
       $={(self) => {
           const conns: Map<GObject.Object, number> = new Map();
           const gestureClick = Gtk.GestureClick.new();
@@ -120,7 +125,10 @@ export function PopupWindow(props: PopupWindowProps): GObject.Object {
           conns.set(self, self.connect("close-request", () => conns.forEach((id, obj) =>
               obj.disconnect(id))));
 
-          props.$?.(self, self.get_first_child()!.get_first_child()!.get_first_child() as Gtk.Box);
+          conns.set(self, self.connect("destroy", () => conns.forEach((id, obj) =>
+              obj.disconnect(id))));
+
+          props.$?.(self);
       }}>
           <Gtk.Box hexpand={false} vexpand={false}>
               <Gtk.Box class={"popup-window-container"} halign={props.halign} 
@@ -145,9 +153,7 @@ export function PopupWindow(props: PopupWindowProps): GObject.Object {
                     conns.set(self, self.connect("destroy", () => conns.forEach((id, obj) =>
                         obj.disconnect(id))));
                 }}>
-                  <Gtk.Box>
-                      {props.children}
-                  </Gtk.Box>
+                  {props.children}
               </Gtk.Box>
           </Gtk.Box>
     </Astal.Window> as Astal.Window;
