@@ -1,6 +1,6 @@
 @use "./colors";
 
-.logout-menu {
+.logout-menu-container {
   background: rgba($color: colors.$bg-translucent-primary, $alpha: .4);
 
   .top {
@@ -17,6 +17,9 @@
     }
   }
   .button-row {
+    $radius: 32px;
+
+    all: unset;
     margin: 0 150px;
 
     & > button {
@@ -24,24 +27,25 @@
         -gtk-icon-size: 128px;
       }
 
-      &:focus {
+      &:focus-visible {
         box-shadow: inset 0 0 0 5px colors.$fg-primary;
       }
 
-      margin: {
-        left: 4px;
-        right: 4px;
+      &:active {
+        border-radius: calc($radius - 6px);
       }
+
+      margin: 0 4px;
       border-radius: 6px;
 
-      &:first-child {
-        border-top-left-radius: 28px;
-        border-bottom-left-radius: 28px;
+      &:first-child:not(:active) {
+        border-top-left-radius: $radius;
+        border-bottom-left-radius: $radius;
       }
 
-      &:last-child {
-        border-top-right-radius: 28px;
-        border-bottom-right-radius: 28px;
+      &:last-child:not(:active) {
+        border-top-right-radius: $radius;
+        border-bottom-right-radius: $radius;
       }
     }
   }
