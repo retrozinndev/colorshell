@@ -1,6 +1,7 @@
 import { timeout, GLib } from 'astal';
 import { Gtk, Gdk, Widget } from 'astal/gtk3';
 import AstalMpris from "gi://AstalMpris";
+import { Wallpaper } from '../../scripts/wallpaper';
 
 let pauseProgress = 1; // 0 = full wave, 1 = full straight
 
@@ -9,7 +10,77 @@ export enum typeSliders {
     MATERIAL_EXPRESSIVE_SLIDER 
 }
 
-export interface SliderOptions {
+function drawRoundedRectangleCustom(cr, x, y, width, height, options: {
+    topLeft?: boolean | number | 'small';
+    topRight?: boolean | number | 'small';
+    bottomRight?: boolean | number | 'small';
+    bottomLeft?: boolean | number | 'small';
+    minRadius?: number;
+}) {
+    const {
+        topLeft = 0,
+        topRight = 0, 
+        bottomRight = 0,
+        bottomLeft = 0,
+        minRadius = 2
+    } = options;
+
+    const calculateRadiusPercent = (height: number): number => {
+        const percent = -1.5 * height + 72.5;
+        return Math.max(30, Math.min(percent, 100));
+    };
+    
+    let tl, tr, br, bl;
+    
+    const dynamicMaxRadiusPercent = calculateRadiusPercent(height) / 100;
+    const maxRadius = height * dynamicMaxRadiusPercent;
+        
+    tl = topLeft === true ? maxRadius : (topLeft === 'small' ? minRadius : (topLeft || 0));
+    tr = topRight === true ? maxRadius : (topRight === 'small' ? minRadius : (topRight || 0));
+    br = bottomRight === true ? maxRadius : (bottomRight === 'small' ? minRadius : (bottomRight || 0));
+    bl = bottomLeft === true ? maxRadius : (bottomLeft === 'small' ? minRadius : (bottomLeft || 0));
+    
+    const maxR = Math.min(width / 2, height / 2);
+    tl = Math.min(tl, maxR);
+    tr = Math.min(tr, maxR);
+    br = Math.min(br, maxR);
+    bl = Math.min(bl, maxR);
+    
+    cr.moveTo(x + tl, y);
+    
+    // Top rigth
+    if (tr > 0) {
+        cr.arc(x + width - tr, y + tr, tr, 1.5 * Math.PI, 2 * Math.PI);
+    } else {
+        cr.lineTo(x + width, y);
+    }
+    
+    // Bottom rigth
+    if (br > 0) {
+        cr.arc(x + width - br, y + height - br, br, 0, 0.5 * Math.PI);
+    } else {
+        cr.lineTo(x + width, y + height);
+    }
+    
+    // Bottom left
+    if (bl > 0) {
+        cr.arc(x + bl, y + height - bl, bl, 0.5 * Math.PI, Math.PI);
+    } else {
+        cr.lineTo(x, y + height);
+    }
+    
+    // Top left
+    if (tl > 0) {
+        cr.arc(x + tl, y + tl, tl, Math.PI, 1.5 * Math.PI);
+    } else {
+        cr.lineTo(x, y);
+        cr.lineTo(x + tl, y);
+    }
+    
+    cr.closePath();
+}
+
+export function createUnifiedSlider(model: {
     getValue(): number;
     getMaxValue(): number;
     setValue(value: number): void;
@@ -17,55 +88,9 @@ export interface SliderOptions {
     getColor(): string | (() => string | null);
     typeSlider(): typeSliders;
     getPlaybackStatus?(): AstalMpris.PlaybackStatus;
-}
-
-function drawRoundedRectangleCustom(cr, x, y, width, height, radius, corners = {
-    topLeft: true,
-    topRight: true,
-    bottomRight: true,
-    bottomLeft: true
-}) {
-    radius = Math.min(radius, height / 2, width / 2);
-    
-    cr.moveTo(x + (corners.topLeft ? radius : 0), y);
-    
-    // Top rigth
-    if (corners.topRight) {
-        cr.arc(x + width - radius, y + radius, radius, 1.5 * Math.PI, 2 * Math.PI);
-    } else {
-        cr.lineTo(x + width, y);
-        cr.lineTo(x + width, y + radius);
-    }
-    
-    // Bottom rigth
-    if (corners.bottomRight) {
-        cr.arc(x + width - radius, y + height - radius, radius, 0, 0.5 * Math.PI);
-    } else {
-        cr.lineTo(x + width, y + height);
-        cr.lineTo(x + width - radius, y + height);
-    }
-    
-    // Bottom left
-    if (corners.bottomLeft) {
-        cr.arc(x + radius, y + height - radius, radius, 0.5 * Math.PI, Math.PI);
-    } else {
-        cr.lineTo(x, y + height);
-        cr.lineTo(x, y + height - radius);
-    }
-    
-    // Top left
-    if (corners.topLeft) {
-        cr.arc(x + radius, y + radius, radius, Math.PI, 1.5 * Math.PI);
-    } else {
-        cr.lineTo(x, y);
-        cr.lineTo(x + radius, y);
-    }
-    
-    cr.closePath();
-}
-
-
-export function createUnifiedSlider(model: SliderOptions): Gtk.Widget {
+    setSliderHeight?(): number;
+    extraSetup?(): () => { }; 
+}): Gtk.Widget {
     let isDragging = false;
     let dragProgress: number | null = null;
 
@@ -76,7 +101,9 @@ export function createUnifiedSlider(model: SliderOptions): Gtk.Widget {
             new Widget.DrawingArea({
                 className: "slider-drawing-area",
                 hexpand: true,
-                heightRequest: 30,
+                heightRequest: model.setSliderHeight 
+                    ? (model.setSliderHeight() < 15) ? model.setSliderHeight() * 2 : model.setSliderHeight() * 1.5
+                    : 25,
 
                 setup: (self) => {
                     self.add_events(
@@ -124,8 +151,8 @@ export function createUnifiedSlider(model: SliderOptions): Gtk.Widget {
                     self.connect('realize', () => {
                         if (drawLoopId === null) {
                             // 16 ms is about 60 fps, so if you want get more fps, use this formula: Math.round(1000 / RefreshRate)
-                            const FrameToMilliseconds = 16; // ~60 fps
-                            drawLoopId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, FrameToMilliseconds, () => {
+                            const FrameInMilliseconds = 16;
+                            drawLoopId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, FrameInMilliseconds, () => {
                                 if (self.get_window()?.is_visible()) {
                                     self.queue_draw();
                                 }
@@ -183,28 +210,28 @@ export function createUnifiedSlider(model: SliderOptions): Gtk.Widget {
 
                     switch (styleType) {
                         case typeSliders.MATERIAL_EXPRESSIVE_SLIDER: {
-                            const barHeight = 15;
-                            const barRadius = Math.max(5, barHeight / 2);
+                            const barHeight = model.setSliderHeight ? model.setSliderHeight() : 15;
                             const centerY = height / 2;
                             const progressX = width * displayProgress;
 
                             const handleWidth = 5;
-                            const handleHeight = Math.max(barHeight + handleWidth, Math.min(height - barHeight, barHeight + barHeight / 2));
+                            const handleHeight = Math.max(barHeight + handleWidth * 2, Math.min(height - barHeight, barHeight + barHeight / 2));
                             const handleX = Math.max(0, Math.min(progressX - handleWidth / 2, width - handleWidth));
 
                             const handleOffset = 5;
                             const activeEndX = handleX - handleOffset;
                             const inactiveStartX = handleX + handleWidth + handleOffset;
 
+                            const colorToUse = colorStr ? color : fg;
+
                             // Active line
                             if (displayProgress > 0 && activeEndX > 0) {
-                                const colorToUse = colorStr ? color : fg;
                                 cr.setSourceRGBA(colorToUse.red, colorToUse.green, colorToUse.blue, colorToUse.alpha);
                                 drawRoundedRectangleCustom(
                                     cr,
                                     0, centerY - barHeight / 2,
-                                    Math.max(0, activeEndX), barHeight, barRadius,
-                                    { topLeft: true, topRight: false, bottomRight: false, bottomLeft: true }
+                                    Math.max(0, activeEndX), barHeight,
+                                    { topLeft: true, topRight: 'small', bottomRight: 'small', bottomLeft: true }
                                 );
                                 cr.fill();
                             }
@@ -218,8 +245,8 @@ export function createUnifiedSlider(model: SliderOptions): Gtk.Widget {
                                     drawRoundedRectangleCustom(
                                         cr,
                                         inactiveStartX, centerY - barHeight / 2,
-                                        inactiveWidth, barHeight, barRadius,
-                                        { topLeft: false, topRight: true, bottomRight: true, bottomLeft: false }
+                                        inactiveWidth, barHeight,
+                                        { topLeft: 'small', topRight: true, bottomRight: true, bottomLeft: 'small' }
                                     );
                                     cr.fill();
                                 }
@@ -227,24 +254,28 @@ export function createUnifiedSlider(model: SliderOptions): Gtk.Widget {
 
                             // Handle
                             cr.setSourceRGBA(fg.red, fg.green, fg.blue, fg.alpha);
+                            //cr.setSourceRGBA(colorToUse.red, colorToUse.green, colorToUse.blue, colorToUse.alpha);
                             drawRoundedRectangleCustom(
                                 cr,
                                 handleX, centerY - handleHeight / 2,
-                                handleWidth, handleHeight, barRadius
+                                handleWidth, handleHeight, 
+                                { topLeft: true, topRight: true, bottomRight: true, bottomLeft: true }
                             );
                             cr.fill();
 
                             // Max Value Dot
                             if (hasInactive) {
-                                const dotRadius = barHeight / 6;
-                                const dotX = width - barHeight / 2;
-                                const colorToUse = colorStr ? color : fg;
+                                //const dotRadius = barHeight / 6;
+                                const dotRadius = 2.5;
+                                //const dotX = width - barHeight / 2;
+                                const dotX = width - dotRadius * 3;
+                                //const colorToUse = colorStr ? color : fg;
 
                                 cr.save();
                                 drawRoundedRectangleCustom(
                                     cr,
                                     inactiveStartX, centerY - barHeight / 2,
-                                    width - inactiveStartX, barHeight, barRadius,
+                                    width - inactiveStartX, barHeight,
                                     { topLeft: false, topRight: true, bottomRight: true, bottomLeft: false }
                                 );
                                 cr.clip();
@@ -280,7 +311,7 @@ export function createUnifiedSlider(model: SliderOptions): Gtk.Widget {
                             cr.setLineWidth(lineThickness);
                             cr.setLineCap(1); // ROUND caps
 
-                            // Active part (wave or line)
+                            // Active line (wave or line)
                             if (activeEndX > startX) {
                                 const src = colorStr ? color : fg;
                                 cr.setSourceRGBA(src.red, src.green, src.blue, src.alpha);
@@ -294,7 +325,7 @@ export function createUnifiedSlider(model: SliderOptions): Gtk.Widget {
                                 cr.stroke();
                             }
 
-                            // Unactive part
+                            // Unactive line
                             const inactiveStartX = Math.max(lineThickness * 2, Math.min(width, progressX + rectangleHandleWidth * 2));
                             if (inactiveStartX < width - startX) {
                                 cr.setSourceRGBA(fg.red, fg.green, fg.blue, 0.3);
@@ -306,7 +337,14 @@ export function createUnifiedSlider(model: SliderOptions): Gtk.Widget {
 
                             if (!isStreamPlaying) {
                                 cr.setSourceRGBA(fg.red, fg.green, fg.blue, fg.alpha);
-                                drawRoundedRectangleCustom(cr, rectangleHandleX, centerY - rectangleHandleHeight / 2, rectangleHandleWidth, rectangleHandleHeight, radius);
+                                drawRoundedRectangleCustom(
+                                    cr, 
+                                    rectangleHandleX, 
+                                    centerY - rectangleHandleHeight / 2, 
+                                    rectangleHandleWidth, 
+                                    rectangleHandleHeight, 
+                                    { topLeft: true, topRight: true, bottomRight: true, bottomLeft: true }
+                                );
                                 cr.fill();
                             }
                             break;
