@@ -1,14 +1,13 @@
 import { Astal, Gdk, Gtk } from "ags/gtk4";
-import { PopupWindow } from "../widget/PopupWindow";
+import { getPopupWindowContainer, PopupWindow } from "../widget/PopupWindow";
 import { updateApps } from "../scripts/apps";
 import { ResultWidget, ResultWidgetProps } from "./widgets/ResultWidget";
 import { Windows } from "../windows";
-import { createState, For } from "ags";
 import { timeout } from "ags/time";
 
-import GObject from "ags/gobject";
 import AstalHyprland from "gi://AstalHyprland";
 import AstalIO from "gi://AstalIO";
+import GObject from "gi://GObject?version=2.0";
 
 
 export namespace Runner {
@@ -42,17 +41,38 @@ export interface Plugin {
 }
 
 export let instance: (Astal.Window|null) = null;
+
 let gtkEntry: (Gtk.SearchEntry|null) = null;
 const plugins = new Set<Runner.Plugin>();
+const ignoredKeys = [
+    Gdk.KEY_space,
+    Gdk.KEY_Shift_L,
+    Gdk.KEY_Shift_R,
+    Gdk.KEY_Shift_Lock,
+    Gdk.KEY_Return,
+    Gdk.KEY_Tab,
+    Gdk.KEY_Control_L,
+    Gdk.KEY_Control_R,
+    Gdk.KEY_Alt_L,
+    Gdk.KEY_Alt_R,
+    Gdk.KEY_Option,
+    Gdk.KEY_Super_L,
+    Gdk.KEY_Super_R,,
+    Gdk.KEY_F5,
+    Gdk.KEY_Up,
+    Gdk.KEY_Down,
+    Gdk.KEY_Left,
+    Gdk.KEY_Right
+];
+
 
 export function close() { instance?.close(); }
-
 export function regExMatch(search: string, item: (string|number)): boolean {
     search = search.replace(/[\\^$.*?()[\]{}|]/g, "\\$&");
 
     if(typeof item === "number")
         return new RegExp(`${search.split('').map(c => 
-            `${c}`).join('')}`,
+            `[${c}]`).join('')}`,
         "g").test(item.toString());
 
     return new RegExp(`${search.split('').map(c => 
@@ -91,6 +111,7 @@ export function openDefault(initialText?: string) {
     return Runner.openRunner({
         entryPlaceHolder: "Start typing...",
         initialText,
+        showResultsPlaceHolderOnStartup: false,
         resultsLimit: 24
     } as Runner.RunnerProps, [
         {
@@ -138,52 +159,93 @@ export function openDefault(initialText?: string) {
     ]);
 }
 
-export function openRunner(props: RunnerProps, placeholder?: Array<Result>): Astal.Window {
+function getPluginResults(input: string, limit?: number): Array<Result> {
+    if(limit != null)
+        limit = Math.abs(Math.floor(limit));
+
+    let calledPlugins: Array<Plugin> = getPlugins().filter((plugin) => 
+        plugin.prefix ? (input.startsWith(plugin.prefix) ? true : false) : true
+    ).sort((plugin) => plugin.prefix != null ? 0 : 1);
+
+    for(const plugin of calledPlugins) {
+        if(plugin.prioritize) {
+            calledPlugins = [ plugin ];
+            break;
+        }
+    }
+
+    const results = calledPlugins.map(plugin => plugin.handle(
+        plugin.prefix ? input.replace(plugin.prefix, "") : input)
+    ).filter(value => value !== undefined && value !== null).flat(1);
+
+    return limit != null && limit !== Infinity ? 
+        results.splice(0, limit)
+    : results;
+}
+
+function updateResultsList(listbox: Gtk.ListBox, input: string, placeholders?: Array<Result>) {
+    const newResults: Array<Result> = [],
+        scrolledWindow = listbox.parent.parent as Gtk.ScrolledWindow;
+
+    listbox.remove_all();
+    getPluginResults(input).forEach((result) => {
+        listbox.insert(<ResultWidget {...result} /> as ResultWidget, -1);
+        newResults.push(result);
+    });
+
+    // Insert placeholder if there are no results
+    if(placeholders && newResults.length < 1) 
+        placeholders.forEach(phdlr => listbox.insert(
+          <ResultWidget {...phdlr} /> as ResultWidget, -1
+        ));
+
+    newResults.length > 0 ?
+        (!scrolledWindow.visible && scrolledWindow.show())
+    : scrolledWindow.hide();
+}
+
+function selectPreviousItem(listbox: Gtk.ListBox) {
+    const selectedRow = listbox.get_selected_row();
+    const prevRow = selectedRow?.get_prev_sibling();
+
+    if(!prevRow || selectedRow === listbox.get_row_at_index(0)) 
+        return;
+
+    const viewport = listbox.parent as Gtk.Viewport;
+    const vadjustment = (viewport.parent as Gtk.ScrolledWindow).get_vadjustment();
+    const [, , prevRowY] = prevRow.translate_coordinates(viewport, 
+        prevRow.get_allocation().x, prevRow.get_allocation().y);
+
+    listbox.select_row(prevRow as Gtk.ListBoxRow);
+    if(prevRowY < vadjustment.get_value()) 
+        vadjustment.set_value(prevRowY);
+}
+
+function selectNextItem(listbox: Gtk.ListBox) {
+    const selectedRow = listbox.get_selected_row();
+    const nextRow = selectedRow?.get_next_sibling();
+
+    if(!nextRow || selectedRow === listbox.get_last_child()) 
+        return;
+
+    const viewport = listbox.parent as Gtk.Viewport;
+    const vadjustment = (viewport.parent as Gtk.ScrolledWindow).get_vadjustment();
+    const nextRowVAllocation = (nextRow.get_allocation().y + nextRow.get_allocation().height);
+
+    listbox.select_row(nextRow as Gtk.ListBoxRow);
+    if(nextRowVAllocation > viewport.get_allocation().height) 
+        vadjustment.set_value(nextRow.get_allocation().y - viewport.get_allocation().height + nextRow.get_allocation().height);
+}
+
+export function openRunner(props: RunnerProps, placeholders?: Array<Result>): Astal.Window {
     props.width ??= 780;
     props.height ??= 420;
 
-    const connections: Map<GObject.Object, number> = new Map();
-    const [results, setResults] = createState([] as Array<Result>);
-    let clickTimeout: AstalIO.Time|undefined;
-
-    function getPluginResults(input: string): Array<Result> {
-        let calledPlugins: Array<Plugin> = getPlugins().filter((plugin) => 
-            plugin.prefix ? (input.startsWith(plugin.prefix) ? true : false) : true
-        ).sort((plugin) => plugin.prefix != null ? 0 : 1);
-
-        for(const plugin of calledPlugins) {
-            if(plugin.prioritize) {
-                calledPlugins = [ plugin ];
-                break;
-            }
-        }
-
-        const results = calledPlugins.map(plugin => plugin.handle(
-            plugin.prefix ? input.replace(plugin.prefix, "") : input)
-        ).filter(value => value !== undefined && value !== null).flat(1);
-
-        return props?.resultsLimit != null && 
-            props.resultsLimit !== Infinity ? 
-                results.splice(0, props.resultsLimit)
-            : results;
-    }
-
-    function updateResultsList(input: string) {
-        const newResults: Array<Result> = [];
-
-        // Insert placeholder if there are no results
-        if(placeholder && results.get().length === 0) 
-            newResults.push(...placeholder);
-
-        getPluginResults(input).forEach((result) => {
-            newResults.unshift(result);
-        });
-
-        setResults(newResults);
-    }
+    let clickTimeout: AstalIO.Time|undefined,
+        results: Array<Result> = [];
 
     if(!instance)
-        instance = Windows.getDefault().createWindowForFocusedMonitor((mon: number) => 
+        instance = Windows.getDefault().createWindowForFocusedMonitor((mon, root) => 
             <PopupWindow namespace={"runner"} monitor={mon} widthRequest={props.width} 
               heightRequest={props.height} exclusivity={Astal.Exclusivity.IGNORE} halign={Gtk.Align.CENTER}
               marginTop={(AstalHyprland.get_default().get_monitor(mon)?.height / 2) - (props.height! / 2)}
@@ -193,35 +255,63 @@ export function openRunner(props: RunnerProps, placeholder?: Array<Result>): Ast
 
                   props.initialText && 
                       Runner.setEntryText(props.initialText);
-              }} actionKeyPressed={(_, keyval) => {
-                  if(!gtkEntry!.has_focus && keyval !== Gdk.KEY_F5 
-                       && keyval !== Gdk.KEY_Down && keyval !== Gdk.KEY_Up
-                       && keyval !== Gdk.KEY_Return) {
-                        gtkEntry!.grab_focus();
-                        return;
+              }} actionKeyPressed={(self, keyval) => {
+                    const listbox = ((getPopupWindowContainer(self).get_first_child()!
+                        .get_last_child()! as Gtk.ScrolledWindow).get_child()! as Gtk.Viewport)
+                        .get_child()! as Gtk.ListBox;
+
+                    switch(keyval) {
+                        case Gdk.KEY_F5:
+                            updateApps();
+                            return;
+
+                        case Gdk.KEY_Left:
+                        case Gdk.KEY_Up:
+                            selectPreviousItem(listbox);
+                            return;
+
+                        case Gdk.KEY_Right:
+                        case Gdk.KEY_Down:
+                            selectNextItem(listbox);
+                            return;
                     }
 
-                    keyval === Gdk.KEY_F5 &&
-                        updateApps();
-              }} onCloseRequest={() => {
-                  connections.forEach((id, obj) => GObject.signal_handler_is_connected(obj, id) &&
-                      obj.disconnect(id));
+                    for(const key of ignoredKeys) {
+                        if(keyval === key)
+                            return;
+                    }
 
-                  gtkEntry = null;
-
+                    !gtkEntry?.hasFocus &&
+                        gtkEntry?.grab_focus();
+              }} actionClosed={() => {
                   [...plugins.values()].forEach(plugin => plugin?.onClose?.());
+                  root.dispose();
 
                   instance = null;
+                  gtkEntry = null;
               }}>
-                <Gtk.Box class={`runner main ${props.showResultsPlaceHolderOnStartup ? 
-                      "empty" : ""}`} orientation={Gtk.Orientation.VERTICAL} hexpand
-                  valign={Gtk.Align.START} visible>
+                <Gtk.Box class={`runner main`} orientation={Gtk.Orientation.VERTICAL} hexpand
+                  valign={Gtk.Align.START}>
 
                     <Gtk.SearchEntry class={"search"} placeholderText={props.entryPlaceHolder ?? ""}
-                      $={(self) => gtkEntry = self}
-                      onSearchChanged={(self) => {
-                          updateResultsList(self.text);
-                          const listbox = self.parent.get_last_child()?.get_first_child()?.get_first_child() as Gtk.ListBox;
+                      $={(self) => {
+                          gtkEntry = self;
+                          const controllerKey = Gtk.EventControllerKey.new(),
+                              conns = new Map<GObject.Object, number>;
+                          self.add_controller(controllerKey);
+
+                          conns.set(controllerKey, controllerKey.connect("key-released", (_, keyval) => {
+                              if(keyval === Gdk.KEY_Escape)
+                                  (self.parent.parent.parent.parent as Astal.Window)?.close();
+
+                              return true;
+                          }));
+
+                          conns.set(self, self.connect("destroy", () => conns.forEach((id, obj) =>
+                              obj.disconnect(id))));
+                      }} searchDelay={0} onSearchChanged={(self) => {
+                          const listbox = self.get_next_sibling()?.get_first_child()?.get_first_child() as Gtk.ListBox;
+                          updateResultsList(listbox, self.text, placeholders);
 
                           listbox.get_row_at_index(0) && 
                               listbox.select_row(listbox.get_row_at_index(0));
@@ -231,25 +321,26 @@ export function openRunner(props: RunnerProps, placeholder?: Array<Result>): Ast
 
                           if(resultWidget instanceof ResultWidget) {
                               resultWidget.actionClick();
-                              resultWidget.closeOnClick && Runner.close();
+                              resultWidget.closeOnClick && 
+                                  Runner.close();
                           }
                       }}
                     />
                     <Gtk.ScrolledWindow class={"results-scrollable"} vscrollbarPolicy={Gtk.PolicyType.AUTOMATIC}
-                      hscrollbarPolicy={Gtk.PolicyType.NEVER} hexpand vexpand propagateNaturalHeight
-                      visible={props.showResultsPlaceHolderOnStartup ?? false} 
+                      hscrollbarPolicy={Gtk.PolicyType.NEVER} hexpand vexpand propagateNaturalHeight visible={false}
                       maxContentHeight={props.height}>
 
-                        <Gtk.ListBox hexpand vexpand visible onRowActivated={(_, row) => {
-                            if(row instanceof ResultWidget && !clickTimeout) {
+                        <Gtk.ListBox hexpand vexpand activateOnSingleClick selectionMode={Gtk.SelectionMode.SINGLE} 
+                          sensitive canFocus focusable onRowActivated={(_, row) => {
+                            const child = row.get_child()!;
+
+                            if(child instanceof ResultWidget && !clickTimeout) {
                                 clickTimeout = timeout(250, () => clickTimeout = undefined);
-                                row.actionClick?.();
+                                child.actionClick?.();
+                                child.closeOnClick && 
+                                    Runner.close();
                             }
-                        }}>
-                            <For each={results}>
-                                {(res: Result) => <ResultWidget {...res} visible />}
-                            </For>
-                        </Gtk.ListBox>
+                        }} />
                     </Gtk.ScrolledWindow>
                 </Gtk.Box>
             </PopupWindow> as Astal.Window

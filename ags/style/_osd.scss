@@ -16,24 +16,18 @@
     margin-top: -6px;
 
     .device {
-      margin-bottom: 5px;
+      margin-bottom: 6px;
       font-size: 14px;
       font-weight: 600;
     }
 
-    levelbar {
-      trough block {
-        border-radius: 3px;
-        background: colors.$bg-primary;
+    levelbar trough block {
+      border-radius: 3px;
+      background: colors.$bg-primary;
 
-        &.empty {
-          border-radius: 3px;
-        }
-
-        &.filled {
-          min-height: 8px;
-          background: colors.$bg-secondary;
-        }
+      &.filled {
+        min-height: 8px;
+        background: colors.$bg-secondary;
       }
     }
 

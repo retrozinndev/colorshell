@@ -109,7 +109,7 @@ export function PopupWindow(props: PopupWindowProps): GObject.Object {
               }
           }));
 
-          conns.set(keyController, keyController.connect("key-released", (_, keyval, keycode) => {
+          conns.set(keyController, keyController.connect("key-pressed", (_, keyval, keycode) => {
               if(keyval === Gdk.KEY_Escape) {
                   conns.forEach((id, obj) => {
                       obj.disconnect(id);
@@ -157,4 +157,8 @@ export function PopupWindow(props: PopupWindowProps): GObject.Object {
               </Gtk.Box>
           </Gtk.Box>
     </Astal.Window> as Astal.Window;
+}
+
+export function getPopupWindowContainer(popupWindow: Astal.Window): Gtk.Box {
+    return popupWindow.get_child()!.get_first_child() as Gtk.Box;
 }

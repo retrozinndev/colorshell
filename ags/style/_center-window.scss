@@ -81,12 +81,12 @@
 
     & trough {
       border-radius: 4px;
-      min-height: .6em;
     }
 
     & trough highlight {
-      border-radius: 4px;
-      min-height: .6em;
+      min-height: .65em;
+      border-top-right-radius: 2px;
+      border-bottom-right-radius: 2px;
     }
 
     & .bottom {

@@ -25,7 +25,7 @@
 
     & > flowboxchild {
       & > button {
-        padding: 8px;
+        padding: 10px;
         border-radius: 24px;
 
         & image {
@@ -33,7 +33,7 @@
         }
 
         & label {
-          margin-top: 6px;
+          margin-top: 24px;
           text-shadow: 1px 1px 1px rgba(colors.$bg-primary, .2);
           font-weight: 500;
         }

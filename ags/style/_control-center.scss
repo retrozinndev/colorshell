@@ -17,14 +17,15 @@
     &:first-child {
       margin-top: 0;
     }
+
     &:last-child {
       margin-bottom: 0;
     }
   }
 
-  /*& eventbox:focus, & button:focus {
+  & button:focus-visible {
     box-shadow: inset 0 0 0 1px colors.$fg-primary;
-  }*/
+  }
 
   & .quickactions {
     margin-bottom: .8em;

@@ -28,11 +28,32 @@
 
   & list {
     padding: 6px;
-    padding-top: 0;
 
-    & > *:selected > .result,
-    & > *:active > .result,
-    & > *:hover > .result {
+    & .result {
+      padding: 10px;
+      background: colors.$bg-primary;
+      margin: 2px 0;
+      border-radius: 14px;
+
+      & image {
+        -gtk-icon-size: 28px;
+        margin-right: 6px;
+      }
+
+      & .title {
+        font-weight: 500;
+        font-size: 16px;
+      }
+
+      & .description {
+        font-size: 12px;
+        color: colors.$fg-disabled;
+      }
+    }
+
+    & > *:selected .result,
+    & > *:active .result,
+    & > *:hover .result {
       background: colors.$bg-secondary;
     }
 
@@ -42,45 +63,6 @@
 
     &:last-child {
       margin-bottom: 0;
-    }
-  }
-
-  & trough {
-    margin-bottom: 10px;
-  }
-
-  & list .result {
-    padding: 10px;
-    background: colors.$bg-primary;
-    margin: 2px 0;
-    border-radius: 14px;
-
-    & icon {
-      font-size: 28px;
-      margin-right: 6px;
-    }
-
-    & .title {
-      font-weight: 500;
-      font-size: 16px;
-    }
-
-    & .description {
-      font-size: 12px;
-      color: colors.$fg-disabled;
-    }
-  }
-
-  & .not-found {
-    padding-top: 24px;
-
-    & icon {
-      font-size: 64px;
-      margin-bottom: .4em;
-    }
-
-    & label {
-      font-size: 16px;
     }
   }
 }
