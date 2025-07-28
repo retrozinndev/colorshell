@@ -1,7 +1,6 @@
 import { timeout, GLib } from 'astal';
 import { Gtk, Gdk, Widget } from 'astal/gtk3';
 import AstalMpris from "gi://AstalMpris";
-import { Wallpaper } from '../../scripts/wallpaper';
 
 let pauseProgress = 1; // 0 = full wave, 1 = full straight
 
@@ -171,8 +170,8 @@ export function createSlider(model: {
 
             self.connect('realize', () => {
                 if (drawLoopId === null) {
-                    // 16 ms is about 60 fps, so if you want get more fps, use this formula: Math.round(1000 / RefreshRate)
-                    const FramesInMilliseconds = Math.round(1000 / Wallpaper.getDefault().getRefreshRate());
+                    const fps = 60;
+                    const FramesInMilliseconds = Math.round(1000 / fps);
                     drawLoopId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, FramesInMilliseconds, () => {
                         if (self.get_window()?.is_visible()) {
                             self.queue_draw();
