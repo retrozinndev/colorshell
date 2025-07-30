@@ -14,12 +14,11 @@ import { Stylesheet } from "./scripts/stylesheet";
 import { Clipboard } from "./scripts/clipboard";
 import { PluginClipboard } from "./runner/plugins/clipboard";
 import { Config } from "./scripts/config";
-import { onCleanup, Scope } from "/usr/share/ags/js/gnim/src/jsx/scope";
+import { Scope } from "/usr/share/ags/js/gnim/src/jsx/scope";
 
 import App from "ags/gtk4/app"
 import GObject from "ags/gobject";
 import AstalNotifd from "gi://AstalNotifd";
-
 
 export const appScope: Scope = new Scope(null);
 
@@ -43,21 +42,14 @@ App.start({
     requestHandler: (request: string, response: (result: any) => void): void => {
         response(handleArguments(request));
     },
-    main: (..._args: Array<string>) => appScope.run(() => {
-        console.log(`Initialized astal instance as: ${ App.instanceName || "astal" }`);
-        App.connect("shutdown", () => appScope.dispose());
+    main: (..._args: Array<string>) => {
+        console.log(`Colorshell: initialized instance as: "${ App.instanceName || "astal" }"`);
+        connections.set(App, App.connect("shutdown", () => appScope.dispose()));
 
         console.log("Config: initializing configuration file");
         Config.getDefault();
 
         Stylesheet.getDefault().compileApply();
-
-        App.vfunc_dispose = () => {
-            console.log("Disconnecting stuff");
-            connections.forEach((v, k) => Array.isArray(v) ? 
-                v.map(id => k.disconnect(id))
-            : k.disconnect(v));
-        };
 
         // Init clipboard module
         Clipboard.getDefault();
@@ -66,7 +58,7 @@ App.start({
         Wallpaper.getDefault();
 
         console.log("Adding runner plugins");
-        runnerPlugins.map(plugin => Runner.addPlugin(plugin));
+        runnerPlugins.forEach(plugin => Runner.addPlugin(plugin));
 
         connections.set(Wireplumber.getDefault(), 
             Wireplumber.getDefault().getDefaultSink().connect("notify::volume", () => 
@@ -84,10 +76,13 @@ App.start({
 
         defaultWindows.forEach(w => Windows.getDefault().open(w));
 
-        onCleanup(() => connections.forEach((ids, obj) => Array.isArray(ids) ?
-            ids.forEach(id => obj.disconnect(id))
-        : obj.disconnect(ids)));
-    })
+        appScope.onCleanup(() => {
+            console.log("Colorshell: disconnecting from GObjects because of ::shutdown");
+            connections.forEach((ids, obj) => Array.isArray(ids) ?
+                ids.forEach(id => obj.disconnect(id))
+            : obj.disconnect(ids));
+        });
+    }
 });
 
 function triggerOSD() {
