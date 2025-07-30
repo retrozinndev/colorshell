@@ -21,6 +21,7 @@ export type BackgroundWindowProps = {
     actionClickPrimary?: (window: Astal.Window) => void;
     /** Function that is called when the user clicks on the window with secodary mouse button */
     actionClickSecondary?: (window: Astal.Window) => void;
+    onCloseRequest?: (window: Astal.Window) => void;
     keymode?: Astal.Keymode;
     exclusivity?: Astal.Exclusivity;
 
@@ -42,7 +43,7 @@ export function BackgroundWindow(props: BackgroundWindowProps): Astal.Window {
 
     return <Astal.Window namespace={"background-window"} monitor={props.monitor} visible
         layer={props.layer ?? Astal.Layer.OVERLAY} keymode={props.keymode ?? Astal.Keymode.EXCLUSIVE}
-        exclusivity={props.exclusivity ?? Astal.Exclusivity.IGNORE} 
+        onCloseRequest={props.onCloseRequest} exclusivity={props.exclusivity ?? Astal.Exclusivity.IGNORE} 
         anchor={TOP | LEFT | BOTTOM | RIGHT} css={props.css ?? "background: rgba(0, 0, 0, .2);"}
         $={(self) => {
             const gestureClick = Gtk.GestureClick.new(),
