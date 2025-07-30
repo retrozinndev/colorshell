@@ -1,6 +1,6 @@
 import { Astal, Gdk, Gtk } from "ags/gtk4";
 import { BackgroundWindow } from "./BackgroundWindow";
-import { Accessor, CCProps, createComputed, createRoot } from "ags";
+import { Accessor, CCProps, createComputed, createRoot, getScope } from "ags";
 import { omitObjectKeys, WidgetNodeType } from "../scripts/utils";
 
 import GObject from "ags/gobject";
@@ -13,6 +13,7 @@ type PopupWindowSpecificProps = {
     cssBackgroundWindow?: string;
     class?: string | Accessor<string>;
     actionClosed?: (self: Astal.Window) => void|boolean;
+    orientation?: Gtk.Orientation | Accessor<Gtk.Orientation>;
     actionClickedOutside?: (self: Astal.Window) => void;
     actionKeyPressed?: (self: Astal.Window, keyval: number, keycode: number) => void;
 };
@@ -67,6 +68,7 @@ export function PopupWindow(props: PopupWindowProps): GObject.Object {
         "marginBottom",
         "hexpand",
         "vexpand",
+        "orientation",
         "actionClosed",
         "$"
     ])} namespace={props.namespace ?? "popup-window"} class={
@@ -80,33 +82,31 @@ export function PopupWindow(props: PopupWindowProps): GObject.Object {
       anchor={TOP | LEFT | BOTTOM | RIGHT} visible={false} 
       onCloseRequest={(self) => props.actionClosed?.(self)}
       $={(self) => {
+          const scope = getScope();
           const conns: Map<GObject.Object, number> = new Map();
           const gestureClick = Gtk.GestureClick.new();
           const keyController = Gtk.EventControllerKey.new();
-          const allocation = self.get_first_child()!.get_first_child()!.get_allocation();
           
           self.add_controller(gestureClick);
           self.add_controller(keyController);
 
-          props.cssBackgroundWindow && createRoot(() => 
+          props.cssBackgroundWindow && createRoot((dispose) => 
               <BackgroundWindow monitor={props.monitor ?? 0}
                 layer={props.layer} css={props.cssBackgroundWindow} 
                 keymode={Astal.Keymode.NONE} attach={self}
+                onCloseRequest={() => dispose()}
               />
           );
 
           props.visible && self.show();
 
-          conns.set(gestureClick, gestureClick.connect("released", (_, __, x, y) => {
-              if((x < allocation.x || x > (allocation.x + allocation.width)) ||
-               (y < allocation.y || y > (allocation.y + allocation.height))) {
-                  if(clickedInside) {
-                      clickedInside = false;
-                      return;
-                  }
-
-                  props.actionClickedOutside!(self);
+          conns.set(gestureClick, gestureClick.connect("released", () => {
+              if(clickedInside) {
+                  clickedInside = false;
+                  return;
               }
+
+              props.actionClickedOutside!(self);
           }));
 
           conns.set(keyController, keyController.connect("key-pressed", (_, keyval, keycode) => {
@@ -122,11 +122,7 @@ export function PopupWindow(props: PopupWindowProps): GObject.Object {
               props.actionKeyPressed?.(self, keyval, keycode);
           }));
 
-          conns.set(self, self.connect("close-request", () => conns.forEach((id, obj) =>
-              obj.disconnect(id))));
-
-          conns.set(self, self.connect("destroy", () => conns.forEach((id, obj) =>
-              obj.disconnect(id))));
+          scope.onCleanup(() => conns.forEach((id, obj) => obj.disconnect(id)));
 
           props.$?.(self);
       }}>
@@ -134,6 +130,7 @@ export function PopupWindow(props: PopupWindowProps): GObject.Object {
               <Gtk.Box class={"popup-window-container"} halign={props.halign} 
                 valign={props.valign} widthRequest={props.widthRequest} 
                 hexpand={props.hexpand} vexpand={props.vexpand}
+                orientation={props.orientation}
                 heightRequest={props.heightRequest} css={`
                     margin-left: ${props.marginLeft ?? 0}px;
                     margin-right: ${props.marginRight ?? 0}px;
