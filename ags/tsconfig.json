@@ -3,11 +3,13 @@
   "compilerOptions": {
     "allowJs": false,
     "checkJs": true,
-    "jsx": "react-jsx",
-    "jsxImportSource": "ags/gtk4",
-    "module": "esnext",
+    "module": "es2022",
+    "target": "es2020",
+    "lib": ["ES2024"],
     "moduleResolution": "bundler",
+    "skipLibCheck": true,
     "strict": true,
-    "target": "esnext"
+    "jsx": "react-jsx",
+    "jsxImportSource": "ags/gtk4"
   }
 }
