@@ -7,12 +7,11 @@ import { FloatingNotifications } from "./window/FloatingNotifications";
 import { CenterWindow } from "./window/CenterWindow";
 import { LogoutMenu } from "./window/LogoutMenu";
 import { AppsWindow } from "./window/AppsWindow";
-import { createRoot, onCleanup } from "ags";
+import { Scope } from "/usr/share/ags/js/gnim/src/jsx/scope";
+import { appScope } from "./app";
 import GObject, { getter, register, signal } from "ags/gobject";
 
 import AstalHyprland from "gi://AstalHyprland";
-import { Scope } from "../../../../usr/share/ags/js/gnim/src/jsx/scope";
-import { appScope } from "./app";
 
 
 export { Windows };
@@ -80,7 +79,7 @@ class Windows extends GObject.Object {
             });
         });
 
-        onCleanup(() => {
+        appScope.onCleanup(() => {
             hyprConnections.forEach(id => 
                 GObject.signal_handler_is_connected(AstalHyprland.get_default(), id) && 
                     AstalHyprland.get_default().disconnect(id)
@@ -127,14 +126,14 @@ class Windows extends GObject.Object {
 
         if(Array.isArray(window)) {
             for(const win of window) {
-                if(win.connections!.length > 0) 
+                if(win.connections?.length > 0) 
                     return true;
             }
 
             return false;
         }
 
-        return window.connections!.length > 0;
+        return window.connections?.length > 0;
     }
 
     private connectWindow(name: string) {
@@ -192,17 +191,25 @@ class Windows extends GObject.Object {
      */
     public createWindowForMonitors(create: (mon: number, scope: Scope) => GObject.Object|Astal.Window): (() => Array<Astal.Window>) {
         const monitors = AstalHyprland.get_default().get_monitors();
+
         if(monitors.length < 1) 
             throw new Error("Couldn't create window for monitors", {
                 cause: "No monitors connected on Hyprland"
             });
 
-        return () => {
+        // create a scope for every window generator function and dispose on ::close-request
+        return () => monitors.map(mon => {
             const scope = new Scope(null);
-            return monitors.map(mon => 
-                scope.run(() => create(mon.id, scope) as Astal.Window)
-            )
-        }
+            return scope.run(() => {
+                const instance = create(mon.id, scope) as Astal.Window;
+                const connection: number = instance.connect("close-request", () => 
+                    scope.dispose());
+
+                scope.onCleanup(() => instance.disconnect(connection));
+
+                return instance;
+            })
+        })
     }
 
     /**
@@ -221,12 +228,20 @@ class Windows extends GObject.Object {
 
         return () => {
             const scope = new Scope(null);
-            return scope.run(() => create(focusedMonitor, scope) as Astal.Window);
+            return scope.run(() => {
+                const instance = create(focusedMonitor, scope) as Astal.Window;
+                const connection: number = instance.connect("close-request", () =>
+                    scope.dispose());
+
+                scope.onCleanup(() => instance.disconnect(connection));
+
+                return instance;
+            });
         }
     }
 
-    public addWindow(name: string, window: (() => (Astal.Window | Array<Astal.Window>))): void {
-        this.#windows[name] = { create: () => createRoot((_) => window()) };
+    public addWindow(name: string, create: () => Astal.Window|Array<Astal.Window>): void {
+        this.#windows[name] = { create };
     }
 
     public hasWindow(name: string): boolean {
