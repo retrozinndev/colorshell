@@ -24,10 +24,12 @@ export const PluginShell = (() => {
             }
 
             const command = input ? GLib.shell_parse_argv(input) : undefined;
+            const shellSplit = shell.split('/'),
+                shellName = shellSplit[shellSplit.length-1];
 
             return {
                 actionClick: () => {
-                    if(!command || !command[0]) return;
+                    if(!command?.[0] || !command[1]) return;
 
                     const proc = procLauncher.spawnv([ shell, "-c", `${input}` ]);
                     proc.communicate_utf8_async(null, null, (_, asyncResult) => {
@@ -52,8 +54,10 @@ export const PluginShell = (() => {
                         });
                     });
                 },
-                title: `Run ${input ? ` \`${input}\`` : `with ${shell.split('/')[shell.split('/').length-1]}`}`,
-                description: (input || showOutputNotif) && `${input ? `${shell}\t` : ""}${ showOutputNotif ? "(showing output on notification)" : "" }`,
+                title: `Run ${input ? ` \`${input}\`` : `with ${shellName}`}`,
+                description: input || showOutputNotif ? `${input ? `${shell}\t` : ""}${
+                    showOutputNotif ? "(showing output on notification)" : "" }`
+                : "",
                 icon: "utilities-terminal-symbolic"
             };
         }
