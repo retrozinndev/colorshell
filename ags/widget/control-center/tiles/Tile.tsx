@@ -15,7 +15,7 @@ export type TileProps = {
     description?: string | Accessor<string>;
     toggleState?: boolean | Accessor<boolean>;
     enableOnClickMore?: boolean | Accessor<boolean>;
-    onDestroy?: (self: Gtk.Box) => void;
+    onUnmap?: (self: Gtk.Box) => void;
     onToggledOn: () => void;
     onToggledOff: () => void;
     onClickMore?: () => void;
@@ -35,7 +35,8 @@ export function Tile(props: TileProps): Gtk.Widget {
 
     onCleanup(() => subs.forEach(s => s()));
 
-    return <Gtk.Box hexpand visible={props.visible} onDestroy={props.onDestroy} class={
+    return <Gtk.Box hexpand visible={props.visible} onUnmap={props.onUnmap} 
+      canFocus focusable={false} class={
         (props.class instanceof Accessor) ?
           createComputed([props.class, toggled], (clss, isToggled) => 
               `tile ${clss} ${isToggled ? "toggled" : ""} ${
@@ -47,7 +48,7 @@ export function Tile(props: TileProps): Gtk.Widget {
                 props.onClickMore ? "has-more" : ""
             }`
         )
-    }>
+      }>
         <Gtk.Button class={"toggle-button"} onClicked={() => {
             if(toggled.get()) {
                 setToggled(false);

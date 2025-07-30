@@ -1,24 +1,21 @@
-import { register } from "ags/gobject";
 import { Gtk } from "ags/gtk4";
 import { Separator } from "../../Separator";
-import { Accessor, For } from "ags";
-import { transform, transformWidget, variableToBoolean, WidgetNodeType } from "../../../scripts/utils";
+import { Accessor, createRoot } from "ags";
+import { transformWidget, variableToBoolean, WidgetNodeType } from "../../../scripts/utils";
 
 import Pango from "gi://Pango?version=1.0";
 
 
 export type PageProps = {
-    $?: () => void;
-    actionClose?: () => void;
     id: string;
-    class?: string | Accessor<string>;
-    title: string | Accessor<string>;
-    description?: string | Accessor<string>;
-    headerButtons?: Array<JSX.Element> | Accessor<Array<JSX.Element>>;
+    title: string;
+    description?: string;
+    headerButtons?: Array<HeaderButton> | Accessor<Array<HeaderButton>>;
     bottomButtons?: Array<BottomButton> | Accessor<Array<BottomButton>>;
     orientation?: Gtk.Orientation | Accessor<Gtk.Orientation>;
-    spacing?: number;
-    children?: WidgetNodeType;
+    spacing?: number | Accessor<number>;
+    content: () => WidgetNodeType;
+    actionClosed?: () => void;
 };
 
 export type BottomButton = {
@@ -26,142 +23,134 @@ export type BottomButton = {
     description?: string | Accessor<string>;
     tooltipText?: string | Accessor<string>;
     tooltipMarkup?: string | Accessor<string>;
-    onClick?: () => void;
+    actionClicked?: () => void;
 };
 
-export { Page };
+export type HeaderButton = {
+    label?: string|Accessor<string>;
+    icon: string|Accessor<string>;
+    tooltipText?: string | Accessor<string>;
+    tooltipMarkup?: string | Accessor<string>;
+    actionClicked?: () => void;
+};
 
-@register({ GTypeName: "Page" })
-class Page extends Gtk.Box {
-    #id: string | number = "";
-    readonly bottomButtons?: Array<BottomButton> = [];
+export class Page {
+    #title: string;
+    #description?: string;
+    #orientation: Gtk.Orientation|Accessor<
+        Gtk.Orientation> = Gtk.Orientation.VERTICAL;
+    #spacing: number|Accessor<number> = 4;
+    #headerButtons?: Array<HeaderButton>|Accessor<Array<HeaderButton>>;
+    #bottomButtons?: Array<BottomButton>|Accessor<Array<BottomButton>>;
+    readonly #id?: string;
+    readonly #create: () => WidgetNodeType;
 
-    #subs: Array<() => void> = [];
-    #title: string | Accessor<string> = "";
-    #description?: string | Accessor<string>;
-
+    public get id() { return this.#id; }
     public get title() { return this.#title; }
     public get description() { return this.#description; }
-    public get id() { return this.#id; }
-    public actionClose?: () => void = () => {};
+    public get headerButtons() { return this.#headerButtons; }
+    public get bottomButtons() { return this.#bottomButtons; }
+    public readonly actionClosed?: () => void;
 
     constructor(props: PageProps) {
-        super();
-
-        this.set_hexpand(true);
-        this.set_orientation(Gtk.Orientation.VERTICAL);
-
-        if(props.class instanceof Accessor) {
-            this.#subs.push(props.class.subscribe(() => {
-                const clss = (props.class as Accessor<string>).get();
-
-                this.cssClasses = ["page", ...clss.split(' ').filter(s => s !== "")];
-            }));
-        } else {
-            if(props.class) 
-                this.cssClasses = ["page", 
-                    ...(props.class as string).split(' ').filter(s => s)];
-            else
-                this.add_css_class("page");
-        }
-
         this.#id = props.id;
         this.#title = props.title;
         this.#description = props.description;
-        this.actionClose = props.actionClose;
+        this.#create = props.content;
+        this.actionClosed = props.actionClosed;
 
-        this.prepend(<Gtk.Box class={"header"} orientation={Gtk.Orientation.VERTICAL}
-            hexpand={true}>
-            
-            <Gtk.Box class={"top"}>
-                <Gtk.Label hexpand={true} class={"title"} ellipsize={Pango.EllipsizeMode.END}
-                  visible={variableToBoolean(props.title)} label={props.title}
-                  halign={Gtk.Align.START} />
+        if(props.orientation != null)
+            this.#orientation = props.orientation;
+
+        if(props.spacing != null)
+            this.#spacing = props.spacing;
+
+        if(props.headerButtons != null)
+            this.#headerButtons = props.headerButtons;
+    }
+
+    public create(): Gtk.Box {
+        return createRoot((dispose) => 
+            <Gtk.Box hexpand class={`page container ${this.#id ?? ""}`} cssName={"page"} name={"page"}
+              orientation={Gtk.Orientation.VERTICAL} onUnmap={() => dispose()}>
+
+                <Gtk.Box class={"header"} orientation={Gtk.Orientation.VERTICAL}>
+                    <Gtk.Box class={"top"} hexpand>
+                        <Gtk.Box orientation={Gtk.Orientation.VERTICAL} hexpand>
+                            <Gtk.Label class={"title"} label={this.#title} xalign={0} 
+                              ellipsize={Pango.EllipsizeMode.END} />
+
+                            <Gtk.Label class={"description"} label={this.#description} 
+                              xalign={0} ellipsize={Pango.EllipsizeMode.END} 
+                              visible={variableToBoolean(this.#description)} />
+                        </Gtk.Box>
+                        <Gtk.Box class={"button-row"} visible={variableToBoolean(this.#headerButtons)}
+                          hexpand={false}>
+
+                            {this.#headerButtons && transformWidget(this.#headerButtons, (button) =>
+                                <Gtk.Button class={"header-button"} label={button.label}
+                                  iconName={button.icon} onClicked={() => button.actionClicked?.()}
+                                  tooltipText={button.tooltipText} tooltipMarkup={button.tooltipMarkup}
+                                />
+                            )}
+                        </Gtk.Box>
+                    </Gtk.Box>
+                </Gtk.Box>
+                <Gtk.Box class={"content"} hexpand={false} orientation={this.#orientation} 
+                  spacing={this.#spacing}>
+
+                    {this.#create()}
+                </Gtk.Box>
+                <Separator alpha={.2} spacing={6} orientation={Gtk.Orientation.VERTICAL}
+                  visible={variableToBoolean(this.#bottomButtons)} 
+                />
+                <Gtk.Box class={"bottom-buttons"} orientation={Gtk.Orientation.VERTICAL}
+                  visible={variableToBoolean(this.#bottomButtons)} spacing={2}>
                 
-                {props.headerButtons && <Gtk.Box class={"button-row"} visible={variableToBoolean(props.headerButtons)}>
-                    {
-                        (props.headerButtons instanceof Accessor) ? 
-                            <For each={props.headerButtons}>
-                                {(button) => button}
-                            </For>
-                        : props.headerButtons
-                    }
-                </Gtk.Box>}
-                
-                <Gtk.Label class={"description"} hexpand={true} ellipsize={Pango.EllipsizeMode.END}
-                  xalign={0} visible={variableToBoolean(props.description)} label={props.description} />
+                    {this.#bottomButtons && transformWidget(this.#bottomButtons, (button) => 
+                        <Gtk.Button onClicked={() => button?.actionClicked?.()} tooltipText={button?.tooltipText}
+                          tooltipMarkup={button?.tooltipMarkup}>
 
-            </Gtk.Box>
-        </Gtk.Box> as Gtk.Box);
+                            <Gtk.Label class={"title"} label={button?.title} xalign={0} />
+                            <Gtk.Label class={"description"} label={button?.description} 
+                              xalign={0} visible={variableToBoolean(button?.description)} />
+                        </Gtk.Button>
+                    )}
+                </Gtk.Box>
+            </Gtk.Box> as Gtk.Box
+        );
+    }
 
-        this.append(<Gtk.Box class={"content"} spacing={props.spacing ?? 4} hexpand={true} vexpand={true}
-          orientation={props.orientation ?? Gtk.Orientation.VERTICAL}>
-
-            {props.children}
-        </Gtk.Box> as Gtk.Box);
-
-        this.append(<Separator alpha={.2} spacing={6} orientation={Gtk.Orientation.VERTICAL}
-            visible={(props.bottomButtons instanceof Accessor) ? 
-                props.bottomButtons.as(buttons => buttons.length > 0)
-            : (!props.bottomButtons ? false : props.bottomButtons.length > 0)} 
-        /> as Gtk.Widget);
-
-        this.append(<Gtk.Box class={"bottom-buttons"} orientation={Gtk.Orientation.VERTICAL}
-          visible={variableToBoolean(props.bottomButtons)} spacing={2}>
-            
-            {transformWidget(props.bottomButtons, (button) => 
-                <Gtk.Button onClicked={button?.onClick} tooltipText={button?.tooltipText}
-                  tooltipMarkup={button?.tooltipMarkup}>
-
-                    <Gtk.Label class={"title"} label={button?.title} xalign={0} />
-                    <Gtk.Label class={"description"} label={button?.description} 
-                      xalign={0} visible={variableToBoolean(button?.description)} />
-                </Gtk.Button>
-            )}
-        </Gtk.Box> as Gtk.Box);
-
-        props.$?.();
+    public static getContent(pageWidget: Gtk.Box) {
+        return pageWidget.get_first_child()!.get_next_sibling()! as Gtk.Box;
     }
 }
 
-function BottomButton(props: BottomButton) {
-    return <Gtk.Button onClicked={props.onClick} tooltipMarkup={props.tooltipMarkup}
-      tooltipText={props.tooltipText}>
-
-        <Gtk.Box orientation={Gtk.Orientation.VERTICAL}>
-            <Gtk.Label class={"title"} label={props.title} xalign={0} />
-            <Gtk.Label class={"description"} label={props.description} 
-              visible={Boolean(props.description)} xalign={0} />
-        </Gtk.Box>
-    </Gtk.Button> as Gtk.Button;
-}
-
-export function PageButton({ onDestroy, ...props }: {
+export function PageButton({ onUnmap, ...props }: {
     class?: string | Accessor<string>;
     icon?: string | Accessor<string>;
     title: string | Accessor<string>;
     endWidget?: WidgetNodeType;
     description?: string | Accessor<string>;
     extraButtons?: Array<WidgetNodeType> | WidgetNodeType;
-    onDestroy?: (self: Gtk.Box) => void;
-    onClick?: (self: Gtk.Button) => void;
+    maxWidthChars?: number | Accessor<number>;
+    onUnmap?: (self: Gtk.Box) => void;
+    actionClicked?: (self: Gtk.Button) => void;
     tooltipText?: string | Accessor<string>;
     tooltipMarkup?: string | Accessor<string>;
-}) {
-    return <Gtk.Box onDestroy={onDestroy}>
-        <Gtk.Button onClicked={props.onClick} class={props.class} hexpand={true}
+}): Gtk.Box {
+    return <Gtk.Box onUnmap={(self) => onUnmap?.(self)} class={"page-button"}>
+        <Gtk.Button onClicked={props.actionClicked} class={props.class} hexpand
           tooltipText={props.tooltipText} tooltipMarkup={props.tooltipMarkup}>
 
-            <Gtk.Box class={"page-button"} hexpand={true} vexpand={true}>
+            <Gtk.Box class={"container"} hexpand>
                 {props.icon && <Gtk.Image iconName={props.icon} visible={variableToBoolean(props.icon)}
                     css={"font-size: 20px; margin-right: 6px;"} />}
 
-                <Gtk.Box orientation={Gtk.Orientation.VERTICAL} hexpand={true} vexpand={false}>
+                <Gtk.Box orientation={Gtk.Orientation.VERTICAL} hexpand vexpand={false}>
                     <Gtk.Label class={"title"} xalign={0} tooltipText={props.title}
-                      ellipsize={Pango.EllipsizeMode.END} label={
-                          transform(props.title, (title) => 
-                              `${title.substring(0, 35)}${title.length > 35 ? '…' : ""}`)
-                      }
+                      ellipsize={Pango.EllipsizeMode.END} label={props.title}
+                      maxWidthChars={props.maxWidthChars ?? 28}
                     />
                     <Gtk.Label class={"description"} xalign={0} visible={variableToBoolean(props.description)}
                       label={props.description} ellipsize={Pango.EllipsizeMode.END} 
@@ -174,7 +163,7 @@ export function PageButton({ onDestroy, ...props }: {
             </Gtk.Box>
         </Gtk.Button>
 
-        <Gtk.Box class={"extra-buttons button-row"} visible={variableToBoolean(props.extraButtons)}>
+        <Gtk.Box class={"extra-buttons"} visible={variableToBoolean(props.extraButtons)}>
             {props.extraButtons}
         </Gtk.Box>
     </Gtk.Box> as Gtk.Box;

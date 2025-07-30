@@ -3,7 +3,6 @@ import { Recording } from "../../../scripts/recording";
 import { tr } from "../../../i18n/intl";
 import { isInstalled, time } from "../../../scripts/utils";
 import { createBinding, createComputed } from "ags";
-import { Gtk } from "ags/gtk4";
 
 
 export const TileRecording = () => 

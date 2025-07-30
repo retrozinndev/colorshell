@@ -20,6 +20,6 @@ export const TileNightLight = () =>
         onToggledOff={() => NightLight.getDefault().identity = true}
         onToggledOn={() => NightLight.getDefault().identity = false}
         enableOnClickMore={true}
-        onClickMore={() => TilesPages?.toggle(PageNightLight())}
+        onClickMore={() => TilesPages?.toggle(PageNightLight)}
         toggleState={createBinding(NightLight.getDefault(), "identity").as(identity => !identity)}
     />

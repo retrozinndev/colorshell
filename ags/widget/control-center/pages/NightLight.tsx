@@ -5,14 +5,14 @@ import { Astal, Gtk } from "ags/gtk4";
 import { addSliderMarksFromMinMax } from "../../../scripts/utils";
 import { createBinding } from "ags";
 
-export const PageNightLight = () => 
-    <Page id={"night-light"} title={tr("control_center.pages.night_light.title")}
-      description={tr("control_center.pages.night_light.description")}
-      class={"night-light"}>
-
+export const PageNightLight = new Page({
+    id: "night-light",
+    title: tr("control_center.pages.night_light.title"),
+    description: tr("control_center.pages.night_light.description"),
+    content: () => [
         <Gtk.Label class={"sub-header"} label={tr(
             "control_center.pages.night_light.temperature"
-        )} xalign={0} />
+        )} xalign={0} />,
         <Astal.Slider class={"temperature"} $={(self) => {
               self.value = NightLight.getDefault().temperature;
               addSliderMarksFromMinMax(self, 5, "{}K");
@@ -24,10 +24,10 @@ export const PageNightLight = () =>
               if(type != undefined && type !== null)
                   NightLight.getDefault().temperature = Math.floor(value)
           }}
-        />
+        />,
         <Gtk.Label class={"sub-header"} label={tr(
             "control_center.pages.night_light.gamma"
-        )} xalign={0} />
+        )} xalign={0} />,
         <Astal.Slider class={"gamma"} $={(self) => {
               self.value = NightLight.getDefault().gamma;
               addSliderMarksFromMinMax(self, 5, "{}%");
@@ -39,4 +39,5 @@ export const PageNightLight = () =>
                   NightLight.getDefault().gamma = Math.floor(value)
           }}
         />
-    </Page> as Page;
+    ]
+});

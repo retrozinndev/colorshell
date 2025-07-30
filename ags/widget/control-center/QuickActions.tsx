@@ -2,12 +2,14 @@ import { Gtk } from "ags/gtk4";
 import { Windows } from "../../windows";
 import { Wallpaper } from "../../scripts/wallpaper";
 import { execApp } from "../../scripts/apps";
-import GLib from "gi://GLib?version=2.0";
 import { Accessor } from "ags";
 import { createPoll } from "ags/time";
 
+import GLib from "gi://GLib?version=2.0";
+import Gio from "gi://Gio?version=2.0";
 
 
+const userFace: Gio.File = Gio.File.new_for_path(`${GLib.get_home_dir()}/.face`);
 const uptime: Accessor<string> = createPoll("Just turned on", 1000, "uptime -p"); 
 
 function LockButton(): Gtk.Button {
@@ -57,22 +59,25 @@ function LogoutButton(): Gtk.Button {
 
 export const QuickActions = () => 
     <Gtk.Box class={"quickactions"}>
-        <Gtk.Box orientation={Gtk.Orientation.VERTICAL} halign={Gtk.Align.START}
-          hexpand={true} class={"left"}>
+        <Gtk.Box halign={Gtk.Align.START} class={"left"} hexpand>
+            {userFace.query_exists(null) && 
+                <Gtk.Box class={"user-face"} css={
+                  `background-image: url("${userFace.get_path()!}");`} 
+                />
+            }
+            <Gtk.Box orientation={Gtk.Orientation.VERTICAL}>
+                <Gtk.Label class={"hostname"} xalign={0} tooltipText={"Host name"}
+                  label={GLib.get_host_name()} />
 
-            <Gtk.Label class={"hostname"} xalign={0} tooltipText={"Host name"}
-              label={GLib.get_host_name()} />
-
-            <Gtk.Box>
-                <Gtk.Image iconName={"hourglass-symbolic"} />
-                <Gtk.Label class={"uptime"} xalign={0} tooltipText={"Up time"}
-                  label={uptime.as(str => str.replace(/^up /, ""))} />
+                <Gtk.Box>
+                    <Gtk.Image iconName={"hourglass-symbolic"} />
+                    <Gtk.Label class={"uptime"} xalign={0} tooltipText={"Up time"}
+                      label={uptime.as(str => str.replace(/^up /, ""))} />
+                </Gtk.Box>
             </Gtk.Box>
         </Gtk.Box>
 
-        <Gtk.Box class={"right button-row"} halign={Gtk.Align.END} 
-          hexpand={true}>
-
+        <Gtk.Box class={"right button-row"} halign={Gtk.Align.END} hexpand>
             <LockButton />
             <ColorPickerButton />
             <ScreenshotButton />

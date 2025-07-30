@@ -5,7 +5,6 @@ import { TileDND } from "./tiles/DoNotDisturb";
 import { TileRecording } from "./tiles/Recording";
 import { TileNightLight } from "./tiles/NightLight";
 import { Pages } from "./Pages";
-import { createRoot } from "/usr/share/ags/js/gnim/src/jsx/scope";
 
 
 export let TilesPages: Pages|undefined;
@@ -19,18 +18,15 @@ export const tileList: Array<() => JSX.Element|Gtk.Widget> = [
 
 export function Tiles(): Gtk.Widget {
     return <Gtk.Box class={"tiles-container"} orientation={Gtk.Orientation.VERTICAL}
-      onDestroy={() => TilesPages = undefined} $={(self) => {
-          if(!TilesPages)
-              TilesPages = createRoot(() => new Pages({ class: "tile-pages" }));
-
-          self.append(TilesPages!);
-      }}>
+      onUnmap={() => TilesPages = undefined}>
 
         <Gtk.FlowBox orientation={Gtk.Orientation.HORIZONTAL} rowSpacing={6}
           columnSpacing={6} minChildrenPerLine={2} activateOnSingleClick
-          maxChildrenPerLine={2} hexpand vexpand homogeneous>
+          maxChildrenPerLine={2} hexpand homogeneous>
 
             {tileList.map(t => t())}
         </Gtk.FlowBox>
+
+	<Pages class={"tile-pages"} $={(self) => TilesPages = self} />
     </Gtk.Box> as Gtk.Box;
 }

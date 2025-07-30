@@ -13,7 +13,7 @@ export const TileBluetooth = () =>
             return connected && connectedDev ? connectedDev.get_alias() : ""
         })} onToggledOn={() => AstalBluetooth.get_default().adapter?.set_powered(true)}
         onToggledOff={() => AstalBluetooth.get_default().adapter?.set_powered(false)}
-        onClickMore={() => TilesPages?.toggle(BluetoothPage())}
+        onClickMore={() => TilesPages?.toggle(BluetoothPage)}
         enableOnClickMore={true} iconSize={16}
         toggleState={createBinding(AstalBluetooth.get_default(), "isPowered")}
         icon={createComputed([

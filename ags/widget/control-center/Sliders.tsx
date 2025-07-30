@@ -3,7 +3,7 @@ import { Wireplumber } from "../../scripts/volume";
 import { Pages } from "./Pages";
 import { PageSound } from "./pages/Sound";
 import { PageMicrophone } from "./pages/Microphone";
-import { createBinding, createRoot, With } from "ags";
+import { createBinding, With } from "ags";
 
 import AstalWp from "gi://AstalWp";
 
@@ -11,51 +11,43 @@ import AstalWp from "gi://AstalWp";
 export let slidersPages: Pages|undefined;
 
 export function Sliders() {
-    slidersPages = createRoot(() => new Pages())!;
-
     return <Gtk.Box class={"sliders"} orientation={Gtk.Orientation.VERTICAL} 
-      hexpand spacing={10} onDestroy={() => slidersPages = undefined}>
+      hexpand spacing={10} onUnmap={() => slidersPages = undefined}>
 
         <With value={createBinding(Wireplumber.getWireplumber(), "defaultSpeaker")}>
             {(sink: AstalWp.Endpoint) => <Gtk.Box class={"sink speaker"} spacing={3}>
-                <Gtk.Button onClicked={Wireplumber.getDefault().toggleMuteSink}
+                <Gtk.Button onClicked={() => Wireplumber.getDefault().toggleMuteSink()}
                     iconName={createBinding(sink, "volumeIcon").as((icon) => 
                         (!Wireplumber.getDefault().isMutedSink() && 
-                            Wireplumber.getDefault().getSinkVolume() > 0) ? 
-                                icon
-                            : "audio-volume-muted-symbolic"
+                            Wireplumber.getDefault().getSinkVolume() > 0
+                        ) ? icon : "audio-volume-muted-symbolic"
                 )} />
 
-                <Astal.Slider drawValue={false} hexpand={true} 
-                  $={(self) => self.value = Math.floor(sink.volume * 100)}
-                  value={createBinding(sink, "volume").as(v => Math.floor(v * 100))}
-                  max={Wireplumber.getDefault().getMaxSinkVolume()}
-                  onChangeValue={(_, _scrollType, value) => sink.set_volume(value / 100)} />
+                <Astal.Slider drawValue={false} hexpand value={createBinding(sink, "volume")}
+                  max={Wireplumber.getDefault().getMaxSinkVolume() / 100}
+                  onChangeValue={(_, __, value) => sink.set_volume(value)} />
 
-                <Gtk.Button class={"more"} iconName={"go-next-symbolic"} onClicked={(_) => 
-                    slidersPages!.toggle(PageSound())} />
+                <Gtk.Button class={"more"} iconName={"go-next-symbolic"} onClicked={() => 
+                    slidersPages?.toggle(PageSound)} />
             </Gtk.Box>}
         </With>
         <With value={createBinding(Wireplumber.getWireplumber(), "defaultMicrophone")}>
             {(source: AstalWp.Endpoint) => <Gtk.Box class={"source microphone"} spacing={3}>
-                <Gtk.Button onClicked={Wireplumber.getDefault().toggleMuteSink}
+                <Gtk.Button onClicked={() => Wireplumber.getDefault().toggleMuteSource()}
                     iconName={createBinding(source, "volumeIcon").as((icon) => 
-                        (!Wireplumber.getDefault().isMutedSink() && 
-                            Wireplumber.getDefault().getSinkVolume() > 0) ? 
-                                icon
-                            : "microphone-sensitivity-muted-symbolic"
+                        (!Wireplumber.getDefault().isMutedSource() && 
+                            Wireplumber.getDefault().getSourceVolume() > 0
+                        ) ? icon : "microphone-sensitivity-muted-symbolic"
                 )} />
 
-                <Astal.Slider drawValue={false} hexpand={true} 
-                  $={(self) => self.value = Math.floor(source.volume * 100)}
-                  value={createBinding(source, "volume").as(v => Math.floor(v * 100))}
-                  max={Wireplumber.getDefault().getMaxSinkVolume()}
-                  onChangeValue={(_, _scrollType, value) => source.set_volume(value / 100)} />
+                <Astal.Slider drawValue={false} hexpand value={createBinding(source, "volume")}
+                  max={Wireplumber.getDefault().getMaxSourceVolume() / 100}
+                  onChangeValue={(_, __, value) => source.set_volume(value)} />
 
-                <Gtk.Button class={"more"} iconName={"go-next-symbolic"} onClicked={(_) => 
-                    slidersPages!.toggle(PageMicrophone())} />
+                <Gtk.Button class={"more"} iconName={"go-next-symbolic"} onClicked={() => 
+                    slidersPages?.toggle(PageMicrophone)} />
             </Gtk.Box>}
         </With>
-        {slidersPages}
+        <Pages $={(self) => slidersPages = self} />
     </Gtk.Box>
 }

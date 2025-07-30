@@ -2,16 +2,13 @@ import { register } from "ags/gobject";
 import { Gtk } from "ags/gtk4";
 import { Page } from "./pages/Page";
 import { timeout } from "ags/time";
-import { variableToBoolean } from "../../scripts/utils";
 
 import AstalIO from "gi://AstalIO";
-import { createRoot } from "ags";
 
 
 export { Pages };
 export type PagesProps = {
     initialPage?: Page;
-    class?: string;
     transitionDuration?: number;
 };
 
@@ -19,21 +16,20 @@ export type PagesProps = {
 class Pages extends Gtk.Box {
     #timeouts: Array<[AstalIO.Time, (() => void)|undefined]> = [];
     #page: (Page|undefined);
-    #pageWidget: (Gtk.Revealer|undefined);
     #transDuration: number;
     #transType: Gtk.RevealerTransitionType = Gtk.RevealerTransitionType.SLIDE_DOWN;
 
-    get isOpen() { return Boolean(this.get_first_child()); }
+    get isOpen() { return Boolean(this.#page); }
+    get page() { return this.#page; }
 
     constructor(props?: PagesProps) {
         super({
             orientation: Gtk.Orientation.VERTICAL,
-            cssName: "pages"
+            cssName: "pages",
+            name: "pages"
         });
 
-        this.name = "pages";
-        props?.class?.split(' ').filter(variableToBoolean).forEach(clss =>
-            this.add_css_class(clss));
+        this.add_css_class("pages");
 
         this.#transDuration = props?.transitionDuration ?? 280;
 
@@ -53,7 +49,7 @@ class Pages extends Gtk.Box {
     }
 
     toggle(newPage?: Page, onToggled?: () => void): void {
-        if(!newPage || (this.#page?.id === newPage?.id)) {
+        if(!newPage || (this.#page?.id === newPage.id)) {
             this.close(onToggled);
             return;
         }
@@ -69,38 +65,35 @@ class Pages extends Gtk.Box {
         }
     }
 
-    open(newPage: Page, onOpened?: () => void) {
-        const pageWidget = createRoot(() => <Gtk.Revealer
-          transitionDuration={this.#transDuration}
-          transitionType={this.#transType}
-          revealChild={false}>
-
-            {newPage as unknown as Gtk.Widget}
-        </Gtk.Revealer> as Gtk.Revealer);
-
-        this.prepend(pageWidget);
-
-        this.#pageWidget = pageWidget;
+    open(newPage: Page, onOpen?: () => void) {
         this.#page = newPage;
 
-        this.reorder_child_after(this.get_last_child()!, null);
-        (this.get_first_child() as Gtk.Revealer).revealChild = true;
-        onOpened?.();
+        this.prepend(
+            <Gtk.Revealer revealChild={false} transitionType={this.#transType}
+              transitionDuration={this.#transDuration}>
+
+                {newPage.create()}
+            </Gtk.Revealer> as Gtk.Revealer
+        );
+
+        (this.get_first_child() as Gtk.Revealer)?.set_reveal_child(true);
+        onOpen?.();
     }
 
     close(onClosed?: () => void): void {
-        if(!this.#pageWidget) return;
+        const page = this.get_first_child() as Gtk.Revealer|null;
+        if(!page) return;
 
-        this.#pageWidget.revealChild = false;
-        const closingPage = this.#pageWidget!;
+        this.#page?.actionClosed?.();
+        this.#page = undefined;
 
+        page.set_reveal_child(false);
         this.#timeouts.push([
-            timeout(closingPage.transitionDuration, () => {
-                this.remove(closingPage);
+            timeout(page.transitionDuration, () => {
+                this.remove(page);
                 onClosed?.();
             }),
-        onClosed]);
-
-        this.#pageWidget = undefined;
+            onClosed
+        ]);
     }
 }
