@@ -30,7 +30,7 @@ export const Status = () =>
                   icon={createBinding(Wireplumber.getDefault().getDefaultSource(), "volumeIcon").as(icon => 
                       !Wireplumber.getDefault().isMutedSource() && 
                           Wireplumber.getDefault().getSourceVolume() > 0 ? icon
-                          : "audio-volume-muted-symbolic")
+                          : "microphone-sensitivity-muted-symbolic")
                   } />
             </Gtk.Box>
             <Gtk.Revealer revealChild={createBinding(Recording.getDefault(), "recording")}
