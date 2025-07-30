@@ -77,10 +77,6 @@
     }
 
     & .page .content {
-      & > eventbox > box {
-        margin: 6px 0;
-      }
-
       & label.name {
         font-size: 14px;
         font-weight: 500;
@@ -100,7 +96,7 @@
     }
   }
 
-  & .page {
+  & #page {
     transition: 120ms linear;
     background: colors.$bg-secondary;
     padding: 14px;
@@ -109,12 +105,12 @@
     & .header {
       margin-bottom: 12px;
 
-      & .top > .title {
+      & .top .title {
         font-size: 20px;
         font-weight: 600;
       }
 
-      & > .description {
+      & .description {
         font-size: 12px;
         font-weight: 500;
         color: colors.$fg-disabled;
@@ -127,11 +123,21 @@
       margin-bottom: 4px;
     }
 
-    & button {
-      padding: 6px;
-      border-radius: 12px;
+    & .page-button, .extra-buttons {
+      & button {
+        padding: 6px;
+        border-radius: 12px;
 
-      & label {
+        &:hover {
+          background: rgba(colors.$fg-primary, .1);
+        }
+
+        &:active {
+          border-radius: 10px;
+        }
+      }
+
+      & label.title {
         font-size: 14px;
       }
 
@@ -143,10 +149,6 @@
 
       & icon {
         font-size: 16px;
-      }
-
-      &:hover {
-        background: rgba(colors.$fg-primary, .1);
       }
     }
 
@@ -165,8 +167,13 @@
 
     & .extra-buttons {
       margin-left: 2px;
-      & > button {
-        border-radius: 12px;
+
+      button {
+        border-radius: 10px;
+
+        &:active {
+          border-radius: 8px;
+        }
       }
     }
   }
@@ -251,18 +258,13 @@
   }
 }
 
-.tile-pages .page {
-  transition: 180ms linear;
+.tile-pages #page {
   margin-top: 10px;
 
   &.bluetooth {
     button.connected {
       background: colors.$bg-tertiary;
     }
-  }
-
-  &.revealed {
-    padding-top: 12px;
   }
 }
 

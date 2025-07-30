@@ -21,14 +21,17 @@
       box-shadow: none;
     }
 
-    & image.left {
+    & image {
       margin-right: 6px;
+      -gtk-icon-size: 16px;
     }
   }
 
-  & list {
-    padding: 6px;
+  & scrolledwindow {
+    margin: 6px;
+  }
 
+  & list {
     & .result {
       padding: 10px;
       background: colors.$bg-primary;
