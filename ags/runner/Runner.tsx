@@ -7,7 +7,6 @@ import { timeout } from "ags/time";
 
 import AstalHyprland from "gi://AstalHyprland";
 import AstalIO from "gi://AstalIO";
-import GObject from "gi://GObject?version=2.0";
 
 
 export namespace Runner {
@@ -160,9 +159,6 @@ export function openDefault(initialText?: string) {
 }
 
 function getPluginResults(input: string, limit?: number): Array<Result> {
-    if(limit != null)
-        limit = Math.abs(Math.floor(limit));
-
     let calledPlugins: Array<Plugin> = getPlugins().filter((plugin) => 
         plugin.prefix ? (input.startsWith(plugin.prefix) ? true : false) : true
     ).sort((plugin) => plugin.prefix != null ? 0 : 1);
@@ -178,7 +174,7 @@ function getPluginResults(input: string, limit?: number): Array<Result> {
         plugin.prefix ? input.replace(plugin.prefix, "") : input)
     ).filter(value => value !== undefined && value !== null).flat(1);
 
-    return limit != null && limit !== Infinity ? 
+    return limit != null && limit > 0 ? 
         results.splice(0, limit)
     : results;
 }
@@ -241,8 +237,7 @@ export function openRunner(props: RunnerProps, placeholders?: Array<Result>): As
     props.width ??= 780;
     props.height ??= 420;
 
-    let clickTimeout: AstalIO.Time|undefined,
-        results: Array<Result> = [];
+    let clickTimeout: AstalIO.Time|undefined;
 
     if(!instance)
         instance = Windows.getDefault().createWindowForFocusedMonitor((mon, root) => 
@@ -294,22 +289,7 @@ export function openRunner(props: RunnerProps, placeholders?: Array<Result>): As
                   valign={Gtk.Align.START}>
 
                     <Gtk.SearchEntry class={"search"} placeholderText={props.entryPlaceHolder ?? ""}
-                      $={(self) => {
-                          gtkEntry = self;
-                          const controllerKey = Gtk.EventControllerKey.new(),
-                              conns = new Map<GObject.Object, number>;
-                          self.add_controller(controllerKey);
-
-                          conns.set(controllerKey, controllerKey.connect("key-released", (_, keyval) => {
-                              if(keyval === Gdk.KEY_Escape)
-                                  (self.parent.parent.parent.parent as Astal.Window)?.close();
-
-                              return true;
-                          }));
-
-                          conns.set(self, self.connect("destroy", () => conns.forEach((id, obj) =>
-                              obj.disconnect(id))));
-                      }} searchDelay={0} onSearchChanged={(self) => {
+                      $={(self) => gtkEntry = self} searchDelay={0} onSearchChanged={(self) => {
                           const listbox = self.get_next_sibling()?.get_first_child()?.get_first_child() as Gtk.ListBox;
                           updateResultsList(listbox, self.text, placeholders);
 
@@ -324,7 +304,7 @@ export function openRunner(props: RunnerProps, placeholders?: Array<Result>): As
                               resultWidget.closeOnClick && 
                                   Runner.close();
                           }
-                      }}
+                      }} onStopSearch={() => Runner.close()} // close Runner on Escape
                     />
                     <Gtk.ScrolledWindow class={"results-scrollable"} vscrollbarPolicy={Gtk.PolicyType.AUTOMATIC}
                       hscrollbarPolicy={Gtk.PolicyType.NEVER} hexpand vexpand propagateNaturalHeight visible={false}
