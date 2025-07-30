@@ -45,9 +45,13 @@ export const Workspaces = () => {
                 }
             </For>
         </Gtk.Box>
-        <Separator alpha={.2} orientation={Gtk.Orientation.HORIZONTAL}
-          margin={12} spacing={8} visible={variableToBoolean(specialWorkspaces)}
-        />
+        <Gtk.Revealer transitionType={Gtk.RevealerTransitionType.SLIDE_RIGHT}
+          transitionDuration={220} revealChild={variableToBoolean(specialWorkspaces)}>
+
+            <Separator alpha={.2} orientation={Gtk.Orientation.HORIZONTAL}
+              margin={12} spacing={8} visible={variableToBoolean(specialWorkspaces)}
+            />
+        </Gtk.Revealer>
         <Gtk.Box class={"default-workspaces"} spacing={4} $={(self) => {
               const conns: Map<GObject.Object, Array<number>|number> = new Map();
               const controllerScroll = Gtk.EventControllerScroll.new(
