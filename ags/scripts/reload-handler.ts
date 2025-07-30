@@ -8,8 +8,8 @@ import Gio from "gi://Gio?version=2.0";
 
 const monitoringPaths = [ "./scripts", "./window", "./app.ts", "env.d.ts" ];
 
-export function restartInstance(instanceName?: string): void {
-    execAsync(`astal -q ${ instanceName ?? App.instanceName ?? "astal" }`);
+export function restartInstance(): void {
+    execAsync(`astal -q ${ App.instanceName ?? "astal" }`);
     Gio.Subprocess.new(
         ( uwsmIsActive ? 
             [ "uwsm", "app", "--", "ags", "run" ]

@@ -12,8 +12,10 @@ import GLib from "gi://GLib?version=2.0";
 export class Stylesheet {
     private static instance: Stylesheet;
     #watchDelay: (AstalIO.Time|undefined);
-    #outputPath = Gio.File.new_for_path(`${GLib.get_user_state_dir()}/ags/style`);
+    #outputPath = Gio.File.new_for_path(`${GLib.get_user_cache_dir()}/colorshell/style`);
     #styles = [ "./style", "./style.scss" ];
+
+    public get stylePath() { return this.#outputPath.get_path()!; }
 
     public async compileSass(): Promise<void> {
         console.log("Stylesheet: Compiling Sass");

@@ -6,6 +6,7 @@ import { getSymbolicIcon } from "./apps";
 
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
+import Xdp from "gi://Xdp?version=1.0";
 
 
 /** gnim doesn't export this, so we need to do it again */
@@ -13,9 +14,9 @@ export type WidgetNodeType = Array<JSX.Element> | JSX.Element | number | string 
 
 export const decoder = new TextDecoder("utf-8"),
     encoder = new TextEncoder();
-
 export const time = createPoll(GLib.DateTime.new_now_local(), 500, () => 
     GLib.DateTime.new_now_local());
+export const XdgPortal = Xdp.Portal.new();
 
 export function getHyprlandInstanceSig(): (string|null) {
     return GLib.getenv("HYPRLAND_INSTANCE_SIGNATURE");
@@ -153,6 +154,15 @@ export function transformWidget<ValueType = unknown>(
     : (Array.isArray(v) ?
         v.map(val => fn(val))
     : fn(v));
+}
+
+export function filter<ValueType = unknown, FilterReturnType = unknown>(
+    v: Accessor<Array<ValueType>>|Array<ValueType>, 
+    fn: (v: ValueType, i: number, array: Array<ValueType>) => FilterReturnType
+): Array<ValueType>|Accessor<Array<ValueType>> {
+    return ((v instanceof Accessor) ?
+        v(v => v.filter((it, i, arr) => fn(it, i, arr)))
+    : v.filter((it, i, arr) => fn(it, i, arr)));
 }
 
 export function makeDirectory(dir: string): void {
