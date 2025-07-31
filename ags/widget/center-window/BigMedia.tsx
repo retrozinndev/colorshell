@@ -13,12 +13,12 @@ import Pango from "gi://Pango?version=1.0";
 export const BigMedia = () => {
     let dragTimer: (AstalIO.Time|undefined);
 
-    return <Gtk.Box class={"big-media"} orientation={Gtk.Orientation.VERTICAL} widthRequest={265}
+    return <Gtk.Box class={"big-media"} orientation={Gtk.Orientation.VERTICAL} widthRequest={255}
       visible={player(pl => pl.available)}>
 
         <With value={player}>
             {(player: AstalMpris.Player) => player.available &&
-                <Gtk.Box halign={Gtk.Align.CENTER} orientation={Gtk.Orientation.VERTICAL}>
+                <Gtk.Box orientation={Gtk.Orientation.VERTICAL} hexpand>
 
                     <Gtk.Revealer hexpand={false} revealChild={
                         createBinding(player, "artUrl").as(Boolean)
