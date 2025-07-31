@@ -1,17 +1,19 @@
 #!/usr/bin/bash
 
 source ./utils.sh
-
 set -e
+
 trap "printf \"\nOk, quitting beacuse you entered an exit signal. (SIGINT).\n\"; exit 1" SIGINT
 trap "printf \"\nOh noo!! Some application just killed the script!\"; exit 2" SIGTERM
 
-XDG_CONFIG_HOME=$(sh -c '[[ ! -z "$XDG_CONFIG_HOME" ]] && echo "$XDG_CONFIG_HOME" || echo "$HOME/.config"')
+XDG_CONFIG_HOME=`[[ ! -z "$XDG_CONFIG_HOME" ]] && echo $XDG_CONFIG_HOME || echo $HOME/.config`
+
+skip_prompts=`[[ "$@" =~ "\-y" ]] && echo -n true`
+is_standalone=`git remove -v && remote=\`git remote -v | head -n 1 | awk '{print $2}' | sed 's/.git$//g'\` || echo -n`
+repo_directory=`[[ $is_standalone ]] && echo "/tmp/colorshell-git" || echo "."`
 
 function Apply_wallpapers() {
-    echo -n "Would you also like to apply the wallpapers folder? :3 [y/n] "
-    read answer
-    printf "\n"
+    Ask "Would you also like to apply the wallpapers folder? :3"
 
     if [[ $answer =~ "y" ]]; then
         echo "Thanks for choosing! Please remember that I am not the author of the wallpapers!"
@@ -31,40 +33,57 @@ function Apply_wallpapers() {
 # Start #
 #########
 
+# makes bash force-load the script into memory to avoid issues when 
+# switching source to a tag
+{
 Print_header
-echo -e "colorshell is a project made by retrozinndev. source: https://github.com/retrozinndev/colorshell\n"
+echo -e "Colorshell is a project made by retrozinndev.\nhttps://github.com/retrozinndev/colorshell\n"
 sleep .5
 
 echo "Welcome to the colorshell installation script!"
 
 # Warn user of possible problems that can happen
-echo "!!!WARNING!!! By running this script, you assume total responsability for any issues that may occur with your filesystem"
+Send_log warn "!! By running this script, you assume total responsability for any issues that may occur with your filesystem"
 
-echo -n "Do you want to start the shell installation? [y/n] "
-[[ ! $1 == "dots" ]] && read input || printf "\n"
+[[ ! $1 == "dots" ]] && Ask "Do you want to start the shell installation?"
 
-if [[ $1 == "dots" ]] || [[ $input =~ "y" ]]; then
-	Send_log "Starting installation...\n"
+rm -rf $repo_directory 2> /dev/null
+Send_log "cloning repository in \`$repo_directory\`..."
+git clone https://github.com/retrozinndev/colorshell.git $repo_directory
 
-	for dir in ${config_dirs[@]}; do
+if [[ $1 == "dots" ]] || [[ $answer == "y" ]]; then
+    Ask "Nice! Use the stable version instead of the unstable(git)?"
+
+    if [[ ! $1 == "dots" ]] && [[ $answer == "y" ]]; then
+        Send_log "fetching latest release from colorshell repository"
+        latest_tag=`curl -s "$repo_api_url/releases" | jq -r '. | select(.[].prerelease == false) | .[0].tag_name'`
+        
+        Send_log "done fetching"
+        Send_log "checking out latest non-pre-release version: $latest_tag"
+        git -C $repo_directory checkout $latest_tag 1> /dev/null
+    fi
+
+    Send_log "starting colorshell installation"
+
+    for dir in ${config_dirs[@]}; do
         dest=$XDG_CONFIG_HOME/$dir
 
         echo "-> Installing $dir in $dest"
         mkdir -p "$dest" # create parents
 
-        if [[ -f "./$dir" ]]; then
-            rm -r "$dest" # delete unused directory
-            cp -f ./$dir "$dest" # copy actual file
+        if [[ -f "$repo_directory/$dir" ]]; then
+            rm -rf "$dest" # delete unused directory
+            cp -f $repo_directory/$dir "$dest" # copy actual file
         else
-            cp -rf ./$dir/* "$dest" # force-copy content
+            cp -rf $repo_directory/$dir/* "$dest" # force-copy content
         fi
     done
 
     echo "-> Copying default user config"
-    cp -rf ./hypr/user $XDG_CONFIG_HOME/hypr
+    cp -rf $repo_directory/hypr/user $XDG_CONFIG_HOME/hypr
 
     echo "-> Copying default hyprpaper.conf"
-    cp -f ./hypr/hyprpaper.conf $XDG_CONFIG_HOME/hypr
+    cp -f $repo_directory/hypr/hyprpaper.conf $XDG_CONFIG_HOME/hypr
 
     # Ask if user also wants to install default wallpapers
     Apply_wallpapers
@@ -84,4 +103,5 @@ if [[ $1 == "dots" ]] || [[ $input =~ "y" ]]; then
 fi
 
 printf "Ok, doing as you said! Bye bye!\n"
-exit 0
+exit
+}

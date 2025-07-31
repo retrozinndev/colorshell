@@ -4,7 +4,8 @@ source ./utils.sh
 
 Check_current_dir() {
     if ! [[ -f ./utils.sh ]]; then
-        Send_log warn "Looks like you're not in the repository directory!\nPlease run this script from the repo directory to avoid problems."
+        Send_log warn "Looks like you're not in the repository directory! \
+Please run this script from the repo directory to avoid problems."
         Send_log "Exiting"
         sleep .5
         exit 1
@@ -22,7 +23,7 @@ Clean_local() {
     Send_log "info" "Cleaning wallpapers..."
     rm -rf ./wallpapers
 
-    echo "Done cleaning."
+    Send_log "Done cleaning"
 }
 
 Update_local() {
@@ -53,43 +54,42 @@ Update_local() {
 }
 
 Update_remote() {
-    echo "Git status:"
-    /bin/env git status
-    echo "Please type one of the dotfiles you want to push now(only one dir):"
-    printf "directory/file: "
-    read chosen_dir 
-    if [[ -d $chosen_dir ]] || [[ -f $chosen_dir ]]; then
-        git add $chosen_dir
-        echo -n "Would you like to add more dirs to queue? [y/n] "
-        read add_more_dirs
-        if [[ $add_more_dirs =~ y ]]; then
+    git status
+    read -p "Single file/directory to add: " chosen
+    if [[ -d $chosen ]] || [[ -f $chosen ]]; then
+        git add $chosen
+        Ask "Add more files/directories to queue?"
+        if [[ $answer =~ y ]]; then
             Update_remote
-        else
-            commit_message=""
-            commit_description=""
-            push_changes=""
-            echo -en "(You can use emojis by typing its name between colons, e.g.: \":tada:\" for \"🎉\").\nCommit message: "
-            read commit_message
-            echo -n "Type commit description(leave blank if none): "
-            read commit_description
-
-            echo "Committing changes..."
-            [[ ! -z $commit_description ]] && \
-                git commit -m "$commit_message" -m "$commit_description" || \
-            git commit -m "$commit_message"
-
-            echo -n "Done! Do you want to push? If not, you'll go back to file selection [y/n] "
-            read push_changes
-
-            if [[ $push_changes =~ "y" ]]; then
-                git push
-                echo "Done pushing!!"
-            else
-                Update_remote
-            fi
+            return
         fi
+
+        commit_message=""
+        commit_description=""
+        push_changes=""
+        echo "You can use emojis by typing its name between colons, e.g.: \":tada:\" for \"🎉\""
+        echo -n "Commit message: "
+        read commit_message
+        echo -n "Type commit description(leave blank if none): "
+        read commit_description
+
+        Send_log "Committing changes..."
+        [[ ! -z $commit_description ]] && \
+            git commit -m "$commit_message" -m "$commit_description" || \
+        git commit -m "$commit_message"
+
+        Send_log "Done!"
+        Ask "Push changes now? If not, you'll go back to the queue step"
+
+        if [[ $answer == y ]]; then
+            git push
+            Send_log "Done pushing!"
+            return
+        fi
+
+        Update_remote
     else
-        echo "Looks like this directory does not exist! Try taking a look at the dir list."
+        echo "Looks like this file/directory does not exist."
         Update_remote
     fi
 
@@ -99,38 +99,32 @@ Update_remote() {
 Check_current_dir
 Print_header
 
-printf "\n"
-echo "!!WARNING!! Running this script may override all data in current repo with host configurations."
-echo "This script is intended to be used only by the dotfiles owner"
-printf "\n"
+Send_log warn "!! Running this script may override all data in the local repo with host files"
+Send_log warn "This script is intended to be used only by the dotfiles owner\n"
 
-echo "Please run this script in it's current directory to avoid issues"
-echo "Tip: Press Ctrl + C to stop script at any time"
+Send_log "Please run this script in it's current directory to avoid issues"
+Send_log "Tip: Press ^C([Ctrl] + [C]) to stop script at any time\n"
 
-printf "\n"
-
-echo -n "Do you want to update local repository with host configurations? [y/n] "
-read answer
-if ! [[ $answer =~ y ]]; then
+Ask "Update local repository with host configurations?"
+if ! $answer == y; then
     Send_log "Exiting"
-    exit 1
+    exit 0
 fi
 
-printf "\n"
+printf '\n'
 
 Clean_local
 Update_local
 
-echo -n "Would you like to commit to remote? (You will be prompted for commits) [y/n] "
-read answer
+if command -v git; then
+    Ask "Would you like to commit to remote? (You will be prompted for commits)"
 
-if [[ $answer =~ y ]]; then
-    Update_remote
-    echo "Looks like it's done! Have a great day!"
-else
-    echo "Ok, work's finished here! Have a great day!"
+    if $answer =~ y; then
+        Update_remote
+        echo "Looks like it's done! Have a great day!"
+    else
+        echo "Ok, work's finished here! Have a great day!"
+    fi
+
+    git status
 fi
-
-env git status
-
-exit 0
