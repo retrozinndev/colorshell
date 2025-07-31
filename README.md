@@ -3,7 +3,7 @@
 
 > [!note]
 > The [AGS v3](https://github.com/aylur/ags/blob/main) version is already done! You can try it out in the branch [`gtk4-ags3`](https://github.com/retrozinndev/colorshell/blob/gtk4-ags3). <br>
-> The updated version will be merged into the main branch as sonn as AGS v3 reaches a stable release(tagged release).
+> The updated version will be merged into the main branch as soon as AGS v3 reaches a stable release(tagged release).
 
 > [!note]
 > My personal dotfiles are now on [retrozinndev/Hyprland-Dots](https://github.com/retrozinndev/Hyprland-Dots)
