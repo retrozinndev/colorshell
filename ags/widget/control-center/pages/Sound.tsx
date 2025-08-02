@@ -21,7 +21,7 @@ export const PageSound = new Page({
             <For each={createBinding(Wireplumber.getWireplumber().audio!, "speakers")}>
                 {(sink: AstalWp.Endpoint) => 
                     <PageButton class={createBinding(sink, "isDefault").as(isDefault =>
-                          isDefault ? "default" : "")} 
+                          isDefault ? "selected" : "")} 
                       icon={createBinding(sink, "icon").as(ico =>
                           lookupIcon(ico) ? ico : "audio-card-symbolic")}
                       title={createBinding(sink, "description").as(desc =>

@@ -17,7 +17,7 @@ export const PageMicrophone = new Page({
         <Gtk.Box orientation={Gtk.Orientation.VERTICAL} spacing={4}>
             <For each={createBinding(Wireplumber.getWireplumber().get_audio()!, "microphones")}>
                 {(source: AstalWp.Endpoint) => <PageButton class={
-                      createBinding(source, "isDefault").as(isDefault => isDefault ? "default" : "")
+                      createBinding(source, "isDefault").as(isDefault => isDefault ? "selected" : "")
                   } icon={createBinding(source, "icon").as(ico => lookupIcon(ico) ? 
                       ico : "audio-input-microphone-symbolic")} title={
                     createBinding(source, "description").as(desc => desc ?? "Microphone")

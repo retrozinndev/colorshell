@@ -89,10 +89,6 @@
       & label.sub-header {
         margin-top: 6px;
       }
-      
-      & button.default {
-        background: colors.$bg-tertiary;
-      }
     }
   }
 
@@ -127,6 +123,10 @@
       & button {
         padding: 6px;
         border-radius: 12px;
+
+        &.selected {
+          background: colors.$bg-tertiary;
+        }
 
         &:hover {
           background: rgba(colors.$fg-primary, .1);
@@ -260,12 +260,6 @@
 
 .tile-pages #page {
   margin-top: 10px;
-
-  &.bluetooth {
-    button.connected {
-      background: colors.$bg-tertiary;
-    }
-  }
 }
 
 box.notif-history {
