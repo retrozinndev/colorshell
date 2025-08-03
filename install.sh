@@ -1,16 +1,30 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 
-source ./utils.sh
 set -e
 
 trap "printf \"\nOk, quitting beacuse you entered an exit signal. (SIGINT).\n\"; exit 1" SIGINT
-trap "printf \"\nOh noo!! Some application just killed the script!\"; exit 2" SIGTERM
+trap "printf \"\nOh noo!! Some application just killed the script! (SIGTERM)\"; exit 2" SIGTERM
 
 XDG_CONFIG_HOME=`[[ ! -z "$XDG_CONFIG_HOME" ]] && echo $XDG_CONFIG_HOME || echo $HOME/.config`
+XDG_CACHE_HOME=`[[ ! -z "$XDG_CACHE_HOME" ]] && echo $XDG_CACHE_HOME || echo $HOME/.cache`
 
 skip_prompts=`[[ "$@" =~ "\-y" ]] && echo -n true`
-is_standalone=`git remove -v && remote=\`git remote -v | head -n 1 | awk '{print $2}' | sed 's/.git$//g'\` || echo -n`
-repo_directory=`[[ $is_standalone ]] && echo "/tmp/colorshell-git" || echo "."`
+is_standalone=`git remote -v && remote=\`git remote -v | head -n 1 | awk '{print $2}' | sed 's/.git$//g'\` || echo -n`
+temp_dir="$XDG_CACHE_HOME/colorshell-installer"
+repo_directory=`[[ $is_standalone ]] && echo "$temp_dir/repo" || echo "."`
+
+
+# source utils script before installation
+if $is_standalone; then
+    mkdir -p $temp_dir
+    # testing only, change to commented value before merging (hope I don't forget lol)
+    default_branch="standalone-installer" # `curl -s https://api.github.com/repos/retrozinndev/colorshell | jq -r .default_branch`
+    # get utils script
+    curl -s https://raw.githubusercontent.com/retrozinndev/colorshell/refs/heads/$default_branch/utils.sh > $temp_dir/utils.sh
+    source $temp_dir/utils.sh
+else
+    source ./utils.sh
+fi
 
 function Apply_wallpapers() {
     Ask "Would you also like to apply the wallpapers folder? :3"
@@ -45,13 +59,18 @@ echo "Welcome to the colorshell installation script!"
 # Warn user of possible problems that can happen
 Send_log warn "!! By running this script, you assume total responsability for any issues that may occur with your filesystem"
 
-[[ ! $1 == "dots" ]] && Ask "Do you want to start the shell installation?"
+[[ ! $skip_prompts ]] && Ask "Do you want to start the shell installation?"
 
-rm -rf $repo_directory 2> /dev/null
-Send_log "cloning repository in \`$repo_directory\`..."
-git clone https://github.com/retrozinndev/colorshell.git $repo_directory
+if $is_standalone; then
+    Send_log "installer noticed that you don't have a local clone of colorshell yet"
+    rm -rf $repo_directory 2> /dev/null
+    Send_log "cloning repository in \`$repo_directory\`..."
+    git clone https://github.com/retrozinndev/colorshell.git $repo_directory
+else 
+    Send_log "installer detected that you're running the script from a local clone"
+fi
 
-if [[ $1 == "dots" ]] || [[ $answer == "y" ]]; then
+if [[ $skip_prompts ]] || [[ $answer == "y" ]]; then
     Ask "Nice! Use the stable version instead of the unstable(git)?"
 
     if [[ ! $1 == "dots" ]] && [[ $answer == "y" ]]; then
