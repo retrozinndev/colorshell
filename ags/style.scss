@@ -222,7 +222,7 @@ menu {
   }
 }
 
-.button-row {
+.button-row, .top-row {
   & > button {
     background: colors.$bg-secondary;
     margin: 0 1px;
@@ -232,7 +232,7 @@ menu {
     &:hover {
       background: colors.$bg-tertiary;
     }
-
+    
     &:first-child {
       border-top-left-radius: 10px;
       border-bottom-left-radius: 10px;
@@ -246,6 +246,24 @@ menu {
     }
   }
 }
+
+//Need some workouts///////////////
+switch {
+  padding: 4px;
+  border-radius: 16px;
+  background: functions.toRGB(color.adjust($color: wal.$color1, $lightness: -20%));
+  &:checked {
+    background: colors.$bg-tertiary;
+  }
+}
+
+switch slider {
+  border-radius: 12px;
+  color: colors.$bg-primary;
+  background: wal.$foreground;
+  transition: all 0.2s ease-in-out;
+}
+/////////////////////////////////////
 
 selection {
   background: colors.$bg-tertiary;

@@ -1,9 +1,10 @@
 import { Page, PageButton, PageProps } from "./Page";
 import { bind, Variable } from "astal";
 import { Astal, Gtk, Widget } from "astal/gtk3";
-import { getAppIcon } from "../../../scripts/apps";
+import { getAppIcon, getIconByAppName, getSymbolicIcon } from "../../../scripts/apps";
 import { Wireplumber } from "../../../scripts/volume";
 import { tr } from "../../../i18n/intl";
+import { analyser } from "../../../scripts/utils";
 
 export function PageSound(): Page {
     const endpoints = Variable.derive([
@@ -26,7 +27,7 @@ export function PageSound(): Page {
                 PageButton({
                     className: bind(speaker, "isDefault").as(isDefault => isDefault ? "default" : ""),
                     icon: bind(speaker, "icon").as(icon => 
-                        Astal.Icon.lookup_icon(icon)? icon : "audio-card-symbolic"),
+                        getSymbolicIcon(icon) ?? "audio-card-symbolic"),
                     title: bind(speaker, "description").as(desc => desc ?? "Speaker"),
                     onClick: () => speaker.set_is_default(true),
                     endWidget: new Widget.Icon({
@@ -52,9 +53,9 @@ export function PageSound(): Page {
                                 orientation: Gtk.Orientation.HORIZONTAL,
                                 children: [
                                     new Widget.Icon({
-                                        icon: bind(stream, "name").as(name => 
-                                            getAppIcon(name.split(' ')[0]) ?? "application-x-executable-symbolic"),
-                                        css: "font-size: 18px; margin-right: 6px;"
+                                        icon: bind(stream, "description").as(icon =>
+                                            getSymbolicIcon(icon) ?? getIconByAppName(icon) ?? "application-x-executable-symbolic"),
+                                        css: "font-size: 20px; margin-right: 6px;"
                                     } as Widget.IconProps),
                                     new Widget.Box({
                                         orientation: Gtk.Orientation.VERTICAL,
@@ -69,7 +70,11 @@ export function PageSound(): Page {
                                                 ),
                                                 onDestroy: () => connections.map(id => eventbox.disconnect(id)),
                                                 child: new Widget.Label({
-                                                    label: bind(stream, "name").as(name => name || "Unknown"),
+                                                    label: bind(stream, "description").as(desc => { //need to add filter for "audio stream1"
+                                                        const maxLength = (35 - (desc.length + 3));
+                                                        let title = `${stream.name.substring(0, maxLength)}${stream.name.length >= maxLength ? '...' : ""}`
+                                                        return `${desc} - ${title}`;
+                                                        }),
                                                     truncate: true,
                                                     tooltipText: bind(stream, "name"),
                                                     className: "name",

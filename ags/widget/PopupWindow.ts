@@ -1,6 +1,10 @@
-import { Binding } from "astal";
+import { Binding, bind } from "astal";
 import { Astal, Gdk, Gtk, Widget } from "astal/gtk3";
 import { BackgroundWindow } from "./BackgroundWindow";
+import AstalHyprland from "gi://AstalHyprland";
+import { Windows } from "../windows";
+
+const hyprland = AstalHyprland.get_default();
 
 type PopupWindowSpecificProps = {
     onDestroy?: (self: Widget.Window) => void;
@@ -51,12 +55,23 @@ export function PopupWindow(props: PopupWindowProps): Widget.Window {
         winProps[key as keyof typeof winProps] = props[key as keyof typeof props];
     }
 
+    let isFullscreen: boolean;
+    
     return new Widget.Window({
         ...winProps,
         namespace: props?.namespace ?? "popup-window",
         className: `popup-window ${(props.namespace instanceof Binding ?
             props.namespace.get() : props.namespace) || ""}`,
-        keymode: Astal.Keymode.EXCLUSIVE,
+        keymode: bind(hyprland, 'focusedWorkspace').as(fw => {
+
+            if (Windows.isVisible('logout-menu')) return Astal.Keymode.EXCLUSIVE;
+
+            if (fw.get_last_client() === null) return Astal.Keymode.ON_DEMAND;
+
+            return fw.get_last_client().get_fullscreen() === AstalHyprland.Fullscreen.FULLSCREEN && fw.get_last_client().get_workspace() === fw
+                ? Astal.Keymode.EXCLUSIVE
+                : Astal.Keymode.ON_DEMAND
+        }),
         anchor: TOP | LEFT | RIGHT | BOTTOM,
         exclusivity: props.exclusivity ?? Astal.Exclusivity.NORMAL,
         halign: undefined,

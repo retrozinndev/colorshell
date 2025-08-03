@@ -3,6 +3,7 @@ import { Page, PageButton } from "./Page";
 import AstalNetwork from "gi://AstalNetwork";
 import { bind, GLib } from "astal";
 import NM from "gi://NM";
+import NMA from "gi://NMA";
 import { Windows } from "../../../windows";
 import { tr } from "../../../i18n/intl";
 import { execApp } from "../../../scripts/apps";
@@ -10,6 +11,11 @@ import { EntryPopup, EntryPopupProps } from "../../EntryPopup";
 import { Notifications } from "../../../scripts/notifications";
 import { AskPopup, AskPopupProps } from "../../AskPopup";
 import { encoder } from "../../../scripts/utils";
+import { setOSDMode } from "../../../window/OSD";
+
+const client = AstalNetwork.get_default().get_client();
+export const Network = AstalNetwork.get_default();
+
 
 export const PageNetwork: (() => Page) = () => new Page({
     id: "network",
@@ -21,10 +27,10 @@ export const PageNetwork: (() => Page) = () => new Page({
             image: new Widget.Icon({
                 icon: "arrow-circular-top-right-symbolic"
             } as Widget.IconProps),
-            visible: bind(AstalNetwork.get_default(), "primary").as((primary) => 
+            visible: bind(Network, "primary").as((primary) => 
                 primary === AstalNetwork.Primary.WIFI),
             tooltipText: "Re-scan connections",
-            onClick: () => AstalNetwork.get_default().wifi.scan()
+            onClick: () => Network.wifi.scan()
         } as Widget.ButtonProps)
     ],
     bottomButtons: [{
@@ -39,14 +45,13 @@ export const PageNetwork: (() => Page) = () => new Page({
             className: "devices",
             hexpand: true,
             orientation: Gtk.Orientation.VERTICAL,
-            visible: bind(AstalNetwork.get_default().get_client(), "devices").as((devs) => devs.length > 0),
-            children: bind(AstalNetwork.get_default().get_client(), "devices").as((devices) => {
+            visible: bind(Network.get_client(), "devices").as((devs) => devs.length > 0),
+            children: bind(Network.get_client(), "devices").as((devices) => {
                 devices = devices.filter(dev => dev.interface !== "lo");
 
                 return [
                     new Widget.Label({
                         label: tr("devices"),
-                        xalign: 0,
                         className: "sub-header",
                     } as Widget.LabelProps),
                     ...devices.filter(device => device.real).map(dev => PageButton({
@@ -57,6 +62,23 @@ export const PageNetwork: (() => Page) = () => new Page({
                                 : "network-wired-symbolic"),
                             title: bind(dev, "interface").as(iface => iface ?? 
                                 tr("control_center.pages.network.interface")),
+                            switches: [
+                                new Widget.Switch({
+                                    css: `margin: 2px 0px;
+                                        font-size: 18px;`,
+                                    onNotifyActive: (self) => {
+
+                                        const isDeviceActive = dev.state === NM.DeviceState.ACTIVATED
+
+                                        if (self.active === isDeviceActive) {
+                                            return;
+                                        }
+                                        
+                                        controlConnection(dev, self.active)
+                                    },
+                                    state: bind(dev, "state").as(state => state === NM.DeviceState.ACTIVATED ? true : false)
+                                } as Widget.SwitchProps) 
+                            ],
                             extraButtons: [
                                 new Widget.Button({
                                     image: new Widget.Icon({
@@ -172,21 +194,51 @@ export const PageNetwork: (() => Page) = () => new Page({
         } as Widget.BoxProps)
     ]
 });
+// For switches
+function controlConnection(device: (NM.Device|null), check: boolean): void {
+    
+    const activeConnection = device.get_active_connection() ?? null;
+    
+    if (check === true) {
+        const availableConnections = device.get_available_connections();
+        
+        if (availableConnections.length <= 0) {
+            return;
+        }
+        const connection = availableConnections[0];
+        client.activate_connection_async(connection, device, null, null, (_, asyncRes) => { 
+            try {
+                console.log(`Activation ${device.interface} was successful.`);
+            } catch (e) {
+                console.error(`Activation error: ${e.message}`);
+            }
+        });
+    } else {
+        client.deactivate_connection_async(activeConnection, null, (_, asyncRes) => {
+            try {
+                console.log(`Deactivation ${device.interface} was successful.`);
+            } catch (e) {
+                console.error(`Deactivation error: ${e.message}`);
+            }
+        })
+    }
+}
 
 function activateWirelessConnection(connection: NM.RemoteConnection, ssid: string): void {
-    AstalNetwork.get_default().get_client().activate_connection_async(
-        connection, AstalNetwork.get_default().wifi.get_device(), null, null, (_, asyncRes) => {
-            const activeConnection = AstalNetwork.get_default().get_client().activate_connection_finish(asyncRes);
-            if(!activeConnection) {
-                Notifications.getDefault().sendNotification({
-                    appName: "network",
-                    summary: "Couldn't activate wireless connection",
-                    body: `An error occurred while activating the wireless connection "${ssid}"`
-                });
-                return;
-            }
-        }
-    );
+    Network.get_client().activate_connection_async(
+        connection, Network.wifi.get_device(), null, null, (_, asyncRes) => errorNotif(asyncRes, ssid));
+}
+
+function errorNotif(asyncRes: any, ssid: string = ""): void { //change notify for connected and errors scenario
+    const activeConnection = Network.get_client().activate_connection_finish(asyncRes);
+    if(!activeConnection) {
+        Notifications.getDefault().sendNotification({
+            appName: "network",
+            summary: "Couldn't activate wireless connection",
+            body: `An error occurred while activating the wireless connection "${ssid}"`
+        });
+        return;
+    }
 }
 
 function notifyConnectionError(ssid: string): void {

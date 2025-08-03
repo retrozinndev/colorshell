@@ -45,9 +45,9 @@ export function Workspaces(): Gtk.Widget {
                                                 bind(AstalHyprland.get_default(), "focusedWorkspace")
                                             ], (lastClient, focusedWorkspace) => focusedWorkspace?.id === workspace.id ?
                                                  false : Boolean(lastClient))(),
-                                            icon: bind(lastClient, "initialClass").as((initialClass) =>
+                                            icon: lastClient ? bind(lastClient, "initialClass").as((initialClass) =>
                                                 getSymbolicIcon(initialClass) ?? getAppIcon(initialClass) ?? 
-                                                    "application-x-executable-symbolic")
+                                                    "application-x-executable-symbolic") : undefined
                                         } as Widget.IconProps)
                                     )
                                 } as Widget.BoxProps),

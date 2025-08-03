@@ -35,7 +35,7 @@
       font-weight: 600;
     }
 
-    & > box:not(.button-row) icon {
+    & > box:not(.button-row):not(.top-row) icon {
       font-size: 12px;
       color: colors.$fg-disabled;
       margin-right: 3px;
@@ -47,7 +47,7 @@
       color: colors.$fg-disabled;
     }
 
-    & .button-row {
+    & .button-row, & .top-row {
       & button {
         padding: 7px;
         margin: {
@@ -169,6 +169,7 @@
 }
 
 box.history {
+  margin-top: 10px;
   background: colors.$bg-translucent;
   box-shadow: 0 0 6px 1px colors.$bg-translucent;
   border-radius: 24px;
@@ -186,8 +187,8 @@ box.history {
     }
   }
 
-  & > .button-row {
-    margin-top: 12px;
+  & > .button-row, & > .top-row {
+    margin-bottom: 12px;
 
     & button {
       padding: 6px;

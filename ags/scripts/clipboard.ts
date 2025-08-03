@@ -81,7 +81,8 @@ class Clipboard extends GObject.Object {
     }
 
     public async copyAsync(content: string): Promise<void> {
-        await execAsync(`wl-copy "${content}"`).catch((err: Gio.IOErrorEnum) => {
+        const sanitizedContent = content.replace(/"/g, '\\"');
+        await execAsync(`wl-copy "${sanitizedContent}"`).catch((err: Gio.IOErrorEnum) => {
             console.error(`Clipboard: Couldn't copy text using wl-copy. Stderr:\n\t${err.message
                 } | Stack:\n\t\t${err.stack}`);
         });
