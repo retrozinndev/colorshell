@@ -8,7 +8,7 @@
 # From: https://github.com/retrozinndev/colorshell
 
 
-if uwsm check is-active "hyprland-uwsm.desktop"; then
+if uwsm check is-active; then
     exec uwsm app -- "$@"
     exit 0
 fi

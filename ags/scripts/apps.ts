@@ -6,7 +6,7 @@ import AstalHyprland from "gi://AstalHyprland";
 
 
 export const uwsmIsActive: boolean = await execAsync(
-    "uwsm check is-active hyprland-uwsm.desktop"
+    "uwsm check is-active"
 ).then(() => true).catch(() => false);
 const astalApps: AstalApps.Apps = new AstalApps.Apps();
 
