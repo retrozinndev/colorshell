@@ -6,10 +6,12 @@ import { Runner } from "../runner/Runner";
 import { showWorkspaceNumber } from "../widget/bar/Workspaces";
 import { playSystemBell } from "./utils";
 import { Config } from "./config";
+import { player, setPlayer } from "../widget/bar/Media";
 
 import AstalIO from "gi://AstalIO";
 import GLib from "gi://GLib?version=2.0";
 import App from "ags/gtk4/app";
+import AstalMpris from "gi://AstalMpris";
 
 
 let wsTimeout: (AstalIO.Time|undefined);
@@ -18,6 +20,10 @@ export function handleArguments(request: string): any {
     const args: Array<string> = GLib.shell_parse_argv(request)[1]!;
 
     switch(args[0]) {
+        case "help":
+        case "h":
+            return getHelp();
+
         case "open":
         case "close":
         case "toggle":
@@ -25,12 +31,11 @@ export function handleArguments(request: string): any {
         case "reopen":
             return handleWindowArgs(args);
 
-        case "help":
-        case "h":
-            return getHelp();
-
         case "volume":
             return handleVolumeArgs(args);
+
+        case "media":
+            return handleMediaArgs(args);
 
         case "reload":
             restartInstance();
@@ -57,6 +62,95 @@ export function handleArguments(request: string): any {
         default:
             return "Error: command not found! try checking help";
     }
+}
+
+function handleMediaArgs(args: Array<string>): string {
+    if(/h|help/.test(args[1]))
+        return `
+Manage colorshell's active player
+
+Options: 
+  play: resume/start active player's media.
+  pause: pause the active player.
+  play-pause: toggle play/pause on active player.
+  stop: stop the active player's media.
+  previous: go back to previous media if player supports it.
+  next: jump to next media if player supports it.
+  bus-name: get active player's mpris bus name.
+  list: show available players with their bus name.
+  select bus_name: change the active player, where bus_name is 
+    the desired player's mpris bus name(with the mediaplayer2 prefix).
+`.trim();
+
+    const activePlayer: AstalMpris.Player|undefined = player.get().available ? 
+        player.get() 
+    : undefined;
+    const players = AstalMpris.get_default().players.filter(pl => pl.available);
+
+    if(!activePlayer)
+        return `Error: no active player found! try playing some media first`
+
+    switch(args[1]) {
+        case "play":
+            activePlayer.play();
+            return "Playing";
+
+        case "list":
+            return `Available players:\n${players.map(pl => {
+                let playbackStatusStr: string;
+                switch(pl.playbackStatus) {
+                    case AstalMpris.PlaybackStatus.PAUSED:
+                        playbackStatusStr = "paused";
+                    break;
+                    case AstalMpris.PlaybackStatus.PLAYING:
+                        playbackStatusStr = "playing";
+                    break;
+                    default:
+                        playbackStatusStr = "stopped";
+                    break;
+                }
+
+                return `  ${pl.busName}: ${playbackStatusStr}`;
+            }).join('\n')}`;
+
+        case "pause":
+            activePlayer.pause();
+            return "Paused";
+
+        case "play-pause":
+            activePlayer.play_pause();
+            return activePlayer?.playbackStatus === AstalMpris.PlaybackStatus.PAUSED ? 
+                "Toggled play"
+            : "Toggled pause";
+
+        case "stop":
+            activePlayer.stop();
+            return "Stopped!";
+
+        case "previous":
+            activePlayer.canGoPrevious && activePlayer.previous();
+            return activePlayer.canGoPrevious ? 
+                "Back to previous"
+            : "Player does not support this command";
+
+        case "next":
+            activePlayer.canGoNext && activePlayer.next();
+            return activePlayer.canGoNext ? 
+                "Jump to next"
+            : "Player does not support this command";
+
+        case "bus-name":
+            return activePlayer.busName;
+
+        case "select":
+            if(!args[2] || !players.filter(pl => pl.busName == args[2])?.[0])
+                return `Error: either no player was specified or the player with specified bus name does not exist/is not available!`;
+
+            setPlayer(players.filter(pl => pl.busName === args[2])[0]);
+            return `Done setting player to \`${args[2]}\`!`
+    }
+
+    return "Error: couldn't handle media arguments, try checking `media help`";
 }
 
 function handleWindowArgs(args: Array<string>): string {
@@ -186,6 +280,9 @@ made using Astal Libraries, AGS and Gnim by Aylur.
 
         Audio Controls:
           volume: speaker and microphone volume controller, see "volume help".
+
+        Media Controls:
+          media: manage colorshell's active player, see "media help".
         
         Other options:
           runner [initial_text]: open the application runner, optionally add an initial search.
