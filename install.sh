@@ -9,9 +9,10 @@ XDG_CONFIG_HOME=`[[ ! -z "$XDG_CONFIG_HOME" ]] && echo $XDG_CONFIG_HOME || echo 
 XDG_CACHE_HOME=`[[ ! -z "$XDG_CACHE_HOME" ]] && echo $XDG_CACHE_HOME || echo $HOME/.cache`
 
 skip_prompts=`[[ "$@" =~ "\-y" ]] && echo -n true`
-is_standalone=`git remote -v && remote=\`git remote -v | head -n 1 | awk '{print $2}' | sed 's/.git$//g'\` || echo -n`
+is_standalone=`[[ $(git remote -v > /dev/null) ]] && remote=\`git remote -v | head -n 1 \
+    | awk '{print $2}' | sed 's/.git$//g'\` echo -n $remote || echo -n`
 temp_dir="$XDG_CACHE_HOME/colorshell-installer"
-repo_directory=`[[ $is_standalone ]] && echo "$temp_dir/repo" || echo "."`
+repo_directory=`$is_standalone && echo "$temp_dir/repo" || echo "."`
 
 
 # source utils script before installation
@@ -29,7 +30,7 @@ fi
 function Apply_wallpapers() {
     Ask "Would you also like to apply the wallpapers folder? :3"
 
-    if [[ $answer =~ "y" ]]; then
+    if $answer == "y"; then
         echo "Thanks for choosing! Please remember that I am not the author of the wallpapers!"
         echo "You can see sources in the repo: https://github.com/retrozinndev/colorshell/WALLPAPERS.md"
  
