@@ -4,9 +4,10 @@
     "packageManager": "pnpm@10.12.1",
     "scripts": {
         "types": "sh ./scripts/types.sh",
-        "dev": "pnpm build && pnpm start",
+        "dev": "pnpm start",
         "start": "sh ./scripts/start.sh",
-        "build": "sh ./scripts/build.sh"
+        "build": "sh ./scripts/build.sh",
+        "sync-config": "sh scripts/update-repo.sh"
     },
     "devDependencies": {
         "ags": "link:../../../../usr/share/ags/js"
