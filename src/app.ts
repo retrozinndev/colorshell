@@ -16,7 +16,6 @@ import { Runner } from "./runner/Runner";
 import { Windows } from "./windows";
 import { Notifications } from "./scripts/notifications";
 import { Wallpaper } from "./scripts/wallpaper";
-
 import { Stylesheet } from "./scripts/stylesheet";
 import { Clipboard } from "./scripts/clipboard";
 import { Config } from "./scripts/config";
@@ -30,6 +29,7 @@ import GObject, { register } from "ags/gobject";
 import AstalNotifd from "gi://AstalNotifd";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
+import Adw from "gi://Adw?version=1";
 
 
 const runnerPlugins: Array<Runner.Plugin> = [
@@ -42,6 +42,8 @@ const runnerPlugins: Array<Runner.Plugin> = [
 ];
 
 const defaultWindows: Array<string> = [];
+
+Adw.init();
 
 @register({ GTypeName: "Shell" })
 export class Shell extends Gtk.Application {
@@ -100,18 +102,33 @@ export class Shell extends Gtk.Application {
 
     vfunc_command_line(cmd: Gio.ApplicationCommandLine): number {
         const args = cmd.get_arguments();
+        args.splice(0, 1); // remove executable
 
         if(cmd.isRemote) {
-            cmd.print_literal(handleArguments(args));
-            cmd.done();
-            return 0;
+            try {
+                const res = handleArguments(cmd, args);
+                cmd.done();
+                cmd.set_exit_status(res);
+                return res;
+            } catch(_e) {
+                const e = _e as Error;
+                cmd.printerr_literal(`Error: something went wrong! Stderr: ${e.message}\n${e.stack}`);
+                cmd.done();
+                return 1;
+            }
+        } else {
+            if(args[1]) {
+                printerr("Error: colorshell not running. Try to clean-run before using arguments");
+                return 1;
+            }
+
+            this.main();
         }
         
-        this.main(args);
         return 0;
     }
 
-    private main(_args: Array<string>): void {
+    private main(): void {
         this.#loop = GLib.MainLoop.new(null, false);
         const connections = new Map<GObject.Object, Array<number> | number>();
 
@@ -156,6 +173,11 @@ export class Shell extends Gtk.Application {
         });
 
         this.#loop.run();
+    }
+
+    quit(): void {
+        this.#loop.is_running() && this.#loop.quit();
+        super.quit();
     }
 }
 
