@@ -8,6 +8,9 @@
     "lib": ["ES2024"],
     "moduleResolution": "bundler",
     "skipLibCheck": true,
+    "types": [
+        "../@girs"
+    ],
     "strict": true,
     "jsx": "react-jsx",
     "jsxImportSource": "ags/gtk4"

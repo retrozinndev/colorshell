@@ -134,7 +134,7 @@ export class Shell extends Gtk.Application {
 
         connections.set(this, this.connect("shutdown", () => this.#scope.dispose()));
         createRoot(() => {
-            console.log(`Colorshell: initialized instance as: "colorshell"`);
+            console.log(`Colorshell: initializing`);
             this.#scope = getScope();
 
             Stylesheet.getDefault().compileApply();
