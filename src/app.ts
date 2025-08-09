@@ -43,7 +43,9 @@ const runnerPlugins: Array<Runner.Plugin> = [
 
 const defaultWindows: Array<string> = [];
 
+Gtk.init();
 Adw.init();
+GLib.unsetenv("LD_PRELOAD");
 
 @register({ GTypeName: "Shell" })
 export class Shell extends Gtk.Application {
@@ -51,8 +53,10 @@ export class Shell extends Gtk.Application {
 
     #loop!: GLib.MainLoop;
     #scope!: ReturnType<typeof getScope>;
+    #connections = new Map<GObject.Object, Array<number> | number>();
     #stylesheet: Uint8Array|undefined;
     #styleProvider: Gtk.CssProvider;
+    #gresource: Gio.Resource|null = null;
 
     get scope() { return this.#scope; }
 
@@ -64,6 +68,12 @@ export class Shell extends Gtk.Application {
         });
 
         this.#styleProvider = Gtk.CssProvider.new();
+        try {
+            this.#gresource = Gio.Resource.load(GRESOURCES_FILE);
+        } catch(_e) {
+            const e = _e as Error;
+            console.error(`Error: couldn't load gresource! Stderr: ${e.message}\n${e.stack}`);
+        }
     }
 
     public static getDefault(): Shell {
@@ -121,18 +131,22 @@ export class Shell extends Gtk.Application {
                 printerr("Error: colorshell not running. Try to clean-run before using arguments");
                 return 1;
             }
-
-            this.main();
+            
+            this.activate();
         }
         
         return 0;
     }
 
+    vfunc_activate(): void {
+        super.vfunc_activate();
+        this.main();
+    }
+
     private main(): void {
         this.#loop = GLib.MainLoop.new(null, false);
-        const connections = new Map<GObject.Object, Array<number> | number>();
 
-        connections.set(this, this.connect("shutdown", () => this.#scope.dispose()));
+        this.#connections.set(this, this.connect("shutdown", () => this.#scope.dispose()));
         createRoot(() => {
             console.log(`Colorshell: initializing`);
             this.#scope = getScope();
@@ -148,12 +162,12 @@ export class Shell extends Gtk.Application {
             console.log("Adding runner plugins");
             runnerPlugins.forEach(plugin => Runner.addPlugin(plugin));
 
-            connections.set(Wireplumber.getDefault(), 
+            this.#connections.set(Wireplumber.getDefault(), 
                 Wireplumber.getDefault().getDefaultSink().connect("notify::volume", () => 
                     triggerOSD())
             );
 
-            connections.set(Notifications.getDefault(), [
+            this.#connections.set(Notifications.getDefault(), [
                 Notifications.getDefault().connect("notification-added", (_, _notif: AstalNotifd.Notification) => {
                     Windows.getDefault().open("floating-notifications");
                 }),
@@ -167,7 +181,7 @@ export class Shell extends Gtk.Application {
 
         this.#scope.onCleanup(() => {
             console.log("Colorshell: disposing connections and quitting because of ::shutdown");
-            connections.forEach((ids, obj) => Array.isArray(ids) ?
+            this.#connections.forEach((ids, obj) => Array.isArray(ids) ?
                 ids.forEach(id => obj.disconnect(id))
             : obj.disconnect(ids));
         });

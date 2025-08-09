@@ -7,7 +7,7 @@ import { FloatingNotifications } from "./window/FloatingNotifications";
 import { CenterWindow } from "./window/CenterWindow";
 import { LogoutMenu } from "./window/LogoutMenu";
 import { AppsWindow } from "./window/AppsWindow";
-import { Scope } from "/usr/share/ags/js/gnim/src/jsx/scope";
+import { createRoot, getScope, onCleanup, Scope } from "/usr/share/ags/js/gnim/src/jsx/scope";
 import { Shell } from "./app";
 import GObject, { getter, register, signal } from "ags/gobject";
 
@@ -35,6 +35,7 @@ export type WindowData = {
 class Windows extends GObject.Object {
     private static instance: (Windows | null);
 
+    #scope!: ReturnType<typeof getScope>;
     #windows: Record<string, WindowData> = {
         "bar": { create: this.createWindowForMonitors(Bar) },
         "osd": { create: this.createWindowForFocusedMonitor(OSD), },
@@ -60,32 +61,24 @@ class Windows extends GObject.Object {
     constructor() {
         super();
 
-        // Listen to monitor events
-        const hyprConnections = [
-            AstalHyprland.get_default().connect("monitor-added", () => 
-                this.reopen()),
-            AstalHyprland.get_default().connect("monitor-removed", () => 
-                AstalHyprland.get_default().get_monitors().length > 0 &&
-                    this.reopen())
-        ];
+        createRoot((dispose) => {
+            this.#scope = getScope();
+            Shell.getDefault().scope.onMount(dispose);
 
-        Shell.getDefault().scope.run(() => {
-            // open windows with the "open" status on startup
-            Object.keys(this.#windows).filter((key) => 
-                this.#windows[key].status === "open"
-            ).forEach(name => {
-                this.open(name, true);
-                console.log(`Windows: opening window \`${name}\` on startup`);
+            // Listen to monitor events
+            const hyprConnections = [
+                AstalHyprland.get_default().connect("monitor-added", () => 
+                    this.reopen()),
+                AstalHyprland.get_default().connect("monitor-removed", () => 
+                    AstalHyprland.get_default().get_monitors().length > 0 &&
+                        this.reopen())
+            ];
+
+            onCleanup(() => {
+                hyprConnections.forEach(id => AstalHyprland.get_default().disconnect(id));
+                this.openWindows.forEach(name => this.disconnectWindow(name));
             });
-        });
 
-        Shell.getDefault().scope.onCleanup(() => {
-            hyprConnections.forEach(id => 
-                GObject.signal_handler_is_connected(AstalHyprland.get_default(), id) && 
-                    AstalHyprland.get_default().disconnect(id)
-            );
-
-            this.openWindows.forEach(name => this.disconnectWindow(name));
         });
     }
 
@@ -199,11 +192,13 @@ class Windows extends GObject.Object {
 
         // create a scope for every window generator function and dispose on ::close-request
         return () => monitors.map(mon => {
-            const scope = new Scope(null);
-            return scope.run(() => {
+            return createRoot(() => {
+                const scope = getScope();
                 const instance = create(mon.id, scope) as Astal.Window;
                 const connection: number = instance.connect("close-request", () => 
                     scope.dispose());
+
+                this.#scope.onMount(scope.dispose);
 
                 scope.onCleanup(() => instance.disconnect(connection));
 
@@ -227,12 +222,12 @@ class Windows extends GObject.Object {
             });
 
         return () => {
-            const scope = new Scope(null);
-            return scope.run(() => {
+            return createRoot((dispose) => {
+                const scope = getScope();
                 const instance = create(focusedMonitor, scope) as Astal.Window;
-                const connection: number = instance.connect("close-request", () =>
-                    scope.dispose());
+                const connection = instance.connect("close-request", () => dispose());
 
+                this.#scope.onMount(dispose)
                 scope.onCleanup(() => instance.disconnect(connection));
 
                 return instance;

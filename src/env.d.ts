@@ -1,4 +1,6 @@
 declare const SRC: string
+declare const DEVEL: boolean;
+declare const GRESOURCES_FILE: string;
 
 declare module "inline:*" {
     const content: string
