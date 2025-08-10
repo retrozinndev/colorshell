@@ -1,7 +1,7 @@
 declare const SRC: string
 declare const DEVEL: boolean;
 declare const GRESOURCES_FILE: string;
-declare const VERSION: string;
+declare const COLORSHELL_VERSION: string;
 
 declare module "inline:*" {
     const content: string
