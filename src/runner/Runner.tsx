@@ -225,14 +225,12 @@ function selectNextItem(listbox: Gtk.ListBox) {
         return;
 
     const viewport = listbox.parent as Gtk.Viewport;
-    const vadjustment = viewport.vadjustment;
-    const [, , nextRowY] = nextRow.translate_coordinates(viewport,
-        nextRow.get_allocation().x, nextRow.get_allocation().y);
+    const vadjustment = (viewport.parent as Gtk.ScrolledWindow).get_vadjustment();
+    const nextRowVAllocation = (nextRow.get_allocation().y + nextRow.get_allocation().height);
 
     listbox.select_row(nextRow as Gtk.ListBoxRow);
-    if(vadjustment.value < nextRowY)
-        vadjustment.set_value(nextRowY - vadjustment.value);
-}
+    if(nextRowVAllocation > viewport.get_allocation().height) 
+        vadjustment.set_value(nextRow.get_allocation().y - viewport.get_allocation().height + nextRow.get_allocation().height);}
 
 export function openRunner(props: RunnerProps, placeholders?: Array<Result>): Astal.Window {
     props.width ??= 780;
@@ -245,16 +243,16 @@ export function openRunner(props: RunnerProps, placeholders?: Array<Result>): As
             <PopupWindow namespace={"runner"} monitor={mon} widthRequest={props.width} 
               heightRequest={props.height} exclusivity={Astal.Exclusivity.IGNORE} halign={Gtk.Align.CENTER}
               marginTop={(AstalHyprland.get_default().get_monitor(mon)?.height / 2) - (props.height! / 2)}
-              valign={Gtk.Align.START} $={() => {
+              valign={Gtk.Align.START} hexpand orientation={Gtk.Orientation.VERTICAL} 
+              $={() => {
                   plugins.forEach(plugin => 
                       plugin.init?.());
 
                   props.initialText && 
                       Runner.setEntryText(props.initialText);
               }} actionKeyPressed={(self, keyval) => {
-                    const listbox = ((getPopupWindowContainer(self).get_first_child()!
-                        .get_last_child()! as Gtk.ScrolledWindow).get_child()! as Gtk.Viewport)
-                        .get_child()! as Gtk.ListBox;
+                    const listbox = ((getPopupWindowContainer(self).get_last_child() as Gtk.ScrolledWindow)
+                      .get_child() as Gtk.Viewport).get_child() as Gtk.ListBox;
 
                     switch(keyval) {
                         case Gdk.KEY_F5:
@@ -279,8 +277,10 @@ export function openRunner(props: RunnerProps, placeholders?: Array<Result>): As
                             return;
                     }
 
-                    !gtkEntry?.hasFocus &&
+                    if(!gtkEntry?.hasFocus) {
                         gtkEntry?.grab_focus();
+                        listbox.grab_focus();
+                    }
               }} actionClosed={() => {
                   [...plugins.values()].forEach(plugin => plugin?.onClose?.());
                   root.dispose();
@@ -288,45 +288,45 @@ export function openRunner(props: RunnerProps, placeholders?: Array<Result>): As
                   instance = null;
                   gtkEntry = null;
               }}>
-                <Gtk.Box class={`runner main`} orientation={Gtk.Orientation.VERTICAL} hexpand
-                  valign={Gtk.Align.START}>
+                <Gtk.SearchEntry class={"search"} placeholderText={props.entryPlaceHolder ?? ""}
+                  $={(self) => gtkEntry = self} searchDelay={0} onSearchChanged={(self) => {
+                      const listbox = ((self.get_next_sibling()! as Gtk.ScrolledWindow)
+                        .get_child() as Gtk.Viewport).get_child() as Gtk.ListBox;
+                      updateResultsList(listbox, self.text, placeholders);
 
-                    <Gtk.SearchEntry class={"search"} placeholderText={props.entryPlaceHolder ?? ""}
-                      $={(self) => gtkEntry = self} searchDelay={0} onSearchChanged={(self) => {
-                          const listbox = self.get_next_sibling()?.get_first_child()?.get_first_child() as Gtk.ListBox;
-                          updateResultsList(listbox, self.text, placeholders);
+                      listbox.get_row_at_index(0) && 
+                          listbox.select_row(listbox.get_row_at_index(0));
+                  }} onActivate={(self) => {
+                      const listbox = ((self.get_next_sibling() as Gtk.ScrolledWindow)
+                        .get_child() as Gtk.Viewport).get_child() as Gtk.ListBox;
+                      const resultWidget = listbox.get_selected_row()?.get_child();
 
-                          listbox.get_row_at_index(0) && 
-                              listbox.select_row(listbox.get_row_at_index(0));
-                      }} onActivate={(self) => {
-                          const listbox = self.parent.get_last_child()?.get_first_child()?.get_first_child() as Gtk.ListBox;
-                          const resultWidget = listbox.get_selected_row()?.get_child();
+                      if(resultWidget instanceof ResultWidget && !clickTimeout) {
+                          clickTimeout = timeout(250, () => clickTimeout = undefined);
+                          resultWidget.actionClick();
+                          resultWidget.closeOnClick && 
+                              Runner.close();
+                      }
 
-                          if(resultWidget instanceof ResultWidget) {
-                              resultWidget.actionClick();
-                              resultWidget.closeOnClick && 
+                  }} onStopSearch={() => Runner.close()} // close Runner on Escape
+                />
+                <Gtk.ScrolledWindow class={"results-scrollable"} vscrollbarPolicy={Gtk.PolicyType.AUTOMATIC}
+                  hscrollbarPolicy={Gtk.PolicyType.NEVER} hexpand vexpand propagateNaturalHeight visible={false}
+                  maxContentHeight={props.height} focusable={false}>
+
+                    <Gtk.ListBox hexpand activateOnSingleClick selectionMode={Gtk.SelectionMode.SINGLE} 
+                      onRowActivated={(_, row) => {
+                          const child = row.get_child()!;
+
+                          if(child instanceof ResultWidget && !clickTimeout) {
+                              clickTimeout = timeout(250, () => clickTimeout = undefined);
+                              child.actionClick?.();
+                              child.closeOnClick && 
                                   Runner.close();
                           }
-                      }} onStopSearch={() => Runner.close()} // close Runner on Escape
+                      }}
                     />
-                    <Gtk.ScrolledWindow class={"results-scrollable"} vscrollbarPolicy={Gtk.PolicyType.AUTOMATIC}
-                      hscrollbarPolicy={Gtk.PolicyType.NEVER} hexpand vexpand propagateNaturalHeight visible={false}
-                      maxContentHeight={props.height}>
-
-                        <Gtk.ListBox hexpand activateOnSingleClick selectionMode={Gtk.SelectionMode.SINGLE} 
-                          onRowActivated={(_, row) => {
-                              const child = row.get_child()!;
-
-                              if(child instanceof ResultWidget && !clickTimeout) {
-                                  clickTimeout = timeout(250, () => clickTimeout = undefined);
-                                  child.actionClick?.();
-                                  child.closeOnClick && 
-                                      Runner.close();
-                              }
-                          }}
-                        />
-                    </Gtk.ScrolledWindow>
-                </Gtk.Box>
+                </Gtk.ScrolledWindow>
             </PopupWindow> as Astal.Window
         )();
 
