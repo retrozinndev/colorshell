@@ -1,10 +1,10 @@
 import { timeout } from "ags/time";
 import { Astal, Gtk } from "ags/gtk4";
-import { Clipboard } from "../../scripts/clipboard";
+import { Clipboard } from "../../modules/clipboard";
 import { getMediaUrl } from "../bar/Media";
-import { player, setPlayer } from "../../scripts/media";
+import { player, setPlayer } from "../../modules/media";
 import { createBinding, For } from "ags";
-import { pathToURI, variableToBoolean } from "../../scripts/utils";
+import { pathToURI, variableToBoolean } from "../../modules/utils";
 
 import AstalMpris from "gi://AstalMpris";
 import AstalIO from "gi://AstalIO";

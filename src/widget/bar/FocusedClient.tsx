@@ -1,7 +1,7 @@
 import { Gtk } from "ags/gtk4";
 import { createBinding, With } from "ags";
-import { variableToBoolean } from "../../scripts/utils";
-import { getAppIcon, getSymbolicIcon } from "../../scripts/apps";
+import { variableToBoolean } from "../../modules/utils";
+import { getAppIcon, getSymbolicIcon } from "../../modules/apps";
 
 import Pango from "gi://Pango?version=1.0";
 import AstalHyprland from "gi://AstalHyprland";

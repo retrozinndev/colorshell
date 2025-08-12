@@ -1,6 +1,6 @@
 import { createBinding, createComputed } from "ags";
 import { Runner } from "../Runner";
-import { player } from "../../scripts/media";
+import { player } from "../../modules/media";
 
 import AstalMpris from "gi://AstalMpris";
 

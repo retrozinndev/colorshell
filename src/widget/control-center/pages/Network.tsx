@@ -2,10 +2,10 @@ import { Gtk } from "ags/gtk4";
 import { Page, PageButton } from "./Page";
 import { Windows } from "../../../windows";
 import { tr } from "../../../i18n/intl";
-import { execApp } from "../../../scripts/apps";
-import { Notifications } from "../../../scripts/notifications";
+import { execApp } from "../../../modules/apps";
+import { Notifications } from "../../../modules/notifications";
 import { AskPopup, AskPopupProps } from "../../AskPopup";
-import { encoder, variableToBoolean } from "../../../scripts/utils";
+import { encoder, variableToBoolean } from "../../../modules/utils";
 import { createBinding, For, With } from "ags";
 
 import GLib from "gi://GLib?version=2.0";

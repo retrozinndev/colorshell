@@ -1,5 +1,5 @@
 import { Gtk } from "ags/gtk4";
-import { HistoryNotification, Notifications } from "../../scripts/notifications";
+import { HistoryNotification, Notifications } from "../../modules/notifications";
 import { NotificationWidget } from "../Notification";
 import { tr } from "../../i18n/intl";
 import { createBinding, For } from "ags";

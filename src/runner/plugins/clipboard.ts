@@ -1,5 +1,5 @@
 import { Gtk } from "ags/gtk4";
-import { Clipboard } from "../../scripts/clipboard";
+import { Clipboard } from "../../modules/clipboard";
 import { Runner } from "../Runner";
 import { jsx } from "ags/gtk4/jsx-runtime";
 

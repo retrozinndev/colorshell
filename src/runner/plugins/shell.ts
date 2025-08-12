@@ -1,5 +1,5 @@
 import { Runner } from "../Runner";
-import { Notifications } from "../../scripts/notifications";
+import { Notifications } from "../../modules/notifications";
 
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";

@@ -1,10 +1,10 @@
 import { Gtk } from "ags/gtk4";
 import AstalHyprland from "gi://AstalHyprland";
-import { getAppIcon, getSymbolicIcon } from "../../scripts/apps";
+import { getAppIcon, getSymbolicIcon } from "../../modules/apps";
 import { Separator } from "../Separator";
 import { generalConfig } from "../../app";
 import { createBinding, createComputed, createState, For, With } from "ags";
-import { variableToBoolean } from "../../scripts/utils";
+import { variableToBoolean } from "../../modules/utils";
 
 import GObject from "ags/gobject";
 

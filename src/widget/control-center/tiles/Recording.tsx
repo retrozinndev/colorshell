@@ -1,7 +1,7 @@
 import { Tile } from "./Tile";
-import { Recording } from "../../../scripts/recording";
+import { Recording } from "../../../modules/recording";
 import { tr } from "../../../i18n/intl";
-import { isInstalled, time } from "../../../scripts/utils";
+import { isInstalled, time } from "../../../modules/utils";
 import { createBinding, createComputed } from "ags";
 
 

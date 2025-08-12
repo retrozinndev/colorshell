@@ -1,6 +1,6 @@
 import { createBinding, createComputed, For, With } from "ags";
 import { Gdk, Gtk } from "ags/gtk4";
-import { variableToBoolean } from "../../scripts/utils";
+import { variableToBoolean } from "../../modules/utils";
 
 import GObject from "gi://GObject?version=2.0";
 import AstalTray from "gi://AstalTray"

@@ -2,9 +2,9 @@ import { Astal, Gdk, Gtk } from "ags/gtk4";
 import { execAsync } from "ags/process";
 import { generalConfig } from "../app";
 import { AskPopup } from "../widget/AskPopup";
-import { Notifications } from "../scripts/notifications";
-import { NightLight } from "../scripts/nightlight";
-import { time } from "../scripts/utils";
+import { Notifications } from "../modules/notifications";
+import { NightLight } from "../modules/nightlight";
+import { time } from "../modules/utils";
 
 import GObject from "ags/gobject";
 import AstalNotifd from "gi://AstalNotifd";

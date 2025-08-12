@@ -1,6 +1,6 @@
 import { Astal } from "ags/gtk4";
 import { Bar } from "./window/Bar";
-import { variableToBoolean } from "./scripts/utils";
+import { variableToBoolean } from "./modules/utils";
 import { OSD } from "./window/OSD";
 import { ControlCenter } from "./window/ControlCenter";
 import { FloatingNotifications } from "./window/FloatingNotifications";

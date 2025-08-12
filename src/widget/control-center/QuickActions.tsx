@@ -1,7 +1,7 @@
 import { Gtk } from "ags/gtk4";
 import { Windows } from "../../windows";
-import { Wallpaper } from "../../scripts/wallpaper";
-import { execApp } from "../../scripts/apps";
+import { Wallpaper } from "../../modules/wallpaper";
+import { execApp } from "../../modules/apps";
 import { Accessor } from "ags";
 import { createPoll } from "ags/time";
 

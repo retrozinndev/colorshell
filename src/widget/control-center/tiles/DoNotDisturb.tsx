@@ -1,4 +1,4 @@
-import { Notifications } from "../../../scripts/notifications";
+import { Notifications } from "../../../modules/notifications";
 import { Tile } from "./Tile";
 import { tr } from "../../../i18n/intl";
 import { createBinding } from "ags";

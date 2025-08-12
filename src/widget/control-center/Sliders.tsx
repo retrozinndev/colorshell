@@ -1,5 +1,5 @@
 import { Astal, Gtk } from "ags/gtk4";
-import { Wireplumber } from "../../scripts/volume";
+import { Wireplumber } from "../../modules/volume";
 import { Pages } from "./Pages";
 import { PageSound } from "./pages/Sound";
 import { PageMicrophone } from "./pages/Microphone";

@@ -2,9 +2,9 @@ import { Accessor, createBinding, createConnection, onCleanup, With } from "ags"
 import { Gtk } from "ags/gtk4";
 import { Separator } from "../Separator";
 import { Windows } from "../../windows";
-import { Clipboard } from "../../scripts/clipboard";
-import { decoder, getPlayerIconFromBusName, variableToBoolean } from "../../scripts/utils";
-import { player, setPlayer } from "../../scripts/media";
+import { Clipboard } from "../../modules/clipboard";
+import { decoder, getPlayerIconFromBusName, variableToBoolean } from "../../modules/utils";
+import { player, setPlayer } from "../../modules/media";
 
 import GObject from "ags/gobject";
 import AstalMpris from "gi://AstalMpris";

@@ -1,11 +1,11 @@
 import { Astal, Gdk, Gtk } from "ags/gtk4";
-import { execApp, getAppIcon, getApps, getAstalApps } from "../scripts/apps";
+import { execApp, getAppIcon, getApps, getAstalApps } from "../modules/apps";
 import { getPopupWindowContainer, PopupWindow } from "../widget/PopupWindow";
 
 import AstalApps from "gi://AstalApps";
 import Pango from "gi://Pango?version=1.0";
 import { createState, For } from "ags";
-import { escapeUnintendedMarkup } from "../scripts/utils";
+import { escapeUnintendedMarkup } from "../modules/utils";
 
 
 const ignoredKeys = [

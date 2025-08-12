@@ -1,8 +1,10 @@
 import { Accessor, With } from "ags";
 import { register } from "ags/gobject";
 import { Gtk } from "ags/gtk4";
+import { variableToBoolean } from "../../modules/utils";
+
 import Pango from "gi://Pango?version=1.0";
-import { variableToBoolean } from "../../scripts/utils";
+
 
 export { ResultWidget, ResultWidgetProps };
 

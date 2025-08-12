@@ -1,4 +1,4 @@
-import { Wallpaper } from "../../scripts/wallpaper";
+import { Wallpaper } from "../../modules/wallpaper";
 import { Runner } from "../Runner";
 
 import Gio from "gi://Gio?version=2.0";

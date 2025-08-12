@@ -1,7 +1,7 @@
 import { Gtk } from "ags/gtk4";
 import { tr } from "../../../i18n/intl";
 import { Accessor, createBinding, createComputed, createState, getScope, onCleanup } from "ags";
-import { omitObjectKeys, variableToBoolean } from "../../../scripts/utils";
+import { omitObjectKeys, variableToBoolean } from "../../../modules/utils";
 import GObject, { property, register, signal } from "ags/gobject";
 
 import Pango from "gi://Pango?version=1.0";

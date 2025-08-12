@@ -1,7 +1,7 @@
 import { Astal, Gdk, Gtk } from "ags/gtk4";
 import { BackgroundWindow } from "./BackgroundWindow";
 import { Accessor, CCProps, createComputed, createRoot, getScope } from "ags";
-import { omitObjectKeys, WidgetNodeType } from "../scripts/utils";
+import { omitObjectKeys, WidgetNodeType } from "../modules/utils";
 
 import GObject from "ags/gobject";
 

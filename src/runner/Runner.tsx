@@ -1,6 +1,6 @@
 import { Astal, Gdk, Gtk } from "ags/gtk4";
 import { getPopupWindowContainer, PopupWindow } from "../widget/PopupWindow";
-import { updateApps } from "../scripts/apps";
+import { updateApps } from "../modules/apps";
 import { ResultWidget, ResultWidgetProps } from "./widgets/ResultWidget";
 import { Windows } from "../windows";
 import { timeout } from "ags/time";

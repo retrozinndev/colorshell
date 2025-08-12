@@ -11,21 +11,21 @@ import {
     PluginWallpapers, 
     PluginWebSearch
 } from "./runner/plugins";
-import { Wireplumber } from "./scripts/volume";
-import { handleArguments } from "./scripts/arg-handler";
+import { Wireplumber } from "./modules/volume";
+import { handleArguments } from "./modules/arg-handler";
 import { Runner } from "./runner/Runner";
 import { Windows } from "./windows";
-import { Notifications } from "./scripts/notifications";
-import { Wallpaper } from "./scripts/wallpaper";
-import { Stylesheet } from "./scripts/stylesheet";
-import { Clipboard } from "./scripts/clipboard";
-import { Config } from "./scripts/config";
+import { Notifications } from "./modules/notifications";
+import { Wallpaper } from "./modules/wallpaper";
+import { Stylesheet } from "./modules/stylesheet";
+import { Clipboard } from "./modules/clipboard";
+import { Config } from "./modules/config";
 import { Gdk, Gtk } from "ags/gtk4";
 import { createRoot, getScope } from "ags";
 import { triggerOSD } from "./window/OSD";
 import { programArgs, programInvocationName } from "system";
 import { setConsoleLogDomain } from "console";
-import { initPlayer } from "./scripts/media";
+import { initPlayer } from "./modules/media";
 import GObject, { register } from "ags/gobject";
 
 import AstalNotifd from "gi://AstalNotifd";

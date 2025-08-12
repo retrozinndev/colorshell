@@ -1,10 +1,10 @@
 import { Gtk } from "ags/gtk4";
-import { Wireplumber } from "../../scripts/volume";
-import { Notifications } from "../../scripts/notifications";
+import { Wireplumber } from "../../modules/volume";
+import { Notifications } from "../../modules/notifications";
 import { Windows } from "../../windows";
-import { Recording } from "../../scripts/recording";
+import { Recording } from "../../modules/recording";
 import { Accessor, createBinding, createComputed, With } from "ags";
-import { time, variableToBoolean } from "../../scripts/utils";
+import { time, variableToBoolean } from "../../modules/utils";
 
 import GObject from "ags/gobject";
 import AstalBluetooth from "gi://AstalBluetooth";

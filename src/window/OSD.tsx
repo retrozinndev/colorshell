@@ -1,6 +1,6 @@
 import { Astal, Gtk } from "ags/gtk4";
 import { createBinding, createState } from "ags";
-import { Wireplumber } from "../scripts/volume";
+import { Wireplumber } from "../modules/volume";
 import { Windows } from "../windows";
 import { Time, timeout } from "ags/time";
 

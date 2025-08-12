@@ -1,7 +1,7 @@
 import { Gtk } from "ags/gtk4";
 import { Separator } from "../../Separator";
 import { Accessor, createRoot } from "ags";
-import { transformWidget, variableToBoolean, WidgetNodeType } from "../../../scripts/utils";
+import { transformWidget, variableToBoolean, WidgetNodeType } from "../../../modules/utils";
 
 import Pango from "gi://Pango?version=1.0";
 

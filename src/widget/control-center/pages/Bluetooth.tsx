@@ -2,8 +2,8 @@ import { Gtk } from "ags/gtk4";
 import { Page, PageButton } from "./Page";
 import { tr } from "../../../i18n/intl";
 import { Windows } from "../../../windows";
-import { Notifications } from "../../../scripts/notifications";
-import { execApp } from "../../../scripts/apps";
+import { Notifications } from "../../../modules/notifications";
+import { execApp } from "../../../modules/apps";
 import { createBinding, createComputed, For, With } from "ags";
 
 import AstalNotifd from "gi://AstalNotifd";

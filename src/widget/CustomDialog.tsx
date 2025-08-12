@@ -4,7 +4,7 @@ import { PopupWindow } from "./PopupWindow";
 import { Separator } from "./Separator";
 import { tr } from "../i18n/intl";
 import { Accessor } from "ags";
-import { transformWidget, variableToBoolean, WidgetNodeType } from "../scripts/utils";
+import { transformWidget, variableToBoolean, WidgetNodeType } from "../modules/utils";
 
 
 export type CustomDialogProps = {

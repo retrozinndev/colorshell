@@ -2,7 +2,7 @@ import { Gtk } from "ags/gtk4";
 import { Separator } from "../widget/Separator";
 import { PopupWindow } from "../widget/PopupWindow";
 import { BigMedia } from "../widget/center-window/BigMedia";
-import { time, variableToBoolean } from "../scripts/utils";
+import { time, variableToBoolean } from "../modules/utils";
 import { createBinding } from "ags";
 
 import AstalMpris from "gi://AstalMpris?version=0.1";

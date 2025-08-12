@@ -1,7 +1,7 @@
 import { Gtk } from "ags/gtk4";
 import { Windows } from "../../windows";
 import { createBinding } from "ags";
-import { time } from "../../scripts/utils";
+import { time } from "../../modules/utils";
 import { generalConfig } from "../../app";
 
 

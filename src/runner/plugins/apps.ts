@@ -1,4 +1,4 @@
-import { execApp, getAstalApps, lookupIcon, updateApps } from "../../scripts/apps";
+import { execApp, getAstalApps, lookupIcon, updateApps } from "../../modules/apps";
 import { Runner } from "../Runner";
 
 export const PluginApps = {

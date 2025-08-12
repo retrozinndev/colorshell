@@ -1,6 +1,6 @@
 import { Astal, Gtk } from "ags/gtk4";
 import { createBinding, For } from "ags";
-import { Notifications } from "../scripts/notifications";
+import { Notifications } from "../modules/notifications";
 import { NotificationWidget } from "../widget/Notification";
 
 import AstalNotifd from "gi://AstalNotifd?version=0.1";

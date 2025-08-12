@@ -1,10 +1,10 @@
 import { Page, PageButton } from "./Page";
 import { Astal, Gtk } from "ags/gtk4";
-import { getAppIcon, lookupIcon } from "../../../scripts/apps";
-import { Wireplumber } from "../../../scripts/volume";
+import { getAppIcon, lookupIcon } from "../../../modules/apps";
+import { Wireplumber } from "../../../modules/volume";
 import { tr } from "../../../i18n/intl";
 import { createBinding, For } from "ags";
-import { variableToBoolean } from "../../../scripts/utils";
+import { variableToBoolean } from "../../../modules/utils";
 
 import AstalWp from "gi://AstalWp";
 import GObject from "gi://GObject?version=2.0";

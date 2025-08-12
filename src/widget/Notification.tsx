@@ -1,8 +1,8 @@
 import { Gdk, Gtk } from "ags/gtk4";
 import { Separator } from "./Separator";
-import { HistoryNotification, Notifications } from "../scripts/notifications";
-import { getAppIcon, getSymbolicIcon } from "../scripts/apps";
-import { escapeUnintendedMarkup, pathToURI } from "../scripts/utils";
+import { HistoryNotification, Notifications } from "../modules/notifications";
+import { getAppIcon, getSymbolicIcon } from "../modules/apps";
+import { escapeUnintendedMarkup, pathToURI } from "../modules/utils";
 import { onCleanup } from "ags";
 
 import GObject from "ags/gobject";
