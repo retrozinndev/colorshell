@@ -1,12 +1,13 @@
 {
     "$schema": "https://www.schemastore.org/package.json",
     "name": "colorshell",
-    "version": "1.1.0",
+    "version": "2.0.0",
     "packageManager": "pnpm@10.12.1",
     "scripts": {
         "types": "sh ./scripts/types.sh",
         "dev": "sh ./scripts/build.sh -d && sh ./scripts/start.sh",
         "start": "sh ./scripts/start.sh",
+        "clean": "sh ./scripts/clean.sh",
         "build": "sh ./scripts/build.sh",
         "build:release": "sh ./scripts/release.sh",
         "sync-config": "sh ./scripts/update-repo.sh"
