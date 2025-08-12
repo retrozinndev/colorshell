@@ -52,7 +52,7 @@ export function handleArguments(cmd: Gio.ApplicationCommandLine, args: Array<str
         case "version":
         case "v":
             cmd.print_literal(`colorshell by retrozinndev, version ${COLORSHELL_VERSION
-                }${DEVEL ? "(devel)" : ""}\nhttps://github.com/retrozinndev/colorshell`);
+                }${DEVEL ? " (devel)" : ""}\nhttps://github.com/retrozinndev/colorshell`);
             return 0;
 
         case "open":
@@ -305,11 +305,6 @@ function handleVolumeArgs(cmd: Gio.ApplicationCommandLine, args: Array<string>):
         return 1;
     }
 
-    if(Number.isNaN(Number.parseFloat(args[2]))) {
-        cmd.printerr_literal(`Error: argument "${args[2]} is not a valid number! Please use integers"`);
-        return 1;
-    }
-
     const command: Array<string> = args[1].split('-');
 
     if(/h|help/.test(args[1])) {
@@ -325,20 +320,26 @@ Options:
         return 0;
     }
 
+    if(command[1] === "mute") {
+        command[0] === "sink" ? 
+            Wireplumber.getDefault().toggleMuteSink()
+        : Wireplumber.getDefault().toggleMuteSource()
+
+        cmd.print_literal(`Done toggling mute!`);
+        return 0;
+    }
+
+    if(Number.isNaN(Number.parseFloat(args[2]))) {
+        cmd.printerr_literal(`Error: argument "${args[2]} is not a valid number! Please use integers"`);
+        return 1;
+    }
+
     switch(command[1]) {
         case "set":
             command[0] === "sink" ? 
                 Wireplumber.getDefault().setSinkVolume(Number.parseInt(args[2]))
             : Wireplumber.getDefault().setSourceVolume(Number.parseInt(args[2]))
             cmd.print_literal(`Done! Set ${command[0]} volume to ${args[2]}`);
-            return 0;
-
-        case "mute":
-            command[0] === "sink" ? 
-                Wireplumber.getDefault().toggleMuteSink()
-            : Wireplumber.getDefault().toggleMuteSource()
-
-            cmd.print_literal(`Done toggling mute!`);
             return 0;
 
         case "increase":
