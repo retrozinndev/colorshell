@@ -17,14 +17,14 @@
 
     <!-- Icons -->
     <gresource prefix="/io/github/retrozinndev/colorshell/icons/scalable/actions">
-        <file alias="applications-other-symbolic">icons/applications-other-symbolic.svg</file>
-        <file alias="arrow-circular-top-right-symbolic">icons/arrow-circular-top-right-symbolic.svg</file>
-        <file alias="circle-filled-symbolic">icons/circle-filled-symbolic.svg</file>
-        <file alias="hourglass-symbolic">icons/hourglass-symbolic.svg</file>
-        <file alias="loop-arrow-symbolic">icons/loop-arrow-symbolic.svg</file>
-        <file alias="minus-circle-filled-symbolic">icons/minus-circle-filled-symbolic.svg</file>
-        <file alias="shield-danger-symbolic">icons/shield-danger-symbolic.svg</file>
-        <file alias="shield-safe-symbolic">icons/shield-safe-symbolic.svg</file>
-        <file alias="user-trash-symbolic">icons/user-trash-symbolic.svg</file>
+        <file alias="applications-other-symbolic.svg">icons/applications-other-symbolic.svg</file>
+        <file alias="arrow-circular-top-right-symbolic.svg">icons/arrow-circular-top-right-symbolic.svg</file>
+        <file alias="circle-filled-symbolic.svg">icons/circle-filled-symbolic.svg</file>
+        <file alias="hourglass-symbolic.svg">icons/hourglass-symbolic.svg</file>
+        <file alias="loop-arrow-symbolic.svg">icons/loop-arrow-symbolic.svg</file>
+        <file alias="minus-circle-filled-symbolic.svg">icons/minus-circle-filled-symbolic.svg</file>
+        <file alias="shield-danger-symbolic.svg">icons/shield-danger-symbolic.svg</file>
+        <file alias="shield-safe-symbolic.svg">icons/shield-safe-symbolic.svg</file>
+        <file alias="user-trash-symbolic.svg">icons/user-trash-symbolic.svg</file>
     </gresource>
 </gresources>
