@@ -62,6 +62,7 @@ export const BluetoothPage = new Page({
 
                                 return <PageButton class={isSelected.as(is => is ? "selected" : "")} 
                                   title={adapter.alias ?? "Adapter"} icon={"bluetooth-active-symbolic"} 
+                                  description={createBinding(adapter, "address")}
                                   endWidget={
                                       <Gtk.Image iconName={"object-select-symbolic"} visible={isSelected} />
                                   }
