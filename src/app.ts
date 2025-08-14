@@ -26,6 +26,8 @@ import { triggerOSD } from "./window/OSD";
 import { programArgs, programInvocationName } from "system";
 import { setConsoleLogDomain } from "console";
 import { initPlayer } from "./modules/media";
+import { encoder } from "./modules/utils";
+import { exec } from "ags/process";
 import GObject, { register } from "ags/gobject";
 
 import AstalNotifd from "gi://AstalNotifd";
@@ -49,7 +51,7 @@ Gtk.init();
 Adw.init();
 GLib.unsetenv("LD_PRELOAD");
 
-@register({ GTypeName: "Shell", Implements: [Gio.ActionGroup]})
+@register({ GTypeName: "Shell" })
 export class Shell extends Adw.Application implements Gio.ActionMap {
     private static instance: Shell;
 
@@ -57,6 +59,8 @@ export class Shell extends Adw.Application implements Gio.ActionMap {
     #connections = new Map<GObject.Object, Array<number> | number>();
     #providers: Array<Gtk.CssProvider> = [];
     #gresource: Gio.Resource|null = null;
+    #socketService: Gio.SocketService;
+    #socketFile: Gio.File;
 
     get scope() { return this.#scope; }
 
@@ -69,11 +73,12 @@ export class Shell extends Adw.Application implements Gio.ActionMap {
 
         setConsoleLogDomain("colorshell");
 
+        // load gresource from build-defined path
         try {
-            // load gresource from build-defined value + support env variables
             this.#gresource = Gio.Resource.load(GRESOURCES_FILE.split('/').filter(s => 
                 s !== ""
             ).map(path => {
+                // support environment variables at runtime
                 if(/^\$/.test(path)) {
                     const env = GLib.getenv(path.replace(/^\$/, ""));
                     if(env === null)
@@ -94,11 +99,75 @@ export class Shell extends Adw.Application implements Gio.ActionMap {
             console.error(`Error: couldn't load gresource! Stderr: ${e.message}\n${e.stack}`);
         }
 
-        // create action for gapplication to handle commands via dbus 
-        // (faster than running a remote instance to send arguments)
-        // TODO: implement support for argument parsing through dbus
-        const msgAction = Gio.SimpleAction.new("msg", null);
-        this.add_action(msgAction);
+        this.#socketFile = Gio.File.new_for_path(`${GLib.get_user_runtime_dir() ?? 
+            `/run/user/${exec("id -u").trim()}`}/colorshell.sock`);
+
+        if(this.#socketFile.query_exists(null)) {
+            console.log(`Colorshell: Deleting previous instance's socket`);
+            this.#socketFile.delete(null);
+        }
+        
+        this.#socketService = Gio.SocketService.new();
+        this.#socketService.add_address(
+            Gio.UnixSocketAddress.new(this.#socketFile.get_path()!),
+            Gio.SocketType.STREAM,
+            Gio.SocketProtocol.DEFAULT,
+            null
+        );
+
+        // handle communication via socket
+        this.#connections.set(this.#socketService, 
+            this.#socketService.connect("incoming", (_, conn) => {
+                const inputStream = Gio.DataInputStream.new(conn.inputStream);
+                inputStream.read_upto_async('\x00', -1, GLib.PRIORITY_DEFAULT, null, (_, res) => {
+                    const [args, len] = inputStream.read_upto_finish(res);
+                    inputStream.close(null);
+                    conn.inputStream.close(null);
+
+                    if(len < 1) {
+                        console.error(`Colorshell: No args provided via socket call`);
+                        return;
+                    }
+
+                    try {
+                        const [success, parsedArgs] = GLib.shell_parse_argv(`colorshell ${args}`);
+                        parsedArgs?.splice(0, 1); // remove the unnecessary `colorshell` part
+
+                        if(success) {
+                            handleArguments({
+                                print_literal: (msg) => conn.outputStream.write_bytes(
+                                    encoder.encode(msg),
+                                    null
+                                ),
+                                // TODO: support writing to stderr(i don't know how to do that :sob:)
+                                printerr_literal: (msg) => conn.outputStream.write_bytes(
+                                    encoder.encode(msg),
+                                    null
+                                )
+                            }, parsedArgs!);
+
+                            conn.outputStream.flush(null);
+                            conn.close(null);
+                            return;
+                        }
+
+                        conn.outputStream.write_bytes(
+                            encoder.encode("Error: Unexpected error occurred on argument parsing!"),
+                            null
+                        );
+
+                        conn.outputStream.flush(null);
+                        conn.close(null);
+                    } catch(_e) {
+                        const e = _e as Error;
+                        console.error(`Colorshell: An error occurred while writing to socket output. Stderr:\n${
+                            e.message}\n${e.stack}`);
+                    }
+                });
+
+                return false;
+            })
+        );
     }
 
     public static getDefault(): Shell {
@@ -154,12 +223,16 @@ export class Shell extends Adw.Application implements Gio.ActionMap {
     }
 
     vfunc_command_line(cmd: Gio.ApplicationCommandLine): number {
-        const args = cmd.get_arguments();
-        args.splice(0, 1); // remove executable
+        const args = cmd.get_arguments().toSpliced(0, 1); // remove executable
 
         if(cmd.isRemote) {
             try {
+                // warn user that this method is pretty slow
+                cmd.print_literal("\nColorshell: !! Using a remote instance to communicate is pretty slow, \
+you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster response.\n\n");
+
                 const res = handleArguments(cmd, args);
+
                 cmd.done();
                 cmd.set_exit_status(res);
                 return res;
@@ -197,7 +270,7 @@ export class Shell extends Adw.Application implements Gio.ActionMap {
             initPlayer();
             Clipboard.getDefault();
 
-            console.log("Colorshell: Initializing wallpaper & Stylesheet handlers");
+            console.log("Colorshell: Initializing Wallpaper and Stylesheet modules");
             Wallpaper.getDefault();
             Stylesheet.getDefault();
 

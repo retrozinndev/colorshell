@@ -10,8 +10,12 @@ import { generalConfig, Shell } from "../app";
 
 import AstalIO from "gi://AstalIO";
 import AstalMpris from "gi://AstalMpris";
-import Gio from "gi://Gio?version=2.0";
 
+
+export type RemoteCaller = {
+    printerr_literal: (message: string) => void,
+    print_literal: (message: string) => void
+};
 
 let wsTimeout: AstalIO.Time|undefined;
 const help = `Manage Astal Windows and do more stuff. From retrozinndev's colorshell, \
@@ -42,7 +46,7 @@ made using GTK4, AGS, Gnim and Astal libraries by Aylur.
         https://github.com/retrozinndev/colorshell
     `.split('\n').map(l => l.replace(/^ {8}/, "")).join('\n');
 
-export function handleArguments(cmd: Gio.ApplicationCommandLine, args: Array<string>): number {
+export function handleArguments(cmd: RemoteCaller, args: Array<string>): number {
     switch(args[0]) {
         case "help":
         case "h":
@@ -111,7 +115,7 @@ export function handleArguments(cmd: Gio.ApplicationCommandLine, args: Array<str
     return 1;
 }
 
-function handleMediaArgs(cmd: Gio.ApplicationCommandLine, args: Array<string>): number {
+function handleMediaArgs(cmd: RemoteCaller, args: Array<string>): number {
     if(/h|help/.test(args[1])) {
         const mediaHelp = `
 Manage colorshell's active player
@@ -225,7 +229,7 @@ specified bus name does not exist/is not available!`);
     return 1;
 }
 
-function handleWindowArgs(cmd: Gio.ApplicationCommandLine, args: Array<string>): number {
+function handleWindowArgs(cmd: RemoteCaller, args: Array<string>): number {
     switch(args[0]) {
         case "reopen":
             Windows.getDefault().reopen();
@@ -294,7 +298,7 @@ function handleWindowArgs(cmd: Gio.ApplicationCommandLine, args: Array<string>):
     return 1;
 }
 
-function handleVolumeArgs(cmd: Gio.ApplicationCommandLine, args: Array<string>): number {
+function handleVolumeArgs(cmd: RemoteCaller, args: Array<string>): number {
     if(!args[1]) {
         cmd.printerr_literal(`Error: please specify what to do! see \`volume help\``);
         return 1;
