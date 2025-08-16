@@ -1,46 +1,91 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 
 set -e
-source ./scripts/utils.sh
 
 trap "printf \"\nOk, quitting beacuse you entered an exit signal. (SIGINT).\n\"; exit 1" SIGINT
-trap "printf \"\nOh noo!! Some application just killed the script!\"; exit 2" SIGTERM
+trap "printf \"\nOh noo!! Some application just killed the script! (SIGTERM)\"; exit 2" SIGTERM
 
 BIN_HOME=`[[ ! "$BIN_HOME" ]] && echo -n "$BIN_HOME" || echo -n "$HOME/.local/bin"`
 XDG_DATA_HOME=`[[ ! "$XDG_DATA_HOME" ]] && echo -n "$XDG_DATA_HOME" || echo -n "$HOME/.local/share"`
+XDG_CACHE_HOME=`[[ ! "$XDG_CACHE_HOME" ]] && echo -n $XDG_CACHE_HOME || echo -N $HOME/.cache`
 XDG_CONFIG_HOME=`[[ ! "$XDG_CONFIG_HOME" ]] && echo -n "$XDG_CONFIG_HOME" || echo -n "$HOME/.config"`
 
-#####
+skip_prompts=`[[ "$@" =~ \-y ]] && echo -n true`
+is_standalone=`"$(git remote -v > /dev/null)" && remote=\`git remote -v | head -n 1 \
+    | awk '{print $2}' | sed 's/.git$//g'\` echo -n $remote`
+temp_dir="$XDG_CACHE_HOME/colorshell-installer"
+repo_directory=`[[ $is_standalone ]] && echo -n "$temp_dir/repo" || echo -n "."`
 
+
+# source utils script before installation
+if "$is_standalone"; then
+    mkdir -p $temp_dir
+    # testing only, change to commented value before merging (hope I don't forget lol)
+    default_branch="gtk4-ags3" # `curl -s https://api.github.com/repos/retrozinndev/colorshell | jq -r .default_branch`
+    # get utils script
+    curl -s https://raw.githubusercontent.com/retrozinndev/colorshell/refs/heads/$default_branch/utils.sh > $temp_dir/utils.sh
+    source $temp_dir/utils.sh
+else
+    source ./scripts/utils.sh
+fi
+
+
+#########
+# Start #
+#########
+
+# makes bash force-load the script into memory to avoid issues when 
+# switching source to a tag
+{
 Print_header
 echo -e "Colorshell is a project made by retrozinndev. 
 Source: https://github.com/retrozinndev/colorshell\n"
-
 sleep .5
 
 echo "Welcome to the colorshell installation script!"
 
-# Warn user of possible problems that can happen
+# Warn user of possible issues
 Send_log warn "!! By running this script, you assume total responsability for any issues that may occur with your filesystem"
 
-echo -n "Do you want to start the shell installation? [y/n] "
-[[ ! $1 == "dots" ]] && read input || printf "\n"
+[[ ! $skip_prompts ]] && \
+    Ask "Do you want to start the shell installation?"
 
-if [[ $1 == "dots" ]] || [[ $input =~ "y" ]]; then
-    Send_log "Starting installation...\n"
+
+if $is_standalone; then
+    Send_log "The installer noticed that you're calling the installation remotely"
+    rm -rf $repo_directory 2> /dev/null
+    Send_log "Cloning repository in \`$repo_directory\`..."
+    git clone https://github.com/retrozinndev/colorshell.git "$repo_directory"
+else 
+    Send_log "The installer detected that you're running the script from a local clone"
+fi
+
+if "$skip_prompts" || "$answer" == "y"; then
+    Ask "Nice! Do you want to use the stable version instead of the unstable(latest commit)?"
+
+    if ! "$skip_prompts" && "$answer" == "y"; then
+        Send_log "fetching latest release from colorshell repository"
+        latest_tag=`curl -s "$repo_api_url/releases" | jq -r '. | select(.[].prerelease == false) | .[0].tag_name'`
+        
+        Send_log "Done fetching"
+        Send_log "Checking out latest non-pre-release version: $latest_tag"
+        git -C $repo_directory checkout $latest_tag 1> /dev/null
+    fi
+
+    Send_log "Starting installation..."
 
     Send_log "Installing default configurations"
-    for dir in $(ls -A -w1 ./config); do
+    for dir in $(ls -A -w1 "$repo_directory/config"); do
         dest=$XDG_CONFIG_HOME/$dir
 
         echo "-> Installing $dir in $dest"
         mkdir -p "$dest" # create parents
 
-        if [[ -f "./$dir" ]]; then
-            rm -r "$dest" # delete unused directory
-            cp -f ./$dir "$dest" # copy actual file
+        if [[ -f "$repo_directory/$dir" ]]; then
+            rm -rf "$dest" # delete unused directory
+            cp -f $repo_directory/$dir "$dest" # copy actual file
         else
-            cp -rf ./$dir/* "$dest" # force-copy content
+            cp -rf $repo_directory/$dir/* "$dest" # force-copy content
         fi
     done
 
@@ -52,13 +97,13 @@ if [[ $1 == "dots" ]] || [[ $input =~ "y" ]]; then
     mkdir -p $BIN_HOME
     cp -f ./build/release/colorshell $BIN_HOME
 
-    # install gresouce
+    # install gresource
     mkdir -p $XDG_DATA_HOME/colorshell
     cp -f ./build/release/resources.gresource $XDG_DATA_HOME/colorshell
     Send_log "Cleaning"
     pnpm clean
 
-    if ! [[ $1 == "dots" ]]; then
+    if ! "$skip_prompts"; then
         echo "Colorshell is installed! :D"
         sleep .8
         echo "If you have issues, please report it!"
@@ -76,3 +121,4 @@ fi
 
 printf "Ok, doing as you said! Bye bye!\n"
 exit 0
+}
