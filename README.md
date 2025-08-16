@@ -85,6 +85,9 @@ Don't see your language here? You can contribute and make translations too! <br>
 You can do so by forking this repository, translating the shell in your fork and then opening a pull request to this repository, simple as that!
 (I'll create a more detailed guide for that soon)
 
+## ⚙️ Installation
+See the Installation Guide on [Wiki/Installation].
+
 ## 🛠️ Development
 This project uses `pnpm` to manage packages and running scripts.
 To build the shell, run a development build or make a release build, you can use the project's integrated scripts.<br>
@@ -121,9 +124,6 @@ or if you actually only want to run the current build instead of building again:
 ```
 pnpm start
 ```
-
-## ⚙️ Installation
-See the Installation Guide on [Wiki/Installation].
 
 ## ❗ Issues
 Having issues? Please create a [new Issue] here, I'll be happy to help you out!
