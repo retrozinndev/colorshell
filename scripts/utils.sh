@@ -9,20 +9,6 @@
 
 
 # -------------
-# Array containing directory names to be used by 
-# retrozinndev/colorshell install and update
-# scripts.
-# -------------
-config_dirs=(
-    "hypr/scripts" 
-    "hypr/shell" 
-    "hypr/hyprlock.conf" 
-    "hypr/hyprland.conf" 
-    "hypr/hypridle.conf" 
-    "kitty/kitty.conf" 
-)
-
-# -------------
 # Sends stdout log with type and message provided 
 # in parameters.
 # param $1 (optional) log type (err[or], warn[ing]), if not any of list, print as info

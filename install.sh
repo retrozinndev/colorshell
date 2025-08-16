@@ -1,52 +1,36 @@
 #!/usr/bin/bash
 
-source ./utils.sh
-
 set -e
+source ./scripts/utils.sh
+
 trap "printf \"\nOk, quitting beacuse you entered an exit signal. (SIGINT).\n\"; exit 1" SIGINT
 trap "printf \"\nOh noo!! Some application just killed the script!\"; exit 2" SIGTERM
 
-XDG_CONFIG_HOME=$(sh -c '[[ ! -z "$XDG_CONFIG_HOME" ]] && echo "$XDG_CONFIG_HOME" || echo "$HOME/.config"')
+BIN_HOME=`[[ ! "$BIN_HOME" ]] && echo -n "$BIN_HOME" || echo -n "$HOME/.local/bin"`
+XDG_DATA_HOME=`[[ ! "$XDG_DATA_HOME" ]] && echo -n "$XDG_DATA_HOME" || echo -n "$HOME/.local/share"`
+XDG_CONFIG_HOME=`[[ ! "$XDG_CONFIG_HOME" ]] && echo -n "$XDG_CONFIG_HOME" || echo -n "$HOME/.config"`
 
-function Apply_wallpapers() {
-    echo -n "Would you also like to apply the wallpapers folder? :3 [y/n] "
-    read answer
-    printf "\n"
-
-    if [[ $answer =~ "y" ]]; then
-        echo "Thanks for choosing! Please remember that I am not the author of the wallpapers!"
-        echo "You can see sources in the repo: https://github.com/retrozinndev/colorshell/WALLPAPERS.md"
- 
-        echo "-> Copying wallpapers to ~/wallpapers"
-        mkdir -p $HOME/wallpapers
-        cp -f ./wallpapers/* $HOME/wallpapers
-    else
-        echo "Ok! The wallpaper is yours to choose!"
-        echo "Expect some Hyprland source and color errors, it happens because there aren't colors to source when you don't install wallpapers right away, so you have to do it yourself."
-        echo "Tip: create the ~/wallpapers directory, put your wallpapers there and press ´SUPER + W´ to select :3"
-    fi
-}
-
-#########
-# Start #
-#########
+#####
 
 Print_header
-echo -e "colorshell is a project made by retrozinndev. source: https://github.com/retrozinndev/colorshell\n"
+echo -e "Colorshell is a project made by retrozinndev. 
+Source: https://github.com/retrozinndev/colorshell\n"
+
 sleep .5
 
 echo "Welcome to the colorshell installation script!"
 
 # Warn user of possible problems that can happen
-echo "!!!WARNING!!! By running this script, you assume total responsability for any issues that may occur with your filesystem"
+Send_log warn "!! By running this script, you assume total responsability for any issues that may occur with your filesystem"
 
 echo -n "Do you want to start the shell installation? [y/n] "
 [[ ! $1 == "dots" ]] && read input || printf "\n"
 
 if [[ $1 == "dots" ]] || [[ $input =~ "y" ]]; then
-	Send_log "Starting installation...\n"
+    Send_log "Starting installation...\n"
 
-	for dir in ${config_dirs[@]}; do
+    Send_log "Installing default configurations"
+    for dir in $(ls -A -w1 ./config); do
         dest=$XDG_CONFIG_HOME/$dir
 
         echo "-> Installing $dir in $dest"
@@ -60,26 +44,33 @@ if [[ $1 == "dots" ]] || [[ $input =~ "y" ]]; then
         fi
     done
 
-    echo "-> Copying default user config"
-    cp -rf ./hypr/user $XDG_CONFIG_HOME/hypr
+    Send_log "Building colorshell..."
+    pnpm build:release
 
-    echo "-> Copying default hyprpaper.conf"
-    cp -f ./hypr/hyprpaper.conf $XDG_CONFIG_HOME/hypr
+    Send_log "Installing colorshell"
+    # install shell
+    mkdir -p $BIN_HOME
+    cp -f ./build/release/colorshell $BIN_HOME
 
-    # Ask if user also wants to install default wallpapers
-    Apply_wallpapers
+    # install gresouce
+    mkdir -p $XDG_DATA_HOME/colorshell
+    cp -f ./build/release/resources.gresource $XDG_DATA_HOME/colorshell
+    Send_log "Cleaning"
+    pnpm clean
 
     if ! [[ $1 == "dots" ]]; then
-        echo "Ah yes! Looks like it's installed, yay :3"; sleep .8
-        echo "If you find any issue, please report it in: https://github.com/retrozinndev/colorshell/issues"; sleep .5
-        echo "Thanks for using colorshell! I really appreciate that :D"
+        echo "Colorshell is installed! :D"
+        sleep .8
+        echo "If you have issues, please report it!"
+        echo "Issue Tracker: https://github.com/retrozinndev/colorshell/issues"
+        sleep .5
+        echo "Thanks for using colorshell! I really appreciate that :P"
         printf "\n"
 
         exit 0
     fi
 
-    Send_log "colorshell is installed!"
-
+    Send_log "Colorshell is installed!"
     exit 0
 fi
 

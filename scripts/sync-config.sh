@@ -1,7 +1,15 @@
 #!/usr/bin/bash
 
-source ./utils.sh
+source ./scripts/utils.sh
 
+config_dirs=(
+    "hypr/scripts" 
+    "hypr/shell" 
+    "hypr/hyprlock.conf" 
+    "hypr/hyprland.conf" 
+    "hypr/hypridle.conf" 
+    "kitty/kitty.conf" 
+)
 outdir="./config"
 
 Clean_local() {
