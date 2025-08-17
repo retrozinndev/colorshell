@@ -13,7 +13,7 @@ skip_prompts=`[[ "$@" =~ -y ]] && echo -n true`
 is_standalone=`(git remote -v > /dev/null 2>&1) || echo -n true`
 
 temp_dir="$XDG_CACHE_HOME/colorshell-installer"
-repo_directory=`"$is_standalone" && echo -n "$temp_dir/repo" || echo -n "."`
+repo_directory=`[[ "$is_standalone" ]] && echo -n "$temp_dir/repo" || echo -n "."`
 
 
 # source utils script before installation
