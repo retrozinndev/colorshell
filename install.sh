@@ -83,6 +83,8 @@ if [[ "$answer" == "y" ]] || [[ "$skip_prompts" ]]; then
     done
 
     Send_log "Building colorshell..."
+    prev_wd=`pwd`
+    cd "$repo_directory"
     pnpm build:release
 
     Send_log "Installing colorshell"
@@ -95,6 +97,8 @@ if [[ "$answer" == "y" ]] || [[ "$skip_prompts" ]]; then
     cp -f ./build/release/resources.gresource $XDG_DATA_HOME/colorshell
     Send_log "Cleaning"
     pnpm clean
+
+    cd "$prev_wd"
 
     if [[ -z "$skip_prompts" ]]; then
         echo "Colorshell is installed! :D"
