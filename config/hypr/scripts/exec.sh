@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # This script executes the provided program with UWSM
-# if in usage or launches it normally with hyprctl.
+# if active, or else normally.
 # ---------------
 # Licensed under the MIT License
 # Made by retrozinndev (João Dias)
@@ -10,6 +10,11 @@
 
 if uwsm check is-active; then
     exec uwsm app -- "$@"
+    exit 0
+fi
+
+if [[ $1 =~ [.]desktop$ ]]; then
+    gtk-launch $@
     exit 0
 fi
 
