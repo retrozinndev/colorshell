@@ -133,10 +133,15 @@ This repo is licensed under the [MIT License], project is made and maintained by
 
 ## 🌠 Stargazers
 <div align="center">
-  
-[![Star History Chart](https://api.star-history.com/svg?repos=retrozinndev/colorshell&type=Date)](https://www.star-history.com/#retrozinndev/colorshell&Date)
-<br>
-<p align="center">Thanks to everyone who starred my project! 💖</p>
+    <a href="https://www.star-history.com/#retrozinndev/colorshell&Date">
+        <picture>
+            <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=retrozinndev/colorshell&type=Date&theme=dark" />
+            <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=retrozinndev/colorshell&type=Date" />
+            <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=retrozinndev/colorshell&type=Date" />
+        </picture>
+    </a>
+    <br>
+    <p align="center">Thanks to everyone who starred my project! 💖</p>
 </div>
 
 <!-- References of other projects -->
