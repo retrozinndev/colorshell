@@ -9,14 +9,14 @@ It really took me a lot of time to make this, so please star the repo if you lik
 
 ## 🌄 Screenshots
 <div align="center">
-    <img src="./repo/shots/desktop.png" alt="desktop" width="48%" />
-    <img src="./repo/shots/runner.png" alt="Runner" width="48%" />
-    <img src="./repo/shots/center-window-control-center.png" alt="Control Center & Center Window" width="48%" />
-    <img src="./repo/shots/kitty.png" alt="Kitty" width="48%" />
+  <img src="./repo/shots/desktop.png" alt="desktop" width="49%" />
+  <img src="./repo/shots/runner.png" alt="Runner" width="49%" />
+  <img src="./repo/shots/center-window-control-center.png" alt="Control Center & Center Window" width="49%" />
+  <img src="./repo/shots/kitty.png" alt="Kitty" width="49%" />
 
-    <p align="center">
-        more screenshots on [`repo/shots`](repo/shots)
-    </p>
+  <p align="right">
+    <i>more screenshots on <a href="repo/shots"><code>repo/shots</code></a></i>
+  </p>
 </div>
 
 ## 🎨 Colors
