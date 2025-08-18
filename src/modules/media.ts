@@ -1,4 +1,5 @@
-import { createRoot, createState, onCleanup } from "ags";
+import { Accessor, createConnection, createRoot, createState, onCleanup } from "ags";
+import { decoder } from "./utils";
 
 import GObject from "ags/gobject";
 import AstalMpris from "gi://AstalMpris";
@@ -52,6 +53,18 @@ export function initPlayer(): void {
             disposeFun = undefined;
         });
     });
+}
+
+export function accessMediaUrl(player: AstalMpris.Player): Accessor<string|undefined> {
+    return createConnection(player.get_meta("xesam:url"),
+        [player, "notify::metadata", () => player.get_meta("xesam:url")]
+    ).as(url => {
+        const byteString = url?.get_data_as_bytes();
+
+        return byteString ? 
+            decoder.decode(byteString.toArray())
+        : undefined;
+      })
 }
 
 export function disposePlayer(): void {

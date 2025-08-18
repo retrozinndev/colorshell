@@ -51,6 +51,10 @@ export function escapeUnintendedMarkup(input: string): string {
     });
 }
 
+export function escapeSpecialCharacters(str: string): string {
+    return str.replace(/[\\^$.*?()[\]{}|]/g, "\\$&");
+}
+
 export function getChildren(widget: Gtk.Widget): Array<Gtk.Widget> {
     const firstChild = widget.get_first_child(), 
         children: Array<Gtk.Widget> = [];

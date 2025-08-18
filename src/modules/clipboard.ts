@@ -1,17 +1,12 @@
+import { timeout } from "ags/time";
+import { monitorFile, readFile } from "ags/file"; 
+import { execAsync } from "ags/process";
+import GObject, { getter, register, signal } from "ags/gobject";
+
 import AstalIO from "gi://AstalIO";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 
-import GObject, { getter, register, signal } from "ags/gobject";
-import { timeout } from "ags/time";
-import { monitorFile, readFile } from "ags/file"; 
-import { execAsync } from "ags/process";
-
-
-interface ClipboardSignals extends GObject.Object.SignalSignatures {
-    copied: Clipboard["copied"];
-    wiped: Clipboard["wiped"];
-};
 
 export enum ClipboardItemType {
     TEXT = 0,
@@ -38,7 +33,10 @@ export { Clipboard };
 class Clipboard extends GObject.Object {
     private static instance: Clipboard;
 
-    declare $signals: ClipboardSignals;
+    declare $signals: GObject.Object.SignalSignatures & {
+        "copied": Clipboard["copied"];
+        "wiped": Clipboard["wiped"];
+    };
 
     #dbFile: Gio.File;
     #dbMonitor: Gio.FileMonitor;
@@ -49,7 +47,6 @@ class Clipboard extends GObject.Object {
 
     @signal(GObject.TYPE_JSOBJECT) copied(_item: object) {}
     @signal() wiped() {};
-
 
     @getter(Array)
     public get history() { return this.#history; }
@@ -97,11 +94,25 @@ class Clipboard extends GObject.Object {
         );
     }
 
-    public async copyAsync(content: string): Promise<void> {
-        await execAsync(`wl-copy "${content}"`).catch((err: Gio.IOErrorEnum) => {
-            console.error(`Clipboard: Couldn't copy text using wl-copy. Stderr:\n\t${err.message
-                } | Stack:\n\t\t${err.stack}`);
-        });
+    public async copyAsync(content: string): Promise<boolean> {
+        const proc = Gio.Subprocess.new(
+            ["wl-copy", content],
+            Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
+        );
+
+        const stderr = Gio.DataInputStream.new(proc.get_stderr_pipe()!);
+
+        if(!proc.wait_check()) {
+            try {
+                const [err, ] = stderr.read_upto('\x00', -1);
+                console.error(`Clipboard: An error occurred while copying text. Stderr: ${err}`);
+            } catch(_) {
+                console.error(`Clipboard: An error occurred while copying text and shell couldn't read \
+stderr for more info.`);
+            }
+        }
+
+        return proc.get_exit_status() === 0;
     }
 
     public async selectItem(itemToSelect: number|ClipboardItem): Promise<boolean> {

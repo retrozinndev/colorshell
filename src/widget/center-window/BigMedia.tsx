@@ -1,7 +1,7 @@
 import { timeout } from "ags/time";
 import { Astal, Gtk } from "ags/gtk4";
 import { Clipboard } from "../../modules/clipboard";
-import { getMediaUrl } from "../bar/Media";
+import { accessMediaUrl } from "../../modules/media";
 import { player, setPlayer } from "../../modules/media";
 import { createBinding, For } from "ags";
 import { pathToURI, variableToBoolean } from "../../modules/utils";
@@ -126,9 +126,9 @@ class PlayerWidget extends Gtk.Box {
                 <Gtk.Box class={"controls button-row"} $type="center">
                     <Gtk.Button class={"link"} iconName={"edit-paste-symbolic"}
                       tooltipText={"Copy link to clipboard"}
-                      visible={variableToBoolean(getMediaUrl(player))}
+                      visible={variableToBoolean(accessMediaUrl(player))}
                       onClicked={() => {
-                          const url = getMediaUrl(player).get();
+                          const url = accessMediaUrl(player).get();
                           url && Clipboard.getDefault().copyAsync(url);
                       }}
                     />

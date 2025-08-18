@@ -1,10 +1,10 @@
-import { Accessor, createBinding, createConnection, onCleanup, With } from "ags";
+import { createBinding, onCleanup, With } from "ags";
 import { Gtk } from "ags/gtk4";
 import { Separator } from "../Separator";
 import { Windows } from "../../windows";
 import { Clipboard } from "../../modules/clipboard";
-import { decoder, getPlayerIconFromBusName, variableToBoolean } from "../../modules/utils";
-import { player, setPlayer } from "../../modules/media";
+import { getPlayerIconFromBusName, variableToBoolean } from "../../modules/utils";
+import { accessMediaUrl, player, setPlayer } from "../../modules/media";
 
 import GObject from "ags/gobject";
 import AstalMpris from "gi://AstalMpris";
@@ -105,9 +105,9 @@ export const Media = () => {
             <With value={player(pl => pl.available)}>
                 {(available: boolean) => available && <Gtk.Box class={"media-controls button-row"}>
                     <Gtk.Button class={"link"} iconName={"edit-paste-symbolic"} 
-                      visible={variableToBoolean(getMediaUrl(player.get()))}
+                      visible={variableToBoolean(accessMediaUrl(player.get()))}
                       tooltipText={"Copy link to Clipboard"} onClicked={() => {
-                          const url = getMediaUrl(player.get()).get();
+                          const url = accessMediaUrl(player.get()).get();
                           url && Clipboard.getDefault().copyAsync(url);
                       }}
                     />
@@ -132,16 +132,4 @@ export const Media = () => {
             </With>
         </Gtk.Revealer>
     </Gtk.Box>
-}
-
-export function getMediaUrl(player: AstalMpris.Player): Accessor<string|undefined> {
-    return createConnection(player.get_meta("xesam:url"),
-        [player, "notify::metadata", () => player.get_meta("xesam:url")]
-    ).as(url => {
-        const byteString = url?.get_data_as_bytes();
-
-        return byteString ? 
-            decoder.decode(byteString.toArray())
-        : undefined;
-      })
 }
