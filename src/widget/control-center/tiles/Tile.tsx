@@ -74,6 +74,7 @@ class Tile extends Gtk.Box {
 
         this.icon = props.icon;
         this.title = props.title;
+        this.hexpand = true;
 
         if(props.hasArrow != null)
             this.hasArrow = props.hasArrow;
@@ -104,11 +105,12 @@ class Tile extends Gtk.Box {
               valign={Gtk.Align.CENTER} hexpand>
 
                 <Gtk.Label class={"title"} label={createBinding(this, "title")} 
-                  xalign={0} ellipsize={Pango.EllipsizeMode.END} />
+                  xalign={0} ellipsize={Pango.EllipsizeMode.END} hexpand={false} 
+                  maxWidthChars={10} />
                 <Gtk.Label class={"description"} label={createBinding(this, "description")} 
                   xalign={0} ellipsize={Pango.EllipsizeMode.END} visible={
                       variableToBoolean(createBinding(this, "description"))
-                  } 
+                  } maxWidthChars={15} hexpand={false}
                 />
 
                 <Gtk.GestureClick onReleased={() => {
@@ -123,7 +125,7 @@ class Tile extends Gtk.Box {
 
         if(this.hasArrow)
             this.append(
-                <Gtk.Image class={"arrow"} iconName={"go-next-symbolic"}>
+                <Gtk.Image class={"arrow"} iconName={"go-next-symbolic"} halign={Gtk.Align.END}>
                     <Gtk.GestureClick onReleased={() => {
                         this.emit("clicked");
                         if(this.enableOnClicked && !this.state)
