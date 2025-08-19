@@ -110,7 +110,7 @@ class Tile extends Gtk.Box {
                 <Gtk.Label class={"description"} label={createBinding(this, "description")} 
                   xalign={0} ellipsize={Pango.EllipsizeMode.END} visible={
                       variableToBoolean(createBinding(this, "description"))
-                  } maxWidthChars={15} hexpand={false}
+                  } maxWidthChars={12} hexpand={false}
                 />
 
                 <Gtk.GestureClick onReleased={() => {

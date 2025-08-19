@@ -1,9 +1,10 @@
+import { execAsync, exec } from "ags/process";
+import { interval } from "ags/time";
+import GObject, { getter, register, setter } from "ags/gobject";
+
 import AstalIO from "gi://AstalIO";
 import GLib from "gi://GLib?version=2.0";
 
-import GObject, { getter, register } from "ags/gobject";
-import { execAsync, exec } from "ags/process";
-import { interval } from "ags/time";
 
 export { NightLight };
 
@@ -15,9 +16,6 @@ class NightLight extends GObject.Object {
     #temperature: number = 4500;
     #gamma: number = 100;
     #identity: boolean = false;
-
-    #prevTemperature: (number|null) = null;
-    #prevGamma: (number|null) = null;
 
     @getter(Number)
     public get temperature() { return this.#temperature; }
@@ -34,19 +32,24 @@ class NightLight extends GObject.Object {
 
     @getter(Boolean)
     public get identity() { return this.#identity; }
-    public set identity(newValue: boolean) {
-        newValue ? this.applyIdentity() : this.filter();
+
+    @setter(Boolean)
+    public set identity(val: boolean) {
+        val ? this.applyIdentity() : this.filter();
+        this.#identity = val;
+        this.notify("identity");
     }
 
     constructor() {
         super();
 
-        this.#watchInterval = interval(1000, () => {
+        this.#watchInterval = interval(10000, () => {
             execAsync("hyprctl hyprsunset temperature").then(t => {
                 if(t.trim() !== "" && t.trim().length <= 5) {
                     const val = Number.parseInt(t.trim());
 
                     if(this.#temperature !== val) {
+                        this.identity = this.#temperature === this.identityTemperature;
                         this.#temperature = val;
                         this.notify("temperature");
                     }
@@ -58,6 +61,7 @@ class NightLight extends GObject.Object {
                     const val = Number.parseInt(g.trim());
 
                     if(this.#gamma !== val) {
+                        this.identity = this.#gamma === this.maxGamma;
                         this.#gamma = val;
                         this.notify("gamma");
                     }
@@ -77,7 +81,7 @@ class NightLight extends GObject.Object {
     }
 
     private setTemperature(value: number): void {
-        if(value === this.temperature) return;
+        if(value === this.temperature && !this.identity) return;
 
         if(value > this.maxTemperature || value < 1000) {
             console.error(`Night Light(hyprsunset): provided temperatue ${value
@@ -85,20 +89,18 @@ class NightLight extends GObject.Object {
             return;
         }
 
-        execAsync(`hyprctl hyprsunset temperature ${value}`).then(() => {
+        this.dispatchAsync("temperature", value).then(() => {
             this.#temperature = value;
             this.notify("temperature");
 
-            this.#identity = false;
-            this.#prevTemperature = null;
-            this.#prevGamma = null;
+            this.identity = false;
         }).catch((r) => console.error(
             `Night Light(hyprsunset): Couldn't set temperature. Stderr: ${r}`
         ));
     }
 
     private setGamma(value: number): void {
-        if(value === this.gamma) return;
+        if(value === this.gamma && !this.identity) return;
 
         if(value > this.maxGamma || value < 0) {
             console.error(`Night Light(hyprsunset): provided gamma ${value
@@ -106,38 +108,40 @@ class NightLight extends GObject.Object {
             return;
         }
 
-        execAsync(`hyprctl hyprsunset gamma ${value}`).then(() => {
+        this.dispatchAsync("gamma", value).then(() => {
             this.#gamma = value;
             this.notify("gamma");
 
-            this.#identity = false;
-            this.#prevTemperature = null;
-            this.#prevGamma = null;
+            this.identity = false;
         }).catch((r) => console.error(
             `Night Light(hyprsunset): Couldn't set gamma. Stderr: ${r}`
         ));
     }
 
     public applyIdentity(): void {
-        if(this.#identity) return;
+        this.dispatch("identity");
+        if(!this.#identity) {
+            this.#identity = true;
+            this.notify("identity");
+        }
+    }
 
-        this.#prevGamma = this.#gamma;
-        this.#prevTemperature = this.#temperature;
+    private dispatch(call: "temperature"|"gamma"|"identity", val?: number): string {
+        return exec(`hyprctl hyprsunset ${call}${val != null ? ` ${val}` : ""}`);
+    }
 
-        this.#identity = true;
-        this.temperature = this.identityTemperature;
-        this.gamma = this.maxGamma;
+    private async dispatchAsync(...[call, val]: Parameters<typeof this.dispatch>): Promise<string> {
+        return await execAsync(`hyprctl hyprsunset ${call}${val != null ? ` ${val}` : ""}`);
     }
 
     public filter(): void {
-        if(!this.#identity) return;
+        this.setTemperature(this.temperature);
+        this.setGamma(this.gamma);
 
-        this.#identity = false;
-        this.setTemperature(this.#prevTemperature ?? this.identityTemperature);
-        this.setGamma(this.#prevGamma ?? this.maxGamma);
-
-        this.#prevTemperature = null;
-        this.#prevGamma = null;
+        if(this.#identity) {
+            this.#identity = false;
+            this.notify("identity");
+        }
     }
 
     public saveData(): void {

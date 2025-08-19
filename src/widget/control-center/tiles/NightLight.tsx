@@ -10,11 +10,14 @@ export const TileNightLight = () =>
     <Tile title={tr("control_center.tiles.night_light.title")}
         icon={"weather-clear-night-symbolic"}
         description={createComputed([
+            createBinding(NightLight.getDefault(), "identity"),
             createBinding(NightLight.getDefault(), "temperature"),
             createBinding(NightLight.getDefault(), "gamma")
-        ], (temp, gamma) => `${temp === NightLight.getDefault().identityTemperature ? 
-                tr("control_center.tiles.night_light.default_desc") : `${temp}K`} ${
-            gamma < NightLight.getDefault().maxGamma ? `(${gamma}%)` : ""}`
+        ], (identity, temp, gamma) => !identity ? 
+                `${temp === NightLight.getDefault().identityTemperature ? 
+                    tr("control_center.tiles.night_light.default_desc") : `${temp}K`
+                    } ${gamma < NightLight.getDefault().maxGamma ? `(${gamma}%)` : ""}`
+            : tr("control_center.tiles.disabled")
         )}
         hasArrow visible={isInstalled("hyprsunset")}
         onDisabled={() => NightLight.getDefault().identity = true}
