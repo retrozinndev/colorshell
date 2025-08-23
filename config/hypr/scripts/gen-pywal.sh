@@ -12,6 +12,7 @@ if ! [[ -f "$XDG_CONFIG_HOME/hypr/hyprpaper.conf" ]]; then
     exit 1
 fi
 
-wallpaper=`cat "$XDG_CONFIG_HOME/hypr/hyprpaper.conf" | grep '$wallpaper =' | sed -e 's/^$wallpaper = //'`
+raw=`cat "$XDG_CONFIG_HOME/hypr/hyprpaper.conf" | grep '$wallpaper =' | sed -e 's/^$wallpaper = //'`
+wallpaper=${raw/\~/"$HOME"}
 [[ -d "$XDG_CACHE_HOME/wal" ]] && wal -R || sh $XDG_CONFIG_HOME/hypr/scripts/change-wallpaper.sh "$wallpaper"
 
