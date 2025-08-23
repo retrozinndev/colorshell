@@ -26,12 +26,11 @@ This is possible by using [pywal16], a fork of the archived [pywal](https://gith
 It's a cli tool to generate color schemes from an image.
 
 ## 🖼️ Wallpapers
-
 These are not included in the shell anymore, because the repository was getting too big in size. 
 So you'll have to add it in your own.
 
-You can define the `WALLPAPERS` variable in your hyprland user configuration to your wallpapers folder, 
-or create the `~/wallpapers` directory and put your wallpapers there.
+You can add more wallpapers either by adding your custom images to `~/wallpapers` or by defining `WALLPAPERS` 
+in your `hypr/user/environment`, pointing to the custom location.
 
 Also, you can select any of the images inside `~/wallpapers` by pressing 
 <kbd>SUPER</kbd> + <kbd>W</kbd> or by accessing the Control Center and clicking in the image 
