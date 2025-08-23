@@ -11,14 +11,15 @@ const languages: Array<string> = Object.keys(i18nKeys);
 let language: string = getSystemLanguage();
 
 export function getSystemLanguage(): string {
-    const sysLanguage: (string|null|undefined) = GLib.getenv("LANG") || GLib.getenv("LANGUAGE");
+    const sysLanguage: (string|null|undefined) = GLib.getenv("LANG") ?? GLib.getenv("LANGUAGE"),
+        splitted: Array<string>|undefined = sysLanguage?.split('.');
 
-    if(!sysLanguage || languages[sysLanguage as keyof typeof languages] === undefined) {
-        console.warn(`Intl: Fallback to default \`${languages[0]}\``);
+    if(!splitted || !languages.includes(splitted![0])) {
+        console.warn(`Intl: Falling back to default \`${languages[0]}\``);
         return languages[0];
     }
 
-    return sysLanguage.split('.')[0];
+    return splitted![0];
 }
 
 export function setLanguage(lang: string): string {
