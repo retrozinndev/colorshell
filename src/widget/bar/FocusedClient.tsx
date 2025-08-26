@@ -10,13 +10,12 @@ import AstalHyprland from "gi://AstalHyprland";
 const hyprland = AstalHyprland.get_default();
 
 // Fix empty focused-client on opening a window on an empty workspace
-hyprland.connect("client-added", () => hyprland.notify("focused-client"));
+hyprland.connect("notify::clients", () => hyprland.notify("focused-client"));
 
 export const FocusedClient = () => {
     const focusedClient = createBinding(hyprland, "focusedClient");
 
-    return <Gtk.Box class={"focused-client"} 
-      visible={variableToBoolean(createBinding(hyprland, "focusedClient"))}>
+    return <Gtk.Box class={"focused-client"} visible={variableToBoolean(focusedClient)}>
         <With value={focusedClient}>
             {(focusedClient) => focusedClient?.class && <Gtk.Box>
                 <Gtk.Image iconName={createBinding(focusedClient, "class").as((clss) => 

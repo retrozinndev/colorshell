@@ -4,6 +4,7 @@ import { Pages } from "./Pages";
 import { PageSound } from "./pages/Sound";
 import { PageMicrophone } from "./pages/Microphone";
 import { createBinding, With } from "ags";
+import { Backlight } from "../../modules/backlight";
 
 import AstalWp from "gi://AstalWp";
 
@@ -48,6 +49,27 @@ export function Sliders() {
                     slidersPages?.toggle(PageMicrophone)} />
             </Gtk.Box>}
         </With>
+        <Gtk.Box visible={Boolean(Backlight.getDefault())}>
+            {Backlight.getDefault() &&
+                <With value={createBinding(Backlight.getDefault()!, "default")}>
+                    {(bklight: Backlight) => bklight && 
+                        <Gtk.Box class={"backlight"} spacing={3}>
+                            <Gtk.Button onClicked={() => {
+                                  bklight.brightness = bklight.maxBrightness
+                              }} iconName={"display-brightness-symbolic"}
+                            />
+
+                            <Astal.Slider drawValue={false} hexpand value={createBinding(bklight, "brightness")} 
+                              max={bklight.maxBrightness}
+                              onChangeValue={(_, __, value) => {
+                                  Backlight.getDefault()!.brightness = value
+                              }}
+                            />
+                        </Gtk.Box>
+                    }
+                </With>
+            }
+        </Gtk.Box>
         <Pages $={(self) => slidersPages = self} />
     </Gtk.Box>
 }
