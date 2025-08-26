@@ -12,7 +12,7 @@ import AstalNotifd from "gi://AstalNotifd";
 
 
 export { Config };
-type ValueTypes = "string" | "boolean" | "object" | "number" | "undefined" | "any";
+type ValueTypes = "string" | "boolean" | "object" | "number" | "any";
 
 @register({ GTypeName: "Config" })
 class Config<K extends NonNullable<string|number|symbol>, V extends string|object|any> extends GObject.Object {
@@ -91,6 +91,10 @@ class Config<K extends NonNullable<string|number|symbol>, V extends string|objec
                 });
             }
         );
+
+        this.readFile().catch(e => console.error(
+            `Config: An error occurred while read the configuration file. Stderr: ${e}`
+        ));
     }
 
     private async readFile(): Promise<void> {
@@ -106,7 +110,7 @@ class Config<K extends NonNullable<string|number|symbol>, V extends string|objec
                     summary: "Config parsing error",
                     body: `An error occurred while parsing colorshell's config file: \nFile: ${
                         this.#file.get_path()!}\n${
-                        (e as SyntaxError).message}\n${(e as SyntaxError).stack}`
+                        (e as SyntaxError).message}`
                 });
             }
 
@@ -128,24 +132,45 @@ class Config<K extends NonNullable<string|number|symbol>, V extends string|objec
                     urgency: AstalNotifd.Urgency.NORMAL,
                     appName: "colorshell",
                     summary: "Config read error",
-                    body: `An error occurred while reading colorshell's config file: \nFile: ${`${
-                        this.#file.get_path()!}\n${e.message ? `${e.message}\n` : ""}${e.stack}`.replace(/[<>]/g, "\\&")}`
+                    body: `An error occurred while reading colorshell's config file: ${this.#file.get_path()!
+                        }\n${e.message}`.replace(/[<>]/g, "\\&")
                 });
         });
     }
 
-    public bindProperty(propertyPath: string, expectType?: ValueTypes): Accessor<any|undefined> {
-        return new Accessor<Record<K, V>>(() => this.getProperty(propertyPath, expectType), (callback: () => void) => {
+    public bindProperty(path: string, expectType: "boolean"): Accessor<boolean>;
+    public bindProperty(path: string, expectType: "number"): Accessor<number>;
+    public bindProperty(path: string, expectType: "string"): Accessor<string>;
+    public bindProperty(path: string, expectType: "object"): Accessor<object>;
+    public bindProperty(path: string, expectType: "any"): Accessor<any>;
+    public bindProperty(path: string, expectType: undefined): Accessor<any>;
+
+    public bindProperty(propertyPath: string, expectType?: ValueTypes): Accessor<boolean|number|string|object|any> {
+        return new Accessor(() => this.getProperty(propertyPath, expectType as never), (callback: () => void) => {
             const id = this.connect("notify::entries", () => callback());
             return () => this.disconnect(id);
         });
     }
 
-    public getProperty(path: string, expectType?: ValueTypes): (any|undefined) {
+    public getProperty(path: string, expectType: "boolean"): boolean;
+    public getProperty(path: string, expectType: "number"): number;
+    public getProperty(path: string, expectType: "string"): string;
+    public getProperty(path: string, expectType: "object"): object;
+    public getProperty(path: string, expectType: "any"): any;
+    public getProperty(path: string, expectType: undefined): any;
+
+    public getProperty(path: string, expectType?: ValueTypes): boolean|number|string|object|any {
         return this._getProperty(path, this.#entries, expectType);
     }
 
-    public getPropertyDefault(path: string, expectType?: ValueTypes): (any|undefined) {
+    public getPropertyDefault(path: string, expectType: "boolean"): boolean;
+    public getPropertyDefault(path: string, expectType: "number"): number;
+    public getPropertyDefault(path: string, expectType: "string"): string;
+    public getPropertyDefault(path: string, expectType: "object"): object;
+    public getPropertyDefault(path: string, expectType: "any"): any;
+    public getPropertyDefault(path: string, expectType: undefined): any;
+
+    public getPropertyDefault(path: string, expectType?: ValueTypes): boolean|number|string|object|any {
         return this._getProperty(path, this.defaults, expectType);
     }
 
@@ -160,10 +185,7 @@ class Config<K extends NonNullable<string|number|symbol>, V extends string|objec
         }
 
         if(expectType !== "any" && typeof property !== expectType) {
-            console.error(`Config: property with path \`${path
-                }\` is either \`undefined\` or not in the expected value type \`${expectType
-                }\`, returning default value`);
-
+            // return default value if not defined by user
             property = this.defaults;
 
             for(let i = 0; i < pathArray.length; i++) {
