@@ -20,68 +20,45 @@ export const Media = () => {
         : obj.disconnect(id)
     ));
 
-    return <Gtk.Box class={"media"} visible={player((pl) => pl.available)}
-      $={(self) => {
-          const gestureClick = Gtk.GestureClick.new(),
-              controllerMotion = Gtk.EventControllerMotion.new(),
-              controllerScroll = Gtk.EventControllerScroll.new(
-                  Gtk.EventControllerScrollFlags.VERTICAL
-              );
+    return <Gtk.Box class={"media"} visible={player((pl) => pl.available)}>
+        <Gtk.EventControllerScroll $={(self) => {
+              self.set_flags(Gtk.EventControllerScrollFlags.VERTICAL)
+          }} onScroll={(_, __, dy) => {
+              if(AstalMpris.get_default().players.length === 1 && 
+                player.get()?.busName === AstalMpris.get_default().players[0].busName) 
+                  return true;
 
-          self.add_controller(gestureClick);
-          self.add_controller(controllerMotion);
-          self.add_controller(controllerScroll);
+              const players = AstalMpris.get_default().players;
 
-          connections.set(gestureClick, gestureClick.connect("released", () =>
-              Windows.getDefault().toggle("center-window")));
+              for(let i = 0; i < players.length; i++) {
+                  const pl = players[i];
 
-          connections.set(controllerScroll, 
-              controllerScroll.connect("scroll", (_, _dx, dy) => {
-                  if(AstalMpris.get_default().players.length === 1 && 
-                     player.get()?.busName === AstalMpris.get_default().players[0].busName) 
-                      return true;
+                  if(pl.busName !== player.get().busName) 
+                      continue;
 
-                  const players = AstalMpris.get_default().players;
-
-                  for(let i = 0; i < players.length; i++) {
-                      const pl = players[i];
-
-                      if(pl.busName !== player.get().busName) 
-                          continue;
-
-                      if(dy > 0 && players[i-1]) {
-                          setPlayer(players[i-1]);
-                          break;
-                      }
-
-                      if(dy < 0 && players[i+1]) {
-                          setPlayer(players[i+1]);
-                          break;
-                      }
+                  if(dy > 0 && players[i-1]) {
+                      setPlayer(players[i-1]);
+                      break;
                   }
 
-                  return true;
-              })
-          );
+                  if(dy < 0 && players[i+1]) {
+                      setPlayer(players[i+1]);
+                      break;
+                  }
+              }
 
-          connections.set(controllerMotion, [
-              controllerMotion.connect("enter", () => {
-                  const revealer = self.get_last_child() as Gtk.Revealer;
-                  revealer.set_reveal_child(true);
-              }),
-              controllerMotion.connect("leave", () => {
-                  const revealer = self.get_last_child() as Gtk.Revealer;
-                  revealer.set_reveal_child(false);
-              })
-          ]);
-
-          connections.set(self, self.connect("destroy", () => 
-              connections.forEach((ids, obj) => Array.isArray(ids) ?
-                  ids.forEach(id => obj.disconnect(id))
-              : obj.disconnect(ids))
-          ));
-      }}>
-
+              return true;
+          }}
+        />
+        <Gtk.GestureClick onReleased={() => Windows.getDefault().toggle("center-window")} />
+        <Gtk.EventControllerMotion onEnter={(self) => {
+              const revealer = self.get_widget()!.get_last_child() as Gtk.Revealer;
+              revealer.set_reveal_child(true);
+          }} onLeave={(self) => {
+              const revealer = self.get_widget()!.get_last_child() as Gtk.Revealer;
+              revealer.set_reveal_child(false);
+          }}
+        />
         <Gtk.Box spacing={4} visible={player(pl => pl.available)}>
             <With value={player(pl => pl.available)}>
                 {(available: boolean) => available && <Gtk.Box>

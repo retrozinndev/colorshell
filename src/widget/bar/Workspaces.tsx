@@ -1,12 +1,11 @@
 import { Gtk } from "ags/gtk4";
-import AstalHyprland from "gi://AstalHyprland";
 import { getAppIcon, getSymbolicIcon } from "../../modules/apps";
 import { Separator } from "../Separator";
 import { generalConfig } from "../../app";
 import { createBinding, createComputed, createState, For, With } from "ags";
 import { variableToBoolean } from "../../modules/utils";
 
-import GObject from "ags/gobject";
+import AstalHyprland from "gi://AstalHyprland";
 
 
 const [showNumbers, setShowNumbers] = createState(false);
@@ -19,10 +18,15 @@ export const Workspaces = () => {
         defaultWorkspaces = workspaces.as(wss => 
             wss.filter(ws => ws.id > 0).sort((a, b) => a.id - b.id)),
         specialWorkspaces = workspaces.as(wss => 
-            wss.filter(ws => ws.id < 0).sort((a, b) => a.id - b.id));
+            wss.filter(ws => ws.id < 0).sort((a, b) => a.id - b.id)),
+        focusedWorkspace = createBinding(AstalHyprland.get_default(), "focusedWorkspace");
 
 
-    return <Gtk.Box class={"workspaces-row"}>
+    return <Gtk.Box class={"workspaces-row"} visible={createComputed([
+          workspaces.as(wss => wss.length <= 1),
+          generalConfig.bindProperty("workspaces.hide_if_single", "boolean")
+      ], (hideable, enabled) => enabled && hideable ? false : true
+    )}>
         <Gtk.Box class={"special-workspaces"} spacing={4}>
             <For each={specialWorkspaces}>
                 {(ws: AstalHyprland.Workspace) => 
@@ -54,34 +58,19 @@ export const Workspaces = () => {
               margin={12} spacing={8} visible={variableToBoolean(specialWorkspaces)}
             />
         </Gtk.Revealer>
-        <Gtk.Box class={"default-workspaces"} spacing={4} $={(self) => {
-              const conns: Map<GObject.Object, Array<number>|number> = new Map();
-              const controllerScroll = Gtk.EventControllerScroll.new(
-                  Gtk.EventControllerScrollFlags.VERTICAL
-              ), controllerMotion = Gtk.EventControllerMotion.new();
-
-              self.add_controller(controllerScroll);
-              self.add_controller(controllerMotion);
-
-              conns.set(controllerScroll, controllerScroll.connect("scroll", (_, _dx, dy) => {
+        <Gtk.Box class={"default-workspaces"} spacing={4}>
+            <Gtk.EventControllerScroll $={(self) => self.set_flags(Gtk.EventControllerScrollFlags.VERTICAL)}
+              onScroll={(_, __, dy) => {
                   dy > 0 ?
                       AstalHyprland.get_default().dispatch("workspace", "e-1")
                   : AstalHyprland.get_default().dispatch("workspace", "e+1");
 
                   return true;
-              }));
-
-              conns.set(controllerMotion, [
-                  controllerMotion.connect("enter", () => setShowNumbers(true)),
-                  controllerMotion.connect("leave", () => setShowNumbers(false))
-              ]);
-
-              conns.set(self, self.connect("destroy", () => conns.forEach((ids, obj) =>
-                  Array.isArray(ids) ? 
-                      ids.forEach(id => obj.disconnect(id))
-                  : obj.disconnect(ids)
-              )));
-          }}>
+              }}
+            />
+            <Gtk.EventControllerMotion onEnter={() => setShowNumbers(true)}
+              onLeave={() => setShowNumbers(false)}
+            />
             <For each={defaultWorkspaces}>
                 {(ws: AstalHyprland.Workspace, i) => {
                     const showId = createComputed([
@@ -122,20 +111,20 @@ export const Workspaces = () => {
                                   `${lastClient.get_class()}: `
                               : ""
                           } ${lastClient.title}` : "" }`
-                      )} onClicked={() => ws.focus()}>
-                        
+                      )} onClicked={() => focusedWorkspace.get()?.id !== ws.id && ws.focus()}>
                         
                         <With value={createBinding(ws, "lastClient")}>
                             {(lastClient: AstalHyprland.Client) => 
                                 <Gtk.Box class={"last-client"} hexpand>
                                     <Gtk.Revealer transitionDuration={280} revealChild={showId}
-                                      transitionType={createBinding(AstalHyprland.get_default(), "focusedWorkspace")
-                                          .as(fws => fws.id !== ws.id ? 
-                                               Gtk.RevealerTransitionType.SLIDE_LEFT
-                                             : Gtk.RevealerTransitionType.SLIDE_RIGHT)}>
-
+                                      transitionType={focusedWorkspace.as(
+                                          fws => fws.id !== ws.id ? 
+                                              Gtk.RevealerTransitionType.SLIDE_LEFT
+                                          : Gtk.RevealerTransitionType.SLIDE_RIGHT
+                                      )}>
                                         <Gtk.Label label={createBinding(ws, "id").as(String)}
-                                          class={"id"} hexpand />
+                                          class={"id"} hexpand 
+                                        />
                                     </Gtk.Revealer>
                                     {lastClient && <Gtk.Image class={"last-client-icon"} iconName={
                                       createBinding(lastClient, "initialClass").as(initialClass =>
