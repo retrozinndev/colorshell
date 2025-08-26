@@ -14,7 +14,7 @@ function is_running() {
 function start() {
     if is_running; then
         echo "[info] killing previous instance"
-        killall gjs # TODO: call a method to quit via dbus instead of killing GnomeJS
+        colorshell quit || killall gjs
     fi
     echo "[info] starting"
     exec "$file"
