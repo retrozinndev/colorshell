@@ -57,14 +57,26 @@ export namespace Backlights {
                 return [];
             }
 
-            if(backlights.length < 1 && this.#available === true) {
-                this.#available = false;
-                this.notify("available");
+            if(backlights.length < 1) {
+                if(this.#available) {
+                    this.#available = false;
+                    this.notify("available");
+                }
+
+                this.#default = null;
+                this.notify("default");
             }
 
-            if(this.#backlights.length < 1 && backlights.length > 0) {
-                this.#available = true;
-                this.notify("available");
+            if(backlights.length > 0) {
+                if(this.#backlights.length < 1) {
+                    this.#available = true;
+                    this.notify("available");
+                }
+
+                if(!this.#default || !backlights.filter(bk => bk.path === this.#default?.path)[0]) {
+                    this.#default = backlights[0];
+                    this.notify("default");
+                }
             }
 
             this.#backlights = backlights;
@@ -91,6 +103,9 @@ export namespace Backlights {
             }, this);
         }
         public static $gtype: GObject.GType<Backlight>;
+        declare $signals: GObject.Object.SignalSignatures & {
+            "brightness-changed": (value: number) => void
+        };
 
         readonly #name: string;
         #path: string;
@@ -124,10 +139,6 @@ export namespace Backlights {
         @getter(Number) 
         get maxBrightness() { return this.#maxBrightness;};
 
-
-        declare $signals: GObject.Object.SignalSignatures & {
-            "brightness-changed": (value: number) => void
-        };
 
         // intel_backlight is mostly the default on laptops
         constructor(name: string = "intel_backlight") {
