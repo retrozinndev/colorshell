@@ -10,6 +10,7 @@ export type PageProps = {
     id: string;
     title: string;
     description?: string;
+    $?: (self: Gtk.Box) => void;
     headerButtons?: Array<HeaderButton> | Accessor<Array<HeaderButton>>;
     bottomButtons?: Array<BottomButton> | Accessor<Array<BottomButton>>;
     orientation?: Gtk.Orientation | Accessor<Gtk.Orientation>;
@@ -42,6 +43,7 @@ export class Page {
     #spacing: number|Accessor<number> = 4;
     #headerButtons?: Array<HeaderButton>|Accessor<Array<HeaderButton>>;
     #bottomButtons?: Array<BottomButton>|Accessor<Array<BottomButton>>;
+    #setup?: (self: Gtk.Box) => void;
     readonly #id?: string;
     readonly #create: () => WidgetNodeType;
 
@@ -67,12 +69,16 @@ export class Page {
 
         if(props.headerButtons != null)
             this.#headerButtons = props.headerButtons;
+
+        if(props.$ != null)
+            this.#setup = props.$;
     }
 
     public create(): Gtk.Box {
         return createRoot((dispose) => 
             <Gtk.Box hexpand class={`page container ${this.#id ?? ""}`} cssName={"page"} name={"page"}
-              orientation={Gtk.Orientation.VERTICAL} onUnmap={() => dispose()}>
+              orientation={Gtk.Orientation.VERTICAL} onUnmap={() => dispose()}
+              $={this.#setup}>
 
                 <Gtk.Box class={"header"} orientation={Gtk.Orientation.VERTICAL}>
                     <Gtk.Box class={"top"} hexpand>

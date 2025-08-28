@@ -11,6 +11,17 @@ export const PageBacklight = new Page({
     id: "backlight",
     title: tr("control_center.pages.backlight.title"),
     description: tr("control_center.pages.backlight.description"),
+    $: () => {
+        const dataDefaultBacklight = userData.getProperty("control_center.default_backlight", "any");
+        if(typeof dataDefaultBacklight === "string" && 
+           Backlights.getDefault().default?.name !== dataDefaultBacklight) {
+
+            const bk = Backlights.getDefault().backlights.filter(b => b.name === dataDefaultBacklight)[0];
+            if(!bk) return;
+
+            Backlights.getDefault().setDefault(bk);
+        }
+    },
     content: () => (
         <With value={createBinding(Backlights.getDefault(), "backlights")}>
             {(bklights: Array<Backlights.Backlight>) => bklights.length > 0 &&
