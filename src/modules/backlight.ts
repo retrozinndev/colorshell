@@ -33,7 +33,7 @@ export namespace Backlights {
         @getter(Array as unknown as ParamSpec<Array<Backlight>>)
         get backlights() { return this.#backlights; }
 
-        @getter(Backlight as unknown as ParamSpec<Backlight|null>)
+        @getter(GObject.Object as unknown as ParamSpec<Backlight|null>)
         get default() { return this.#default; }
 
         /** true if there are any backlights available */
