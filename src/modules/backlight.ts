@@ -7,11 +7,17 @@ import Gio from "gi://Gio?version=2.0";
 
 export namespace Backlights {
 
+    const BacklightsParamSpec = (name: string, flags: GObject.ParamFlags) => 
+        GObject.ParamSpec.object(name, null, null, flags) as ParamSpec<Backlights>;
+
+    const BacklightParamSpec = (name: string, flags: GObject.ParamFlags) => 
+        GObject.ParamSpec.object(name, null, null, flags) as ParamSpec<Backlight>;
+
     let instance: Backlights;
     
     export function getDefault(): Backlights {
         if(!instance)
-            instance = new Backlights;
+            instance = new Backlights();
 
         return instance;
     }
@@ -22,7 +28,6 @@ export namespace Backlights {
                 GTypeName: "Backlights"
             }, this);
         }
-        public static $gtype: GObject.GType<Backlights>;
 
 
         #backlights: Array<Backlight> = [];
@@ -33,8 +38,8 @@ export namespace Backlights {
         @getter(Array as unknown as ParamSpec<Array<Backlight>>)
         get backlights() { return this.#backlights; }
 
-        @getter(GObject.Object as unknown as ParamSpec<Backlight|null>)
-        get default() { return this.#default; }
+        @getter(BacklightParamSpec)
+        get default() { return this.#default!; }
 
         /** true if there are any backlights available */
         @getter(Boolean)
@@ -102,7 +107,8 @@ export namespace Backlights {
                 GTypeName: "Backlight"
             }, this);
         }
-        public static $gtype: GObject.GType<Backlight>;
+
+
         declare $signals: GObject.Object.SignalSignatures & {
             "brightness-changed": (value: number) => void
         };
