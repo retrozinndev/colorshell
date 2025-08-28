@@ -8,7 +8,7 @@ import Gio from "gi://Gio?version=2.0";
 export namespace Backlights {
 
     const BacklightParamSpec = (name: string, flags: GObject.ParamFlags) => 
-        GObject.ParamSpec.object(name, null, null, flags) as ParamSpec<Backlight>;
+        GObject.ParamSpec.jsobject(name, null, null, flags) as ParamSpec<Backlight>;
 
     let instance: Backlights;
     
