@@ -21,13 +21,9 @@ export const FloatingNotifications = (mon: number) =>
                     <Adw.Clamp maximumSize={size}>
                         <Gtk.Box class={"float-notification"} widthRequest={size} vexpand={false}>
 
-                            {/* 
-                                Why is holdOnHover disabled: the shell for some reason crashes 
-                                when removing the notification on hover-lost 💔
-                            */}
                             <NotificationWidget notification={notif} showTime={false}
                               actionClose={() => Notifications.getDefault().removeNotification(notif)}
-                              holdOnHover={false} actionClicked={() => {
+                              holdOnHover actionClicked={() => {
                                   const viewAction = notif.actions.filter(a => 
                                       a.id.toLowerCase() === "view" || 
                                           a.label.toLowerCase() === "view"

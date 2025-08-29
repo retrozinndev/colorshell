@@ -9,6 +9,7 @@ import GObject from "ags/gobject";
 import AstalNotifd from "gi://AstalNotifd";
 import Pango from "gi://Pango?version=1.0";
 import GLib from "gi://GLib?version=2.0";
+import { timeout } from "ags/time";
 
 
 function getNotificationImage(notif: AstalNotifd.Notification|HistoryNotification): (string|undefined) {
@@ -58,7 +59,9 @@ export function NotificationWidget({ notification, actionClicked, holdOnHover, s
               eventControllerMotion.connect("enter", () => 
                   holdOnHover && Notifications.getDefault().holdNotification(notification.id)),
               eventControllerMotion.connect("leave", () => 
-                  holdOnHover && notification && Notifications.getDefault().removeNotification(notification.id))
+                  holdOnHover && notification && timeout(600, () => 
+                      Notifications.getDefault().removeNotification(notification.id)
+                  ))
           ]);
 
           conns.set(gestureClick, [
