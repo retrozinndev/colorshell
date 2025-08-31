@@ -37,14 +37,14 @@ export class OSDMode extends GObject.Object {
     }
 }
 
-export const OSDModes: Record<string, OSDMode> = {
-    SINK: new OSDMode({
+export const OSDModes: Record<string, () => OSDMode> = {
+    SINK: () => new OSDMode({
         icon: createBinding(Wireplumber.getWireplumber().defaultSpeaker, "volumeIcon"),
         value: createBinding(Wireplumber.getWireplumber().defaultSpeaker, "volume"),
         text: createBinding(Wireplumber.getWireplumber().defaultSpeaker, "description"),
         max: Wireplumber.getDefault().getMaxSinkVolume() / 100
     }),
-    BRIGHTNESS: Backlights.getDefault().available ? new OSDMode({
+    BRIGHTNESS: () => Backlights.getDefault().available ? new OSDMode({
             icon: "display-brightness-symbolic",
             value: createBinding(Backlights.getDefault().default, "brightness"),
             max: createBinding(Backlights.getDefault().default, "maxBrightness"),
@@ -67,25 +67,28 @@ export const OSD = (mon: number) =>
 
         <Gtk.Box class={"osd"}>
             <With value={osdMode}>
-                {(mode: OSDMode) => <Gtk.Box>
-                    <Gtk.Image class={"icon"} iconName={
-                        createBinding(mode, "icon")
-                    } />
-                    <Gtk.Box orientation={Gtk.Orientation.VERTICAL} class={"level"} vexpand hexpand>
-                        <Gtk.Label class={"text"} label={createBinding(mode, "text").as(t => t ?? "")}
-                          ellipsize={Pango.EllipsizeMode.END}
-                          visible={variableToBoolean(createBinding(mode, "text"))}
-                        />
-                        <Gtk.LevelBar value={createBinding(mode, "value")} hexpand
-                          maxValue={createBinding(mode, "max")}
-                        />
-                    </Gtk.Box>
-                </Gtk.Box>}
+                {(modeFun: () => OSDMode) => {
+                    const mode = modeFun();
+                    return <Gtk.Box>
+                        <Gtk.Image class={"icon"} iconName={
+                            createBinding(mode, "icon")
+                        } />
+                        <Gtk.Box orientation={Gtk.Orientation.VERTICAL} class={"level"} vexpand hexpand>
+                            <Gtk.Label class={"text"} label={createBinding(mode, "text").as(t => t ?? "")}
+                              ellipsize={Pango.EllipsizeMode.END}
+                              visible={variableToBoolean(createBinding(mode, "text"))}
+                            />
+                            <Gtk.LevelBar value={createBinding(mode, "value")} hexpand
+                              maxValue={createBinding(mode, "max")}
+                            />
+                        </Gtk.Box>
+                    </Gtk.Box>;
+                }}
             </With>
         </Gtk.Box>
     </Astal.Window>;
 
-export function triggerOSD(mode: OSDMode) {
+export function triggerOSD(mode: () => OSDMode) {
     setOSDMode(mode);
     Windows.getDefault().open("osd");
 
