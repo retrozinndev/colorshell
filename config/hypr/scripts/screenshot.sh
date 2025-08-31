@@ -3,7 +3,7 @@
 # This script handles taking a screenshot using the
 # hyprshot tool.
 # --------------
-# Licensed under the MIT License
+# Licensed under the BSD 3-Clause License
 # Made by retrozinndev (João Dias)
 # From https://github.com/retrozinndev/colorshell
 

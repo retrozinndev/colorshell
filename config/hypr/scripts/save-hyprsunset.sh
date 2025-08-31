@@ -5,7 +5,7 @@
 # It is used to save last user configuration on computer
 # shutdown.
 # --------------
-# Licensed under the MIT License
+# Licensed under the BSD 3-Clause License
 # Made by retrozinndev (João Dias)
 # From https://github.com/retrozinndev/colorshell
 

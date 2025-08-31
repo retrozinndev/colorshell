@@ -2,7 +2,7 @@
 # in other scripts from colorshell.
 # ----------
 # Made by retrozinndev (João Dias)
-# Licensed under the MIT License
+# Licensed under the BSD 3-Clause License
 # From: https://github.com/retrozinndev/colorshell
 
 

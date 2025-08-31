@@ -3,7 +3,7 @@
 # This script loads/generate color schemes from current
 # wallpaper using pywal16.
 # ----------
-# Licensed under the MIT License
+# Licensed under the BSD 3-Clause License
 # Made by retrozinndev (João Dias)
 # From https://github.com/retrozinndev/colorshell
 

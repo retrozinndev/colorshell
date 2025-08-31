@@ -5,7 +5,7 @@
 # an entry, it automatically writes changes to the hyprpaper.conf file and 
 # hot-reloads if hyprpaper is running.
 # --------------
-# Licensed under the MIT License
+# Licensed under the BSD 3-Clause License
 # Made by retrozinndev (João Dias)
 # From https://github.com/retrozinndev/colorshell
 

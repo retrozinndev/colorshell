@@ -3,7 +3,7 @@
 # This script executes the provided program with UWSM
 # if active, or else normally.
 # ---------------
-# Licensed under the MIT License
+# Licensed under the BSD 3-Clause License
 # Made by retrozinndev (João Dias)
 # From: https://github.com/retrozinndev/colorshell
 

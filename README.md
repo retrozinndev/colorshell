@@ -134,7 +134,7 @@ pnpm start
 Having issues? Please create a [new Issue] here, I'll be happy to help you out!
 
 ## 📜 License
-This repo is licensed under the [MIT License], project is made and maintained by [retrozinndev](https://github.com/retrozinndev).
+This repo is licensed under the [BSD 3-clause] license, project is made and maintained by [retrozinndev](https://github.com/retrozinndev).
 
 ## 🌠 Stargazers
 <div align="center">
@@ -163,7 +163,7 @@ This repo is licensed under the [MIT License], project is made and maintained by
 [gtk]: https://www.gtk.org
 
 <!--  Web refs -->
-[mit license]: https://en.wikipedia.org/wiki/MIT_License
+[bsd 3-clause]: https://en.wikipedia.org/wiki/BSD_licenses#4-clause_license_(original_%22BSD_License%22)
 
 <!-- Tabs -->
 [wiki]: https://github.com/retrozinndev/colorshell/wiki

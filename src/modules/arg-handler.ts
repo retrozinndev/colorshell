@@ -46,7 +46,7 @@ Other options:
   v, version: display current colorshell version.
   h, help: shows this help message.
 
-2025 (c) retrozinndev's colorshell, licensed under the MIT License.
+2025 (c) retrozinndev's colorshell, licensed under the BSD 3-Clause License.
 https://github.com/retrozinndev/colorshell
 `.trim();
 
