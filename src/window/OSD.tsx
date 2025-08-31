@@ -37,7 +37,7 @@ export class OSDMode extends GObject.Object {
     }
 }
 
-export const OSDModes: Record<string, () => OSDMode> = {
+export const OSDModes = {
     SINK: () => new OSDMode({
         icon: createBinding(Wireplumber.getWireplumber().defaultSpeaker, "volumeIcon"),
         value: createBinding(Wireplumber.getWireplumber().defaultSpeaker, "volume"),
@@ -66,9 +66,9 @@ export const OSD = (mon: number) =>
       anchor={Astal.WindowAnchor.BOTTOM} focusable={false} marginBottom={80} monitor={mon}>
 
         <Gtk.Box class={"osd"}>
-            <With value={osdMode}>
-                {(modeFun: () => OSDMode) => {
-                    const mode = modeFun();
+            <With value={osdMode(f => f)}>
+                {(_: () => OSDMode) => {
+                    const mode = _ as unknown as OSDMode; // for some reason, gnim runs this function :broken_heart:
                     return <Gtk.Box>
                         <Gtk.Image class={"icon"} iconName={
                             createBinding(mode, "icon")
