@@ -80,31 +80,35 @@ export const Media = () => {
           revealChild={false}>
 
             <With value={player(pl => pl.available)}>
-                {(available: boolean) => available && <Gtk.Box class={"media-controls button-row"}>
-                    <Gtk.Button class={"link"} iconName={"edit-paste-symbolic"} 
-                      visible={variableToBoolean(accessMediaUrl(player.get()))}
-                      tooltipText={"Copy link to Clipboard"} onClicked={() => {
-                          const url = accessMediaUrl(player.get()).get();
-                          url && Clipboard.getDefault().copyAsync(url);
-                      }}
-                    />
-                    <Gtk.Button class={"previous"} iconName={"media-skip-backward-symbolic"}
-                      tooltipText={"Previous"} onClicked={() => 
-                          player.get().canGoPrevious && player.get().previous()}
-                    />
-                    <Gtk.Button class={"play-pause"} iconName={createBinding(player.get(), "playbackStatus").as(status =>
-                        status === AstalMpris.PlaybackStatus.PAUSED ? 
-                            "media-playback-start-symbolic"
-                        : "media-playback-pause-symbolic")}
-                      tooltipText={
-                          createBinding(player.get(), "playbackStatus").as(status =>
-                              status === AstalMpris.PlaybackStatus.PAUSED ? "Play" : "Pause")
-                      } onClicked={() => player.get().play_pause()}
-                    />
-                    <Gtk.Button class={"next"} iconName={"media-skip-forward-symbolic"}
-                      tooltipText={"Next"} onClicked={() => player.get().canGoNext &&
-                          player.get().next()}
-                    />
+                {(available: boolean) => available && <Gtk.Box class={"buttons"} spacing={4}>
+                    <Gtk.Box class={"extra button-row"}>
+                        <Gtk.Button class={"link"} iconName={"edit-paste-symbolic"} 
+                          visible={variableToBoolean(accessMediaUrl(player.get()))}
+                          tooltipText={"Copy link to Clipboard"} onClicked={() => {
+                              const url = accessMediaUrl(player.get()).get();
+                              url && Clipboard.getDefault().copyAsync(url);
+                          }}
+                        />
+                    </Gtk.Box>
+                    <Gtk.Box class={"media-controls button-row"}>
+                        <Gtk.Button class={"previous"} iconName={"media-skip-backward-symbolic"}
+                          tooltipText={"Previous"} onClicked={() => 
+                              player.get().canGoPrevious && player.get().previous()}
+                        />
+                        <Gtk.Button class={"play-pause"} iconName={createBinding(player.get(), "playbackStatus").as(status =>
+                            status === AstalMpris.PlaybackStatus.PAUSED ? 
+                                "media-playback-start-symbolic"
+                            : "media-playback-pause-symbolic")}
+                          tooltipText={
+                              createBinding(player.get(), "playbackStatus").as(status =>
+                                  status === AstalMpris.PlaybackStatus.PAUSED ? "Play" : "Pause")
+                          } onClicked={() => player.get().play_pause()}
+                        />
+                        <Gtk.Button class={"next"} iconName={"media-skip-forward-symbolic"}
+                          tooltipText={"Next"} onClicked={() => player.get().canGoNext &&
+                              player.get().next()}
+                        />
+                    </Gtk.Box>
                 </Gtk.Box>}
             </With>
         </Gtk.Revealer>

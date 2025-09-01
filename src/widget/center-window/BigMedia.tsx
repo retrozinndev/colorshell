@@ -1,19 +1,18 @@
-import { timeout } from "ags/time";
+import { createBinding, For } from "ags";
+import { register } from "ags/gobject";
 import { Astal, Gtk } from "ags/gtk4";
 import { Clipboard } from "../../modules/clipboard";
 import { accessMediaUrl } from "../../modules/media";
 import { player, setPlayer } from "../../modules/media";
-import { createBinding, For } from "ags";
 import { pathToURI, variableToBoolean } from "../../modules/utils";
 
 import AstalMpris from "gi://AstalMpris";
-import AstalIO from "gi://AstalIO";
 import Pango from "gi://Pango?version=1.0";
 import Adw from "gi://Adw?version=1";
-import { register } from "ags/gobject";
+import GLib from "gi://GLib?version=2.0";
 
 
-let dragTimer: (AstalIO.Time|undefined);
+let dragTimer: (GLib.Source|undefined);
 
 export const BigMedia = () => {
     const availablePlayers = createBinding(AstalMpris.get_default(), "players").as(pls => 
@@ -47,6 +46,7 @@ export const BigMedia = () => {
 @register({ GTypeName: "PlayerWidget" })
 class PlayerWidget extends Gtk.Box {
     #player!: AstalMpris.Player;
+    #copyClickTimeout?: GLib.Source;
 
     get player() { return this.#player; }
 
@@ -98,15 +98,17 @@ class PlayerWidget extends Gtk.Box {
                           return;
 
                       if(!dragTimer) {
-                          dragTimer = timeout(200, () => 
-                              player.position = Math.floor(value));
+                          dragTimer = setTimeout(() => 
+                              player.position = Math.floor(value)
+                          , 200);
 
                           return;
                       }
 
-                      dragTimer.cancel(); 
-                      dragTimer = timeout(200, () => 
-                          player.position = Math.floor(value));
+                      dragTimer.destroy(); 
+                      dragTimer = setTimeout(() => 
+                          player.position = Math.floor(value)
+                      , 200);
                   }}
                 />
             </Gtk.Box> as Gtk.Box
@@ -123,58 +125,99 @@ class PlayerWidget extends Gtk.Box {
                   })} $type="start"
                 />
 
-                <Gtk.Box class={"controls button-row"} $type="center">
-                    <Gtk.Button class={"link"} iconName={"edit-paste-symbolic"}
-                      tooltipText={"Copy link to clipboard"}
-                      visible={variableToBoolean(accessMediaUrl(player))}
-                      onClicked={() => {
-                          const url = accessMediaUrl(player).get();
-                          url && Clipboard.getDefault().copyAsync(url);
-                      }}
-                    />
-                    <Gtk.Button class={"shuffle"} visible={createBinding(player, "shuffleStatus").as(status =>
-                          status !== AstalMpris.Shuffle.UNSUPPORTED)} iconName={
-                      createBinding(player, "shuffleStatus").as(status => status === AstalMpris.Shuffle.ON ? 
-                            "media-playlist-shuffle-symbolic"
-                        : "media-playlist-consecutive-symbolic")} tooltipText={
-                      createBinding(player, "shuffleStatus").as(status => status === AstalMpris.Shuffle.ON ? 
-                            "Shuffle"
-                        : "No shuffle")} onClicked={() => player.shuffle()} 
-                    />
-                    <Gtk.Button class={"previous"} iconName={"media-skip-backward-symbolic"}
-                      tooltipText={"Previous"} onClicked={() => player.canGoPrevious && player.previous()}
-                    />
-                    <Gtk.Button class={"play-pause"} tooltipText={
-                      createBinding(player, "playbackStatus").as(status => 
-                          status === AstalMpris.PlaybackStatus.PLAYING ? "Pause" : "Play")}
-                      iconName={createBinding(player, "playbackStatus").as(status => 
-                          status === AstalMpris.PlaybackStatus.PLAYING ? 
-                              "media-playback-pause-symbolic"
-                          : "media-playback-start-symbolic")} onClicked={() => player.play_pause()}
-                    />
-                    <Gtk.Button class={"next"} iconName={"media-skip-forward-symbolic"} 
-                      tooltipText={"Next"} onClicked={() => player.canGoNext && player.next()}
-                    />
-                    <Gtk.Button class={"repeat"} iconName={createBinding(player, "loopStatus").as(status => {
-                          if(status === AstalMpris.Loop.TRACK)
-                              return "media-playlist-repeat-song-symbolic";
+                <Gtk.Box spacing={4} $type="center">
+                    <Gtk.Box class={"extra button-row"}>
+                        <Gtk.Button class={"link"}
+                          tooltipText={"Copy link to clipboard"}
+                          visible={variableToBoolean(accessMediaUrl(player))}
+                          onClicked={(self) => {
+                              const url = accessMediaUrl(player).get();
+                              // a widget that supports adding multiple icons and allows switching
+                              // through them would be pretty nice!! (i'll probably do this later)
+                              url &&
+                                  Clipboard.getDefault().copyAsync(url).then(() => {
+                                      if(this.#copyClickTimeout && !this.#copyClickTimeout.is_destroyed()) 
+                                          this.#copyClickTimeout.destroy();
 
-                          if(status === AstalMpris.Loop.PLAYLIST)
-                              return "media-playlist-repeat-symbolic";
+                                      (self.get_child() as Gtk.Stack).set_visible_child_name("done-icon");
+                                      this.#copyClickTimeout = setTimeout(() => {
+                                          (self.get_child() as Gtk.Stack).set_visible_child_name("copy-icon");
+                                          this.#copyClickTimeout!.destroy();
+                                          this.#copyClickTimeout = undefined;
+                                      }, 1100);
+                                  }).catch(() => {
+                                      if(this.#copyClickTimeout && !this.#copyClickTimeout.is_destroyed()) 
+                                          this.#copyClickTimeout.destroy();
 
-                          return "loop-arrow-symbolic";
-                      })} visible={createBinding(player, "loopStatus").as(status => 
-                          status !== AstalMpris.Loop.UNSUPPORTED)}
-                      tooltipText={createBinding(player, "loopStatus").as(status => {
-                          if(status === AstalMpris.Loop.TRACK)
-                              return "Loop song";
+                                      (self.get_child() as Gtk.Stack).set_visible_child_name("error-icon");
+                                      this.#copyClickTimeout = setTimeout(() => {
+                                          (self.get_child() as Gtk.Stack).set_visible_child_name("copy-icon");
+                                          this.#copyClickTimeout!.destroy();
+                                          this.#copyClickTimeout = undefined;
+                                      }, 900);
+                                  });
+                          }}>
+                            
+                            <Gtk.Stack transitionType={Gtk.StackTransitionType.CROSSFADE} 
+                              transitionDuration={340}>
 
-                          if(status === AstalMpris.Loop.PLAYLIST)
-                              return "Loop playlist";
+                                <Gtk.StackPage name={"copy-icon"} child={
+                                    <Gtk.Image iconName={"edit-paste-symbolic"} /> as Gtk.Widget
+                                } />
+                                <Gtk.StackPage name={"done-icon"} child={
+                                    <Gtk.Image iconName={"object-select-symbolic"} /> as Gtk.Widget
+                                } />
+                                <Gtk.StackPage name={"error-icon"} child={
+                                    <Gtk.Image iconName={"window-close-symbolic"} /> as Gtk.Widget
+                                } />
+                            </Gtk.Stack>
+                        </Gtk.Button>
+                    </Gtk.Box>
+                    <Gtk.Box class={"media-controls button-row"}>
+                        <Gtk.Button class={"shuffle"} visible={createBinding(player, "shuffleStatus").as(status =>
+                              status !== AstalMpris.Shuffle.UNSUPPORTED)} iconName={
+                          createBinding(player, "shuffleStatus").as(status => status === AstalMpris.Shuffle.ON ? 
+                                "media-playlist-shuffle-symbolic"
+                            : "media-playlist-consecutive-symbolic")} tooltipText={
+                          createBinding(player, "shuffleStatus").as(status => status === AstalMpris.Shuffle.ON ? 
+                                "Shuffle"
+                            : "No shuffle")} onClicked={() => player.shuffle()} 
+                        />
+                        <Gtk.Button class={"previous"} iconName={"media-skip-backward-symbolic"}
+                          tooltipText={"Previous"} onClicked={() => player.canGoPrevious && player.previous()}
+                        />
+                        <Gtk.Button class={"play-pause"} tooltipText={
+                          createBinding(player, "playbackStatus").as(status => 
+                              status === AstalMpris.PlaybackStatus.PLAYING ? "Pause" : "Play")}
+                          iconName={createBinding(player, "playbackStatus").as(status => 
+                              status === AstalMpris.PlaybackStatus.PLAYING ? 
+                                  "media-playback-pause-symbolic"
+                              : "media-playback-start-symbolic")} onClicked={() => player.play_pause()}
+                        />
+                        <Gtk.Button class={"next"} iconName={"media-skip-forward-symbolic"} 
+                          tooltipText={"Next"} onClicked={() => player.canGoNext && player.next()}
+                        />
+                        <Gtk.Button class={"repeat"} iconName={createBinding(player, "loopStatus").as(status => {
+                              if(status === AstalMpris.Loop.TRACK)
+                                  return "media-playlist-repeat-song-symbolic";
 
-                          return "No loop";
-                      })} onClicked={() => player.loop()}
-                    />
+                              if(status === AstalMpris.Loop.PLAYLIST)
+                                  return "media-playlist-repeat-symbolic";
+
+                              return "loop-arrow-symbolic";
+                          })} visible={createBinding(player, "loopStatus").as(status => 
+                              status !== AstalMpris.Loop.UNSUPPORTED)}
+                          tooltipText={createBinding(player, "loopStatus").as(status => {
+                              if(status === AstalMpris.Loop.TRACK)
+                                  return "Loop song";
+
+                              if(status === AstalMpris.Loop.PLAYLIST)
+                                  return "Loop playlist";
+
+                              return "No loop";
+                          })} onClicked={() => player.loop()}
+                        />
+                    </Gtk.Box>
                 </Gtk.Box>
                 <Gtk.Label class={"length"} xalign={1} yalign={0}
                   halign={Gtk.Align.END} label={createBinding(player, "length").as(len => { /* bananananananana */

@@ -134,11 +134,14 @@ $color-hover: colors.$bg-primary;
       margin-right: $spacing;
     }
 
-    & .media-controls {
+    & .buttons {
+      margin-left: $spacing;
+    }
+
+    & .button-row {
       border-top-right-radius: 12px;
       border-bottom-right-radius: 12px;
       padding: 4px 0;
-      margin-left: $spacing;
 
       & > button image {
         margin: 0;

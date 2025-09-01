@@ -102,7 +102,7 @@ class Clipboard extends GObject.Object {
 
         const stderr = Gio.DataInputStream.new(proc.get_stderr_pipe()!);
 
-        if(!proc.wait_check()) {
+        if(!proc.wait_check(null)) {
             try {
                 const [err, ] = stderr.read_upto('\x00', -1);
                 console.error(`Clipboard: An error occurred while copying text. Stderr: ${err}`);
