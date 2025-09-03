@@ -9,7 +9,7 @@
 
 
 if uwsm check is-active; then
-    exec uwsm app -- "$@"
+    exec uwsm-app -- "$@"
     exit 0
 fi
 
