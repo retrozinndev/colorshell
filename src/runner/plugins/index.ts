@@ -4,6 +4,7 @@ import { PluginMedia } from "./media"
 import { PluginShell } from "./shell"
 import { PluginWallpapers } from "./wallpapers"
 import { PluginWebSearch } from "./websearch"
+import { PluginKill } from "./kill"
 
 
 export { 
@@ -12,5 +13,6 @@ export {
     PluginClipboard, 
     PluginShell, 
     PluginMedia, 
-    PluginWallpapers
+    PluginWallpapers,
+    PluginKill
 };

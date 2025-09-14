@@ -9,7 +9,8 @@ import {
     PluginMedia, 
     PluginShell, 
     PluginWallpapers, 
-    PluginWebSearch
+    PluginWebSearch,
+    PluginKill
 } from "./runner/plugins";
 import { Wireplumber } from "./modules/volume";
 import { handleArguments } from "./modules/arg-handler";
@@ -40,6 +41,7 @@ const runnerPlugins: Array<Runner.Plugin> = [
     PluginApps,
     PluginShell,
     PluginWebSearch,
+    PluginKill,
     PluginMedia,
     PluginWallpapers,
     PluginClipboard
