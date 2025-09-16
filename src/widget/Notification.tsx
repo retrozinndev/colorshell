@@ -83,8 +83,11 @@ export function NotificationWidget({ notification, actionClicked, holdOnHover, s
         <Separator alpha={.1} orientation={Gtk.Orientation.VERTICAL} />
         <Gtk.Box class={"content"}>
             {getNotificationImage(notification) && 
-                <Gtk.Box class={"image"} hexpand={false} vexpand={false}
+                <Gtk.Box class={"image"} hexpand={false} 
                   css={`background-image: url("${getNotificationImage(notification)}");`} 
+                  valign={Gtk.Align.START}
+                  widthRequest={68}
+                  heightRequest={64}
                 />
             }
             <Gtk.Box class={"text"} orientation={Gtk.Orientation.VERTICAL}
