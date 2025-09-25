@@ -32,6 +32,11 @@ export class Bluetooth extends GObject.Object {
         createRoot((_) => {
             this.#scope = getScope();
             
+            if(this.astalBl.adapters.length > 0) {
+                this.#isAvailable = true;
+                this.notify("is-available");
+            }
+
             this.#connections.set(
                 AstalBluetooth.get_default(), 
                 AstalBluetooth.get_default().connect("adapter-added", (self, adapter) => {

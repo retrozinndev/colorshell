@@ -23,7 +23,7 @@ import { Clipboard } from "./modules/clipboard";
 import { Config } from "./modules/config";
 import { Gdk, Gtk } from "ags/gtk4";
 import { createRoot, getScope } from "ags";
-import { OSDModes, triggerOSD } from "./window/OSD";
+import { OSDModes, triggerOSD } from "./window/osd";
 import { programArgs, programInvocationName } from "system";
 import { setConsoleLogDomain } from "console";
 import { initPlayer } from "./modules/media";

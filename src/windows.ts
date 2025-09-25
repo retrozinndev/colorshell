@@ -1,20 +1,18 @@
 import { Astal } from "ags/gtk4";
-import { Bar } from "./window/Bar";
-import { variableToBoolean } from "./modules/utils";
-import { OSD } from "./window/OSD";
-import { ControlCenter } from "./window/ControlCenter";
-import { FloatingNotifications } from "./window/FloatingNotifications";
-import { CenterWindow } from "./window/CenterWindow";
-import { LogoutMenu } from "./window/LogoutMenu";
-import { AppsWindow } from "./window/AppsWindow";
-import { createRoot, getScope, onCleanup } from "ags";
 import { Shell } from "./app";
 import GObject, { getter, register, signal } from "ags/gobject";
+import { variableToBoolean } from "./modules/utils";
+import { createRoot, getScope, onCleanup } from "ags";
+import { Bar } from "./window/bar";
+import { OSD } from "./window/osd";
+import { ControlCenter } from "./window/control-center";
+import { FloatingNotifications } from "./window/floating-notifications";
+import { CenterWindow } from "./window/center-window";
+import { LogoutMenu } from "./window/logout-menu";
+import { AppsWindow } from "./window/apps-window";
 
 import AstalHyprland from "gi://AstalHyprland";
 
-
-export { Windows };
 
 export type WindowInstance = { instance?: Astal.Window, connections: Array<number> };
 export type WindowData = {
@@ -32,7 +30,7 @@ export type WindowData = {
  * monitor, or all available monitors!
  */
 @register({ GTypeName: "Windows" })
-class Windows extends GObject.Object {
+export class Windows extends GObject.Object {
     private static instance: (Windows | null);
 
     declare $signals: GObject.Object.SignalSignatures & {

@@ -1,16 +1,16 @@
+import { Gtk } from "ags/gtk4";
 import { Wireplumber } from "./volume";
 import { Windows } from "../windows";
 import { restartInstance } from "./reload-handler";
 import { timeout } from "ags/time";
 import { Runner } from "../runner/Runner";
-import { showWorkspaceNumber } from "../widget/bar/Workspaces";
+import { showWorkspaceNumber } from "../window/bar/widgets/Workspaces";
 import { playSystemBell } from "./utils";
 import { player, setPlayer } from "./media";
 import { generalConfig, Shell } from "../app";
 
 import AstalIO from "gi://AstalIO";
 import AstalMpris from "gi://AstalMpris";
-import { Gtk } from "ags/gtk4";
 
 
 export type RemoteCaller = {
