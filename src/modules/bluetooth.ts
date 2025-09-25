@@ -1,5 +1,7 @@
 import { createRoot, getScope, Scope } from "ags";
-import GObject, { getter, gtype, register, setter } from "ags/gobject";
+import GObject, { getter, gtype, property, register, setter } from "ags/gobject";
+import { execAsync } from "ags/process";
+
 import AstalBluetooth from "gi://AstalBluetooth";
 
 
@@ -16,6 +18,8 @@ export class Bluetooth extends GObject.Object {
 
     @getter(Boolean)
     get isAvailable() { return this.#isAvailable; }
+
+    @property(Boolean) saveDefaultAdapter = true;
     
     @getter(gtype<AstalBluetooth.Adapter|null>(AstalBluetooth.Adapter))
     get adapter() { return this.#adapter; }
@@ -24,6 +28,19 @@ export class Bluetooth extends GObject.Object {
     set adapter(newAdapter: AstalBluetooth.Adapter|null) {
         this.#adapter = newAdapter;
         this.notify("adapter");
+        
+        if(!newAdapter) return;
+
+        AstalBluetooth.get_default().adapters.filter(ad => {
+            if(ad.address !== newAdapter.address)
+                return true;
+
+            ad.set_powered(true);
+            return false;
+        }).forEach(ad => ad.set_powered(false));
+
+        execAsync(`bluetoothctl select ${newAdapter.address}`).catch(e =>
+            console.error(`Bluetooth: Couldn't select adapter. Stderr: ${e}`));
     }
 
     constructor() {
@@ -38,38 +55,41 @@ export class Bluetooth extends GObject.Object {
             }
 
             this.#connections.set(
-                AstalBluetooth.get_default(), 
-                AstalBluetooth.get_default().connect("adapter-added", (self, adapter) => {
-                    if(self.adapters.length === 1)  // adapter was just added
-                        this.adapter = adapter;
-                })
+                AstalBluetooth.get_default(), [
+                    AstalBluetooth.get_default().connect("adapter-added", (self, adapter) => {
+                        if(self.adapters.length === 1)  // adapter was just added
+                            this.adapter = adapter;
+                    }),
+                    AstalBluetooth.get_default().connect("adapter-removed", (self, adapter) => {
+                        if(self.adapters.length < 1) {
+                            this.adapter = null;
+                            this.#isAvailable = false;
+                            this.notify("is-available");
+                        }
+
+                        if(this.#adapter?.address !== adapter.address) 
+                            return;
+
+                        // the removed adapter was the default
+
+                        if(self.adapters.length < 1) {
+                            this.adapter = null;
+                            this.#isAvailable = false;
+                            this.notify("is-available");
+
+                            return;
+                        }
+
+                        this.#adapter = self.adapters[0];
+                    })
+                ]
             );
 
-            this.#connections.set(
-                AstalBluetooth.get_default(),
-                AstalBluetooth.get_default().connect("adapter-removed", (self, adapter) => {
-                    if(self.adapters.length < 1) {
-                        this.adapter = null;
-                        this.#isAvailable = false;
-                        this.notify("is-available");
-                    }
-
-                    if(this.#adapter?.address !== adapter.address) 
-                        return;
-
-                    // the removed adapter was the default
-
-                    if(self.adapters.length < 1) {
-                        this.adapter = null;
-                        this.#isAvailable = false;
-                        this.notify("is-available");
-
-                        return;
-                    }
-
-                    this.#adapter = self.adapters[0];
-                })
-            );
+            this.#scope.onCleanup(() => this.#connections.forEach((ids, gobj) => 
+                Array.isArray(ids) ? 
+                    ids.forEach(id => gobj.disconnect(id))
+                : gobj.disconnect(ids)
+            ));
         });
     }
 

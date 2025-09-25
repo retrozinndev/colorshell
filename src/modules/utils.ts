@@ -1,6 +1,6 @@
 import { createPoll } from "ags/time";
 import { exec, execAsync } from "ags/process";
-import { Accessor, For, getScope, onCleanup, With } from "ags";
+import { Accessor, For, getScope, With } from "ags";
 import { Astal, Gtk } from "ags/gtk4";
 import { getSymbolicIcon } from "./apps";
 

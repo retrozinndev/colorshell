@@ -4,7 +4,6 @@ import { tr } from "../../../../i18n/intl";
 import { Windows } from "../../../../windows";
 import { Notifications } from "../../../../modules/notifications";
 import { execApp } from "../../../../modules/apps";
-import { execAsync } from "ags/process";
 import { createBinding, createComputed, For, With } from "ags";
 import { Bluetooth } from "../../../../modules/bluetooth";
 
@@ -69,10 +68,10 @@ export const BluetoothPage = new Page({
                                     return <PageButton class={isSelected.as(is => is ? "selected" : "")} 
                                       title={adapter.alias ?? "Adapter"} icon={"bluetooth-active-symbolic"} 
                                       description={createBinding(adapter, "address")}
-                                      actionClicked={() => 
-                                          adapter.address !== Bluetooth.getDefault().adapter?.address &&
-                                              selectAdapter(adapter)
-                                      }
+                                      actionClicked={() => {
+                                          if(adapter.address !== Bluetooth.getDefault().adapter?.address)
+                                              Bluetooth.getDefault().adapter = adapter;
+                                      }}
                                       endWidget={
                                           <Gtk.Image iconName={"object-select-symbolic"} visible={isSelected} />
                                       }
@@ -211,19 +210,4 @@ function DeviceWidget({ device }: { device: AstalBluetooth.Device }): Gtk.Widget
             }
         </With>} 
     /> as Gtk.Widget;
-}
-
-function selectAdapter(adapter: AstalBluetooth.Adapter): void {
-    AstalBluetooth.get_default().adapters.filter(ad => {
-        if(ad.alias !== adapter.alias)
-            return true;
-
-        ad.set_powered(true);
-        return false;
-    }).forEach(ad => ad.set_powered(false));
-
-    execAsync(`bluetoothctl select ${adapter.address}`).catch(e =>
-        console.error(`Bluetooth: Couldn't select adapter. Stderr: ${e}`));
-
-    Bluetooth.getDefault().adapter = adapter;
 }
