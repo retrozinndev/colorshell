@@ -384,7 +384,9 @@ const generalConfigDefaults = {
 const userDataDefaults = {
     control_center: {
         default_backlight: undefined
-    }
+    },
+
+    bluetooth_default_adapter: undefined
 };
 
 export const userData = new Config<

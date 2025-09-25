@@ -3,6 +3,7 @@ import GObject, { getter, gtype, property, register, setter } from "ags/gobject"
 import { execAsync } from "ags/process";
 
 import AstalBluetooth from "gi://AstalBluetooth";
+import { userData } from "../app";
 
 
 /** AstalBluetooth helper (implements the default adapter feature) */
@@ -39,8 +40,9 @@ export class Bluetooth extends GObject.Object {
             return false;
         }).forEach(ad => ad.set_powered(false));
 
-        execAsync(`bluetoothctl select ${newAdapter.address}`).catch(e =>
-            console.error(`Bluetooth: Couldn't select adapter. Stderr: ${e}`));
+        execAsync(`bluetoothctl select ${newAdapter.address}`).then(() => {
+            userData.setProperty("bluetooth_default_adapter", newAdapter.address, true);
+        }).catch(e => console.error(`Bluetooth: Couldn't select adapter. Stderr: ${e}`));
     }
 
     constructor() {
@@ -53,6 +55,13 @@ export class Bluetooth extends GObject.Object {
                 this.#isAvailable = true;
                 this.notify("is-available");
             }
+
+            // load previous default adapter
+            const dataDefaultAdapter = userData.getProperty("bluetooth_default_adapter", "string");
+            const foundAdapter = this.astalBl.adapters.filter(a => a.address === dataDefaultAdapter)[0];
+
+            if(dataDefaultAdapter !== undefined && foundAdapter !== undefined) 
+                this.adapter = foundAdapter;
 
             this.#connections.set(
                 AstalBluetooth.get_default(), [
