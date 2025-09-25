@@ -1,6 +1,6 @@
 import { createPoll } from "ags/time";
 import { exec, execAsync } from "ags/process";
-import { Accessor, For, With } from "ags";
+import { Accessor, For, getScope, onCleanup, With } from "ags";
 import { Astal, Gtk } from "ags/gtk4";
 import { getSymbolicIcon } from "./apps";
 
@@ -217,7 +217,7 @@ export function addSliderMarksFromMinMax(slider: Astal.Slider, amountOfMarks: nu
 }
 
 /** initialize and sub class properties with accessors */
-export function construct(klass: object, props: Record<any, any|Accessor<any>>): Array<() => void> {
+export function construct<Class extends object>(klass: Class, props: Record<any, any|Accessor<any>>): Array<() => void> {
 
     const subs: Array<() => void> = [];
     const isGObject = klass instanceof GObject.Object;
@@ -228,16 +228,52 @@ export function construct(klass: object, props: Record<any, any|Accessor<any>>):
         if(v === undefined) return;
         if(v instanceof Accessor) {
             subs.push(v.subscribe(() => {
-                klass[k as keyof typeof klass] = v.get() as never;
-                if(isGObject) klass.notify(k);
+                klass[k as keyof Class] = v.get() as Class[keyof Class];
+                if(isGObject) 
+                    klass.notify(k.replace(/[A-Z]/g, (s) => `-${s.toLowerCase()}`
+                    ));
             }));
 
-            klass[k as keyof typeof klass] = v.get() as never;
+            klass[k as keyof Class] = v.get() as Class[keyof Class];
             return;
         }
+
         
-        klass[k as keyof typeof klass] = v as never;
+        klass[k as keyof Class] = v as Class[keyof Class];
     });
 
     return subs;
+}
+
+/** open connections to gobjects that are closed when the scope
+* is disposed 
+* @experimental
+* */
+export function createConnetions<
+    GObj extends GObject.Object, 
+    Signals extends GObj["$signals"],
+    Signal extends keyof Signals,
+    Callback extends Signals[Signal]
+>(...conns: Array<[GObj, Signal, Callback]>): void {
+    const scope = getScope();
+
+    const connections: Map<GObj, Array<number>> = new Map();
+
+    scope.onCleanup(() => connections.forEach((ids, gobj) => 
+        ids.forEach(id => gobj.disconnect(id))
+    ));
+
+    function add(gobj: GObj, id: number): void {
+        if(connections.has(gobj)) {
+            connections.get(gobj)!.push(id);
+            return;
+        }
+
+        connections.set(gobj, [id]);
+    }
+
+    conns.forEach(([gobj, sig, callback]) => {
+        // type stuff
+        add(gobj, gobj.connect(sig as string, callback as never)); 
+    });
 }

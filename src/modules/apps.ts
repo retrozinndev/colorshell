@@ -28,10 +28,10 @@ export function getAstalApps(): AstalApps.Apps {
 /** handles running with uwsm if it's installed */
 export function execApp(app: AstalApps.Application|string, dispatchExecArgs?: string) {
     const executable = (typeof app === "string") ? app 
-        : app.executable.replace(/(%f|%F|%u|%U|%i|%c|%k)/g, "");
+        : app.executable.replace(/%[fFcuUik]/g, "");
 
     AstalHyprland.get_default().dispatch("exec", 
-        `${dispatchExecArgs ? `${dispatchExecArgs} ` : ""}${uwsmIsActive ? "uwsm app -- " : ""}${executable}`
+        `${dispatchExecArgs ? `${dispatchExecArgs} ` : ""}${uwsmIsActive ? "uwsm-app -- " : ""}${executable}`
     );
 }
 

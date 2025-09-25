@@ -342,7 +342,13 @@ const generalConfigDefaults = {
     notifications: {
         timeout_low: 4000,
         timeout_normal: 6000,
-        timeout_critical: 0
+        timeout_critical: 0,
+        /** notification popup horizontal position. can be "left" or "right" 
+        * @default "right" */
+        position_h: "right",
+        /** vertical notification popup position. can be "top" or "bottom" 
+        * @default "top" */
+        position_v: "top"
     },
 
     night_light: {

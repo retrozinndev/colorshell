@@ -89,6 +89,7 @@
 
   & calendar.view {
     $border-radius: 14px;
+
     font-weight: 600;
     background: colors.$bg-primary;
     border-radius: $border-radius;
@@ -104,7 +105,10 @@
       margin: 4px;
 
       label.day-number {
-        min-height: 22px;
+        $size: 24px;
+
+        min-height: $size;
+        min-width: $size;
       }
     }
 

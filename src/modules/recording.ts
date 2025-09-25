@@ -1,6 +1,7 @@
 import { execAsync } from "ags/process";
 import { getter, register, signal } from "ags/gobject";
 import { Gdk } from "ags/gtk4";
+import { createRoot, getScope, Scope } from "ags";
 import { makeDirectory } from "./utils";
 import { Notifications } from "./notifications";
 import { time } from "./utils";
@@ -10,10 +11,8 @@ import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 
 
-export { Recording };
-
 @register({ GTypeName: "Recording" })
-class Recording extends GObject.Object {
+export class Recording extends GObject.Object {
     private static instance: Recording;
 
     @signal() started() {};
@@ -21,6 +20,7 @@ class Recording extends GObject.Object {
 
     #recording: boolean = false;
     #path: string = "~/Recordings";
+    #recordingScope?: Scope;
 
     /** Default extension: mp4(h264) */
     #extension: string = "mp4";
@@ -64,7 +64,22 @@ class Recording extends GObject.Object {
         this.notify("extension");
     }
 
-    /** Recording output file name. %NULL if screen is not being recorded */
+    @getter(String)
+    public get recordingTime() {
+        if(!this.#recording || !this.#startedAt)
+            return "not recording";
+            
+        const startedAtSeconds = time.get().to_unix() - Recording.getDefault().startedAt!;
+        if(startedAtSeconds <= 0) return "00:00";
+
+        const seconds = Math.floor(startedAtSeconds % 60);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+
+        return `${hours > 0 ? `${hours < 10 ? '0' : ""}${hours}` : ""}${ minutes < 10 ? `0${minutes}` : minutes }:${ seconds < 10 ? `0${seconds}` : seconds }`;
+    }
+
+    /** Recording output file name. null if screen is not being recorded */
     public get output() { return this.#output; }
 
     /** Currently unsupported property */
@@ -90,40 +105,50 @@ class Recording extends GObject.Object {
     }
 
     public startRecording(area?: Gdk.Rectangle) {
-        if(this.recording) 
+        if(this.#recording) 
             throw new Error("Screen Recording is already running!");
 
-        this.#output = `${time.get().format("%Y-%m-%d-%H%M%S")}_rec.${this.extension || "mp4"}`;
-        this.#recording = true;
-        this.notify("recording");
-        this.emit("started");
-        makeDirectory(this.path);
+        createRoot(() => {
+            this.#recordingScope = getScope();
 
-        const cancellable = Gio.Cancellable.new();
-        cancellable.cancel = () => {};
+            this.#output = `${time.get().format("%Y-%m-%d-%H%M%S")}_rec.${this.extension || "mp4"}`;
+            this.#recording = true;
+            this.notify("recording");
+            this.emit("started");
+            makeDirectory(this.path);
 
-        const areaString = `${area?.x ?? 0},${area?.y ?? 0} ${area?.width ?? 1}x${area?.height ?? 1}`;
+            const areaString = `${area?.x ?? 0},${area?.y ?? 0} ${area?.width ?? 1}x${area?.height ?? 1}`;
 
-        this.#process = Gio.Subprocess.new([
-            "wf-recorder", 
-            ...(area ? [ `-g`, areaString ] : []),
-            "-f",
-            `${this.path}/${this.output!}`
-        ], Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE);
+            this.#process = Gio.Subprocess.new([
+                "wf-recorder", 
+                ...(area ? [ `-g`, areaString ] : []),
+                "-f",
+                `${this.path}/${this.output!}`
+            ], Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE);
 
-        this.#process.wait_async(cancellable, () => {
-            this.stopRecording();
+            this.#process.wait_async(null, () => {
+                this.stopRecording();
+            });
+
+            this.#startedAt = time.get().to_unix();
+            this.notify("started-at");
+
+            const timeSub = time.subscribe(() => {
+                this.notify("recording-time");
+            });
+
+            this.#recordingScope.onCleanup(timeSub);
         });
-
-        this.#startedAt = time.get().to_unix();
     }
 
     public stopRecording() {
-        if(!this.#process) return;
+        if(!this.#process || !this.#recording) return;
 
         !this.#process.get_if_exited() && execAsync([
             "kill", "-s", "SIGTERM", this.#process.get_identifier()!
         ]);
+
+        this.#recordingScope?.dispose();
 
         const path = this.#path;
         const output = this.#output;
@@ -138,13 +163,8 @@ class Recording extends GObject.Object {
         Notifications.getDefault().sendNotification({
             actions: [
                 {
-                    text: "View",
-                    onAction: () => {
-                        execAsync(["nautilus", "-s", output!, path]);
-                    }
-                },
-                {
-                    text: "Open",
+                    text: "View", // will be hidden(can be triggered by clicking in the notification)
+                    id: "view",
                     onAction: () => {
                         execAsync(["xdg-open", `${path}/${output}`]);
                     }

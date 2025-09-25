@@ -4,10 +4,13 @@ import { tr } from "../../../i18n/intl";
 import { Windows } from "../../../windows";
 import { Notifications } from "../../../modules/notifications";
 import { execApp } from "../../../modules/apps";
+import { execAsync } from "ags/process";
 import { createBinding, createComputed, For, With } from "ags";
+import { Bluetooth } from "../../../modules/bluetooth";
 
 import AstalNotifd from "gi://AstalNotifd";
 import AstalBluetooth from "gi://AstalBluetooth";
+import Adw from "gi://Adw?version=1";
 
 
 export const BluetoothPage = new Page({
@@ -15,27 +18,27 @@ export const BluetoothPage = new Page({
     title: tr("control_center.pages.bluetooth.title"),
     spacing: 6,
     description: tr("control_center.pages.bluetooth.description"),
-    headerButtons: [{
-        icon: createBinding(AstalBluetooth.get_default().adapter, "discovering")
+    headerButtons: createBinding(Bluetooth.getDefault(), "adapter").as(adapter => adapter ? [{
+        icon: createBinding(adapter, "discovering")
             .as(discovering => !discovering ? 
                     "arrow-circular-top-right-symbolic"
                 : "media-playback-stop-symbolic"
             ), 
-        tooltipText: createBinding(AstalBluetooth.get_default().adapter, "discovering")
+        tooltipText: createBinding(adapter, "discovering")
             .as((discovering) => !discovering ? 
                     tr("control_center.pages.bluetooth.start_discovering")
                 : tr("control_center.pages.bluetooth.stop_discovering")),
         actionClicked: () => {
-            if(AstalBluetooth.get_default().adapter.discovering) {
-                AstalBluetooth.get_default().adapter.stop_discovery();
+            if(adapter.discovering) {
+                adapter.stop_discovery();
                 return;
             }
 
-            AstalBluetooth.get_default().adapter.start_discovery();
+            adapter.start_discovery();
         }
-    }],
-    actionClosed: () => AstalBluetooth.get_default().adapter?.discovering && 
-        AstalBluetooth.get_default().adapter.stop_discovery(),
+    }]: []),
+    actionClosed: () => Bluetooth.getDefault().adapter?.discovering && 
+        Bluetooth.getDefault().adapter?.stop_discovery(),
     bottomButtons: [{
         title: tr("control_center.pages.more_settings"),
         actionClicked: () => {
@@ -43,63 +46,79 @@ export const BluetoothPage = new Page({
             execApp("overskride", "[float; animation slide right]");
         }
     }],
-    content: () => [
-        <Gtk.Box class={"adapters"} visible={createBinding(AstalBluetooth.get_default(), "adapters")
-              .as(adptrs => adptrs.length > 1)
-        } spacing={2} orientation={Gtk.Orientation.VERTICAL}>
+    content: () => {
+        const adapter = createBinding(Bluetooth.getDefault(), "adapter");
+        const adapters = createBinding(AstalBluetooth.get_default(), "adapters");
+        const devices = createBinding(AstalBluetooth.get_default(), "devices");
 
-            <Gtk.Label class={"sub-header"} label={tr("control_center.pages.bluetooth.adapters")} 
-              xalign={0} />
-            <With value={createBinding(AstalBluetooth.get_default(), "adapters").as(adpts => 
-                adpts.length > 1)}>
+        return [
+            <Gtk.Box class={"adapters"} visible={adapters.as(adptrs => adptrs.length > 1)
+            } spacing={2} orientation={Gtk.Orientation.VERTICAL}>
 
-                {(hasMoreAdapters: boolean) => hasMoreAdapters &&
-                    <Gtk.Box orientation={Gtk.Orientation.VERTICAL} spacing={2}>
-                        <For each={createBinding(AstalBluetooth.get_default(), "adapters")}> 
-                            {(adapter: AstalBluetooth.Adapter) => {
-                                const isSelected = createBinding(AstalBluetooth.get_default(), "adapter").as(a =>
-                                    a.address === adapter.address);
-
-                                return <PageButton class={isSelected.as(is => is ? "selected" : "")} 
-                                  title={adapter.alias ?? "Adapter"} icon={"bluetooth-active-symbolic"} 
-                                  description={createBinding(adapter, "address")}
-                                  endWidget={
-                                      <Gtk.Image iconName={"object-select-symbolic"} visible={isSelected} />
-                                  }
-                                />;
-                            }}
-                        </For>
-                    </Gtk.Box>
-                }
-            </With>
-        </Gtk.Box>,
-        <Gtk.Box class={"connections"} orientation={Gtk.Orientation.VERTICAL} hexpand={true}
-          spacing={2}>
-            
-            <Gtk.Box class={"paired"} orientation={Gtk.Orientation.VERTICAL} spacing={4}
-              visible={createBinding(AstalBluetooth.get_default(), "devices").as(devs =>
-                devs.filter(dev => dev.paired || dev.connected || dev.trusted).length > 0)}>
-
-                <Gtk.Label class={"sub-header"} label={tr("devices")} xalign={0} />
-                <For each={createBinding(AstalBluetooth.get_default(), "devices").as(devs =>
-                  devs.filter(dev => dev.paired || dev.connected || dev.trusted))}>
-
-                    {(dev: AstalBluetooth.Device) => <DeviceWidget device={dev} />}
-                </For>
-            </Gtk.Box>
-            <Gtk.Box class={"discovered"} orientation={Gtk.Orientation.VERTICAL} spacing={4}
-              visible={createBinding(AstalBluetooth.get_default(), "devices").as(devs =>
-                devs.filter(dev => !dev.connected && !dev.paired && !dev.trusted).length > 0)}>
-
-                <Gtk.Label class={"sub-header"} label={tr("control_center.pages.bluetooth.new_devices")} 
+                <Gtk.Label class={"sub-header"} label={tr("control_center.pages.bluetooth.adapters")} 
                   xalign={0} />
-                <For each={createBinding(AstalBluetooth.get_default(), "devices").as(devs =>
-                  devs.filter(dev => !dev.connected && !dev.paired && !dev.trusted))}>
-                    {(dev: AstalBluetooth.Device) => <DeviceWidget device={dev} />}
-                </For>
+                <With value={adapters.as(adpts => adpts.length > 1)}>
+                    {(hasMoreAdapters: boolean) => hasMoreAdapters &&
+                        <Gtk.Box orientation={Gtk.Orientation.VERTICAL} spacing={2}>
+                            <For each={adapters}> 
+                                {(adapter: AstalBluetooth.Adapter) => {
+                                    const isSelected = createBinding(Bluetooth.getDefault(), "adapter").as(a =>
+                                        adapter.address === a?.address);
+
+                                    return <PageButton class={isSelected.as(is => is ? "selected" : "")} 
+                                      title={adapter.alias ?? "Adapter"} icon={"bluetooth-active-symbolic"} 
+                                      description={createBinding(adapter, "address")}
+                                      actionClicked={() => 
+                                          adapter.address !== Bluetooth.getDefault().adapter?.address &&
+                                              selectAdapter(adapter)
+                                      }
+                                      endWidget={
+                                          <Gtk.Image iconName={"object-select-symbolic"} visible={isSelected} />
+                                      }
+                                    />;
+                                }}
+                            </For>
+                        </Gtk.Box>
+                    }
+                </With>
+            </Gtk.Box>,
+            <Gtk.Box class={"connections"} orientation={Gtk.Orientation.VERTICAL} hexpand
+              spacing={2}>
+                
+                <Gtk.Box class={"paired"} orientation={Gtk.Orientation.VERTICAL} spacing={4}
+                  visible={devices.as(devs => devs.filter(dev => 
+                      (dev.adapter as AstalBluetooth.Adapter).address === adapter.get()?.address && 
+                          dev.paired || dev.connected || dev.trusted).length > 0)
+                }>
+
+                    <Gtk.Label class={"sub-header"} label={tr("devices")} xalign={0} />
+                    <For each={devices.as(devs => devs.filter(dev => 
+                        (dev.adapter as AstalBluetooth.Adapter).address === adapter.get()?.address &&
+                            dev.paired || dev.connected || dev.trusted))
+                    }>
+
+                        {(dev: AstalBluetooth.Device) => <DeviceWidget device={dev} />}
+                    </For>
+                </Gtk.Box>
+                <Gtk.Box class={"discovered"} orientation={Gtk.Orientation.VERTICAL} spacing={4}
+                  visible={devices.as(devs => devs.filter(dev => 
+                      (dev.adapter as AstalBluetooth.Adapter).address === adapter.get()?.address &&
+                          !dev.connected && !dev.paired && !dev.trusted).length > 0)
+                }>
+
+                    <Gtk.Label class={"sub-header"} label={tr("control_center.pages.bluetooth.new_devices")} 
+                      xalign={0} />
+                    <For each={devices.as(devs => devs.filter(dev => 
+                        (dev.adapter as AstalBluetooth.Adapter).address === adapter.get()?.address &&
+                            !dev.connected && !dev.paired && !dev.trusted))
+                    }>
+
+                        {(dev: AstalBluetooth.Device) => <DeviceWidget device={dev} />}
+                    </For>
+                </Gtk.Box>
             </Gtk.Box>
-        </Gtk.Box>
-    ]
+        ];
+    }
 });
 
 function DeviceWidget({ device }: { device: AstalBluetooth.Device }): Gtk.Widget {
@@ -107,9 +126,6 @@ function DeviceWidget({ device }: { device: AstalBluetooth.Device }): Gtk.Widget
       conn ? "selected" : "")} title={
           createBinding(device, "alias").as(alias => alias ?? "Unknown Device")} 
         icon={createBinding(device, "icon").as(ico => ico ?? "bluetooth-active-symbolic")}
-        description={
-            createBinding(device, "connecting").as(connecting => 
-                connecting ? `${tr("connecting")}...` : "")}
         tooltipText={
             createBinding(device, "connected").as(connected => 
                 !connected ? tr("connect") : "")
@@ -138,19 +154,24 @@ function DeviceWidget({ device }: { device: AstalBluetooth.Device }): Gtk.Widget
                     })
                 );
         }}
-        endWidget={<Gtk.Box visible={createComputed([
-                createBinding(device, "batteryPercentage"),
-                createBinding(device, "connected")
-            ]).as(([batt, connected]) => connected && (batt > -1))
-          }>
-            <Gtk.Label halign={Gtk.Align.END} label={
-                createBinding(device, "batteryPercentage").as(batt => 
-                    `${Math.floor(batt * 100)}%`)} />
+        endWidget={<Gtk.Box spacing={6}>
+            <Adw.Spinner visible={createBinding(device, "connecting")} />
+            <Gtk.Box visible={createComputed([
+                  createBinding(device, "batteryPercentage"),
+                  createBinding(device, "connected")
+              ]).as(([batt, connected]) => connected && (batt > -1))
+            } spacing={4}>
+                <Gtk.Label halign={Gtk.Align.END} label={
+                  createBinding(device, "batteryPercentage").as(batt => 
+                      `${Math.floor(batt * 100)}%`)
+                  } visible={createBinding(device, "connected")}
+                />
 
-            <Gtk.Image iconName={
-                createBinding(device, "batteryPercentage").as(batt =>
-                    `battery-level-${Math.floor(batt * 100)}-symbolic`)
-            } css={"font-size: 16px; margin-left: 6px;"} />
+                <Gtk.Image iconName={
+                    createBinding(device, "batteryPercentage").as(batt =>
+                        `battery-level-${Math.floor(batt * 100)}-symbolic`)
+                } css={"font-size: 16px; margin-left: 6px;"} />
+            </Gtk.Box>
         </Gtk.Box>} extraButtons={<With value={createComputed([
             createBinding(device, "connected"),
             createBinding(device, "trusted")
@@ -164,7 +185,7 @@ function DeviceWidget({ device }: { device: AstalBluetooth.Device }): Gtk.Widget
                       : "control_center.pages.bluetooth.unpair_device"
                     )} onClicked={() => {
                         if(!connected) {
-                            AstalBluetooth.get_default().adapter?.remove_device(device);
+                            Bluetooth.getDefault().adapter?.remove_device(device);
                             return;
                         }
 
@@ -181,4 +202,19 @@ function DeviceWidget({ device }: { device: AstalBluetooth.Device }): Gtk.Widget
             }
         </With>} 
     /> as Gtk.Widget;
+}
+
+function selectAdapter(adapter: AstalBluetooth.Adapter): void {
+    AstalBluetooth.get_default().adapters.filter(ad => {
+        if(ad.alias !== adapter.alias)
+            return true;
+
+        ad.set_powered(true);
+        return false;
+    }).forEach(ad => ad.set_powered(false));
+
+    execAsync(`bluetoothctl select ${adapter.address}`).catch(e =>
+        console.error(`Bluetooth: Couldn't select adapter. Stderr: ${e}`));
+
+    Bluetooth.getDefault().adapter = adapter;
 }

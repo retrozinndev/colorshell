@@ -10,6 +10,7 @@ import GObject from "ags/gobject";
 import AstalBluetooth from "gi://AstalBluetooth";
 import AstalNetwork from "gi://AstalNetwork";
 import AstalWp from "gi://AstalWp";
+import { Bluetooth } from "../../modules/bluetooth";
 
 
 export const Status = () => 
@@ -22,14 +23,16 @@ export const Status = () =>
                 <VolumeStatus class="sink" endpoint={Wireplumber.getDefault().getDefaultSink()}
                   icon={createBinding(Wireplumber.getDefault().getDefaultSink(), "volumeIcon").as(icon => 
                       !Wireplumber.getDefault().isMutedSink() && 
-                          Wireplumber.getDefault().getSinkVolume() > 0 ? icon
+                          Wireplumber.getDefault().getSinkVolume() > 0 ?
+                              icon
                           : "audio-volume-muted-symbolic")
                   } />
 
                 <VolumeStatus class="source" endpoint={Wireplumber.getDefault().getDefaultSource()}
                   icon={createBinding(Wireplumber.getDefault().getDefaultSource(), "volumeIcon").as(icon => 
                       !Wireplumber.getDefault().isMutedSource() && 
-                          Wireplumber.getDefault().getSourceVolume() > 0 ? icon
+                          Wireplumber.getDefault().getSourceVolume() > 0 ?
+                              icon
                           : "microphone-sensitivity-muted-symbolic")
                   } />
             </Gtk.Box>
@@ -40,22 +43,9 @@ export const Status = () =>
                     <Gtk.Image class={"recording state"} iconName={"media-record-symbolic"}
                       css={"margin-right: 6px;"} />
 
-                    <Gtk.Label class={"rec-time"} label={createComputed([
-                          createBinding(Recording.getDefault(), "recording"),
-                          time
-                      ], (recording, dateTime) => {
-                          if(!recording || !Recording.getDefault().startedAt) 
-                              return "...";
-
-                          const startedAtSeconds = dateTime.to_unix() - Recording.getDefault().startedAt!;
-                          if(startedAtSeconds <= 0) return "00:00";
-
-                          const minutes = Math.floor(startedAtSeconds / 60);
-                          const seconds = Math.floor(startedAtSeconds % 60);
-
-                          return `${ minutes < 10 ? `0${minutes}` : minutes }:${ seconds < 10 ? `0${seconds}` : seconds }`;
-                      })}
-                    />
+                    <Gtk.Label class={"rec-time"} label={
+                        createBinding(Recording.getDefault(), "recordingTime")
+                    } />
                 </Gtk.Box>
             </Gtk.Revealer>
             <StatusIcons />
@@ -99,7 +89,7 @@ function StatusIcons() {
                   : "bluetooth-symbolic"
               ) : "bluetooth-disabled-symbolic"
           })} class={"bluetooth state"} visible={
-              createBinding(AstalBluetooth.get_default(), "adapter").as(Boolean)
+              createBinding(Bluetooth.getDefault(), "adapter").as(Boolean)
           }
         />
 
