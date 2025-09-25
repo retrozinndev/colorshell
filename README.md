@@ -101,7 +101,6 @@ The most complicated ones have a help flag, so you can learn from there.
 ### Dependencies
 These are development-only dependencies(by package name on AUR):
 - `aylurs-gtk-shell-git`
-- `libastal-meta`
   
 Plus, you also need the packages listed in [Wiki/Dependencies]!
 
