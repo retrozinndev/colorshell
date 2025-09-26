@@ -3,6 +3,7 @@
 
 // fix can't convert non-null pointer to JS value (thanks Aylur!)
 import "ags/overrides";
+import "./config";
 import { 
     PluginApps, 
     PluginClipboard, 
@@ -20,9 +21,8 @@ import { Notifications } from "./modules/notifications";
 import { Wallpaper } from "./modules/wallpaper";
 import { Stylesheet } from "./modules/stylesheet";
 import { Clipboard } from "./modules/clipboard";
-import { Config } from "./modules/config";
 import { Gdk, Gtk } from "ags/gtk4";
-import { createRoot, getScope } from "ags";
+import { createRoot, getScope, Scope } from "ags";
 import { OSDModes, triggerOSD } from "./window/osd";
 import { programArgs, programInvocationName } from "system";
 import { setConsoleLogDomain } from "console";
@@ -51,11 +51,12 @@ const defaultWindows: Array<string> = [ "bar" ];
 
 GLib.unsetenv("LD_PRELOAD");
 
+
 @register({ GTypeName: "Shell" })
-export class Shell extends Adw.Application implements Gio.ActionMap {
+export class Shell extends Adw.Application {
     private static instance: Shell;
 
-    #scope!: ReturnType<typeof getScope>;
+    #scope!: Scope;
     #connections = new Map<GObject.Object, Array<number> | number>();
     #providers: Array<Gtk.CssProvider> = [];
     #gresource: Gio.Resource|null = null;
@@ -333,73 +334,7 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
 
     quit(): void {
         this.release();
-        super.quit();
     }
 }
-
-
-const generalConfigDefaults = {
-    notifications: {
-        timeout_low: 4000,
-        timeout_normal: 6000,
-        timeout_critical: 0,
-        /** notification popup horizontal position. can be "left" or "right" 
-        * @default "right" */
-        position_h: "right",
-        /** vertical notification popup position. can be "top" or "bottom" 
-        * @default "top" */
-        position_v: "top"
-    },
-
-    night_light: {
-        /** whether to save night light values to disk */
-        save_on_shutdown: true
-    },
-
-    workspaces: {
-        /** breaks `enable_helper`, makes all workspaces show their respective ID 
-        * by default */
-        always_show_id: false,
-        /** this is the function that shows the Workspace's IDs 
-        * around the current workspace if one breaks the crescent order.
-        * It basically helps keyboard navigation between workspaces.
-        * ---
-        * Example: 1(empty, current, shows ID), 2(empty, does not appear(makes 
-        * the previous not to be in a crescent order)), 3(not empty, shows ID) */
-        enable_helper: true,
-        /** hide workspace indicator if there's only one active workspace */
-        hide_if_single: false
-    },
-
-    clock: {
-        /** use the same format as gnu's `date` command */
-        date_format: "%A %d, %H:%M"
-    },
-
-    misc: {
-        play_bell_on_volume_change: true
-    }
-};
-
-const userDataDefaults = {
-    control_center: {
-        default_backlight: undefined
-    },
-
-    bluetooth_default_adapter: undefined
-};
-
-export const userData = new Config<
-    keyof typeof userDataDefaults, 
-    (typeof userDataDefaults)[keyof typeof userDataDefaults]
->(
-    `${GLib.get_user_data_dir()}/colorshell/data.json`,
-    userDataDefaults
-);
-
-export const generalConfig = new Config<keyof typeof generalConfigDefaults, 
-    typeof generalConfigDefaults[keyof typeof generalConfigDefaults]>(
-        `${GLib.get_user_config_dir()}/colorshell/config.json`, generalConfigDefaults
-);
 
 Shell.getDefault().runAsync([ programInvocationName, ...programArgs ]);

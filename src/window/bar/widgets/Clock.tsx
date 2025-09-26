@@ -2,7 +2,7 @@ import { Gtk } from "ags/gtk4";
 import { Windows } from "../../../windows";
 import { createBinding } from "ags";
 import { time } from "../../../modules/utils";
-import { generalConfig } from "../../../app";
+import { generalConfig } from "../../../config";
 
 
 export const Clock = () => 

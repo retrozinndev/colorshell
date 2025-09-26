@@ -4,7 +4,7 @@ import { Backlights } from "../../../../modules/backlight";
 import { Page, PageButton } from "../Page";
 import { createBinding, For, With } from "ags";
 import { addSliderMarksFromMinMax } from "../../../../modules/utils";
-import { userData } from "../../../../app";
+import { userData } from "../../../../config";
 
 
 export const PageBacklight = new Page({

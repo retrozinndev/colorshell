@@ -1,9 +1,9 @@
 import { createRoot, getScope, Scope } from "ags";
-import GObject, { getter, gtype, property, register, setter } from "ags/gobject";
 import { execAsync } from "ags/process";
+import { userData } from "../config";
+import GObject, { getter, gtype, property, register, setter } from "ags/gobject";
 
 import AstalBluetooth from "gi://AstalBluetooth";
-import { userData } from "../app";
 
 
 /** AstalBluetooth helper (implements the default adapter feature) */

@@ -7,7 +7,8 @@ import { Runner } from "../runner/Runner";
 import { showWorkspaceNumber } from "../window/bar/widgets/Workspaces";
 import { playSystemBell } from "./utils";
 import { player, setPlayer } from "./media";
-import { generalConfig, Shell } from "../app";
+import { Shell } from "../app";
+import { generalConfig } from "../config";
 
 import AstalIO from "gi://AstalIO";
 import AstalMpris from "gi://AstalMpris";

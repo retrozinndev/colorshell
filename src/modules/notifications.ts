@@ -1,5 +1,5 @@
 import { execAsync } from "ags/process";
-import { generalConfig } from "../app";
+import { generalConfig } from "../config";
 import { onCleanup } from "ags";
 import GObject, { getter, ParamSpec, property, register, signal } from "ags/gobject";
 

@@ -1,7 +1,7 @@
 import { Gtk } from "ags/gtk4";
 import { getAppIcon, getSymbolicIcon } from "../../../modules/apps";
 import { Separator } from "../../../widget/Separator";
-import { generalConfig } from "../../../app";
+import { generalConfig } from "../../../config";
 import { createBinding, createComputed, createState, For, With } from "ags";
 import { variableToBoolean } from "../../../modules/utils";
 

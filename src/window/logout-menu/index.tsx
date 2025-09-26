@@ -1,6 +1,6 @@
 import { Astal, Gdk, Gtk } from "ags/gtk4";
 import { execAsync } from "ags/process";
-import { generalConfig } from "../../app";
+import { generalConfig } from "../../config";
 import { AskPopup } from "../../widget/AskPopup";
 import { Notifications } from "../../modules/notifications";
 import { NightLight } from "../../modules/nightlight";

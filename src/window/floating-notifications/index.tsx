@@ -2,7 +2,7 @@ import { Astal, Gtk } from "ags/gtk4";
 import { createBinding, createComputed, For } from "ags";
 import { Notifications } from "../../modules/notifications";
 import { NotificationWidget } from "../../widget/Notification";
-import { generalConfig } from "../../app";
+import { generalConfig } from "../../config";
 
 import AstalNotifd from "gi://AstalNotifd";
 import Adw from "gi://Adw?version=1";
