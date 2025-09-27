@@ -11,7 +11,10 @@ export class Tile extends Gtk.Box {
     @signal(Boolean) toggled(_state: boolean) {}
     @signal() enabled() {}
     @signal() disabled() {}
-    @signal() clicked() {}
+    @signal() clicked() {
+        if(this.enableOnClicked)
+            this.enable();
+    }
 
     @property(String)
     public icon: string;
@@ -20,7 +23,7 @@ export class Tile extends Gtk.Box {
     @property(String)
     public description: string = "";
     @property(Boolean)
-    public enableOnClicked: boolean = true;
+    public enableOnClicked: boolean = false;
     @property(Boolean)
     public state: boolean = false;
     @property(Boolean)
@@ -39,6 +42,7 @@ export class Tile extends Gtk.Box {
         this.state = true;
         !this.has_css_class("enabled") &&
             this.add_css_class("enabled");
+
         this.emit("toggled", true);
         this.emit("enabled");
     }
@@ -69,25 +73,34 @@ export class Tile extends Gtk.Box {
         ]));
 
         this.add_css_class("tile");
+        this.add_controller(
+            <Gtk.GestureClick onReleased={(_, __, px, py) => {
+                // gets the icon part of the tile
+                const { x, y, width, height } = this.get_first_child()!.get_allocation();
+                
+                if((px < x || px > x+width) || (py < y || y > py+height)) 
+                    this.emit("clicked");
+            }} /> as Gtk.GestureClick
+        );
 
         this.icon = props.icon;
         this.title = props.title;
         this.hexpand = true;
 
-        if(props.hasArrow != null)
+        if(props.hasArrow !== undefined)
             this.hasArrow = props.hasArrow;
 
-        if(props.description != null)
+        if(props.description !== undefined)
             this.description = props.description;
 
-        if(props.state != null)
+        if(props.state !== undefined)
             this.state = props.state;
 
-        if(props.enableOnClicked != null)
+        if(props.enableOnClicked !== undefined)
             this.enableOnClicked = props.enableOnClicked;
 
-        if(this.state)
-            this.add_css_class("enabled"); // fix no highlight with state = true on construct
+        this.state &&
+            this.add_css_class("enabled"); // fix no highlight when enabled on init
 
         this.prepend(
             <Gtk.Box hexpand={false} vexpand class={"icon"}>
@@ -110,28 +123,14 @@ export class Tile extends Gtk.Box {
                       variableToBoolean(createBinding(this, "description"))
                   } maxWidthChars={12} hexpand={false}
                 />
-
-                <Gtk.GestureClick onReleased={() => {
-                    this.emit("clicked");
-                    if(this.enableOnClicked && !this.state)
-                        this.enable();
-
-                    return true;
-                }} />
             </Gtk.Box> as Gtk.Box
         );
 
         if(this.hasArrow)
             this.append(
-                <Gtk.Image class={"arrow"} iconName={"go-next-symbolic"} halign={Gtk.Align.END}>
-                    <Gtk.GestureClick onReleased={() => {
-                        this.emit("clicked");
-                        if(this.enableOnClicked && !this.state)
-                            this.enable();
-
-                        return true;
-                    }} />
-                </Gtk.Image> as Gtk.Image
+                <Gtk.Image class={"arrow"} iconName={"go-next-symbolic"} 
+                  halign={Gtk.Align.END} 
+                /> as Gtk.Image
             );
     }
 

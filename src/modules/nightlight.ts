@@ -1,20 +1,22 @@
 import { execAsync, exec } from "ags/process";
-import { interval } from "ags/time";
+import { userData } from "../config";
 import GObject, { getter, register, setter } from "ags/gobject";
 
-import AstalIO from "gi://AstalIO";
 import GLib from "gi://GLib?version=2.0";
 
 
-export { NightLight };
-
 @register({ GTypeName: "NightLight" })
-class NightLight extends GObject.Object {
+export class NightLight extends GObject.Object {
     private static instance: NightLight;
 
-    #watchInterval: (AstalIO.Time|null) = null;
-    #temperature: number = 4500;
-    #gamma: number = 100;
+    public readonly maxTemperature = 20000;
+    public readonly minTemperature = 1000;
+    public readonly identityTemperature = 6000;
+    public readonly maxGamma = 100;
+
+    #watchInterval: GLib.Source;
+    #temperature: number = this.identityTemperature;
+    #gamma: number = this.maxGamma;
     #identity: boolean = false;
 
     @getter(Number)
@@ -24,11 +26,6 @@ class NightLight extends GObject.Object {
     @getter(Number)
     public get gamma() { return this.#gamma; }
     public set gamma(newValue: number) { this.setGamma(newValue); }
-
-    public readonly maxTemperature = 20000;
-    public readonly minTemperature = 1000;
-    public readonly identityTemperature = 6000;
-    public readonly maxGamma = 100;
 
     @getter(Boolean)
     public get identity() { return this.#identity; }
@@ -43,7 +40,8 @@ class NightLight extends GObject.Object {
     constructor() {
         super();
 
-        this.#watchInterval = interval(10000, () => {
+        this.loadData();
+        this.#watchInterval = setInterval(() => {
             execAsync("hyprctl hyprsunset temperature").then(t => {
                 if(t.trim() !== "" && t.trim().length <= 5) {
                     const val = Number.parseInt(t.trim());
@@ -54,7 +52,8 @@ class NightLight extends GObject.Object {
                         this.notify("temperature");
                     }
                 }
-            }).catch((r) => console.error(r));
+            }).catch((r: Error) => console.error(`Night Light: Couldn't sync temperature. Stderr: ${
+                r.message}\n${r.stack}`));
 
             execAsync("hyprctl hyprsunset gamma").then(g => {
                 if(g.trim() !== "" && g.trim().length <= 5) {
@@ -66,11 +65,13 @@ class NightLight extends GObject.Object {
                         this.notify("gamma");
                     }
                 }
-            }).catch((r) => console.error(r));
-        });
+            }).catch((r: Error) => console.error(`Night Light: Couldn't sync. Stderr: ${
+                r.message}\n${r.stack}`));
+        }, 10000);
+    }
 
-        this.vfunc_dispose = () => this.#watchInterval && 
-            this.#watchInterval.cancel();
+    vfunc_dispose(): void {
+        this.#watchInterval?.destroy();
     }
 
     public static getDefault(): NightLight {
@@ -84,7 +85,7 @@ class NightLight extends GObject.Object {
         if(value === this.temperature && !this.identity) return;
 
         if(value > this.maxTemperature || value < 1000) {
-            console.error(`Night Light(hyprsunset): provided temperatue ${value
+            console.error(`Night Light: provided temperatue ${value
                 } is out of bounds (min: 1000; max: ${this.maxTemperature})`);
             return;
         }
@@ -94,8 +95,8 @@ class NightLight extends GObject.Object {
             this.notify("temperature");
 
             this.identity = false;
-        }).catch((r) => console.error(
-            `Night Light(hyprsunset): Couldn't set temperature. Stderr: ${r}`
+        }).catch((r: Error) => console.error(
+            `Night Light: Couldn't set temperature. Stderr: ${r.message}\n${r.stack}`
         ));
     }
 
@@ -103,7 +104,7 @@ class NightLight extends GObject.Object {
         if(value === this.gamma && !this.identity) return;
 
         if(value > this.maxGamma || value < 0) {
-            console.error(`Night Light(hyprsunset): provided gamma ${value
+            console.error(`Night Light: provided gamma ${value
                 } is out of bounds (min: 0; max: ${this.maxTemperature})`);
             return;
         }
@@ -113,24 +114,33 @@ class NightLight extends GObject.Object {
             this.notify("gamma");
 
             this.identity = false;
-        }).catch((r) => console.error(
-            `Night Light(hyprsunset): Couldn't set gamma. Stderr: ${r}`
+        }).catch((r: Error) => console.error(
+            `Night Light: Couldn't set gamma. Stderr: ${r.message}\n${r.stack}`
         ));
     }
 
     public applyIdentity(): void {
         this.dispatch("identity");
+
         if(!this.#identity) {
             this.#identity = true;
             this.notify("identity");
         }
     }
 
+    private dispatch(call: "temperature", val: number): string;
+    private dispatch(call: "gamma", val: number): string;
+    private dispatch(call: "identity"): string;
+
     private dispatch(call: "temperature"|"gamma"|"identity", val?: number): string {
         return exec(`hyprctl hyprsunset ${call}${val != null ? ` ${val}` : ""}`);
     }
 
-    private async dispatchAsync(...[call, val]: Parameters<typeof this.dispatch>): Promise<string> {
+    private async dispatchAsync(call: "temperature", val: number): Promise<string>;
+    private async dispatchAsync(call: "gamma", val: number): Promise<string>;
+    private async dispatchAsync(call: "identity"): Promise<string>;
+
+    private async dispatchAsync(call: "temperature"|"gamma"|"identity", val?: number): Promise<string> {
         return await execAsync(`hyprctl hyprsunset ${call}${val != null ? ` ${val}` : ""}`);
     }
 
@@ -145,10 +155,22 @@ class NightLight extends GObject.Object {
     }
 
     public saveData(): void {
-        exec(`sh ${GLib.get_user_config_dir()}/hypr/scripts/save-hyprsunset.sh`);
+        userData.setProperty("night_light.temperature", this.#temperature);
+        userData.setProperty("night_light.gamma", this.#gamma);
+        userData.setProperty("night_light.identity", this.#identity, true);
     }
 
+    /** load temperature, gamma and identity(off/on) properties from the user configuration */
     public loadData(): void {
-        exec(`sh ${GLib.get_user_config_dir()}/hypr/scripts/load-hyprsunset.sh`);
+        const identity = userData.getProperty("night_light.identity", "boolean");
+        const temperature = userData.getProperty("night_light.temperature", "number");
+        const gamma = userData.getProperty("night_light.gamma", "number");
+
+        this.#temperature = temperature;
+        this.notify("temperature");
+        this.#gamma = gamma;
+        this.notify("gamma");
+
+        this.identity = identity;
     }
 }

@@ -47,13 +47,22 @@ const generalConfigDefaults = {
 };
 
 const userDataDefaults = {
+    /** last default adapter */
+    bluetooth_default_adapter: undefined,
+
     control_center: {
         /** last default backlight */
         default_backlight: undefined
     },
 
-    /** last default adapter */
-    bluetooth_default_adapter: undefined
+    night_light: {
+        /** last blue light filter temperature */
+        temperature: 6000,
+        /** last gamma filter value */
+        gamma: 100,
+        /** wheter to enable identity filters("disables" the filters) */
+        identity: true
+    }
 };
 
 export const userData = new Config<

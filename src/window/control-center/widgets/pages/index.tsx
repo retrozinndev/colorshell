@@ -1,20 +1,18 @@
 import { register } from "ags/gobject";
 import { Gtk } from "ags/gtk4";
 import { Page } from "../Page";
-import { timeout } from "ags/time";
 
-import AstalIO from "gi://AstalIO";
+import GLib from "gi://GLib?version=2.0";
 
 
-export { Pages };
 export type PagesProps = {
     initialPage?: Page;
     transitionDuration?: number;
 };
 
 @register({ GTypeName: "Pages" })
-class Pages extends Gtk.Box {
-    #timeouts: Array<[AstalIO.Time, (() => void)|undefined]> = [];
+export class Pages extends Gtk.Box {
+    #timeouts: Array<[GLib.Source, (() => void)|undefined]> = [];
     #page: (Page|undefined);
     #transDuration: number;
     #transType: Gtk.RevealerTransitionType = Gtk.RevealerTransitionType.SLIDE_DOWN;
@@ -40,7 +38,7 @@ class Pages extends Gtk.Box {
         const destroyId = this.connect("destroy", () => {
             this.disconnect(destroyId);
             this.#timeouts.forEach((tmout) => {
-                tmout[0].cancel();
+                tmout[0].destroy();
                 (async () => tmout[1]?.())().catch((err: Error) => {
                     console.error(`${err.message}\n${err.stack}`);
                 });
@@ -89,10 +87,10 @@ class Pages extends Gtk.Box {
 
         page.set_reveal_child(false);
         this.#timeouts.push([
-            timeout(page.transitionDuration, () => {
+            setTimeout(() => {
                 this.remove(page);
                 onClosed?.();
-            }),
+            }, page.transitionDuration),
             onClosed
         ]);
     }

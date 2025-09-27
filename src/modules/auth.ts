@@ -1,7 +1,6 @@
-import { execAsync } from "ags/process";
+import { exec, execAsync } from "ags/process";
 import { register } from "ags/gobject";
-import { EntryPopup, EntryPopupProps } from "../widget/EntryPopup";
-import { AskPopup, AskPopupProps } from "../widget/AskPopup";
+import { AuthPopup } from "../widget/AuthPopup";
 
 import AstalAuth from "gi://AstalAuth";
 import Polkit from "gi://Polkit";
@@ -14,39 +13,48 @@ import GLib from "gi://GLib?version=2.0";
 export class Auth extends PolkitAgent.Listener {
     private static instance: Auth;
     #subject: Polkit.Subject;
+    #pam: AstalAuth.Pam;
+    #handle: any;
 
     constructor() {
         super();
-        this.#subject = Polkit.UnixSession.new(GLib.get_user_name());
+        this.#subject = Polkit.UnixSession.new(""); // TODO find how to get session id (for some reason, i can't find a session ID that works)
+        this.#pam = new AstalAuth.Pam();
 
-        this.register(PolkitAgent.RegisterFlags.NONE, 
+        this.#handle = this.register(
+            PolkitAgent.RegisterFlags.RUN_IN_THREAD, 
             this.#subject, 
-            "/io/github/retrozinndev/Colorshell/PolicyKit/AuthAgent", 
+            "/io/github/retrozinndev/colorshell/PolicyKit/AuthAgent", 
             null
         );
     }
 
     vfunc_dispose() {
-        PolkitAgent.Listener.unregister();
+        PolkitAgent.Listener.unregister(this.#handle);
     }
 
-    static initiate_authentication(action_id: string, message: string, icon_name: string, details: Polkit.Details, cookie: string, identities: Array<Polkit.Identity>, cancellable?: Gio.Cancellable, callback?: Gio.AsyncReadyCallback): void | Promise<boolean> {
-        const authPopup = EntryPopup({
-            title: "Authentication",
-            text: message,
-            isPassword: true,
-            onFinish: callback,
-            onCancel: () => cancellable?.cancel(),
-            closeOnAccept: false,
-            onAccept: (input: string) => {
-                if(this.validatePasswd(input)) {
-                    authPopup.close();
-                }
-                AskPopup({
+    public static initiate_authentication(action_id: string, message: string, icon_name: string, details: Polkit.Details, cookie: string, identities: Array<Polkit.Identity>, cancellable: Gio.Cancellable|null, callback: Gio.AsyncReadyCallback<Auth>|null): void {
+        const task = Gio.Task.new(
+            this.getDefault(), 
+            cancellable, 
+            callback as Gio.AsyncReadyCallback|null
+        );
 
-                } as AskPopupProps)
+        AuthPopup({
+            text: message,
+            iconName: icon_name,
+            onContinue: (data, reject, approve) => {
+                this.getDefault().validateAuth(data.passwd, data.user).then((success) => {
+                    approve();
+                    task.return_boolean(success);
+                }).catch((error: GLib.Error) => {
+                    // TODO implement a number of tries (usually it's 3)
+                    reject(`Authentication failed: ${error.message}`);
+                    task.return_error(error);
+                });
             }
-        } as EntryPopupProps);
+        });
+
     }
 
 
@@ -57,20 +65,51 @@ export class Auth extends PolkitAgent.Listener {
         return this.instance;
     }
 
-    private static validatePasswd(passwd: string): boolean {
-        return AstalAuth.Pam.authenticate(passwd, null);
+    // TODO: support fingerprint/facial auth
+    /** @returns true if data are correct, rejects promise otherwise */
+    public validateAuth(passwd: string, user?: string): Promise<boolean> {
+        if(user !== undefined)
+            this.#pam.username = user;
+
+        return new Promise<boolean>((resolve, reject) => {
+            const connections: Array<number> = [];
+            connections.push(
+                this.#pam.connect("fail", () => {
+                    reject(
+                        `Auth: Authentication has failed for user ${this.#pam.username}`
+                    );
+                    connections.forEach(id => this.#pam.disconnect(id));
+                }),
+                this.#pam.connect("success", () => {
+                    resolve(true);
+                    connections.forEach(id => this.#pam.disconnect(id));
+                })
+            );
+
+            this.#pam.start_authenticate();
+            this.#pam.supply_secret(passwd);
+        });
     }
 
-    /** @returns if successful, true, or else, false */
+    /** @returns true if successful */
     public async polkitExecute(cmd: string | Array<string>): Promise<boolean> {
         let success: boolean = true;
-        await execAsync([ "pkexec", "--", ...(Array.isArray(cmd) ? 
-          cmd as Array<string> : [ cmd as string ]) ]
+        await execAsync([ 
+            "pkexec", 
+            "--", 
+            ...(Array.isArray(cmd) ? cmd : [ cmd ]) ]
         ).catch((r) => {
             success = false;
             console.error(`Polkit: Couldn't authenticate. Stderr: ${r}`);
         });
 
         return success;
+    }
+
+    public static getDefault(): Auth {
+        if(!this.instance)
+            this.instance = new Auth();
+
+        return this.instance;
     }
 }

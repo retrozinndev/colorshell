@@ -1,6 +1,6 @@
 import { Astal, Gtk } from "ags/gtk4";
 import { Windows } from "../windows";
-import { PopupWindow } from "./PopupWindow";
+import { getPopupWindowContainer, PopupWindow } from "./PopupWindow";
 import { Separator } from "./Separator";
 import { tr } from "../i18n/intl";
 import { Accessor } from "ags";
@@ -73,4 +73,8 @@ export function CustomDialog({ options = [{ text: tr("accept") }], ...props}: Cu
 
         return popup;
     })();
+}
+
+export function getContainerCustomDialog(dialog: Astal.Window): Gtk.Box {
+    return getPopupWindowContainer(dialog).get_first_child()?.get_last_child()?.get_prev_sibling() as Gtk.Box;
 }

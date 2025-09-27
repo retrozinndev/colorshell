@@ -19,7 +19,7 @@ export const TileBluetooth = () =>
       onEnabled={() => Bluetooth.getDefault().adapter?.set_powered(true)}
       onDisabled={() => Bluetooth.getDefault().adapter?.set_powered(false)}
       onClicked={() => TilesPages?.toggle(BluetoothPage)}
-      enableOnClicked hasArrow
+      hasArrow
       state={createBinding(AstalBluetooth.get_default(), "isPowered")}
       icon={createComputed([
             createBinding(AstalBluetooth.get_default(), "isPowered"),
