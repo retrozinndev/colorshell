@@ -73,7 +73,7 @@ export class Recording extends GObject.Object {
         if(startedAtSeconds <= 0) return "00:00";
 
         const seconds = Math.floor(startedAtSeconds % 60);
-        const minutes = Math.floor(seconds / 60);
+        const minutes = Math.floor(startedAtSeconds / 60);
         const hours = Math.floor(minutes / 60);
 
         return `${hours > 0 ? `${hours < 10 ? '0' : ""}${hours}` : ""}${ minutes < 10 ? `0${minutes}` : minutes }:${ seconds < 10 ? `0${seconds}` : seconds }`;
