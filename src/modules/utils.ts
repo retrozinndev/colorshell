@@ -6,7 +6,7 @@ import { getSymbolicIcon } from "./apps";
 
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
-import GObject from "gi://GObject?version=2.0";
+import GObject from "ags/gobject";
 
 
 /** gnim doesn't export this, so we need to do it again */
@@ -230,8 +230,7 @@ export function construct<Class extends object>(klass: Class, props: Record<any,
             subs.push(v.subscribe(() => {
                 klass[k as keyof Class] = v.get() as Class[keyof Class];
                 if(isGObject) 
-                    klass.notify(k.replace(/[A-Z]/g, (s) => `-${s.toLowerCase()}`
-                    ));
+                    klass.notify(k.replace(/[A-Z]/g, (s) => `-${s.toLowerCase()}`));
             }));
 
             klass[k as keyof Class] = v.get() as Class[keyof Class];
@@ -276,4 +275,29 @@ export function createConnetions<
         // type stuff
         add(gobj, gobj.connect(sig as string, callback as never)); 
     });
+}
+
+export function secureBinding<
+    GObj extends GObject.Object, 
+    Prop extends keyof GObj,
+    Returns extends unknown|undefined
+>(
+    gobj: GObj,
+    prop: Prop,
+    defaultValue: Returns
+): Accessor<GObj[Prop]|Returns> {
+    const get = () => gobj ? gobj[prop] : defaultValue;
+
+    return new Accessor<GObj[Prop]|Returns>(
+        get,
+        (notify) => {
+            const gobjectProp = (prop as string).replace(/[A-Z]/g, (s) => `-${s.toLowerCase()}`);
+            const id = gobj.connect(`notify::${gobjectProp}`, () => notify());
+            return () => {
+                try {
+                    gobj.disconnect(id);
+                } catch(e) {}
+            }
+        }
+    );
 }
