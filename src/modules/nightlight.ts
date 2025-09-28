@@ -166,10 +166,15 @@ export class NightLight extends GObject.Object {
         const temperature = userData.getProperty("night_light.temperature", "number");
         const gamma = userData.getProperty("night_light.gamma", "number");
 
-        this.#temperature = temperature;
-        this.notify("temperature");
-        this.#gamma = gamma;
-        this.notify("gamma");
+        if(identity) {
+            this.#temperature = temperature;
+            this.notify("temperature");
+            this.#gamma = gamma;
+            this.notify("gamma");
+        } else {
+            this.temperature = temperature;
+            this.gamma = gamma;
+        }
 
         this.identity = identity;
     }
