@@ -6,7 +6,7 @@ import { getSymbolicIcon } from "./apps";
 
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
-import GObject from "ags/gobject";
+import GObject from "gi://GObject?version=2.0";
 
 
 /** gnim doesn't export this, so we need to do it again */
@@ -300,4 +300,62 @@ export function secureBinding<
             }
         }
     );
+}
+
+/** securely bind to a property of a gobject accessor 
+* use this to securely bind to a property of a constantly 
+* updated variable that points to a gobject. 
+* 
+* It follows the same idea from secureBinding, it allows setting
+* a default value to return when the base gobject is null.
+* 
+* @param baseObject a binding to the constantly updated property 
+* that points to the gobject
+* @param prop the property to bind 
+* @param defaultValue the value to return when the baseObject is 
+* null/undefined
+*
+* @returns a bind to the specified property of the constantly-updated 
+* object or the default value.
+* */
+export function secureBaseBinding<
+    T extends GObject.Object = GObject.Object,
+    Prop extends keyof T = keyof T,
+    Default = any
+>(
+    baseObject: Accessor<T>, 
+    prop: Prop,
+    defaultValue: Default
+): Accessor<T[Prop]|Default> {
+    let gobj: T|undefined = baseObject.get();
+    let notify: () => void;
+
+    const baseSub = baseObject.subscribe(() => {
+        const newBase = baseObject.get();
+
+        if(!newBase) {
+            gobj = undefined;
+            notify!();
+            return;
+        }
+    });
+
+    const accessor = new Accessor<T[Prop]|Default>(
+        () => gobj ? gobj[prop] : defaultValue,
+        (notifyFun) => {
+            notify = notifyFun;
+
+            const id = gobj?.connect(
+                `notify::${(prop as string).replace(/[A-Z]/g, (s) => `-${s.toLowerCase()}`)}`,
+                () => notify()
+            );
+
+            return () => {
+                id && gobj?.disconnect(id);
+                baseSub();
+            }
+        }
+    );
+
+    return accessor;
 }

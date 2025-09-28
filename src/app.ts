@@ -291,7 +291,7 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
             this.#connections.set(Wireplumber.getDefault(), 
                 Wireplumber.getDefault().getDefaultSink().connect("notify::volume", () => 
                     !Windows.getDefault().isOpen("control-center") &&
-                        triggerOSD(OSDModes.SINK)
+                        triggerOSD(OSDModes.sink)
                 )
             );
 
@@ -311,7 +311,7 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
 
                     this.#connections.set(defaultBk, defaultBk.connect("brightness-changed", () => 
                         !Windows.getDefault().isOpen("control-center") &&
-                            triggerOSD(OSDModes.BRIGHTNESS)
+                            triggerOSD(OSDModes.brightness)
                     ));
                 })
             );

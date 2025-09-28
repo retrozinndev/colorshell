@@ -3,7 +3,7 @@ import { createBinding, createState, With } from "ags";
 import { Wireplumber } from "../../modules/volume";
 import { Windows } from "../../windows";
 import { Backlights } from "../../modules/backlight";
-import { secureBinding, variableToBoolean } from "../../modules/utils";
+import { secureBaseBinding, secureBinding, variableToBoolean } from "../../modules/utils";
 
 import Pango from "gi://Pango?version=1.0";
 import GLib from "gi://GLib?version=2.0";
@@ -13,18 +13,42 @@ import OSDMode from "./modules/osdmode";
 
 export const OSDModes = {
     sink: new OSDMode({
-        icon: secureBinding(AstalWp.get_default().defaultSpeaker, "volumeIcon", 
-                            "audio-volume-high-symbolic"),
-        value: secureBinding(Wireplumber.getWireplumber().defaultSpeaker, "volume", 50),
-        text: secureBinding(Wireplumber.getWireplumber().defaultSpeaker, "description",
-                           "Unknown Speaker"),
+        available: secureBinding(AstalWp.get_default(), "defaultSpeaker", false).as((sink) => 
+            Boolean(sink)),
+        icon: secureBaseBinding<AstalWp.Endpoint>(
+            createBinding(AstalWp.get_default(), "defaultSpeaker"),
+            "volumeIcon",
+            "audio-volume-high-symbolic"
+        ),
+        value: secureBaseBinding<AstalWp.Endpoint>(
+            createBinding(AstalWp.get_default(), "defaultSpeaker"),
+            "volume",
+            .5
+        ),
+        text: secureBaseBinding<AstalWp.Endpoint>(
+            createBinding(AstalWp.get_default(), "defaultSpeaker"),
+            "description",
+            "Unknown Speaker"
+        ),
         max: Wireplumber.getDefault().getMaxSinkVolume() / 100
     }),
     brightness: new OSDMode({
         icon: "display-brightness-symbolic",
-        value: secureBinding(Backlights.getDefault().default, "brightness", 100),
-        max: secureBinding(Backlights.getDefault().default, "maxBrightness", 100),
-        text: secureBinding(Backlights.getDefault().default, "name", "Unknown Backlight"),
+        value: secureBaseBinding<Backlights.Backlight>(
+            createBinding(Backlights.getDefault(), "default"), 
+            "brightness", 
+            100
+        ),
+        max: secureBaseBinding<Backlights.Backlight>(
+            createBinding(Backlights.getDefault(), "default"), 
+            "maxBrightness", 
+            100
+        ),
+        text: secureBaseBinding<Backlights.Backlight>(
+            createBinding(Backlights.getDefault(), "default"), 
+            "name", 
+            "Unknown Backlight"
+        ),
         available: createBinding(Backlights.getDefault(), "available")
     })
 }
