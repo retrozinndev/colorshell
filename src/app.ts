@@ -22,12 +22,12 @@ import { Wallpaper } from "./modules/wallpaper";
 import { Stylesheet } from "./modules/stylesheet";
 import { Clipboard } from "./modules/clipboard";
 import { Gdk, Gtk } from "ags/gtk4";
-import { createRoot, getScope, Scope } from "ags";
+import { createBinding, createRoot, getScope, Scope } from "ags";
 import { OSDModes, triggerOSD } from "./window/osd";
 import { programArgs, programInvocationName } from "system";
 import { setConsoleLogDomain } from "console";
 import { initPlayer } from "./modules/media";
-import { encoder } from "./modules/utils";
+import { createSubscription, encoder, secureBaseBinding } from "./modules/utils";
 import { exec } from "ags/process";
 import { Backlights } from "./modules/backlight";
 import GObject, { register } from "ags/gobject";
@@ -295,25 +295,14 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
                 )
             );
 
-            // dinamically connect to default backlight (if there's any)
-            let lastDefaultBk: Backlights.Backlight|null = null;
-            this.#connections.set(Backlights.getDefault(), 
-                Backlights.getDefault().connect("notify::default", (_, defaultBk: Backlights.Backlight|null) => {
-                    if(!lastDefaultBk) return;
-
-                    if(this.#connections.has(lastDefaultBk))
-                        lastDefaultBk.disconnect((this.#connections.get(lastDefaultBk) as number));
-
-                    lastDefaultBk = null;
-                    if(!defaultBk) return;
-
-                    lastDefaultBk = defaultBk;
-
-                    this.#connections.set(defaultBk, defaultBk.connect("brightness-changed", () => 
-                        !Windows.getDefault().isOpen("control-center") &&
-                            triggerOSD(OSDModes.brightness)
-                    ));
-                })
+            createSubscription(
+                secureBaseBinding<Backlights.Backlight>(
+                    createBinding(Backlights.getDefault(), "default"),
+                    "brightness",
+                    100
+                ),
+                () => !Windows.getDefault().isOpen("control-center") &&
+                    triggerOSD(OSDModes.brightness)
             );
 
             this.#connections.set(Notifications.getDefault(), [

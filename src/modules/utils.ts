@@ -246,7 +246,7 @@ export function construct<Class extends object>(klass: Class, props: Record<any,
 
 /** open connections to gobjects that are closed when the scope
 * is disposed 
-* @experimental
+* @experimental types don't work correctly yet
 * */
 export function createConnetions<
     GObj extends GObject.Object, 
@@ -275,6 +275,13 @@ export function createConnetions<
         // type stuff
         add(gobj, gobj.connect(sig as string, callback as never)); 
     });
+}
+
+export function createSubscription<T = any>(accessor: Accessor<T>, callback: () => void): void {
+    const scope = getScope();
+    const unsub = accessor.subscribe(callback);
+
+    scope.onCleanup(unsub);
 }
 
 export function secureBinding<
