@@ -84,7 +84,7 @@ export const OSD = (mon: number) =>
         </Gtk.Box>
     </Astal.Window>;
 
-export function triggerOSD(mode: () => OSDMode) {
+export function triggerOSD(mode: OSDMode) {
     setOSDMode(mode);
     Windows.getDefault().open("osd");
 
