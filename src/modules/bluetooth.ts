@@ -9,6 +9,14 @@ import AstalBluetooth from "gi://AstalBluetooth";
 /** AstalBluetooth helper (implements the default adapter feature) */
 @register({ GTypeName: "Bluetooth" })
 export class Bluetooth extends GObject.Object {
+    declare $signals: {
+        "notify": () => void;
+        "notify::adapter": (adapter: AstalBluetooth.Adapter|null) => void;
+        "notify::is-available": (available: boolean) => void;
+        "notify::save-default-adapter": (save: boolean) => void;
+        "notify::last-device": (device: AstalBluetooth.Device|null) => void;
+    };
+
     private static instance: Bluetooth;
     private astalBl = AstalBluetooth.get_default();
 
@@ -16,12 +24,18 @@ export class Bluetooth extends GObject.Object {
     #adapter: AstalBluetooth.Adapter|null = this.astalBl.adapter ?? null;
     #scope!: Scope;
     #isAvailable: boolean = false;
+    #lastDevice: AstalBluetooth.Device|null = null;
+
+    @property(Boolean) 
+    saveDefaultAdapter: boolean = true;
 
     @getter(Boolean)
     get isAvailable() { return this.#isAvailable; }
 
-    @property(Boolean) saveDefaultAdapter = true;
-    
+    /** last connected device, can be null */
+    @getter(AstalBluetooth.Device)
+    get lastDevice() { return this.#lastDevice!; }
+
     @getter(gtype<AstalBluetooth.Adapter|null>(AstalBluetooth.Adapter))
     get adapter() { return this.#adapter; }
 
@@ -94,6 +108,16 @@ export class Bluetooth extends GObject.Object {
                 ]
             );
 
+            this.#lastDevice = this.getLastConnectedDevice();
+            this.notify("last-device");
+
+            this.#connections.set(AstalBluetooth.get_default(), [
+                AstalBluetooth.get_default().connect("notify::devices", (_) => {
+                    this.#lastDevice = this.getLastConnectedDevice();
+                    this.notify("last-device");
+                })
+            ]);
+
             this.#scope.onCleanup(() => this.#connections.forEach((ids, gobj) => 
                 Array.isArray(ids) ? 
                     ids.forEach(id => gobj.disconnect(id))
@@ -111,5 +135,23 @@ export class Bluetooth extends GObject.Object {
 
     vfunc_dispose(): void {
         this.#scope.dispose();
+    }
+
+    private getLastConnectedDevice(): AstalBluetooth.Device|null {
+        
+        const connectedDevices = AstalBluetooth.get_default().devices
+            .filter(d => d.connected);
+
+        const lastDevice = connectedDevices[connectedDevices.length - 1];
+
+        console.log(`last device: ${lastDevice?.address}`);
+
+        return lastDevice ?? null;
+    }
+
+    connect<Signal extends keyof (typeof this)["$signals"]>(
+        signal: Signal, callback: (typeof this["$signals"])[Signal]
+    ): number {
+        return super.connect(signal as string, callback as () => void);
     }
 }

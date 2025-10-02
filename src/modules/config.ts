@@ -2,7 +2,7 @@ import { timeout } from "ags/time";
 import { monitorFile, readFileAsync, writeFileAsync } from "ags/file";
 import { Notifications } from "./notifications";
 import { Accessor } from "ags";
-import GObject, { getter, ParamSpec, register } from "ags/gobject";
+import GObject, { getter, gtype, register } from "ags/gobject";
 
 import Gio from "gi://Gio?version=2.0";
 import AstalIO from "gi://AstalIO";
@@ -13,7 +13,7 @@ export { Config };
 type ValueTypes = "string" | "boolean" | "object" | "number" | "any";
 
 @register({ GTypeName: "Config" })
-class Config<K extends NonNullable<string|number|symbol>, V extends string|object|any> extends GObject.Object {
+class Config<K extends string, V = any> extends GObject.Object {
     declare $signals: GObject.Object.SignalSignatures & {
         "notify::entries": (entries: Record<K, V>) => void;
     };
@@ -22,7 +22,7 @@ class Config<K extends NonNullable<string|number|symbol>, V extends string|objec
     * in the `entries` field */
     public readonly defaults: Record<K, V>;
 
-    @getter(Object as unknown as ParamSpec<Record<K, V>>)
+    @getter(gtype<Record<K, V>>(Object))
     public get entries() { return this.#entries; }
 
     #file: Gio.File;

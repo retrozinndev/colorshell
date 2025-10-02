@@ -20,7 +20,21 @@ export default {
 
     apps: "Aplicativos",
     clear: "Limpar",
+    copy_to_clipboard: "Copiar para a Área de Transferência",
 
+    media: {
+        next: "Próxima faixa",
+        pause: "Pausar",
+        play: "Tocar",
+        previous: "Faixa anterior",
+        loop: "Repetir",
+        no_loop: "Não repetir",
+        song_loop: "Repetir faixa",
+        follow_order: "Seguir ordem",
+        shuffle_order: "Ordem aleatória",
+        no_title: "Sem título",
+        no_artist: "Sem artista"
+    },
     control_center: {
         tiles: {
             enabled: "Ligado",
@@ -88,4 +102,4 @@ export default {
     ask_popup: {
         title: "Pergunta"
     }
-} as i18nStruct;
+} satisfies i18nStruct;

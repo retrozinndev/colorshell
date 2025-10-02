@@ -20,7 +20,21 @@ export default {
 
     connect: "Connect",
     disconnect: "Disconnect",
+    copy_to_clipboard: "Copy to clipboard",
 
+    media: {
+        play: "Play",
+        pause: "Pause",
+        next: "Next",
+        previous: "Previous",
+        loop: "Loop",
+        no_loop: "No loop",
+        song_loop: "Loop song",
+        shuffle_order: "Shuffle",
+        follow_order: "Follow order",
+        no_artist: "No artist",
+        no_title: "No title"
+    },
     control_center: {
         tiles: {
             enabled: "Enabled",
@@ -88,4 +102,4 @@ export default {
     ask_popup: {
         title: "Question"
     }
-} as i18nStruct;
+} satisfies i18nStruct;

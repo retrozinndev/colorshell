@@ -5,6 +5,7 @@ import { Clipboard } from "../../../modules/clipboard";
 import { accessMediaUrl } from "../../../modules/media";
 import { player, setPlayer } from "../../../modules/media";
 import { pathToURI, variableToBoolean } from "../../../modules/utils";
+import { tr } from "../../../i18n/intl";
 
 import AstalMpris from "gi://AstalMpris";
 import Pango from "gi://Pango?version=1.0";
@@ -31,7 +32,7 @@ export const BigMedia = () => {
         </For>
     </Adw.Carousel> as Adw.Carousel;
 
-    return <Gtk.Box class={"big-media"} orientation={Gtk.Orientation.VERTICAL} widthRequest={255}
+    return <Gtk.Box class={"big-media"} orientation={Gtk.Orientation.VERTICAL} widthRequest={270}
       visible={variableToBoolean(availablePlayers)}>
 
         {carousel}
@@ -75,15 +76,15 @@ class PlayerWidget extends Gtk.Box {
               valign={Gtk.Align.CENTER} vexpand hexpand>
 
                 <Gtk.Label class={"title"} tooltipText={
-                      createBinding(player, "title").as(title => title ?? "No Title")
+                      createBinding(player, "title").as(title => title ?? tr("media.no_title"))
                   } label={
-                      createBinding(player, "title").as(title => title ?? "No Title")
+                      createBinding(player, "title").as(title => title ?? tr("media.no_title"))
                   } ellipsize={Pango.EllipsizeMode.END} maxWidthChars={25}
                 />
                 <Gtk.Label class={"artist"} tooltipText={
-                      createBinding(player, "artist").as(artist => artist ?? "No Artist")
+                      createBinding(player, "artist").as(artist => artist ?? tr("media.no_artist"))
                   } label={
-                      createBinding(player, "artist").as(artist => artist ?? "No Artist")
+                      createBinding(player, "artist").as(artist => artist ?? tr("media.no_artist"))
                   } ellipsize={Pango.EllipsizeMode.END} maxWidthChars={28} 
                 />
             </Gtk.Box> as Gtk.Box
@@ -128,7 +129,7 @@ class PlayerWidget extends Gtk.Box {
                 <Gtk.Box spacing={4} $type="center">
                     <Gtk.Box class={"extra button-row"}>
                         <Gtk.Button class={"link"}
-                          tooltipText={"Copy link to clipboard"}
+                          tooltipText={tr("copy_to_clipboard")}
                           visible={variableToBoolean(accessMediaUrl(player))}
                           onClicked={(self) => {
                               const url = accessMediaUrl(player).get();
@@ -180,22 +181,22 @@ class PlayerWidget extends Gtk.Box {
                                 "media-playlist-shuffle-symbolic"
                             : "media-playlist-consecutive-symbolic")} tooltipText={
                           createBinding(player, "shuffleStatus").as(status => status === AstalMpris.Shuffle.ON ? 
-                                "Shuffle"
-                            : "No shuffle")} onClicked={() => player.shuffle()} 
+                                tr("media.shuffle")
+                            : tr("media.follow_order"))} onClicked={() => player.shuffle()} 
                         />
                         <Gtk.Button class={"previous"} iconName={"media-skip-backward-symbolic"}
-                          tooltipText={"Previous"} onClicked={() => player.canGoPrevious && player.previous()}
+                          tooltipText={tr("media.previous")} onClicked={() => player.canGoPrevious && player.previous()}
                         />
                         <Gtk.Button class={"play-pause"} tooltipText={
                           createBinding(player, "playbackStatus").as(status => 
-                              status === AstalMpris.PlaybackStatus.PLAYING ? "Pause" : "Play")}
+                              status === AstalMpris.PlaybackStatus.PLAYING ? tr("media.pause") : tr("media.play"))}
                           iconName={createBinding(player, "playbackStatus").as(status => 
                               status === AstalMpris.PlaybackStatus.PLAYING ? 
                                   "media-playback-pause-symbolic"
                               : "media-playback-start-symbolic")} onClicked={() => player.play_pause()}
                         />
                         <Gtk.Button class={"next"} iconName={"media-skip-forward-symbolic"} 
-                          tooltipText={"Next"} onClicked={() => player.canGoNext && player.next()}
+                          tooltipText={tr("media.next")} onClicked={() => player.canGoNext && player.next()}
                         />
                         <Gtk.Button class={"repeat"} iconName={createBinding(player, "loopStatus").as(status => {
                               if(status === AstalMpris.Loop.TRACK)
@@ -209,12 +210,12 @@ class PlayerWidget extends Gtk.Box {
                               status !== AstalMpris.Loop.UNSUPPORTED)}
                           tooltipText={createBinding(player, "loopStatus").as(status => {
                               if(status === AstalMpris.Loop.TRACK)
-                                  return "Loop song";
+                                  return tr("media.song_loop");
 
                               if(status === AstalMpris.Loop.PLAYLIST)
-                                  return "Loop playlist";
+                                  return tr("media.loop");
 
-                              return "No loop";
+                              return tr("media.no_loop");
                           })} onClicked={() => player.loop()}
                         />
                     </Gtk.Box>

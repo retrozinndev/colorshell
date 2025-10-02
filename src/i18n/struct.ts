@@ -17,9 +17,23 @@ export type i18nStruct = {
     disconnect: string,
     connect: string,
 
-    apps: string;
-    clear: string;
+    apps: string,
+    clear: string,
+    copy_to_clipboard: string,
 
+    media: {
+        loop: string,
+        song_loop: string,
+        no_loop: string,
+        shuffle_order: string,
+        follow_order: string,
+        pause: string,
+        play: string,
+        next: string,
+        previous: string,
+        no_artist: string,
+        no_title: string
+    },
     control_center: {
         tiles: {
             enabled: string,

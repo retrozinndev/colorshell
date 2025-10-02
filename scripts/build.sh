@@ -40,10 +40,6 @@ else
     mkdir -p $output
 fi
 
-# link node_modules to src, so ags(esbuild) knows there are modules to bundle
-echo "[info] linking modules"
-ln -s node_modules src/node_modules
-
 echo "[info] compiling gresource"
 gres_target=`[[ "$keep_gresource" ]] && echo -n "$output/resources.gresource" || \
     echo -n "${gresources_target:-$output/resources.gresource}"`
@@ -53,12 +49,9 @@ glib-compile-resources resources.gresource.xml \
     --target "$gres_target"
 
 echo "[info] bundling project"
-ags bundle src/app.ts $output/colorshell \
+ags --gtk 4 bundle src/app.ts $output/colorshell \
     -r ./src \
     -d "DEVEL=`[[ $is_devel ]] && echo -n true || echo -n false`" \
     -d "COLORSHELL_VERSION='`cat package.json | jq -r .version`'" \
     -d "GRESOURCES_FILE='${gresources_target:-$output/resources.gresource}'" \
 || rm -rf src/node_modules
-
-echo "[info] cleaning"
-rm -rf src/node_modules

@@ -48,11 +48,11 @@ const generalConfigDefaults = {
 
 const userDataDefaults = {
     /** last default adapter */
-    bluetooth_default_adapter: undefined,
+    bluetooth_default_adapter: undefined as unknown as string,
 
     control_center: {
         /** last default backlight */
-        default_backlight: undefined
+        default_backlight: undefined as unknown as string
     },
 
     night_light: {
@@ -75,5 +75,6 @@ export const userData = new Config<
 
 export const generalConfig = new Config<keyof typeof generalConfigDefaults, 
     typeof generalConfigDefaults[keyof typeof generalConfigDefaults]>(
-        `${GLib.get_user_config_dir()}/colorshell/config.json`, generalConfigDefaults
+        `${GLib.get_user_config_dir()}/colorshell/config.json`, 
+        generalConfigDefaults
 );

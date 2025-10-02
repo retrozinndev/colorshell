@@ -1,7 +1,3 @@
-// fix ags needing --gtk 4
-// import app from "ags/gtk4/app";
-
-// fix can't convert non-null pointer to JS value (thanks Aylur!)
 import "ags/overrides";
 import "./config";
 import { 
@@ -29,13 +25,13 @@ import { setConsoleLogDomain } from "console";
 import { initPlayer } from "./modules/media";
 import { createSubscription, encoder, secureBaseBinding } from "./modules/utils";
 import { exec } from "ags/process";
+import { NightLight } from "./modules/nightlight";
 import { Backlights } from "./modules/backlight";
 import GObject, { register } from "ags/gobject";
 
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import Adw from "gi://Adw?version=1";
-import { NightLight } from "./modules/nightlight";
 
 
 const runnerPlugins: Array<Runner.Plugin> = [

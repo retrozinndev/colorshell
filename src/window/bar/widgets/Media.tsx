@@ -9,6 +9,7 @@ import { accessMediaUrl, player, setPlayer } from "../../../modules/media";
 import GObject from "ags/gobject";
 import AstalMpris from "gi://AstalMpris";
 import Pango from "gi://Pango?version=1.0";
+import { tr } from "../../../i18n/intl";
 
 
 export const Media = () => {
@@ -66,12 +67,12 @@ export const Media = () => {
                         createBinding(player.get(), "busName").as(getPlayerIconFromBusName)} 
                     />
                     <Gtk.Label class={"title"} label={createBinding(player.get(), "title").as(title =>
-                        title ?? "No Title")} maxWidthChars={20} ellipsize={Pango.EllipsizeMode.END}
+                        title ?? tr("media.no_title"))} maxWidthChars={20} ellipsize={Pango.EllipsizeMode.END}
                     />
                     <Separator orientation={Gtk.Orientation.HORIZONTAL} size={1} margin={5}
                       alpha={.3} spacing={6} />
                     <Gtk.Label class={"artist"} label={createBinding(player.get(), "artist").as(artist =>
-                        artist ?? "No Artist")} maxWidthChars={18} ellipsize={Pango.EllipsizeMode.END}
+                        artist ?? tr("media.no_artist"))} maxWidthChars={18} ellipsize={Pango.EllipsizeMode.END}
                     />
                 </Gtk.Box>}
             </With>
@@ -84,7 +85,7 @@ export const Media = () => {
                     <Gtk.Box class={"extra button-row"}>
                         <Gtk.Button class={"link"} iconName={"edit-paste-symbolic"} 
                           visible={variableToBoolean(accessMediaUrl(player.get()))}
-                          tooltipText={"Copy link to Clipboard"} onClicked={() => {
+                          tooltipText={tr("copy_to_clipboard")} onClicked={() => {
                               const url = accessMediaUrl(player.get()).get();
                               url && Clipboard.getDefault().copyAsync(url);
                           }}
@@ -92,20 +93,21 @@ export const Media = () => {
                     </Gtk.Box>
                     <Gtk.Box class={"media-controls button-row"}>
                         <Gtk.Button class={"previous"} iconName={"media-skip-backward-symbolic"}
-                          tooltipText={"Previous"} onClicked={() => 
+                          tooltipText={tr("media.previous")} onClicked={() => 
                               player.get().canGoPrevious && player.get().previous()}
                         />
                         <Gtk.Button class={"play-pause"} iconName={createBinding(player.get(), "playbackStatus").as(status =>
                             status === AstalMpris.PlaybackStatus.PAUSED ? 
                                 "media-playback-start-symbolic"
                             : "media-playback-pause-symbolic")}
-                          tooltipText={
-                              createBinding(player.get(), "playbackStatus").as(status =>
-                                  status === AstalMpris.PlaybackStatus.PAUSED ? "Play" : "Pause")
-                          } onClicked={() => player.get().play_pause()}
+                          tooltipText={createBinding(player.get(), "playbackStatus").as(status =>
+                              status === AstalMpris.PlaybackStatus.PAUSED ? 
+                                  tr("media.play")
+                              : tr("media.pause")
+                          )} onClicked={() => player.get().play_pause()}
                         />
                         <Gtk.Button class={"next"} iconName={"media-skip-forward-symbolic"}
-                          tooltipText={"Next"} onClicked={() => player.get().canGoNext &&
+                          tooltipText={tr("media.next")} onClicked={() => player.get().canGoNext &&
                               player.get().next()}
                         />
                     </Gtk.Box>

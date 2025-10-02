@@ -1,5 +1,5 @@
 node_modules/
-@girs/
+@types/
 build/
 
 pnpm-lock.yaml

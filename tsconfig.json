@@ -9,7 +9,7 @@
     "moduleResolution": "bundler",
     "skipLibCheck": true,
     "types": [
-        "./@girs"
+        "./@types"
     ],
     "strict": true,
     "jsx": "react-jsx",
