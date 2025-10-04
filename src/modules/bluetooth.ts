@@ -108,11 +108,18 @@ export class Bluetooth extends GObject.Object {
                 ]
             );
 
-            this.#lastDevice = this.getLastConnectedDevice();
-            this.notify("last-device");
+            // async to prevent slow start
+            setTimeout(() => {
+                this.#lastDevice = this.getLastConnectedDevice();
+                this.notify("last-device");
+            }, 1200);
 
             this.#connections.set(AstalBluetooth.get_default(), [
-                AstalBluetooth.get_default().connect("notify::devices", (_) => {
+                AstalBluetooth.get_default().connect("device-added", (_) => {
+                    this.#lastDevice = this.getLastConnectedDevice();
+                    this.notify("last-device");
+                }),
+                AstalBluetooth.get_default().connect("device-removed", (_) => {
                     this.#lastDevice = this.getLastConnectedDevice();
                     this.notify("last-device");
                 })
@@ -143,8 +150,6 @@ export class Bluetooth extends GObject.Object {
             .filter(d => d.connected);
 
         const lastDevice = connectedDevices[connectedDevices.length - 1];
-
-        console.log(`last device: ${lastDevice?.address}`);
 
         return lastDevice ?? null;
     }
