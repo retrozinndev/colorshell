@@ -95,8 +95,7 @@ class PlayerWidget extends Gtk.Box {
                 <Astal.Slider hexpand max={createBinding(player, "length").as(Math.floor)}
                   value={createBinding(player, "position").as(Math.floor)}
                   onChangeValue={(_, type, value) => {
-                      if(type === undefined || type === null) 
-                          return;
+                      if(type == null) return;
 
                       if(!dragTimer) {
                           dragTimer = setTimeout(() => 

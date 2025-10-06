@@ -1,16 +1,24 @@
 import { createPoll } from "ags/time";
 import { exec, execAsync } from "ags/process";
-import { Accessor, For, getScope, With } from "ags";
 import { Astal, Gtk } from "ags/gtk4";
 import { getSymbolicIcon } from "./apps";
 
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
-import GObject from "gi://GObject?version=2.0";
 
+export {
+    type JSXNode as WidgetNodeType,
+    toBoolean as variableToBoolean, 
+    construct, 
+    transform,
+    transformWidget,
+    createSubscription,
+    createAccessorBinding as baseBinding,
+    createScopedConnection,
+    createSecureBinding as secureBinding,
+    createSecureAccessorBinding as secureBaseBinding,
+} from "../utils";
 
-/** gnim doesn't export this, so we need to do it again */
-export type WidgetNodeType = Array<JSX.Element> | JSX.Element | number | string | boolean | null | undefined;
 
 export const decoder = new TextDecoder("utf-8"),
     encoder = new TextEncoder();
@@ -107,16 +115,6 @@ export function pickObjectKeys<ObjT = object>(obj: ObjT, keys: Array<keyof ObjT>
     return finalObject;
 }
 
-export function variableToBoolean(variable: any|Array<any>|Accessor<Array<any>|any>): boolean|Accessor<boolean> {
-    return (variable instanceof Accessor) ?
-        variable.as(v => Array.isArray(v) ?
-            (v as Array<any>).length > 0
-        : Boolean(v))
-    : Array.isArray(variable) ?
-        variable.length > 0
-    : Boolean(variable);
-}
-
 export function pathToURI(path: string): string {
     switch(true) {
         case (/^[/]/).test(path): 
@@ -128,44 +126,6 @@ export function pathToURI(path: string): string {
     }
 
     return path;
-}
-
-export function transform<ValueType = any|Array<any>, RType = any>(
-    v: Accessor<ValueType>|ValueType, fn: (v: ValueType) => RType
-): RType|Accessor<RType> {
-
-    return (v instanceof Accessor) ?
-        v.as(fn)
-    : fn(v);
-}
-
-export function transformWidget<ValueType = unknown>(
-    v: Accessor<ValueType|Array<ValueType>>|ValueType|Array<ValueType>, 
-    fn: (v: ValueType, i?: Accessor<number>|number) => JSX.Element
-): WidgetNodeType {
-
-    return (v instanceof Accessor) ?
-        Array.isArray(v.get()) ?
-            For({
-                each: v as Accessor<Array<ValueType>>,
-                children: (cval, i) => fn(cval, i)
-            })
-        : With({
-            value: v as Accessor<ValueType>,
-            children: fn
-        })
-    : (Array.isArray(v) ?
-        v.map(val => fn(val))
-    : fn(v));
-}
-
-export function filter<ValueType = unknown, FilterReturnType = unknown>(
-    v: Accessor<Array<ValueType>>|Array<ValueType>, 
-    fn: (v: ValueType, i: number, array: Array<ValueType>) => FilterReturnType
-): Array<ValueType>|Accessor<Array<ValueType>> {
-    return ((v instanceof Accessor) ?
-        v(v => v.filter((it, i, arr) => fn(it, i, arr)))
-    : v.filter((it, i, arr) => fn(it, i, arr)));
 }
 
 export function makeDirectory(dir: string): void {
@@ -214,155 +174,4 @@ export function addSliderMarksFromMinMax(slider: Astal.Slider, amountOfMarks: nu
     }
 
     return slider;
-}
-
-/** initialize and sub class properties with accessors */
-export function construct<Class extends object>(klass: Class, props: Record<any, any|Accessor<any>>): Array<() => void> {
-
-    const subs: Array<() => void> = [];
-    const isGObject = klass instanceof GObject.Object;
-
-    Object.keys(props).forEach(k => {
-        const v = props[k as keyof typeof props];
-
-        if(v === undefined) return;
-        if(v instanceof Accessor) {
-            subs.push(v.subscribe(() => {
-                klass[k as keyof Class] = v.get() as Class[keyof Class];
-                if(isGObject) 
-                    klass.notify(k.replace(/[A-Z]/g, (s) => `-${s.toLowerCase()}`));
-            }));
-
-            klass[k as keyof Class] = v.get() as Class[keyof Class];
-            return;
-        }
-
-        
-        klass[k as keyof Class] = v as Class[keyof Class];
-    });
-
-    return subs;
-}
-
-/** open connections to gobjects that are closed when the scope
-* is disposed 
-* @experimental types don't work correctly yet
-* */
-export function createConnetions<
-    GObj extends GObject.Object, 
-    Signals extends GObj["$signals"],
-    Signal extends keyof Signals,
-    Callback extends Signals[Signal]
->(...conns: Array<[GObj, Signal, Callback]>): void {
-    const scope = getScope();
-
-    const connections: Map<GObj, Array<number>> = new Map();
-
-    scope.onCleanup(() => connections.forEach((ids, gobj) => 
-        ids.forEach(id => gobj.disconnect(id))
-    ));
-
-    function add(gobj: GObj, id: number): void {
-        if(connections.has(gobj)) {
-            connections.get(gobj)!.push(id);
-            return;
-        }
-
-        connections.set(gobj, [id]);
-    }
-
-    conns.forEach(([gobj, sig, callback]) => {
-        // type stuff
-        add(gobj, gobj.connect(sig as string, callback as never)); 
-    });
-}
-
-export function createSubscription<T = any>(accessor: Accessor<T>, callback: () => void): void {
-    const scope = getScope();
-    const unsub = accessor.subscribe(callback);
-
-    scope.onCleanup(unsub);
-}
-
-export function secureBinding<
-    GObj extends GObject.Object, 
-    Prop extends keyof GObj,
-    Returns extends unknown|undefined
->(
-    gobj: GObj,
-    prop: Prop,
-    defaultValue: Returns
-): Accessor<GObj[Prop]|Returns> {
-    const get = () => gobj ? gobj[prop] : defaultValue;
-
-    return new Accessor<GObj[Prop]|Returns>(
-        get,
-        (notify) => {
-            const gobjectProp = (prop as string).replace(/[A-Z]/g, (s) => `-${s.toLowerCase()}`);
-            const id = gobj.connect(`notify::${gobjectProp}`, () => notify());
-            return () => {
-                try {
-                    gobj.disconnect(id);
-                } catch(e) {}
-            }
-        }
-    );
-}
-
-/** securely bind to a property of a gobject accessor 
-* use this to securely bind to a property of a constantly 
-* updated variable that points to a gobject. 
-* 
-* It follows the same idea from secureBinding, it allows setting
-* a default value to return when the base gobject is null.
-* 
-* @param baseObject a binding to the constantly updated property 
-* that points to the gobject
-* @param prop the property to bind 
-* @param defaultValue the value to return when the baseObject is 
-* null/undefined
-*
-* @returns a bind to the specified property of the constantly-updated 
-* object or the default value.
-* */
-export function secureBaseBinding<
-    T extends GObject.Object = GObject.Object,
-    Prop extends keyof T = keyof T,
-    Default = any
->(
-    baseObject: Accessor<T>, 
-    prop: Prop,
-    defaultValue: Default
-): Accessor<T[Prop]|Default> {
-    let gobj: T|undefined = baseObject.get();
-    let notify: () => void;
-
-    const baseSub = baseObject.subscribe(() => {
-        const newBase = baseObject.get();
-
-        if(!newBase) {
-            gobj = undefined;
-            notify!();
-            return;
-        }
-    });
-
-    const accessor = new Accessor<T[Prop]|Default>(
-        () => gobj ? gobj[prop] : defaultValue,
-        (notifyFun) => {
-            notify = notifyFun;
-
-            const id = gobj?.connect(
-                `notify::${(prop as string).replace(/[A-Z]/g, (s) => `-${s.toLowerCase()}`)}`,
-                () => notify()
-            );
-
-            return () => {
-                id && gobj?.disconnect(id);
-                baseSub();
-            }
-        }
-    );
-
-    return accessor;
 }

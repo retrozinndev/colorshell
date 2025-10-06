@@ -1,0 +1,3 @@
+[submodule "gnim-utils"]
+	path = src/utils
+	url = https://github.com/retrozinndev/gnim-utils.git

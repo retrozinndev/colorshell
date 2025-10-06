@@ -18,7 +18,7 @@ export class Auth extends PolkitAgent.Listener {
 
     constructor() {
         super();
-        this.#subject = Polkit.UnixSession.new(""); // TODO find how to get session id (for some reason, i can't find a session ID that works)
+        this.#subject = Polkit.UnixSession.new("");
         this.#pam = new AstalAuth.Pam();
 
         this.#handle = this.register(

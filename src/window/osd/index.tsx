@@ -3,7 +3,7 @@ import { createBinding, createState, With } from "ags";
 import { Wireplumber } from "../../modules/volume";
 import { Windows } from "../../windows";
 import { Backlights } from "../../modules/backlight";
-import { secureBaseBinding, secureBinding, variableToBoolean } from "../../modules/utils";
+import { secureBaseBinding, variableToBoolean } from "../../modules/utils";
 
 import Pango from "gi://Pango?version=1.0";
 import GLib from "gi://GLib?version=2.0";
@@ -13,7 +13,7 @@ import OSDMode from "./modules/osdmode";
 
 export const OSDModes = {
     sink: new OSDMode({
-        available: secureBinding(AstalWp.get_default(), "defaultSpeaker", false).as((sink) => 
+        available: createBinding(AstalWp.get_default(), "defaultSpeaker").as((sink) => 
             Boolean(sink)),
         icon: secureBaseBinding<AstalWp.Endpoint>(
             createBinding(AstalWp.get_default(), "defaultSpeaker"),
