@@ -51,12 +51,15 @@ Center Window and scrolling the player
   - Tray(Applications running in the background)
   - Status (volume information, bluetooth, network and notification status)
 - Control Center
-  - Volume Controls (Microphone and Speaker)
-    - Volume Mixer(per-app volume)
+  - Sliders 
+    - Speaker volume
+    - Microphone sensitivity
+    - Brightness amount
   - Pages(the thing that shows up when you click the arrow on a tile)
     - Bluetooth devices
     - Network devices
     - Night Light controls
+    - Brightness options
   - Tiles
     - Screen Recording
     - Bluetooth
@@ -64,6 +67,9 @@ Center Window and scrolling the player
     - Network(wifi needs work, i don't have wifi in my machine)
     - Don't Disturb(disables notification popups)
 - Center Window(clock, calendar + media management)
+- OSD (On-screen Display)
+  - Brightness(when changed)
+  - Volume(when changed)
 - Notifications with support for application actions + Notification History
 - Localization(see [🌐 Internationalization](#-internationalization) for available languages)
 - Application Runner with support for plugins ([anyrun](https://github.com/anyrun-org/anyrun)-like)
