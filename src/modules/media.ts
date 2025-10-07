@@ -1,77 +1,86 @@
-import { Accessor, createConnection, createRoot, createState, onCleanup } from "ags";
-import { decoder } from "./utils";
+import { Accessor, createConnection, getScope, Scope } from "ags";
+import { createScopedConnection, decoder } from "./utils";
 
-import GObject from "ags/gobject";
 import AstalMpris from "gi://AstalMpris";
+import GObject from "gi://GObject?version=2.0";
+import { property, register } from "ags/gobject";
 
 
-export const dummyPlayer = {
-    available: false,
-    busName: "dummy_player",
-    bus_name: "dummy_player"
-} as AstalMpris.Player;
+@register({ GTypeName: "Media" })
+export default class Media extends GObject.Object {
+    private static instance: Media;
+    public static readonly dummyPlayer = {
+        available: false,
+        busName: "dummy_player",
+        bus_name: "dummy_player"
+    } as AstalMpris.Player;
 
-export let [player, setPlayer] = createState(dummyPlayer);
+    @property(AstalMpris.Player)
+    player: AstalMpris.Player = Media.dummyPlayer;
 
-let disposeFun: undefined|(() => void);
+    constructor(scope: Scope) {
+        super();
+        
+        scope.run(() => {
+            const firstPlayer = AstalMpris.get_default().players[0];
+            if(firstPlayer) 
+                this.player = firstPlayer;
 
-export function initPlayer(): void {
-    if(disposeFun) {
-        console.error("Media: cannot initialize, there's already an instance");
-        return;
+            createScopedConnection(
+                AstalMpris.get_default(), 
+                "player-added", 
+                (player) => {
+                    if(player.available) 
+                        this.player = player;
+                }
+            );
+
+            createScopedConnection(
+                AstalMpris.get_default(),
+                "player-closed", (closedPlayer) => {
+                    const players = AstalMpris.get_default().players.filter(pl => pl?.available && 
+                        pl.busName !== closedPlayer.busName);
+
+                    // go back to first player(if available) when the active player is closed
+                    if(players.length > 0 && players[0]) {
+                        this.player = players[0];
+                        return;
+                    } 
+                    
+                    this.player = Media.dummyPlayer;
+                }
+            );
+        });
     }
 
-    createRoot((dispose) => {
-        const connections = new Map<GObject.Object, Array<number>>();
-        disposeFun = dispose;
+    public static getDefault(): Media {
+        if(!this.instance)
+            this.instance = new Media(getScope());
 
-        setPlayer(AstalMpris.get_default().players[0] ?? dummyPlayer);
+        return this.instance;
+    }
 
-        connections.set(AstalMpris.get_default(), [
-            AstalMpris.get_default().connect("player-added", (_, player) => 
-                player.available && setPlayer(player)),
+    public static accessMediaUrl(player: AstalMpris.Player): Accessor<string|undefined> {
+        return createConnection(player.get_meta("xesam:url"),
+            [player, "notify::metadata", () => player.get_meta("xesam:url")]
+        ).as(url => {
+            const byteString = url?.get_data_as_bytes();
 
-            AstalMpris.get_default().connect("player-closed", (_, closedPlayer) => {
-                const players = AstalMpris.get_default().players.filter(pl => pl?.available && 
-                    pl.busName !== closedPlayer.busName);
+            return byteString ? 
+                decoder.decode(byteString.toArray())
+            : undefined;
+          })
+    }
 
-                if(players.length > 0 && players[0]) {
-                    setPlayer(players[0]);
-                    return;
-                } 
-                
-                setPlayer(dummyPlayer);
-            })
-        ]);
+    
+    public static getMediaUrl(player: AstalMpris.Player): string|undefined {
+        if(!player.available) return;
 
-        onCleanup(() => {
-            connections.forEach((ids, obj) => 
-                Array.isArray(ids) ?
-                    ids.forEach(id => obj.disconnect(id))
-                : obj.disconnect(ids)
-            );
-            disposeFun = undefined;
-        });
-    });
-}
-
-export function accessMediaUrl(player: AstalMpris.Player): Accessor<string|undefined> {
-    return createConnection(player.get_meta("xesam:url"),
-        [player, "notify::metadata", () => player.get_meta("xesam:url")]
-    ).as(url => {
-        const byteString = url?.get_data_as_bytes();
+        const meta = player.get_meta("xesam:url");
+        const byteString = meta?.get_data_as_bytes();
 
         return byteString ? 
             decoder.decode(byteString.toArray())
         : undefined;
-      })
-}
-
-export function disposePlayer(): void {
-    if(disposeFun) {
-        disposeFun();
-        return;
     }
-
-    console.error("Media: Couldn't dispose player, there's no instance to dispose of");
 }

@@ -1,32 +1,25 @@
-import { createBinding, onCleanup, With } from "ags";
+import { createBinding, With } from "ags";
 import { Gtk } from "ags/gtk4";
 import { Separator } from "../../../widget/Separator";
 import { Windows } from "../../../windows";
 import { Clipboard } from "../../../modules/clipboard";
-import { getPlayerIconFromBusName, variableToBoolean } from "../../../modules/utils";
-import { accessMediaUrl, player, setPlayer } from "../../../modules/media";
-
-import GObject from "ags/gobject";
-import AstalMpris from "gi://AstalMpris";
-import Pango from "gi://Pango?version=1.0";
+import { getPlayerIconFromBusName, secureBaseBinding, variableToBoolean } from "../../../modules/utils";
 import { tr } from "../../../i18n/intl";
 
+import { default as Player } from "../../../modules/media";
+import AstalMpris from "gi://AstalMpris";
+import Pango from "gi://Pango?version=1.0";
 
-export const Media = () => {
-    const connections: Map<GObject.Object, Array<number>|number> = new Map();
 
-    onCleanup(() => connections.forEach((id, obj) => 
-        Array.isArray(id) ? 
-            id.forEach(id => obj.disconnect(id))
-        : obj.disconnect(id)
-    ));
-
-    return <Gtk.Box class={"media"} visible={player((pl) => pl.available)}>
+export const Media = () => 
+    <Gtk.Box class={"media"} visible={secureBaseBinding<AstalMpris.Player>(createBinding(
+            Player.getDefault(), "player"
+        ), "available", false)}>
         <Gtk.EventControllerScroll $={(self) => {
               self.set_flags(Gtk.EventControllerScrollFlags.VERTICAL)
           }} onScroll={(_, __, dy) => {
               if(AstalMpris.get_default().players.length === 1 && 
-                player.get()?.busName === AstalMpris.get_default().players[0].busName) 
+                Player.getDefault().player.busName === AstalMpris.get_default().players[0].busName) 
                   return true;
 
               const players = AstalMpris.get_default().players;
@@ -34,16 +27,16 @@ export const Media = () => {
               for(let i = 0; i < players.length; i++) {
                   const pl = players[i];
 
-                  if(pl.busName !== player.get().busName) 
+                  if(pl.busName !== Player.getDefault().player.busName) 
                       continue;
 
                   if(dy > 0 && players[i-1]) {
-                      setPlayer(players[i-1]);
+                      Player.getDefault().player = players[i-1];
                       break;
                   }
 
                   if(dy < 0 && players[i+1]) {
-                      setPlayer(players[i+1]);
+                      Player.getDefault().player = players[i+1];
                       break;
                   }
               }
@@ -60,19 +53,33 @@ export const Media = () => {
               revealer.set_reveal_child(false);
           }}
         />
-        <Gtk.Box spacing={4} visible={player(pl => pl.available)}>
-            <With value={player(pl => pl.available)}>
+        <Gtk.Box spacing={4} visible={secureBaseBinding<AstalMpris.Player>(createBinding(
+              Player.getDefault(), "player"
+          ), "available", false)
+        }>
+            <With value={secureBaseBinding<AstalMpris.Player>(createBinding(
+                  Player.getDefault(), "player"
+              ), "available", false)
+            }>
                 {(available: boolean) => available && <Gtk.Box>
                     <Gtk.Image class={"player-icon"} iconName={
-                        createBinding(player.get(), "busName").as(getPlayerIconFromBusName)} 
+                        secureBaseBinding<AstalMpris.Player>(createBinding(
+                            Player.getDefault(), "player"
+                        ), "busName", "org.MediaPlayer2.folder-music-symbolic").as(
+                            getPlayerIconFromBusName
+                        )} 
                     />
-                    <Gtk.Label class={"title"} label={createBinding(player.get(), "title").as(title =>
-                        title ?? tr("media.no_title"))} maxWidthChars={20} ellipsize={Pango.EllipsizeMode.END}
+                    <Gtk.Label class={"title"} label={secureBaseBinding<AstalMpris.Player>(createBinding(
+                          Player.getDefault(), "player"
+                      ), "title", "").as(title => title ?? tr("media.no_title"))} 
+                      maxWidthChars={20} ellipsize={Pango.EllipsizeMode.END}
                     />
                     <Separator orientation={Gtk.Orientation.HORIZONTAL} size={1} margin={5}
                       alpha={.3} spacing={6} />
-                    <Gtk.Label class={"artist"} label={createBinding(player.get(), "artist").as(artist =>
-                        artist ?? tr("media.no_artist"))} maxWidthChars={18} ellipsize={Pango.EllipsizeMode.END}
+                    <Gtk.Label class={"artist"} label={secureBaseBinding<AstalMpris.Player>(createBinding(
+                          Player.getDefault(), "player"
+                      ), "artist", "").as(artist => artist ?? tr("media.no_artist"))} 
+                      maxWidthChars={18} ellipsize={Pango.EllipsizeMode.END}
                     />
                 </Gtk.Box>}
             </With>
@@ -80,13 +87,16 @@ export const Media = () => {
         <Gtk.Revealer transitionType={Gtk.RevealerTransitionType.SLIDE_RIGHT} transitionDuration={260}
           revealChild={false}>
 
-            <With value={player(pl => pl.available)}>
+            <With value={secureBaseBinding<AstalMpris.Player>(createBinding(
+                  Player.getDefault(), "player"
+              ), "available", false)
+            }>
                 {(available: boolean) => available && <Gtk.Box class={"buttons"} spacing={4}>
                     <Gtk.Box class={"extra button-row"}>
                         <Gtk.Button class={"link"} iconName={"edit-paste-symbolic"} 
-                          visible={variableToBoolean(accessMediaUrl(player.get()))}
+                          visible={variableToBoolean(Player.accessMediaUrl(Player.getDefault().player))}
                           tooltipText={tr("copy_to_clipboard")} onClicked={() => {
-                              const url = accessMediaUrl(player.get()).get();
+                              const url = Player.getMediaUrl(Player.getDefault().player);
                               url && Clipboard.getDefault().copyAsync(url);
                           }}
                         />
@@ -94,25 +104,32 @@ export const Media = () => {
                     <Gtk.Box class={"media-controls button-row"}>
                         <Gtk.Button class={"previous"} iconName={"media-skip-backward-symbolic"}
                           tooltipText={tr("media.previous")} onClicked={() => 
-                              player.get().canGoPrevious && player.get().previous()}
+                              Player.getDefault().player.canGoPrevious && 
+                                  Player.getDefault().player.previous()
+                          }
                         />
-                        <Gtk.Button class={"play-pause"} iconName={createBinding(player.get(), "playbackStatus").as(status =>
-                            status === AstalMpris.PlaybackStatus.PAUSED ? 
-                                "media-playback-start-symbolic"
-                            : "media-playback-pause-symbolic")}
-                          tooltipText={createBinding(player.get(), "playbackStatus").as(status =>
-                              status === AstalMpris.PlaybackStatus.PAUSED ? 
-                                  tr("media.play")
-                              : tr("media.pause")
-                          )} onClicked={() => player.get().play_pause()}
+                        <Gtk.Button class={"play-pause"} iconName={secureBaseBinding<AstalMpris.Player>(
+                              createBinding(Player.getDefault(), "player"), 
+                              "playbackStatus", 
+                              AstalMpris.PlaybackStatus.PAUSED
+                          ).as(status => status === AstalMpris.PlaybackStatus.PAUSED ? 
+                                  "media-playback-start-symbolic"
+                              : "media-playback-pause-symbolic"
+                          )}
+                          tooltipText={secureBaseBinding<AstalMpris.Player>(
+                              createBinding(Player.getDefault(), "player"), 
+                              "playbackStatus", 
+                              AstalMpris.PlaybackStatus.PAUSED
+                          ).as(status => status === AstalMpris.PlaybackStatus.PAUSED ? 
+                              tr("media.play") : tr("media.pause")
+                          )} onClicked={() => Player.getDefault().player.play_pause()}
                         />
                         <Gtk.Button class={"next"} iconName={"media-skip-forward-symbolic"}
-                          tooltipText={tr("media.next")} onClicked={() => player.get().canGoNext &&
-                              player.get().next()}
+                          tooltipText={tr("media.next")} onClicked={() => Player.getDefault().player.canGoNext &&
+                              Player.getDefault().player.next()}
                         />
                     </Gtk.Box>
                 </Gtk.Box>}
             </With>
         </Gtk.Revealer>
-    </Gtk.Box>
-}
+    </Gtk.Box> as Gtk.Box;

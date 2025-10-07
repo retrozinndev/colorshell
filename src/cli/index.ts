@@ -1,5 +1,5 @@
 import { Scope } from "ags";
-import { createScopedConnection, encoder } from "../modules/utils";
+import { createScopedConnection, decoder, encoder } from "../modules/utils";
 
 import windows from "./modules/windows";
 import volume from "./modules/volume";
@@ -11,7 +11,6 @@ import GLib from "gi://GLib?version=2.0";
 
 export namespace Cli {
     let rootScope: Scope;
-    let service: Gio.SocketService;
     let initialized: boolean = false;
     const modules: Array<Module> = [
         // main module, no need for prefix
@@ -65,7 +64,12 @@ export namespace Cli {
         value?: string;
         /** help message for the argument */
         help?: string;
-        onCalled: (value?: string) => void;
+        onCalled?: (value?: string) => void;
+    };
+
+    export type ArgumentData = {
+        argument: Argument;
+        data?: string;
     };
 
     export type Command = {
@@ -76,7 +80,7 @@ export namespace Cli {
         /** data passed to the command. (only works when arguments are disabled) */
         data?: string;
         arguments?: Array<Argument>;
-        onCalled: (args: Array<string>, data?: string) => Output;
+        onCalled: (args: Array<ArgumentData>, data?: string) => Output;
     };
 
     export type Module = {
@@ -91,22 +95,57 @@ export namespace Cli {
     };
 
     /** initialize the cli */
-    export function init(scope: Scope, socketService: Gio.SocketService): void {
+    export function init(scope: Scope, communicationMethod: Gio.SocketService|Gio.ApplicationCommandLine, app?: Gio.Application): void {
         if(initialized) return;
 
         initialized = true;
         rootScope = scope;
-        service = socketService;
         DEVEL && modules.push(devel);
 
         scope.run(() => {
-            createScopedConnection(
-                service, "incoming", (conn) => {
-                    try {
-                        return handleIncoming(conn);
-                    } catch(_) {}
+            if(communicationMethod instanceof Gio.SocketService) {
+                createScopedConnection(
+                    communicationMethod, "incoming", (conn) => {
+                        try {
+                            return handleIncoming(conn);
+                        } catch(_) {}
 
-                    return false;
+                        return false;
+                    }
+                );
+
+                return;
+            }
+
+            if(!app) 
+                throw new Error("GApplication not specified for GApplicationCommandLine communication method")
+            if(app.flags !& Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
+                throw new Error("GApplication does not have the HANDLES_COMMAND_LINE flag or doesn't implement it")
+
+            createScopedConnection(
+                app,
+                "command-line",
+                (cmd) => {
+                    let hasError: boolean = false;
+                    try {
+                        handleArgs(
+                            cmd.get_arguments().toSpliced(0, 1), 
+                            (str, type) => {
+                                if(type === "err") {
+                                    cmd.printerr_literal(str);
+                                    hasError = true;
+                                    return;
+                                }
+
+                                cmd.print_literal(str);
+                            }
+                        );
+                    } catch(_) {
+                        // TODO better error message
+                        hasError = true;
+                    }
+
+                    return hasError ? 1 : 0;
                 }
             );
         });
@@ -131,7 +170,7 @@ export namespace Cli {
                 parsedArgs?.splice(0, 1); // remove the unnecessary `colorshell` part
 
                 if(success) {
-                    handleArgs(parsedArgs!);
+                    handleArgs(parsedArgs!, conn.outputStream);
 
                     conn.outputStream.flush(null);
                     conn.close(null);
@@ -153,8 +192,43 @@ export namespace Cli {
         });
     }
 
-    /** translate app arguments to modules/commands */
-    function handleArgs(args: Array<string>): void {
+    /** translate app arguments to modules/commands 
+    * order: module ?arg -> command ?arg */
+    function handleArgs(args: Array<string>, writeTo: Gio.OutputStream|((str: string, type: "out"|"err") => void)): void {
         let mod: Module;
+        let command: Command|undefined;
+        const modArgs: Array<Argument> = [];
+        const cmdArgs: Array<Argument> = [];
+
+        function print(out: Output): void {
+            const content = `${outputToString(out)}\n`;
+            const type: "out"|"err" = typeof out === "object" ?
+                out.type
+            : "out";
+
+            typeof writeTo === "function" ?
+                writeTo(content, type)
+            : writeTo.write_bytes(
+                encoder.encode(`${outputToString(out)}\n`),
+                null
+            );
+        }
+
+        for(let i = 0; i < args.length; i++) {
+            const arg = args[i];
+
+            if(i === 0) {
+                
+            }
+        }
+    }
+
+    function outputToString(out: Output): string {
+        if(typeof out === "object")
+            return out.content instanceof Uint8Array ?
+                decoder.decode(out.content)
+            : out.content;
+
+        return out;
     }
 }

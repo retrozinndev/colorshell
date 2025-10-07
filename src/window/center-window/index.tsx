@@ -4,17 +4,18 @@ import { PopupWindow } from "../../widget/PopupWindow";
 import { BigMedia } from "./widgets/BigMedia";
 import { time, variableToBoolean } from "../../modules/utils";
 import { createBinding } from "ags";
-import { player } from "../../modules/media";
 
+import Media from "../../modules/media";
 import AstalMpris from "gi://AstalMpris";
+
 
 export const CenterWindow = (mon: number) => 
     <PopupWindow namespace={"center-window"} marginTop={10} monitor={mon}
       halign={Gtk.Align.CENTER} valign={Gtk.Align.START}
       actionKeyPressed={(_, keyval) => {
           if(keyval === Gdk.KEY_space) {
-              player.get().available && 
-                  player.get().play_pause();
+              Media.getDefault().player.available && 
+                  Media.getDefault().player.play_pause();
               return true;
           }
       }}>

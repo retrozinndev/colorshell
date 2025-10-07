@@ -2,18 +2,15 @@ import { createBinding, For } from "ags";
 import { register } from "ags/gobject";
 import { Astal, Gtk } from "ags/gtk4";
 import { Clipboard } from "../../../modules/clipboard";
-import { accessMediaUrl } from "../../../modules/media";
-import { player, setPlayer } from "../../../modules/media";
 import { pathToURI, variableToBoolean } from "../../../modules/utils";
 import { tr } from "../../../i18n/intl";
 
+import Media from "../../../modules/media";
 import AstalMpris from "gi://AstalMpris";
 import Pango from "gi://Pango?version=1.0";
 import Adw from "gi://Adw?version=1";
 import GLib from "gi://GLib?version=2.0";
 
-
-let dragTimer: (GLib.Source|undefined);
 
 export const BigMedia = () => {
     const availablePlayers = createBinding(AstalMpris.get_default(), "players").as(pls => 
@@ -22,11 +19,11 @@ export const BigMedia = () => {
     const carousel = <Adw.Carousel orientation={Gtk.Orientation.HORIZONTAL} spacing={6} 
       onPageChanged={(self, num) => {
           const page = self.get_nth_page(num);
-          if(page instanceof PlayerWidget && player.get().busName !== page.player.busName) 
-              setPlayer(page.player);
+          if(page instanceof PlayerWidget && Media.getDefault().player.busName !== page.player.busName) 
+              Media.getDefault().player = page.player;
     }}>
         <For each={availablePlayers.as(players => players.sort(pl => 
-            pl.busName === player.get().busName ? -1 : 1))}>
+            pl.busName === Media.getDefault().player.busName ? -1 : 1))}>
 
             {(player: AstalMpris.Player) => <PlayerWidget player={player} />}
         </For>
@@ -48,6 +45,7 @@ export const BigMedia = () => {
 class PlayerWidget extends Gtk.Box {
     #player!: AstalMpris.Player;
     #copyClickTimeout?: GLib.Source;
+    #dragTimer?: GLib.Source;
 
     get player() { return this.#player; }
 
@@ -97,16 +95,16 @@ class PlayerWidget extends Gtk.Box {
                   onChangeValue={(_, type, value) => {
                       if(type == null) return;
 
-                      if(!dragTimer) {
-                          dragTimer = setTimeout(() => 
+                      if(!this.#dragTimer) {
+                          this.#dragTimer = setTimeout(() => 
                               player.position = Math.floor(value)
                           , 200);
 
                           return;
                       }
 
-                      dragTimer.destroy(); 
-                      dragTimer = setTimeout(() => 
+                      this.#dragTimer?.destroy(); 
+                      this.#dragTimer = setTimeout(() => 
                           player.position = Math.floor(value)
                       , 200);
                   }}
@@ -129,9 +127,9 @@ class PlayerWidget extends Gtk.Box {
                     <Gtk.Box class={"extra button-row"}>
                         <Gtk.Button class={"link"}
                           tooltipText={tr("copy_to_clipboard")}
-                          visible={variableToBoolean(accessMediaUrl(player))}
+                          visible={variableToBoolean(Media.accessMediaUrl(player))}
                           onClicked={(self) => {
-                              const url = accessMediaUrl(player).get();
+                              const url = Media.accessMediaUrl(player).get();
                               // a widget that supports adding multiple icons and allows switching
                               // through them would be pretty nice!! (i'll probably do this later)
                               url &&

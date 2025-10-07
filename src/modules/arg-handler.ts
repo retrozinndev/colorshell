@@ -6,10 +6,10 @@ import { timeout } from "ags/time";
 import { Runner } from "../runner/Runner";
 import { showWorkspaceNumber } from "../window/bar/widgets/Workspaces";
 import { playSystemBell } from "./utils";
-import { player, setPlayer } from "./media";
 import { Shell } from "../app";
 import { generalConfig } from "../config";
 
+import Media from "./media";
 import AstalIO from "gi://AstalIO";
 import AstalMpris from "gi://AstalMpris";
 
@@ -166,8 +166,8 @@ Options:
         return 0;
     }
 
-    const activePlayer: AstalMpris.Player|undefined = player.get().available ? 
-        player.get() 
+    const activePlayer: AstalMpris.Player|undefined = Media.getDefault().player.available ? 
+        Media.getDefault().player 
     : undefined;
     const players = AstalMpris.get_default().players.filter(pl => pl.available);
 
@@ -250,7 +250,7 @@ specified bus name does not exist/is not available!`);
                 return 1;
             }
 
-            setPlayer(players.filter(pl => pl.busName === args[2])[0]);
+            Media.getDefault().player = players.filter(pl => pl.busName === args[2])[0];
             cmd.print_literal(`Done setting player to \`${args[2]}\`!`);
             return 0;
     }

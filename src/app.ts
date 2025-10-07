@@ -18,17 +18,17 @@ import { Wallpaper } from "./modules/wallpaper";
 import { Stylesheet } from "./modules/stylesheet";
 import { Clipboard } from "./modules/clipboard";
 import { Gdk, Gtk } from "ags/gtk4";
-import { createBinding, createRoot, getScope, Scope } from "ags";
+import { createBinding, createComputed, createRoot, getScope, Scope } from "ags";
 import { OSDModes, triggerOSD } from "./window/osd";
 import { programArgs, programInvocationName } from "system";
 import { setConsoleLogDomain } from "console";
-import { initPlayer } from "./modules/media";
 import { createSubscription, encoder, secureBaseBinding } from "./modules/utils";
 import { exec } from "ags/process";
 import { NightLight } from "./modules/nightlight";
 import { Backlights } from "./modules/backlight";
 import GObject, { register } from "ags/gobject";
 
+import Media from "./modules/media";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import Adw from "gi://Adw?version=1";
@@ -275,7 +275,7 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
 
             NightLight.getDefault();
 
-            initPlayer();
+            Media.getDefault();
             Clipboard.getDefault();
 
             console.log("Colorshell: Initializing Wallpaper and Stylesheet modules");
@@ -286,21 +286,14 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
             runnerPlugins.forEach(plugin => Runner.addPlugin(plugin));
 
             createSubscription(
-                secureBaseBinding<AstalWp.Endpoint>(
-                    createBinding(AstalWp.get_default(), "defaultSpeaker"),
-                    "volume",
-                    null
-                ),
-                () => !Windows.getDefault().isOpen("control-center") &&
-                    triggerOSD(OSDModes.sink)
-            );
-
-            createSubscription(
-                secureBaseBinding<AstalWp.Endpoint>(
-                    createBinding(AstalWp.get_default(), "defaultSpeaker"),
-                    "mute",
-                    null
-                ),
+                createComputed([
+                    secureBaseBinding<AstalWp.Endpoint>(createBinding(
+                        AstalWp.get_default(), "defaultSpeaker"
+                    ), "volume", null),
+                    secureBaseBinding<AstalWp.Endpoint>(createBinding(
+                        AstalWp.get_default(), "defaultSpeaker"
+                    ), "mute", null)
+                ]),
                 () => !Windows.getDefault().isOpen("control-center") &&
                     triggerOSD(OSDModes.sink)
             );
