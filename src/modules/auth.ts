@@ -2,29 +2,29 @@ import { exec, execAsync } from "ags/process";
 import { register } from "ags/gobject";
 import { AuthPopup } from "../widget/AuthPopup";
 
-import AstalAuth from "gi://AstalAuth";
-import Polkit from "gi://Polkit";
-import PolkitAgent from "gi://PolkitAgent";
+import Polkit from "gi://Polkit?version=1.0";
+import PolkitAgent from "gi://PolkitAgent?version=1.0";
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
+import AstalAuth from "gi://AstalAuth?version=0.1";
 
 
 @register({ GTypeName: "AuthAgent" })
 export class Auth extends PolkitAgent.Listener {
     private static instance: Auth;
-    #subject: Polkit.Subject;
-    #pam: AstalAuth.Pam;
     #handle: any;
+    #user: Polkit.UnixUser;
+    #pam: AstalAuth.Pam;
 
     constructor() {
         super();
-        this.#subject = Polkit.UnixSession.new("");
-        this.#pam = new AstalAuth.Pam();
+        this.#user = Polkit.UnixUser.new(Number.parseInt(exec("id -u"))) as Polkit.UnixUser;
+        this.#pam = new AstalAuth.Pam;
 
-        this.#handle = this.register(
-            PolkitAgent.RegisterFlags.RUN_IN_THREAD, 
-            this.#subject, 
-            "/io/github/retrozinndev/colorshell/PolicyKit/AuthAgent", 
+        this.register(
+            PolkitAgent.RegisterFlags.RUN_IN_THREAD,
+            Polkit.UnixSession.new(this.#user.get_uid().toString()),
+            "/io/github/retrozinndev/colorshell/AuthAgent",
             null
         );
     }
@@ -57,12 +57,8 @@ export class Auth extends PolkitAgent.Listener {
 
     }
 
-
-    public static initAgent(): Auth {
-        if(!this.instance)
-            this.instance = new Auth();
-
-        return this.instance;
+    initiate_authentication_finish(res: Gio.AsyncResult): boolean {
+        
     }
 
     // TODO: support fingerprint/facial auth

@@ -1,4 +1,5 @@
-import "ags/overrides";
+// thanks Aylur!!
+import "../node_modules/ags/lib/overrides";
 import "./config";
 import { 
     PluginApps, 
@@ -9,7 +10,6 @@ import {
     PluginWebSearch,
     PluginKill
 } from "./runner/plugins";
-import { Wireplumber } from "./modules/volume";
 import { handleArguments } from "./modules/arg-handler";
 import { Runner } from "./runner/Runner";
 import { Windows } from "./windows";
@@ -32,6 +32,7 @@ import GObject, { register } from "ags/gobject";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import Adw from "gi://Adw?version=1";
+import AstalWp from "gi://AstalWp";
 
 
 const runnerPlugins: Array<Runner.Plugin> = [
@@ -284,11 +285,24 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
             console.log("Adding runner plugins");
             runnerPlugins.forEach(plugin => Runner.addPlugin(plugin));
 
-            this.#connections.set(Wireplumber.getDefault(), 
-                Wireplumber.getDefault().getDefaultSink().connect("notify::volume", () => 
-                    !Windows.getDefault().isOpen("control-center") &&
-                        triggerOSD(OSDModes.sink)
-                )
+            createSubscription(
+                secureBaseBinding<AstalWp.Endpoint>(
+                    createBinding(AstalWp.get_default(), "defaultSpeaker"),
+                    "volume",
+                    null
+                ),
+                () => !Windows.getDefault().isOpen("control-center") &&
+                    triggerOSD(OSDModes.sink)
+            );
+
+            createSubscription(
+                secureBaseBinding<AstalWp.Endpoint>(
+                    createBinding(AstalWp.get_default(), "defaultSpeaker"),
+                    "mute",
+                    null
+                ),
+                () => !Windows.getDefault().isOpen("control-center") &&
+                    triggerOSD(OSDModes.sink)
             );
 
             createSubscription(

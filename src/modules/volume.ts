@@ -1,11 +1,8 @@
-import GObject, { register } from "ags/gobject";
 import AstalWp from "gi://AstalWp";
 
-export { Wireplumber };
 
-@register({ GTypeName: "Wireplumber" })
-class Wireplumber extends GObject.Object {
-    private static astalWireplumber: (AstalWp.Wp|null) = AstalWp.get_default();
+export class Wireplumber {
+    private static astalWireplumber: AstalWp.Wp|null = AstalWp.get_default();
     private static inst: Wireplumber;
 
     private defaultSink: AstalWp.Endpoint = Wireplumber.astalWireplumber!.get_default_speaker()!;
@@ -15,8 +12,6 @@ class Wireplumber extends GObject.Object {
     private maxSourceVolume: number = 100;
 
     constructor() {
-        super();
-
         if(!Wireplumber.astalWireplumber) 
             throw new Error("Audio features will not work correctly! Please install wireplumber first", {
                 cause: "Wireplumber library not found"

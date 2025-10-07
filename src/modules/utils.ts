@@ -17,7 +17,7 @@ export {
     createScopedConnection,
     createSecureBinding as secureBinding,
     createSecureAccessorBinding as secureBaseBinding,
-} from "../utils";
+} from "gnim-utils";
 
 
 export const decoder = new TextDecoder("utf-8"),

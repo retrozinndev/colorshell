@@ -14,5 +14,8 @@
     },
     "devDependencies": {
         "ags": "link:../../../../usr/share/ags/js"
+    },
+    "dependencies": {
+        "gnim-utils": "github:retrozinndev/gnim-utils"
     }
 }
