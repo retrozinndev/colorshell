@@ -5,16 +5,14 @@ import { Windows } from "../../../windows";
 import { Clipboard } from "../../../modules/clipboard";
 import { getPlayerIconFromBusName, secureBaseBinding, variableToBoolean } from "../../../modules/utils";
 import { tr } from "../../../i18n/intl";
-
 import { default as Player } from "../../../modules/media";
+
 import AstalMpris from "gi://AstalMpris";
 import Pango from "gi://Pango?version=1.0";
 
 
 export const Media = () => 
-    <Gtk.Box class={"media"} visible={secureBaseBinding<AstalMpris.Player>(createBinding(
-            Player.getDefault(), "player"
-        ), "available", false)}>
+    <Gtk.Box class={"media"} visible={createBinding(Player.getDefault(), "player").as(p => p.available)}>
         <Gtk.EventControllerScroll $={(self) => {
               self.set_flags(Gtk.EventControllerScrollFlags.VERTICAL)
           }} onScroll={(_, __, dy) => {
@@ -53,14 +51,12 @@ export const Media = () =>
               revealer.set_reveal_child(false);
           }}
         />
-        <Gtk.Box spacing={4} visible={secureBaseBinding<AstalMpris.Player>(createBinding(
-              Player.getDefault(), "player"
-          ), "available", false)
-        }>
-            <With value={secureBaseBinding<AstalMpris.Player>(createBinding(
-                  Player.getDefault(), "player"
-              ), "available", false)
-            }>
+        <Gtk.Box spacing={4} visible={createBinding(Player.getDefault(), "player")
+          .as(p => p.available)}>
+
+            <With value={createBinding(Player.getDefault(), "player")
+              .as(p => p.available)}>
+
                 {(available: boolean) => available && <Gtk.Box>
                     <Gtk.Image class={"player-icon"} iconName={
                         secureBaseBinding<AstalMpris.Player>(createBinding(
@@ -87,10 +83,9 @@ export const Media = () =>
         <Gtk.Revealer transitionType={Gtk.RevealerTransitionType.SLIDE_RIGHT} transitionDuration={260}
           revealChild={false}>
 
-            <With value={secureBaseBinding<AstalMpris.Player>(createBinding(
-                  Player.getDefault(), "player"
-              ), "available", false)
-            }>
+            <With value={createBinding(Player.getDefault(), "player")
+              .as(p => p.available)}>
+
                 {(available: boolean) => available && <Gtk.Box class={"buttons"} spacing={4}>
                     <Gtk.Box class={"extra button-row"}>
                         <Gtk.Button class={"link"} iconName={"edit-paste-symbolic"} 
