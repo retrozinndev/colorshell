@@ -1,5 +1,6 @@
 import { Scope } from "ags";
 import { createScopedConnection, decoder, encoder } from "../modules/utils";
+import { showWorkspaceNumber } from "../window/bar/widgets/Workspaces";
 
 import windows from "./modules/windows";
 import volume from "./modules/volume";
@@ -9,6 +10,7 @@ import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
 
 
+/** cli implementation for colorshell */
 export namespace Cli {
     let rootScope: Scope;
     let initialized: boolean = false;
@@ -26,6 +28,14 @@ export namespace Cli {
                             content: `Opening runner${data ? ` with "${data}"` : ""}...`,
                             type: "out"
                         };
+                    }
+                },
+                {
+                    name: "peek-workspace-num",
+                    help: "peek the workspace numbers in the workspace indicator. (optional: time in millis)",
+                    onCalled: () => {
+                        showWorkspaceNumber(true);
+                        return "Peeking workspace IDs...";
                     }
                 }
             ],
@@ -214,12 +224,32 @@ export namespace Cli {
             );
         }
 
-        for(let i = 0; i < args.length; i++) {
-            const arg = args[i];
+        function handleCommandArguments(cmd: Module|Command, args: Array<string>, index: number, printFun: (out: Output) => void): void {
+            const argNameRegEx = /^--/, argAliasRegEx = /^-/;
+            let argName: string;
 
-            if(i === 0) {
+            if(args[index].startsWith("--")) {
                 
             }
+        }
+
+        const firstFoundMod = modules.filter(mod => mod.prefix === args[0])[0];
+        mod = firstFoundMod ?? modules[0];
+
+        if(!mod) {
+            print({
+                content: `No command module found with the name ${args[0]}!`,
+                type: "err"
+            });
+            return;
+        }
+
+        for(let i = 1; i < args.length; i++) {
+            const arg = args[i];
+
+            if(/^-/.test(arg)) {
+                handleCommandArguments(command ?? mod, args, i, print);
+                continue;
         }
     }
 

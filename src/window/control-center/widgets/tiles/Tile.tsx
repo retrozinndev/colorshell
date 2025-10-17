@@ -30,7 +30,7 @@ export class Tile extends Gtk.Box {
     public hasArrow: boolean = false;
     
     declare $signals: Gtk.Box.SignalSignatures & {
-        "toggled": (_state: boolean) => void;
+        "toggled": (state: boolean) => void;
         "enabled": () => void;
         "disabled": () => void;
         "clicked": () => void;

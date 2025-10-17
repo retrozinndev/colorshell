@@ -16,34 +16,41 @@ export const FloatingNotifications = (mon: number) =>
           generalConfig.bindProperty("notifications.position_h", "string"),
           generalConfig.bindProperty("notifications.position_v", "string")
       ]).as(([posH, posV]) => {
-          let horizontal: Astal.WindowAnchor = Astal.WindowAnchor.RIGHT,
-            vertical: Astal.WindowAnchor = Astal.WindowAnchor.TOP;
+          const pos: Array<Astal.WindowAnchor> = [];
 
           switch(posH) {
               case "left":
-                  horizontal = Astal.WindowAnchor.LEFT;
+                  pos.push(Astal.WindowAnchor.LEFT);
               break;
               case "center":
-                  horizontal = Astal.WindowAnchor.LEFT | Astal.WindowAnchor.RIGHT;
+                  pos.push(Astal.WindowAnchor.LEFT);
+                  pos.push(Astal.WindowAnchor.RIGHT);
               break;
               case "right":
-                  horizontal = Astal.WindowAnchor.RIGHT;
+                  pos.push(Astal.WindowAnchor.RIGHT);
               break;
           }
 
           switch(posV) {
               case "top":
-                  vertical = Astal.WindowAnchor.TOP;
+                  pos.push(Astal.WindowAnchor.TOP);
               break;
               case "center":
-                  vertical = Astal.WindowAnchor.TOP | Astal.WindowAnchor.BOTTOM;
+                  pos.push(Astal.WindowAnchor.TOP);
+                  pos.push(Astal.WindowAnchor.BOTTOM);
               break;
               case "bottom":
-                  vertical = Astal.WindowAnchor.BOTTOM;
+                  pos.push(Astal.WindowAnchor.BOTTOM);
               break;
           }
 
-          return horizontal | vertical;
+          let finalPos: Astal.WindowAnchor;
+
+          pos.forEach(pos => finalPos = (finalPos !== undefined ? 
+              finalPos | pos
+          : pos));
+
+          return finalPos!;
 
       })} exclusivity={Astal.Exclusivity.NORMAL}
       resizable={false} widthRequest={450}>

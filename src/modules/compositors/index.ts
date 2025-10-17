@@ -1,7 +1,10 @@
 import { CompositorHyprland } from "./hyprland";
-import GObject, { getter, gtype, register } from "ags/gobject";
+import GObject, { getter, gtype, property, register } from "ags/gobject";
 
 import GLib from "gi://GLib?version=2.0";
+
+
+export default Compositors;
 
 /** WIP modular implementation of a system that supports implementing
 * a variety of Wayland Compositors 
@@ -14,7 +17,6 @@ export namespace Compositors {
     export class Monitor extends GObject.Object {
         #width: number;
         #height: number;
-        #scaling: number;
 
         @getter(Number)
         get width() { return this.#width; }
@@ -22,15 +24,15 @@ export namespace Compositors {
         @getter(Number)
         get height() { return this.#height; }
 
-        @getter(Number)
-        get scaling() { return this.#scaling; }
+        @property(Number)
+        scaling: number;
 
         constructor(width: number, height: number, scaling: number = 1) {
             super();
 
             this.#width = width;
             this.#height = height;
-            this.#scaling = scaling;
+            this.scaling = scaling;
         }
     }
 
@@ -49,7 +51,6 @@ export namespace Compositors {
             super();
 
             this.#monitor = monitor;
-            this.notify("monitor");
             this.#id = id;
         }
     }
@@ -110,10 +111,9 @@ export namespace Compositors {
             if(props.position !== undefined)
                 this.#position = props.position;
 
-            if(props.initialClass !== undefined)
-                this.#initialClass = props.initialClass;
-            else 
-                this.#initialClass = props.class;
+            this.#initialClass = props.initialClass !== undefined ?
+                props.initialClass
+            : props.class;
         }
     }
 
