@@ -136,7 +136,8 @@ export const TileNetwork = () =>
           }
 
           // disable if no device available
-          self.state = false;
+          if(!AstalNetwork.get_default().wired && !AstalNetwork.get_default().wifi)
+              self.state = false;
       }}
     />;
 
