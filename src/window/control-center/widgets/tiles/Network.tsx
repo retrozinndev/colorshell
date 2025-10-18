@@ -136,8 +136,6 @@ export const TileNetwork = () =>
               return;
           }
 
-          console.log("no network device available to enable...");
-
           // disable if no device available
           self.state = false;
       }}
