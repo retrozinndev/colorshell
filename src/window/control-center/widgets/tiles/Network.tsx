@@ -11,7 +11,7 @@ import { Notifications } from "../../../../modules/notifications";
 
 
 const { WIFI, WIRED } = AstalNetwork.Primary,
-    { CONNECTED, CONNECTING } = AstalNetwork.Internet;
+    { CONNECTED, CONNECTING, DISCONNECTED } = AstalNetwork.Internet;
 
 const wiredInternet = secureBaseBinding<AstalNetwork.Wired>(
     createBinding(AstalNetwork.get_default(), "wired"),
@@ -115,29 +115,31 @@ export const TileNetwork = () =>
           return tr("disconnected");        
       })}
       onToggled={(self, state) => {
+          const wifi = AstalNetwork.get_default().wifi,
+              wired = AstalNetwork.get_default().wired;
+
           switch(AstalNetwork.get_default().primary) {
               case WIFI:
-                  AstalNetwork.get_default().wifi.set_enabled(state);
+                  wifi.set_enabled(state);
                   return;
 
               case WIRED:
-                  (state ? 
-                      execAsync("nmcli n off")
-                    : execAsync("nmcli n on")
-                  ).catch(e => {
-                      Notifications.getDefault().sendNotification({
-                          appName: "network",
-                          summary: "Couldn't turn off network",
-                          body: `Turning off networking with nmcli failed: ${
-                              e?.message ?? "(no error message)"}`
-                      });
-                  });
+                  setNetworking(state);
                   return;
           }
 
+          if(wired && wired.internet === DISCONNECTED) {
+              setNetworking(true);
+              return;
+          } else if(wifi && !wifi.enabled) {
+              wifi.set_enabled(true);
+              return;
+          }
+
+          console.log("no network device available to enable...");
+
           // disable if no device available
-          if(!AstalNetwork.get_default().wired && !AstalNetwork.get_default().wifi)
-              self.state = false;
+          self.state = false;
       }}
     />;
 
@@ -151,4 +153,18 @@ function internetToTranslatedString(internet: AstalNetwork.Internet): string {
     }
 
     return tr("disconnected");
+}
+
+function setNetworking(state: boolean): void {
+    (!state ? 
+        execAsync("nmcli n off")
+      : execAsync("nmcli n on")
+    ).catch(e => {
+        Notifications.getDefault().sendNotification({
+            appName: "network",
+            summary: "Couldn't turn off network",
+            body: `Turning off networking with nmcli failed${
+                e?.message !== undefined ? `: ${e?.message}` : ""}`
+        });
+    });
 }
