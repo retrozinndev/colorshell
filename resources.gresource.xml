@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+    <!-- Sass -->
+    <gresource prefix="/io/github/retrozinndev/colorshell/styles">
+        <file alias="main">styles/main.scss</file>
+        <file alias="mixins">styles/_mixins.scss</file>
+        <file alias="colors">styles/_colors.scss</file>
+        <file alias="apps-window">styles/_apps-window.scss</file>
+        <file alias="bar">styles/_bar.scss</file>
+        <file alias="center-window">styles/_center-window.scss</file>
+        <file alias="control-center">styles/_control-center.scss</file>
+        <file alias="float-notifications">styles/_float-notifications.scss</file>
+        <file alias="logout-menu">styles/_logout-menu.scss</file>
+        <file alias="osd">styles/_osd.scss</file>
+        <file alias="runner">styles/_runner.scss</file>
+    </gresource>
+
+    <!-- Icons -->
+    <gresource prefix="/io/github/retrozinndev/colorshell/icons/scalable/actions">
+        <file alias="applications-other-symbolic.svg">icons/applications-other-symbolic.svg</file>
+        <file alias="arrow-circular-top-right-symbolic.svg">icons/arrow-circular-top-right-symbolic.svg</file>
+        <file alias="circle-filled-symbolic.svg">icons/circle-filled-symbolic.svg</file>
+        <file alias="hourglass-symbolic.svg">icons/hourglass-symbolic.svg</file>
+        <file alias="loop-arrow-symbolic.svg">icons/loop-arrow-symbolic.svg</file>
+        <file alias="minus-circle-filled-symbolic.svg">icons/minus-circle-filled-symbolic.svg</file>
+        <file alias="shield-danger-symbolic.svg">icons/shield-danger-symbolic.svg</file>
+        <file alias="shield-safe-symbolic.svg">icons/shield-safe-symbolic.svg</file>
+        <file alias="user-trash-symbolic.svg">icons/user-trash-symbolic.svg</file>
+    </gresource>
+</gresources>

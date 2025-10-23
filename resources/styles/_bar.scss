@@ -1,0 +1,210 @@
+@use "sass:color";
+@use "./mixins";
+@use "./colors";
+
+
+$radius: 18px;
+$padding: 4px;
+$color-hover: colors.$bg-primary;
+
+
+@mixin button-reactivity {
+  &:active {
+    box-shadow: 0 0 0 2px $color-hover;
+  }
+}
+
+.bar-container {
+  padding: 6px;
+  padding-bottom: 0px;
+
+  label {
+    @include mixins.reset-props;
+
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  // Style widget groups
+  & > .bar-centerbox > * {
+    background: rgba(colors.$bg-translucent, .6);
+    border-radius: $radius;
+    padding: 0 $padding;
+
+    & > box:not(.workspaces-row):not(.tray):not(.focused-client):not(.media), 
+    & > button {
+      @include button-reactivity;
+
+      border-radius: calc($radius - $padding);
+      margin: $padding 0;
+      padding: 0 8px;
+
+      &:hover {
+        background: $color-hover;
+      }
+    }
+  }
+
+  .workspaces-row {
+    padding: 4px;
+
+    & .workspace {
+      transition: 80ms linear;
+      margin: 3px 0;
+      border-radius: 16px;
+      min-width: 14px;
+      padding: 0 6px;
+      background: colors.$bg-tertiary;
+
+      &:active {
+        border-radius: 10px;
+      }
+
+      & label.id {
+        font-weight: 600;
+        margin-right: 4px;
+        opacity: 0;
+      }
+
+      &.focus {
+        background: colors.$fg-primary;
+        min-width: 32px;
+
+        & label.id {
+          opacity: 0;
+          color: colors.$fg-light;
+          margin-right: 0;
+        }
+      }
+
+      & icon {
+        font-size: 16px;
+      }
+
+      &.show label.id {
+        opacity: 1;
+      }
+
+      &:hover:not(.last-client-icon):not(.focus) {
+        background: color.scale($color: colors.$bg-tertiary, $lightness: 10%);
+      }
+    }
+  }
+
+  .focused-client {
+    padding: 0 6px;
+
+    & image {
+      margin-right: 6px;
+      -gtk-icon-size: 18px;
+    }
+
+    & .text-content {
+      & .class {
+        font-size: 9px;
+        font-family: monospace;
+        font-weight: 600;
+        color: colors.$fg-disabled;
+        margin-top: 0px;
+      }
+      
+      & .title {
+        font-size: 12px;
+        font-weight: 500;
+        margin-top: -2px;
+      }
+    }
+  }
+
+  .clock.open {
+    background: colors.$bg-primary;
+  }
+
+  .media {
+    $spacing: 5px;
+    $hover-color: color.scale($color: colors.$bg-primary, $lightness: 15%);
+
+    background: colors.$bg-primary;
+    border-radius: calc($radius - $padding);
+    margin: $padding 0;
+    padding: 0 calc($padding + 3px);
+
+    & image.player-icon {
+      -gtk-icon-size: 14px;
+      margin-right: $spacing;
+    }
+
+    & .buttons {
+      margin-left: $spacing;
+    }
+
+    & .button-row {
+      border-top-right-radius: 12px;
+      border-bottom-right-radius: 12px;
+      padding: 4px 0;
+
+      & > button image {
+        margin: 0;
+        -gtk-icon-size: 10px;
+      }
+    }
+
+    
+    &:hover {
+      background: $hover-color;
+    }
+
+    &:active {
+      box-shadow: 0 0 0 2px $hover-color;
+    }
+  }
+
+  .tray {
+    padding: 0 6px;
+
+    & .item {
+      all: unset;
+    }
+  }
+
+  .status {
+    @include mixins.reset-props;
+
+    &.open {
+      background: colors.$bg-primary;
+    }
+
+    & image {
+      -gtk-icon-size: 14px;
+    }
+
+    & revealer > box {
+      background: rgba($color: colors.$bg-tertiary, $alpha: .7);
+      border-radius: 12px; 
+      margin: 4px 0; 
+      margin-left: 5px;
+      padding: 2px 6px;
+    }
+
+    & .status-icons {
+      padding-left: 4px;
+
+      & image.notification-count {
+        -gtk-icon-size: 6px;
+        margin-top: -14px;
+      }
+    }
+  }
+
+  .apps {
+    min-width: 18px;
+    & image {
+      transition: 120ms linear;
+      -gtk-icon-size: 14px;
+    }
+
+    &.open {
+      background: colors.$bg-primary;
+    }
+  }
+}

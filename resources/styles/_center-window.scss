@@ -1,0 +1,129 @@
+@use "sass:color";
+@use "./wal";
+@use "./colors";
+@use "./mixins";
+
+
+.popup-window.center-window .center-window-container {
+  background: colors.$bg-translucent;
+  border-radius: 24px;
+  padding: 12px;
+
+  & .big-media {
+    margin-top: 9px;
+    & .image {
+      background-size: cover;
+      background-position: center center;
+      border-radius: 10px;
+    }
+
+    & .info {
+      padding: {
+        top: 4px;
+        bottom: 6px;
+      };
+
+      & .title {
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      & .artist {
+        font-size: 14px;
+        font-weight: 600;
+        color: colors.$fg-disabled;
+      }
+    }
+
+    & slider {
+      all: unset;
+      opacity: 0;
+      min-height: .6em;
+    }
+
+    & trough {
+      border-radius: 4px;
+    }
+
+    & trough highlight {
+      min-height: .65em;
+      border-top-right-radius: 2px;
+      border-bottom-right-radius: 2px;
+    }
+
+    & .bottom {
+      & .button-row {
+        margin-top: 9px;
+
+        & button {
+          padding: 7px;
+
+          & label {
+            font-size: 9px;
+          }
+        }
+      }
+
+      & .elapsed,
+      & .length {
+        font-size: 12px;
+        color: colors.$fg-disabled;
+      }
+    }
+  }
+
+  & .left .datetime {
+    padding-bottom: 10px;
+
+    & .time {
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    & .date {
+      font-size: 14px;
+      font-weight: 500;
+      color: colors.$fg-disabled;
+    }
+  }
+
+  & calendar.view {
+    $border-radius: 14px;
+
+    font-weight: 600;
+    background: colors.$bg-primary;
+    border-radius: $border-radius;
+
+    & header {
+      background: colors.$bg-secondary;
+      padding: 6px;
+      border-top-left-radius: $border-radius;
+      border-top-right-radius: $border-radius;
+    }
+
+    & grid {
+      margin: 4px;
+
+      label.day-number {
+        $size: 24px;
+
+        min-height: $size;
+        min-width: $size;
+      }
+    }
+
+    & button {
+      transition: 80ms linear;
+      border-radius: 6px;
+
+      &:hover {
+        background-color: colors.$bg-tertiary;
+      }
+    }
+
+    & label:selected {
+      background: colors.$bg-secondary;
+      border-radius: 6px;
+    }
+  }
+}

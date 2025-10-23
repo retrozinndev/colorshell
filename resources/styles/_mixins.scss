@@ -1,0 +1,41 @@
+@use "sass:color";
+@use "./colors";
+
+@mixin reset-props {
+  all: unset;
+  transition: 120ms linear;
+  font-family: "Adwaita Sans", "Cantarell", "Noto Sans", 
+    "Noto Sans CJK JP", "Noto Sans CJK KR", 
+    "Noto Sans CJK HK", "Noto Sans CJK SC", 
+    "Noto Sans CJK TC", sans-serif, 
+    "Symbols Nerd Font Mono";
+  color: colors.$fg-primary;
+}
+
+@mixin button-reactive-primary {
+  background: colors.$bg-primary;
+  border-radius: 14px;
+  padding: 6px;
+
+  &:hover {
+    background: colors.$bg-secondary;
+  }
+
+  &:active {
+    border-radius: 10px;
+  }
+}
+
+@mixin button-reactive-secondary {
+  background: colors.$bg-secondary;
+  border-radius: 12px;
+  padding: 6px;
+
+  &:hover {
+    background: colors.$bg-tertiary;
+  }
+
+  &:active {
+    border-radius: 9px;
+  }
+}

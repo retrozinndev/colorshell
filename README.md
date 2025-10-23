@@ -1,54 +1,65 @@
 # colorshell
-<p>(previously retrozinndev/Hyprland-Dots)</p>
-
-> [!note]
-> The [AGS v3](https://github.com/aylur/ags/blob/main) version is already done! You can try it out in the branch [`gtk4-ags3`](https://github.com/retrozinndev/colorshell/blob/gtk4-ags3). <br>
-> The updated version will be merged into the main branch as soon as AGS v3 reaches a stable release(tagged release).
 
 > [!note]
 > My personal dotfiles are now on [retrozinndev/Hyprland-Dots](https://github.com/retrozinndev/Hyprland-Dots)
 
-My Hyprland Desktop Shell that I love to keep improving every day! 🤩 <br>
+This is the repository for the colorshell desktop shell, made for Hyprland with [TypeScript], [GTK4], [AGS], [Gnim], and some of the [Astal] libraries.
 
-This is the repository for my desktop shell, made with [GTK], [Astal] and [AGS] + [TypeScript]. <br>
 It really took me a lot of time to make this, so please star the repo if you like it! :star:
 
 ## 🌄 Screenshots
-![Kitty](repo/shots/kitty.png)
-![Widgets](repo/shots/control-center-runner.png)
-![Runner](repo/shots/clock-window.png)
-![Browser](repo/shots/browser.png)
+<div align="center">
+  <img src="./repo/shots/desktop.png" alt="desktop" width="49%" />
+  <img src="./repo/shots/runner.png" alt="Runner" width="49%" />
+  <img src="./repo/shots/center-window-control-center.png" alt="Control Center & Center Window" width="49%" />
+  <img src="./repo/shots/kitty.png" alt="Kitty" width="49%" />
+
+  <p align="right">
+    <i>more screenshots on <a href="repo/shots"><code>repo/shots</code></a></i>
+  </p>
+</div>
 
 ## 🎨 Colors
 All the shell colors are dynamically generated from your wallpaper! 
-This is possible by using [pywal16](fork of the archived [pywal](https://github.com/dylanaraps/pywal) project), a cli tool to generate color schemes on the fly.
+
+This is possible by using [pywal16], a fork of the archived [pywal](https://github.com/dylanaraps/pywal) project. 
+It's a cli tool to generate color schemes from an image.
 
 ## 🖼️ Wallpapers
-When you're at the [Installation](#%EF%B8%8F-installation) process, you can choose whether you want to install the wallpapers or not. <br>
-If you chose to not, either define the `$WALLPAPERS` variable in your hyprland user configuration to your wallpapers folder, or create the `~/wallpapers` directory.
+These are not included in the shell anymore, because the repository was getting too big in size. 
+So you'll have to add it in your own.
 
-You can select any of the images inside `~/wallpapers` by pressing <kbd>SUPER</kbd> + <kbd>W</kbd> or by accessing the 
-Control Center and clicking in the image icon on top.
+You can add more wallpapers either by adding your custom images to `~/wallpapers` or by defining `WALLPAPERS` 
+in your `hypr/user/environment`, pointing to the custom location.
 
-### ℹ️ Source
-None of the wallpapers available in this repo are made by me! You can find sources inside the [`WALLPAPERS.md`](/WALLPAPERS.md) file. (it took me a lot of time to make this sources list 😭)
+Also, you can select any of the images inside `~/wallpapers` by pressing 
+<kbd>SUPER</kbd> + <kbd>W</kbd> or by accessing the Control Center and clicking in the image 
+icon on top.
 
-### ✔️ What's included in this shell
+## ✨ Features
+<details>
+  
 - Pretty Top-Bar
-  - Apps button(basically the "start menu", opens the full-screen app launcher)
-  - Workspace indicator(contains icon of last used application on each)
-  - Focused Client(Window) information(title, class and icon)
+  - Apps(basically the "start menu", opens the full-screen app launcher)
+  - Workspaces indicator
+  - Focused Client(window) information(title, class and icon)
   - Clock(with date)
-  - Media(shows only when media is being played)
+  - Media
+    - Change current player by scrolling on top of the widget or by opening the
+Center Window and scrolling the player
+    - Only available when there's media playing
   - Tray(Applications running in the background)
   - Status (volume information, bluetooth, network and notification status)
 - Control Center
-  - Volume Controls (Microphone and Speaker)
-    - Volume Mixer(per-app volume)
+  - Sliders 
+    - Speaker volume
+    - Microphone sensitivity
+    - Brightness amount
   - Pages(the thing that shows up when you click the arrow on a tile)
     - Bluetooth devices
     - Network devices
     - Night Light controls
+    - Brightness options
   - Tiles
     - Screen Recording
     - Bluetooth
@@ -56,6 +67,9 @@ None of the wallpapers available in this repo are made by me! You can find sourc
     - Network(wifi needs work, i don't have wifi in my machine)
     - Don't Disturb(disables notification popups)
 - Center Window(clock, calendar + media management)
+- OSD (On-screen Display)
+  - Brightness(when changed)
+  - Volume(when changed)
 - Notifications with support for application actions + Notification History
 - Localization(see [🌐 Internationalization](#-internationalization) for available languages)
 - Application Runner with support for plugins ([anyrun](https://github.com/anyrun-org/anyrun)-like)
@@ -64,9 +78,9 @@ None of the wallpapers available in this repo are made by me! You can find sourc
   - Wallpapers(`#`): Search and select to change wallpaper
   - Media(`:`): Control playing media
   - Search(`?`): Search something on the internet with your default browser
-- Gnome-like application list
 - Support for your multiple monitors
-- Dynamic support for [UWSM](https://github.com/Vladimir-csp/uwsm)(dinamically enabled if current session is using UWSM)
+- Dynamic support for [UWSM](https://github.com/Vladimir-csp/uwsm)(apps will use uwsm if current session is using it)
+</details>
 
 ## ⌨️ Binds
 You can see default bindings and usage information on the [Wiki/Usage] page!
@@ -85,18 +99,59 @@ You can do so by forking this repository, translating the shell in your fork and
 ## ⚙️ Installation
 See the Installation Guide on [Wiki/Installation].
 
+## 🛠️ Development
+This project uses `pnpm` to manage packages and running scripts.
+To build the shell, run a development build or make a release build, you can use the project's integrated scripts.<br>
+The most complicated ones have a help flag, so you can learn from there.
+
+### Dependencies
+These are development-only dependencies(by package name on AUR):
+- `aylurs-gtk-shell-git`
+  
+Plus, you also need the packages listed in [Wiki/Dependencies]!
+
+### Building
+In a common build, the shell's gresource(icons and sass) will be targeted to the build output directory by default.
+If you want to ship it, you likely want to use the `pnpm build:release` command.
+```zsh
+pnpm build -d # remove the -d flag if you don't want a development build
+```
+If you want to ship the build(or install it on your local machine), you'll likely prefer a release build:
+(the `build:release` command targets the gresource to `$XDG_DATA_HOME/colorshell/resources.gresource` by default)
+```zsh
+pnpm build:release
+```
+Don't forget to install the gresource to the actual target directory! Or else it'll not find the resource file and will fail
+to load custom assets.<br>
+Also, the environment variables are only actually used at runtime! It's passed as a literal string in the bash
+variable format, then when the shell runs, it understands that it's an environment variable and replaces it with it's value.
+
+### Testing/Running the project
+```zsh
+pnpm dev
+```
+or if you actually only want to run the current build instead of building again:
+```
+pnpm start
+```
+
 ## ❗ Issues
 Having issues? Please create a [new Issue] here, I'll be happy to help you out!
 
 ## 📜 License
-This repo is licensed under the [MIT License], project is made and maintained by [retrozinndev](https://github.com/retrozinndev).
+This repo is licensed under the [BSD 3-clause] license, project is made and maintained by [retrozinndev](https://github.com/retrozinndev).
 
 ## 🌠 Stargazers
 <div align="center">
-  
-[![Star History Chart](https://api.star-history.com/svg?repos=retrozinndev/colorshell&type=Date)](https://www.star-history.com/#retrozinndev/colorshell&Date)
-<br>
-<p align="center">Thanks to everyone who starred my project! 💖</p>
+    <a href="https://www.star-history.com/#retrozinndev/colorshell&Date">
+        <picture>
+            <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=retrozinndev/colorshell&type=Date&theme=dark" />
+            <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=retrozinndev/colorshell&type=Date" />
+            <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=retrozinndev/colorshell&type=Date" />
+        </picture>
+    </a>
+    <br>
+    <p align="center">Thanks to everyone who starred my project! 💖</p>
 </div>
 
 <!-- References of other projects -->
@@ -106,12 +161,14 @@ This repo is licensed under the [MIT License], project is made and maintained by
 [nushell]: https://nushell.sh
 [kitty]: https://sw.kovidgoyal.net/kitty
 [ags]: https://aylur.github.io/ags
+[gnim]: https://aylur.github.io/gnim
 [astal]: https://aylur.github.io/astal
 [typescript]: https://typescriptlang.org
+[gtk4]: https://www.gtk.org
 [gtk]: https://www.gtk.org
 
 <!--  Web refs -->
-[mit license]: https://en.wikipedia.org/wiki/MIT_License
+[bsd 3-clause]: https://en.wikipedia.org/wiki/BSD_licenses#4-clause_license_(original_%22BSD_License%22)
 
 <!-- Tabs -->
 [wiki]: https://github.com/retrozinndev/colorshell/wiki

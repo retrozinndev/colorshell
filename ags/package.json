@@ -1,6 +1,0 @@
-{
-    "name": "colorshell",
-    "dependencies": {
-        "astal": "/usr/share/astal/gjs"
-    }
-}
