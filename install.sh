@@ -19,8 +19,7 @@ repo_directory=`[[ "$is_standalone" ]] && echo -n "$temp_dir/repo" || echo -n ".
 # source utils script before installation
 if [[ "$is_standalone" ]]; then
     mkdir -p "$repo_directory"
-    # testing only, change to commented value before merging (hope I don't forget lol)
-    default_branch="gtk4-ags3" # `curl -s https://api.github.com/repos/retrozinndev/colorshell | jq -r .default_branch`
+    default_branch="ryo" # `curl -s https://api.github.com/repos/retrozinndev/colorshell | jq -r .default_branch`
     # get utils script
     echo "fetching utils script..."
     curl -s https://raw.githubusercontent.com/retrozinndev/colorshell/refs/heads/$default_branch/scripts/utils.sh > $temp_dir/utils.sh
