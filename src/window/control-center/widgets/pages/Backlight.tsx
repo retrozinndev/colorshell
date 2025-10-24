@@ -7,11 +7,11 @@ import { addSliderMarksFromMinMax } from "../../../../modules/utils";
 import { userData } from "../../../../config";
 
 
-export const PageBacklight = new Page({
-    id: "backlight",
-    title: tr("control_center.pages.backlight.title"),
-    description: tr("control_center.pages.backlight.description"),
-    $: () => {
+export const PageBacklight = <Page
+    id={"backlight"}
+    title={tr("control_center.pages.backlight.title")}
+    description={tr("control_center.pages.backlight.description")}
+    actionOpen={() => {
         const dataDefaultBacklight = userData.getProperty("control_center.default_backlight", "any");
         if(typeof dataDefaultBacklight === "string" && 
            Backlights.getDefault().default?.name !== dataDefaultBacklight) {
@@ -21,8 +21,8 @@ export const PageBacklight = new Page({
 
             Backlights.getDefault().setDefault(bk);
         }
-    },
-    content: () => (
+    }}
+    content={() => (
         <With value={createBinding(Backlights.getDefault(), "backlights")}>
             {(bklights: Array<Backlights.Backlight>) => bklights.length > 0 &&
                 <Gtk.Box orientation={Gtk.Orientation.VERTICAL} spacing={4}>
@@ -75,10 +75,10 @@ export const PageBacklight = new Page({
                 </Gtk.Box>
             }
         </With>
-    ),
-    headerButtons: [{
+    )}
+    headerButtons={[{
         icon: "arrow-circular-top-right",
         tooltipText: tr("control_center.pages.backlight.refresh"),
         actionClicked: () => Backlights.getDefault().scan()
-    }]
-});
+    }]}
+/> as Page;

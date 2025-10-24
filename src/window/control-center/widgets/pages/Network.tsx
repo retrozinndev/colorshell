@@ -13,24 +13,24 @@ import NM from "gi://NM";
 import AstalNetwork from "gi://AstalNetwork";
 
 
-export const PageNetwork = new Page({
-    id: "network",
-    title: tr("control_center.pages.network.title"),
-    headerButtons: createBinding(AstalNetwork.get_default(), "primary").as(primary =>
+export const PageNetwork = <Page
+    id={"network"}
+    title={tr("control_center.pages.network.title")}
+    headerButtons={createBinding(AstalNetwork.get_default(), "primary").as(primary =>
         primary === AstalNetwork.Primary.WIFI ? [{
             icon: "arrow-circular-top-right-symbolic",
             tooltipText: "Re-scan networks",
             actionClicked: () => AstalNetwork.get_default().wifi.scan()
         }] : []
-    ),
-    bottomButtons: [{
+    )}
+    bottomButtons={[{
         title: tr("control_center.pages.more_settings"),
         actionClicked: () => {
             Windows.getDefault().close("control-center");
             execApp("nm-connection-editor", "[animationstyle gnomed]");
         }
-    }],
-    content: () => [
+    }]}
+    content={() => [
         <Gtk.Box class={"devices"} hexpand orientation={Gtk.Orientation.VERTICAL}
           visible={variableToBoolean(createBinding(AstalNetwork.get_default().client, "devices"))}
           spacing={4}>
@@ -130,8 +130,8 @@ export const PageNetwork = new Page({
                 </For>
             </Gtk.Box>}
         </With>
-    ]
-});
+    ]}
+/> as Page;
 
 function activateWirelessConnection(connection: NM.RemoteConnection, ssid: string): void {
     AstalNetwork.get_default().get_client().activate_connection_async(

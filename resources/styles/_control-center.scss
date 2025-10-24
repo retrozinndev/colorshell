@@ -203,7 +203,7 @@
     $radius: 18px;
     $padding: 4px;
 
-    background: rgba(colors.$bg-primary, .5);
+    background: color.scale($color: colors.$bg-primary, $lightness: -25%);
     border-radius: $radius;
     padding: $padding;
     min-height: 40px;

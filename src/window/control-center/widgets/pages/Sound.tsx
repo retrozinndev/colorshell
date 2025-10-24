@@ -4,18 +4,18 @@ import { getAppIcon, lookupIcon } from "../../../../modules/apps";
 import { Wireplumber } from "../../../../modules/volume";
 import { tr } from "../../../../i18n/intl";
 import { createBinding, For } from "ags";
-import { variableToBoolean } from "../../../../modules/utils";
+import { createScopedConnection, variableToBoolean } from "../../../../modules/utils";
 
 import AstalWp from "gi://AstalWp";
 import GObject from "gi://GObject?version=2.0";
 import Pango from "gi://Pango?version=1.0";
 
 
-export const PageSound = new Page({
-    id: "sound",
-    title: tr("control_center.pages.sound.title"),
-    description: tr("control_center.pages.sound.description"),
-    content: () => [
+export const PageSound = <Page
+    id={"sound"}
+    title={tr("control_center.pages.sound.title")}
+    description={tr("control_center.pages.sound.description")}
+    content={() => [
         <Gtk.Label class={"sub-header"} label={tr("devices")} xalign={0} />,
         <Gtk.Box orientation={Gtk.Orientation.VERTICAL} spacing={4}>
             <For each={createBinding(Wireplumber.getWireplumber().audio!, "speakers")}>
@@ -45,27 +45,17 @@ export const PageSound = new Page({
             <For each={createBinding(Wireplumber.getWireplumber().audio!, "streams")}>
                 {(stream: AstalWp.Stream) => 
                     <Gtk.Box hexpand $={(self) => {
-                        const conns: Map<GObject.Object, Array<number>> = new Map();
                         const controllerMotion = Gtk.EventControllerMotion.new();
 
                         self.add_controller(controllerMotion);
-
-                        conns.set(controllerMotion, [
-                            controllerMotion.connect("enter", () => {
-                                const revealer = self.get_last_child()!.get_first_child() as Gtk.Revealer;
-                                revealer.set_reveal_child(true);
-                            }),
-                            controllerMotion.connect("leave", () => {
-                                const revealer = self.get_last_child()!.get_first_child() as Gtk.Revealer;
-                                revealer.set_reveal_child(false);
-                            })
-                        ]);
-
-                        conns.set(self, [
-                            self.connect("destroy", () => conns.forEach((ids, obj) => 
-                                ids.forEach(id => obj.disconnect(id))
-                            ))
-                        ]);
+                        createScopedConnection(controllerMotion, "enter", () => {
+                            const revealer = self.get_last_child()!.get_first_child() as Gtk.Revealer;
+                            revealer.set_reveal_child(true);
+                        });
+                        createScopedConnection(controllerMotion, "leave", () => {
+                            const revealer = self.get_last_child()!.get_first_child() as Gtk.Revealer;
+                            revealer.set_reveal_child(false);
+                        });
                     }}>
                         <Gtk.Image iconName={createBinding(stream, "name").as(name => 
                             getAppIcon(name.split(' ')[0]) ?? "application-x-executable-symbolic")}
@@ -92,5 +82,5 @@ export const PageSound = new Page({
                 }
             </For>
         </Gtk.Box>
-    ]
-});
+    ]}
+/> as Page;

@@ -4,6 +4,7 @@ import { userData } from "../config";
 import GObject, { getter, gtype, property, register, setter } from "ags/gobject";
 
 import AstalBluetooth from "gi://AstalBluetooth";
+import { createScopedConnection } from "gnim-utils";
 
 
 /** AstalBluetooth helper (implements the default adapter feature) */
@@ -62,7 +63,7 @@ export class Bluetooth extends GObject.Object {
     constructor() {
         super();
 
-        createRoot((_) => {
+        createRoot(async () => {
             this.#scope = getScope();
             
             if(this.astalBl.adapters.length > 0) {
@@ -77,37 +78,33 @@ export class Bluetooth extends GObject.Object {
             if(dataDefaultAdapter !== undefined && foundAdapter !== undefined) 
                 this.adapter = foundAdapter;
 
-            this.#connections.set(
-                AstalBluetooth.get_default(), [
-                    AstalBluetooth.get_default().connect("adapter-added", (self, adapter) => {
-                        if(self.adapters.length === 1)  // adapter was just added
-                            this.adapter = adapter;
-                    }),
-                    AstalBluetooth.get_default().connect("adapter-removed", (self, adapter) => {
-                        if(self.adapters.length < 1) {
-                            this.adapter = null;
-                            this.#isAvailable = false;
-                            this.notify("is-available");
-                        }
+            createScopedConnection(AstalBluetooth.get_default(), "adapter-added", (adapter) => {
+                if(this.astalBl.adapters.length === 1)  // adapter was just added
+                    this.adapter = adapter;
+            });
+            createScopedConnection(AstalBluetooth.get_default(), "adapter-removed", (adapter) => {
+                if(this.astalBl.adapters.length < 1) {
+                    this.adapter = null;
+                    this.#isAvailable = false;
+                    this.notify("is-available");
+                }
 
-                        if(this.#adapter?.address !== adapter.address) 
-                            return;
+                if(this.#adapter?.address !== adapter.address) 
+                    return;
 
-                        // the removed adapter was the default
+                // the removed adapter was the default
 
-                        if(self.adapters.length < 1) {
-                            this.adapter = null;
-                            this.#isAvailable = false;
-                            this.notify("is-available");
+                if(this.astalBl.adapters.length < 1) {
+                    this.adapter = null;
+                    this.#isAvailable = false;
+                    this.notify("is-available");
 
-                            return;
-                        }
+                    return;
+                }
 
-                        this.#adapter = self.adapters[0];
-                    })
-                ]
-            );
-
+                this.#adapter = this.astalBl.adapters[0];
+          });
+            
             // async to prevent slow start
             setTimeout(() => {
                 this.#lastDevice = this.getLastConnectedDevice();

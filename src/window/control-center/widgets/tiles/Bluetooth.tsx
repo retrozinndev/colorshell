@@ -9,12 +9,16 @@ import AstalBluetooth from "gi://AstalBluetooth";
 
 export const TileBluetooth = () => 
     <Tile title={"Bluetooth"} visible={createBinding(Bluetooth.getDefault(), "isAvailable")}
-      description={createBinding(AstalBluetooth.get_default(), "adapters").as((connected) => {
-          if(!connected) return "";
+      description={createComputed([
+          createBinding(Bluetooth.getDefault(), "adapter"),
+          createBinding(AstalBluetooth.get_default(), "devices")
+      ], (adapter, devices) => {
+          const lastConnectedDevice = devices.filter(d => d.connected)[devices.length - 1];
 
-          const connectedDevs = AstalBluetooth.get_default().devices.filter(dev => dev.connected);
-          const connectedDev = connectedDevs[connectedDevs.length - 1]; // last connected device is on display
-          return connectedDev ? connectedDev.get_alias() : ""
+          if(!adapter || !lastConnectedDevice) 
+              return "";
+
+          return lastConnectedDevice.alias;
       })} 
       onEnabled={() => Bluetooth.getDefault().adapter?.set_powered(true)}
       onDisabled={() => Bluetooth.getDefault().adapter?.set_powered(false)}

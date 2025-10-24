@@ -3,8 +3,8 @@ import { Windows } from "../windows";
 import { getPopupWindowContainer, PopupWindow } from "./PopupWindow";
 import { Separator } from "./Separator";
 import { tr } from "../i18n/intl";
-import { Accessor } from "ags";
-import { transformWidget, variableToBoolean, WidgetNodeType } from "../modules/utils";
+import { Accessor, Node } from "ags";
+import { transformWidget, variableToBoolean } from "../modules/utils";
 
 
 export type CustomDialogProps = {
@@ -16,7 +16,7 @@ export type CustomDialogProps = {
     heightRequest?: number | Accessor<number>;
     widthRequest?: number | Accessor<number>;
     childOrientation?: Gtk.Orientation | Accessor<Gtk.Orientation>;
-    children?: WidgetNodeType;
+    children?: Node;
     onFinish?: () => void;
     options?: Array<CustomDialogOption> | Accessor<Array<CustomDialogOption>>;
     optionsOrientation?: Gtk.Orientation | Accessor<Gtk.Orientation>;

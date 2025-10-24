@@ -1,26 +1,27 @@
-import { register } from "ags/gobject";
+import GObject, { getter, gtype, register } from "ags/gobject";
 import { Gtk } from "ags/gtk4";
 import { Page } from "../Page";
 
 import GLib from "gi://GLib?version=2.0";
 
 
-export type PagesProps = {
-    initialPage?: Page;
-    transitionDuration?: number;
-};
-
 @register({ GTypeName: "Pages" })
 export class Pages extends Gtk.Box {
     #timeouts: Array<[GLib.Source, (() => void)|undefined]> = [];
-    #page: (Page|undefined);
+    #page: Page|undefined;
     #transDuration: number;
     #transType: Gtk.RevealerTransitionType = Gtk.RevealerTransitionType.SLIDE_DOWN;
 
+    @getter(Boolean)
     get isOpen() { return Boolean(this.#page); }
+
+    @getter(gtype<Page|undefined>(Page))
     get page() { return this.#page; }
 
-    constructor(props?: PagesProps) {
+    constructor(props?: {
+        initialPage?: Page;
+        transitionDuration?: number;
+    }) {
         super({
             orientation: Gtk.Orientation.VERTICAL,
             cssName: "pages",
@@ -36,7 +37,9 @@ export class Pages extends Gtk.Box {
 
 
         const destroyId = this.connect("destroy", () => {
-            this.disconnect(destroyId);
+            GObject.signal_handler_is_connected(this, destroyId) && 
+                this.disconnect(destroyId);
+
             this.#timeouts.forEach((tmout) => {
                 tmout[0].destroy();
                 (async () => tmout[1]?.())().catch((err: Error) => {

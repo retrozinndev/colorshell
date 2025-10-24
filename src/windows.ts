@@ -203,7 +203,10 @@ export class Windows extends GObject.Object {
 
                 this.#scope.onMount(scope.dispose);
 
-                scope.onCleanup(() => instance.disconnect(connection));
+                scope.onCleanup(() => 
+                    GObject.signal_handler_is_connected(instance, connection) &&
+                        instance.disconnect(connection)
+                );
 
                 return instance;
             })
@@ -231,7 +234,10 @@ export class Windows extends GObject.Object {
                 const connection = instance.connect("close-request", () => dispose());
 
                 this.#scope.onMount(dispose)
-                scope.onCleanup(() => instance.disconnect(connection));
+                scope.onCleanup(() => 
+                    GObject.signal_handler_is_connected(instance, connection) &&
+                        instance.disconnect(connection)
+                );
 
                 return instance;
             });

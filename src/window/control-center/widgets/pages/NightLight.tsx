@@ -5,11 +5,12 @@ import { Astal, Gtk } from "ags/gtk4";
 import { addSliderMarksFromMinMax } from "../../../../modules/utils";
 import { createBinding } from "ags";
 
-export const PageNightLight = new Page({
-    id: "night-light",
-    title: tr("control_center.pages.night_light.title"),
-    description: tr("control_center.pages.night_light.description"),
-    content: () => [
+
+export const PageNightLight = <Page
+    id={"night-light"}
+    title={tr("control_center.pages.night_light.title")}
+    description={tr("control_center.pages.night_light.description")}
+    content={() => [
         <Gtk.Label class={"sub-header"} label={tr(
             "control_center.pages.night_light.temperature"
         )} xalign={0} />,
@@ -39,5 +40,5 @@ export const PageNightLight = new Page({
                   NightLight.getDefault().gamma = Math.floor(value)
           }}
         />
-    ]
-});
+    ]}
+/> as Page;

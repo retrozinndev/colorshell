@@ -8,11 +8,11 @@ import { lookupIcon } from "../../../../modules/apps";
 import AstalWp from "gi://AstalWp?version=0.1";
 
 
-export const PageMicrophone = new Page({
-    id: "microphone",
-    title: tr("control_center.pages.microphone.title"),
-    description: tr("control_center.pages.microphone.description"),
-    content: () => [
+export const PageMicrophone = <Page
+    id={"microphone"}
+    title={tr("control_center.pages.microphone.title")}
+    description={tr("control_center.pages.microphone.description")}
+    content={() => [
         <Gtk.Label class={"sub-header"} label={tr("devices")} xalign={0} />,
         <Gtk.Box orientation={Gtk.Orientation.VERTICAL} spacing={4}>
             <For each={createBinding(Wireplumber.getWireplumber().get_audio()!, "microphones")}>
@@ -30,5 +30,5 @@ export const PageMicrophone = new Page({
                 />}
             </For>
         </Gtk.Box>
-    ]
-});
+    ]}
+/> as Page;

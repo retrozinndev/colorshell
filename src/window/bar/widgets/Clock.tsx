@@ -8,12 +8,7 @@ import { generalConfig } from "../../../config";
 export const Clock = () => 
     <Gtk.Button class={createBinding(Windows.getDefault(), "openWindows").as((wins) =>
         `clock ${wins.includes("center-window") ? "open" : ""}`)}
-        $={(self) => {
-            const conns: Array<number> = [
-                self.connect("clicked", (_) => Windows.getDefault().toggle("center-window")),
-                self.connect("destroy", (_) => conns.forEach(id => self.disconnect(id)))
-            ];
-        }}
+        onClicked={() => Windows.getDefault().toggle("center-window")}
         label={time((dt) => dt.format(
             generalConfig.getProperty("clock.date_format", "string")) 
                 ?? "An error occurred"

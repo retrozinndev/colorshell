@@ -2,12 +2,7 @@ import { createPoll } from "ags/time";
 import { exec, execAsync } from "ags/process";
 import { Astal, Gtk } from "ags/gtk4";
 import { getSymbolicIcon } from "./apps";
-
-import GLib from "gi://GLib?version=2.0";
-import Gio from "gi://Gio?version=2.0";
-
 export {
-    type JSXNode as WidgetNodeType,
     toBoolean as variableToBoolean, 
     construct, 
     transform,
@@ -18,6 +13,9 @@ export {
     createSecureBinding as secureBinding,
     createSecureAccessorBinding as secureBaseBinding,
 } from "gnim-utils";
+
+import GLib from "gi://GLib?version=2.0";
+import Gio from "gi://Gio?version=2.0";
 
 
 export const decoder = new TextDecoder("utf-8"),

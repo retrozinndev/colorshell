@@ -5,6 +5,7 @@ import { Windows } from "../../../../windows";
 import { Notifications } from "../../../../modules/notifications";
 import { execApp } from "../../../../modules/apps";
 import { createBinding, createComputed, For, With } from "ags";
+import { variableToBoolean } from "../../../../modules/utils";
 import { Bluetooth } from "../../../../modules/bluetooth";
 
 import AstalNotifd from "gi://AstalNotifd";
@@ -13,12 +14,12 @@ import Adw from "gi://Adw?version=1";
 import Gio from "gi://Gio?version=2.0";
 
 
-export const BluetoothPage = new Page({
-    id: "bluetooth",
-    title: tr("control_center.pages.bluetooth.title"),
-    spacing: 6,
-    description: tr("control_center.pages.bluetooth.description"),
-    headerButtons: createBinding(Bluetooth.getDefault(), "adapter").as(adapter => adapter ? [{
+export const BluetoothPage = <Page
+    id={"bluetooth"}
+    title={tr("control_center.pages.bluetooth.title")}
+    spacing={6}
+    description={tr("control_center.pages.bluetooth.description")}
+    headerButtons={createBinding(Bluetooth.getDefault(), "adapter").as(adapter => adapter ? [{
         icon: createBinding(adapter, "discovering")
             .as(discovering => !discovering ? 
                     "arrow-circular-top-right-symbolic"
@@ -36,20 +37,25 @@ export const BluetoothPage = new Page({
 
             adapter.start_discovery();
         }
-    }]: []),
-    actionClosed: () => Bluetooth.getDefault().adapter?.discovering && 
-        Bluetooth.getDefault().adapter?.stop_discovery(),
-    bottomButtons: [{
+    }]: [])}
+    actionClosed={() => Bluetooth.getDefault().adapter?.discovering && 
+        Bluetooth.getDefault().adapter?.stop_discovery()}
+    bottomButtons={[{
         title: tr("control_center.pages.more_settings"),
         actionClicked: () => {
             Windows.getDefault().close("control-center");
             execApp("overskride", "[float; animation slide right]");
         }
-    }],
-    content: () => {
-        const adapter = createBinding(Bluetooth.getDefault(), "adapter");
+    }]}
+    content={() => {
         const adapters = createBinding(AstalBluetooth.get_default(), "adapters");
         const devices = createBinding(AstalBluetooth.get_default(), "devices");
+        const knownDevices = devices.as(devs => devs.filter(dev =>
+            dev.trusted || dev.paired || dev.connected
+        ).sort(dev => dev.connected ? 1 : 0));
+        const discoveredDevices = devices.as(devs => devs.filter(dev =>
+            !dev.trusted && !dev.paired && !dev.connected)
+        );
 
         return [
             <Gtk.Box class={"adapters"} visible={adapters.as(adptrs => adptrs.length > 1)
@@ -86,40 +92,26 @@ export const BluetoothPage = new Page({
               spacing={2}>
                 
                 <Gtk.Box class={"paired"} orientation={Gtk.Orientation.VERTICAL} spacing={4}
-                  visible={devices.as(devs => devs.filter(dev => 
-                      (dev.adapter as AstalBluetooth.Adapter).address === adapter.get()?.address && 
-                          dev.paired || dev.connected || dev.trusted).length > 0)
-                }>
+                  visible={variableToBoolean(knownDevices)}>
 
                     <Gtk.Label class={"sub-header"} label={tr("devices")} xalign={0} />
-                    <For each={devices.as(devs => devs.filter(dev => 
-                        (dev.adapter as AstalBluetooth.Adapter).address === adapter.get()?.address &&
-                            dev.paired || dev.connected || dev.trusted))
-                    }>
-
+                    <For each={knownDevices}>
                         {(dev: AstalBluetooth.Device) => <DeviceWidget device={dev} />}
                     </For>
                 </Gtk.Box>
                 <Gtk.Box class={"discovered"} orientation={Gtk.Orientation.VERTICAL} spacing={4}
-                  visible={devices.as(devs => devs.filter(dev => 
-                      (dev.adapter as AstalBluetooth.Adapter).address === adapter.get()?.address &&
-                          !dev.connected && !dev.paired && !dev.trusted).length > 0)
-                }>
+                  visible={variableToBoolean(discoveredDevices)}>
 
                     <Gtk.Label class={"sub-header"} label={tr("control_center.pages.bluetooth.new_devices")} 
                       xalign={0} />
-                    <For each={devices.as(devs => devs.filter(dev => 
-                        (dev.adapter as AstalBluetooth.Adapter).address === adapter.get()?.address &&
-                            !dev.connected && !dev.paired && !dev.trusted))
-                    }>
-
+                    <For each={discoveredDevices}>
                         {(dev: AstalBluetooth.Device) => <DeviceWidget device={dev} />}
                     </For>
                 </Gtk.Box>
             </Gtk.Box>
         ];
-    }
-});
+    }}
+/> as Page;
 
 function DeviceWidget({ device }: { device: AstalBluetooth.Device }): Gtk.Widget {
     const pair = async () => {
