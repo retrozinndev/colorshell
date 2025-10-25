@@ -31,7 +31,7 @@ export interface Plugin {
     /** runs when runner opens */
     readonly init?: () => void;
     /** handle the user input to return results (does not include plugin's prefix) */
-    readonly handle: (inputText: string) => (Result|Array<Result>|null|undefined);
+    readonly handle: (inputText: string, limit?: number) => (Result|Array<Result>|null|undefined);
     /** runs when runner closes */
     readonly onClose?: () => void;
     /** prioritize this plugin's results over other results.
@@ -171,7 +171,8 @@ function getPluginResults(input: string, limit?: number): Array<Result> {
     }
 
     const results = calledPlugins.map(plugin => plugin.handle(
-        plugin.prefix ? input.replace(plugin.prefix, "") : input)
+        plugin.prefix ? input.replace(plugin.prefix, "") : input),
+        limit
     ).filter(value => value !== undefined && value !== null).flat(1);
 
     return limit != null && limit > 0 ? 

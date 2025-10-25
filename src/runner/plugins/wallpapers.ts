@@ -1,3 +1,4 @@
+import Fuse from "fuse.js";
 import { Wallpaper } from "../../modules/wallpaper";
 import { Runner } from "../Runner";
 
@@ -7,7 +8,8 @@ import Gio from "gi://Gio?version=2.0";
 class _PluginWallpapers implements Runner.Plugin {
     prefix = "#";
     prioritize = true;
-    #files: (Array<string>|undefined);
+    #fuse!: Fuse<string>;
+    #files!: Array<string>;
 
     init() {
         this.#files = [];
@@ -21,17 +23,34 @@ class _PluginWallpapers implements Runner.Plugin {
                 this.#files.push(`${dir.get_path()}/${file.get_name()}`);
             }
         }
+
+        this.#fuse = new Fuse<string>(
+            this.#files as ReadonlyArray<string>,
+            {
+                useExtendedSearch: false,
+                shouldSort: true,
+                isCaseSensitive: false
+            }
+        );
     }
 
-    handle(search: string) {
-        if(this.#files!.length > 0)
-            return this.#files!.filter(file => 
-                // also not the best way to search, but it works
-                Runner.regExMatch(search, file.split('/')[file.split('/').length-1])
-            ).map(path => ({
-                title: path.split('/')[path.split('/').length-1].replace(/\..*$/, ""),
-                actionClick: () => Wallpaper.getDefault().setWallpaper(path)
-            }));
+    private wallpaperResult(path: string): Runner.Result {
+        return {
+            title: path.split('/')[path.split('/').length-1].replace(/\..*$/, ""),
+            actionClick: () => Wallpaper.getDefault().setWallpaper(path)
+        };
+    }
+
+    handle(search: string, limit?: number) {
+        if(search.trim().length === 0)
+            return this.#files.map(path =>
+                this.wallpaperResult(path)
+            );
+
+        if(this.#files.length > 0)
+            return this.#fuse.search(search, {
+                limit: limit ?? Infinity
+            }).map(result => this.wallpaperResult(result.item));
 
         return {
             title: "No wallpapers found!",
