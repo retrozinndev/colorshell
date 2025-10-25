@@ -4,8 +4,6 @@ import GObject, { getter, gtype, property, register } from "ags/gobject";
 import GLib from "gi://GLib?version=2.0";
 
 
-export default Compositors;
-
 /** WIP modular implementation of a system that supports implementing
 * a variety of Wayland Compositors 
 * @todo implement more general compositor info + a lot of stuff

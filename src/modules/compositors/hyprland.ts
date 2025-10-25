@@ -1,14 +1,22 @@
-import { register } from "ags/gobject";
 import { Compositors } from ".";
-import { createRoot } from "ags";
+import { register } from "ags/gobject";
+import { createRoot, getScope, Scope } from "ags";
 import { createScopedConnection } from "../utils";
+
 
 import AstalHyprland from "gi://AstalHyprland";
 
 
+type Event = "activewindow" | "activewindowv2"
+            | "workspace" | "workspacev2"
+            | "focusedmon" | "focusedmonv2";
+
 @register({ GTypeName: "CompositorHyprland" })
 export class CompositorHyprland extends Compositors.Compositor {
+    #scope: Scope;
     hyprland: AstalHyprland.Hyprland;
+
+    protected _focusedClient: Compositors.Client | null = null;
 
     constructor() {
         super();
@@ -19,16 +27,43 @@ export class CompositorHyprland extends Compositors.Compositor {
             throw new Error(`Couldn't initialize CompositorHyprland: ${e}`);
         }
 
-        createRoot(() => {
+        this.#scope = createRoot(() => {
             createScopedConnection(
-                this.hyprland, "workspace-added", (hws) => {
-                    // check workspace existance
-                    if(this._workspaces.filter(w => w.id === hws.id)[0])
-                        return;
+                this.hyprland, "event", (e, args) => {
+                    switch(e as Event) {
+                        case "activewindowv2": 
+                            const address = args;
+                            const clients = AstalHyprland.get_default().clients;
+                            const focusedClient = clients.filter(c =>
+                                c.address === address
+                            )[0];
 
-                    // TODO
+                            if(focusedClient) {
+                                this._focusedClient = new Compositors.Client({
+                                    address: address,
+                                    class: focusedClient.class ?? "",
+                                    initialClass: focusedClient.initialClass ?? "",
+                                    mapped: focusedClient.mapped,
+                                    position: [focusedClient.x, focusedClient.y],
+                                    title: focusedClient.title ?? ""
+                                });
+
+                                this.notify("focused-client");
+                                return;
+                            }
+
+                            this._focusedClient = null;
+                            this.notify("focused-client");
+                        break;
+                    }
                 }
             );
+
+            return getScope();
         });
+    }
+
+    vfunc_dispose(): void {
+        this.#scope.dispose();
     }
 }

@@ -22,7 +22,7 @@ import { createBinding, createComputed, createRoot, getScope, Scope } from "ags"
 import { OSDModes, triggerOSD } from "./window/osd";
 import { programArgs, programInvocationName } from "system";
 import { setConsoleLogDomain } from "console";
-import { createSubscription, encoder, secureBaseBinding } from "./modules/utils";
+import { createScopedConnection, createSubscription, encoder, secureBaseBinding } from "./modules/utils";
 import { exec } from "ags/process";
 import { NightLight } from "./modules/nightlight";
 import { Backlights } from "./modules/backlight";
@@ -209,68 +209,67 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
         );
 
         // handle communication via socket
-        this.#connections.set(this.#socketService, 
-            this.#socketService.connect("incoming", (_, conn) => {
+        createScopedConnection(this.#socketService, "incoming", (conn) => {
                 const inputStream = Gio.DataInputStream.new(conn.inputStream);
                 inputStream.read_upto_async('\x00', -1, GLib.PRIORITY_DEFAULT, null, (_, res) => {
-                    const [args, len] = inputStream.read_upto_finish(res);
-                    inputStream.close(null);
-                    conn.inputStream.close(null);
+                const [args, len] = inputStream.read_upto_finish(res);
+                inputStream.close(null);
+                conn.inputStream.close(null);
 
-                    if(len < 1) {
-                        console.error(`Colorshell: No args provided via socket call`);
-                        return;
-                    }
+                if(len < 1) {
+                    console.error(`Colorshell: No args provided via socket call`);
+                    return;
+                }
 
-                    try {
-                        const [success, parsedArgs] = GLib.shell_parse_argv(`colorshell ${args}`);
-                        parsedArgs?.splice(0, 1); // remove the unnecessary `colorshell` part
+                try {
+                    const [success, parsedArgs] = GLib.shell_parse_argv(`colorshell ${args}`);
+                    parsedArgs?.splice(0, 1); // remove the unnecessary `colorshell` part
 
-                        if(success) {
-                            handleArguments({
-                                print_literal: (msg) => conn.outputStream.write_bytes(
-                                    encoder.encode(`${msg}\n`),
-                                    null
-                                ),
-                                // TODO: support writing to stderr(i don't know how to do that :sob:)
-                                printerr_literal: (msg) => conn.outputStream.write_bytes(
-                                    encoder.encode(`${msg}\n`),
-                                    null
-                                )
-                            }, parsedArgs!);
-
-                            conn.outputStream.flush(null);
-                            conn.close(null);
-                            return;
-                        }
-
-                        conn.outputStream.write_bytes(
-                            encoder.encode("Error: Unexpected error occurred on argument parsing!"),
-                            null
-                        );
+                    if(success) {
+                        handleArguments({
+                            print_literal: (msg) => conn.outputStream.write_bytes(
+                                encoder.encode(`${msg}\n`),
+                                null
+                            ),
+                            // TODO: support writing to stderr(i don't know how to do that :sob:)
+                            printerr_literal: (msg) => conn.outputStream.write_bytes(
+                                encoder.encode(`${msg}\n`),
+                                null
+                            )
+                        }, parsedArgs!);
 
                         conn.outputStream.flush(null);
                         conn.close(null);
-                    } catch(_e) {
-                        const e = _e as Error;
-                        console.error(`Colorshell: An error occurred while writing to socket output. Stderr:\n${
-                            e.message}\n${e.stack}`);
+                        return;
                     }
-                });
 
-                return false;
-            })
-        );
+                    conn.outputStream.write_bytes(
+                        encoder.encode("Error: Unexpected error occurred on argument parsing!"),
+                        null
+                    );
+
+                    conn.outputStream.flush(null);
+                    conn.close(null);
+                } catch(_e) {
+                    const e = _e as Error;
+                    console.error(`Colorshell: An error occurred while writing to socket output. Stderr:\n${
+                        e.message}\n${e.stack}`);
+                }
+            });
+
+            return false;
+        });
     }
 
     private main(): void {
         Gtk.init();
         Adw.init();
-        this.init();
 
         createRoot((dispose) => {
             console.log(`Colorshell: Initializing things`);
             this.#connections.set(this, this.connect("shutdown", () => dispose()));
+
+            this.init();
             this.#scope = getScope();
 
             NightLight.getDefault();

@@ -1,16 +1,12 @@
+import { CompositorHyprland } from "../../../modules/compositors/hyprland";
 import { Gtk } from "ags/gtk4";
 import { createBinding, With } from "ags";
 import { variableToBoolean } from "../../../modules/utils";
 import { getAppIcon, getSymbolicIcon } from "../../../modules/apps";
 
 import Pango from "gi://Pango?version=1.0";
-import AstalHyprland from "gi://AstalHyprland";
 
-
-const hyprland = AstalHyprland.get_default();
-
-// Fix empty focused-client on opening a window on an empty workspace
-hyprland.connect("notify::clients", () => hyprland.notify("focused-client"));
+const hyprland = new CompositorHyprland;
 
 export const FocusedClient = () => {
     const focusedClient = createBinding(hyprland, "focusedClient");
