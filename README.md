@@ -99,6 +99,12 @@ You can do so by forking this repository, translating the shell in your fork and
 ## ⚙️ Installation
 See the Installation Guide on [Wiki/Installation].
 
+## ⬇️ Updating
+You can run the following command to update an existing colorshell installation in your system:
+```zsh
+bash -c "bash <(curl -s https://raw.githubusercontent.com/retrozinndev/colorshell/refs/heads/ryo/update.sh)"
+```
+
 ## 🛠️ Development
 This project uses `pnpm` to manage packages and running scripts.
 To build the shell, run a development build or make a release build, you can use the project's integrated scripts.<br>
