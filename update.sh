@@ -121,6 +121,14 @@ if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
     mkdir -p $APPS_HOME
     cp -f $repo_directory/build/release/colorshell.desktop $APPS_HOME
 
+    if Is_running; then
+        Send_log "colorshell is running, restarting shell..."
+        colorshell quit || killall gjs
+        # wait 2s, because the shell can take a little bit of time to close
+        # (the cli is closed before the action is completed)
+        sleep 2s && hyprctl dispatch exec "bash $XDG_CONFIG_HOME/hypr/scripts/exec.sh colorshell"
+    fi
+
 
     if [[ -z "$skip_prompts" ]]; then
         echo "Colorshell is updated! :D"

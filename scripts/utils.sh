@@ -64,6 +64,21 @@ function Ask() {
 }
 
 # -------------
+# Checks if there's currently a colorshell instance running
+# Returns code 0 if none, 1 if there is one
+# -------------
+function Is_running() {
+    if gdbus introspect --session \
+        --dest io.github.retrozinndev.colorshell \
+        --object-path /io/github/retrozinndev/colorshell > /dev/null 2>&1
+    then
+        return 0
+    fi
+
+    return 1
+}
+
+# -------------
 # Check if colorshell is installed
 # Returns code 0 if installed, 1 if not
 # -------------
