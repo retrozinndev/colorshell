@@ -64,6 +64,20 @@ function Ask() {
 }
 
 # -------------
+# Check if colorshell is installed
+# Returns code 0 if installed, 1 if not
+# -------------
+function Is_installed() {
+    executable=${@:-"$HOME/.local/bin/colorshell"}
+
+    if command -v colorshell || [[ -f $executable ]]; then
+        return 0
+    fi
+
+    return 1
+}
+
+# -------------
 # Ask the user to choose a number from the provided list
 # Input answer is exported as $answer
 # (this function is not done yet)
