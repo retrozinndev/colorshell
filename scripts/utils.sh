@@ -70,7 +70,7 @@ function Ask() {
 function Is_installed() {
     executable=${@:-"$HOME/.local/bin/colorshell"}
 
-    if command -v colorshell || [[ -f $executable ]]; then
+    if command -v colorshell > /dev/null 2>&1 || [[ -f $executable ]]; then
         return 0
     fi
 
