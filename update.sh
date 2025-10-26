@@ -68,16 +68,23 @@ Send_log warn "!! By running this, you assume total responsability for issues th
 if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
     if [[ "$is_standalone" ]]; then
         Send_log "The installer noticed that you're calling the script remotely"
-        rm -rf $repo_directory 2> /dev/null
         Send_log "Cloning repository in \`$repo_directory\`..."
-        git clone https://github.com/retrozinndev/colorshell.git "$repo_directory"
+        if [[ -d $repo_directory ]]; then
+            Send_log "repo is already cloned! let's just fetch the latest changes..."
+            git -C "$repo_directory" stash # if there are changes, let's just stash them
+            git -C "$repo_directory" fetch && git -C "$repo_directory" pull --rebase
+            git -C "$repo_directory" stash pop # pop changes back if there are any
+        else
+            git clone https://github.com/retrozinndev/colorshell.git "$repo_directory"
+        fi
     fi
 
     Ask "Nice! Update to latest stable version instead of unstable(latest commit)?"
 
     if [[ -z "$skip_prompts" ]] && [[ "$answer" == y ]]; then
         Send_log "fetching latest release from colorshell repository"
-        latest_tag=`curl -s "$repo_api_url/releases" | jq -r '. | select(.[].prerelease == false) | .[0].tag_name'`
+        # use `head -n1` because for some reason, github api shows the same release 3 times :'(
+        latest_tag=`curl -s "$repo_api_url/releases" | jq -r '. | select(.[].prerelease == false) | .[0].tag_name' | head -n1`
         
         Send_log "Done fetching"
         Send_log "Checking out latest non-pre-release version: $latest_tag"

@@ -1,5 +1,5 @@
 // thanks Aylur!!
-import "../node_modules/ags/lib/overrides";
+import "/usr/share/ags/js/lib/overrides";
 import "./config";
 import { 
     PluginApps, 
@@ -210,24 +210,24 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
 
         // handle communication via socket
         createScopedConnection(this.#socketService, "incoming", (conn) => {
-                const inputStream = Gio.DataInputStream.new(conn.inputStream);
-                inputStream.read_upto_async('\x00', -1, GLib.PRIORITY_DEFAULT, null, (_, res) => {
-                const [args, len] = inputStream.read_upto_finish(res);
-                inputStream.close(null);
-                conn.inputStream.close(null);
+             const inputStream = Gio.DataInputStream.new(conn.inputStream);
+             inputStream.read_upto_async('\x00', -1, GLib.PRIORITY_DEFAULT, null, (_, res) => {
+             const [args, len] = inputStream.read_upto_finish(res);
+             inputStream.close(null);
+             conn.inputStream.close(null);
 
-                if(len < 1) {
-                    console.error(`Colorshell: No args provided via socket call`);
-                    return;
-                }
+             if(len < 1) {
+                 console.error(`Colorshell: No args provided via socket call`);
+                 return;
+             }
 
-                try {
-                    const [success, parsedArgs] = GLib.shell_parse_argv(`colorshell ${args}`);
-                    parsedArgs?.splice(0, 1); // remove the unnecessary `colorshell` part
+             try {
+                 const [success, parsedArgs] = GLib.shell_parse_argv(`colorshell ${args}`);
+                 parsedArgs?.splice(0, 1); // remove the unnecessary `colorshell` part
 
-                    if(success) {
-                        handleArguments({
-                            print_literal: (msg) => conn.outputStream.write_bytes(
+                 if(success) {
+                     handleArguments({
+                         print_literal: (msg) => conn.outputStream.write_bytes(
                                 encoder.encode(`${msg}\n`),
                                 null
                             ),
