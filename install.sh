@@ -55,7 +55,7 @@ if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
         Send_log "The installer noticed that you're calling the script remotely"
         rm -rf $repo_directory 2> /dev/null
         Send_log "Cloning repository in \`$repo_directory\`..."
-        if [[ -d $repo_directory ]]; then
+        if [[ -d $repo_directory/.git ]]; then
             Send_log "repo is already cloned! let's just fetch the latest changes..."
             git -C "$repo_directory" stash # if there are changes, let's just stash them
             git -C "$repo_directory" checkout ryo
