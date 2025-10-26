@@ -72,8 +72,8 @@ if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
         if [[ -d $repo_directory ]]; then
             Send_log "repo is already cloned! let's just fetch the latest changes..."
             git -C "$repo_directory" stash # if there are changes, let's just stash them
+            git -C "$repo_directory" checkout ryo
             git -C "$repo_directory" fetch && git -C "$repo_directory" pull --rebase
-            git -C "$repo_directory" stash pop # pop changes back if there are any
         else
             git clone https://github.com/retrozinndev/colorshell.git "$repo_directory"
         fi
@@ -89,8 +89,6 @@ if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
         Send_log "Done fetching"
         Send_log "Checking out latest non-pre-release version: $latest_tag"
         git -C "$repo_directory" checkout $latest_tag > /dev/null 2>&1
-    else
-        git -C "$repo_directory" checkout ryo > /dev/null 2>&1
     fi
 
     Send_log "Updating..."
