@@ -125,6 +125,9 @@ if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
     mkdir -p $APPS_HOME
     cp -f $repo_directory/build/release/colorshell.desktop $APPS_HOME
 
+    # reload hyprland settings, because it stops monitoring when too much changes are made
+    hyprctl reload
+
     if Is_running; then
         Send_log "colorshell is running, restarting shell..."
         colorshell quit || killall gjs
