@@ -99,14 +99,11 @@ if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
         cp -rf $repo_directory/config/$dir "$dest" # copy
     done
 
-    prev_wd=`pwd`
-    cd "$repo_directory"
     Send_log "Updating dependencies"
-    pnpm i && pnpm update
+    pnpm -C "$repo_directory" i && pnpm -C "$repo_directory" update
 
     Send_log "Building colorshell"
-    pnpm build:release
-    cd "$prev_wd"
+    pnpm -C "$repo_directory" build:release
 
     Send_log "Installing colorshell"
     # install shell
