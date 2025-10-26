@@ -13,7 +13,7 @@
         "sync-config": "sh ./scripts/sync-config.sh"
     },
     "devDependencies": {
-        "ags": "link:../../../../usr/share/ags/js",
+        "ags": "link:/usr/share/ags/js",
         "gnim-utils": "github:retrozinndev/gnim-utils",
         "fuse.js": "^7.1.0"
     }
