@@ -1,10 +1,10 @@
 import { createRoot, getScope, Scope } from "ags";
 import { execAsync } from "ags/process";
 import { userData } from "../config";
+import { createScopedConnection } from "gnim-utils";
 import GObject, { getter, gtype, property, register, setter } from "ags/gobject";
 
 import AstalBluetooth from "gi://AstalBluetooth";
-import { createScopedConnection } from "gnim-utils";
 
 
 /** AstalBluetooth helper (implements the default adapter feature) */
@@ -19,10 +19,10 @@ export class Bluetooth extends GObject.Object {
     };
 
     private static instance: Bluetooth;
-    private astalBl = AstalBluetooth.get_default();
+    private astalBl: AstalBluetooth.Bluetooth;
 
     #connections: Map<GObject.Object, Array<number>|number> = new Map();
-    #adapter: AstalBluetooth.Adapter|null = this.astalBl.adapter ?? null;
+    #adapter: AstalBluetooth.Adapter|null = null;
     #scope!: Scope;
     #isAvailable: boolean = false;
     #lastDevice: AstalBluetooth.Device|null = null;
@@ -62,14 +62,17 @@ export class Bluetooth extends GObject.Object {
 
     constructor() {
         super();
+        
+        this.astalBl = AstalBluetooth.get_default();
+        this.#adapter = this.astalBl.adapter ?? null;
 
-        createRoot(async () => {
-            this.#scope = getScope();
-            
-            if(this.astalBl.adapters.length > 0) {
-                this.#isAvailable = true;
-                this.notify("is-available");
-            }
+        if(this.astalBl.adapters.length > 0) {
+            this.#isAvailable = true;
+            this.notify("is-available");
+        }
+
+        createRoot(() => {
+            this.#scope = getScope();           
 
             // load previous default adapter
             const dataDefaultAdapter = userData.getProperty("bluetooth_default_adapter", "string");
@@ -103,13 +106,10 @@ export class Bluetooth extends GObject.Object {
                 }
 
                 this.#adapter = this.astalBl.adapters[0];
-          });
+            });
             
-            // async to prevent slow start
-            setTimeout(() => {
-                this.#lastDevice = this.getLastConnectedDevice();
-                this.notify("last-device");
-            }, 1200);
+            this.#lastDevice = this.getLastConnectedDevice();
+            this.notify("last-device");
 
             this.#connections.set(AstalBluetooth.get_default(), [
                 AstalBluetooth.get_default().connect("device-added", (_) => {
