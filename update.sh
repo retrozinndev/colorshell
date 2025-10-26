@@ -89,6 +89,8 @@ if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
         Send_log "Done fetching"
         Send_log "Checking out latest non-pre-release version: $latest_tag"
         git -C "$repo_directory" checkout $latest_tag > /dev/null 2>&1
+    else
+        git -C "$repo_directory" checkout ryo > /dev/null 2>&1
     fi
 
     Send_log "Updating..."
