@@ -4,6 +4,10 @@
 > [!note]
 > My personal dotfiles are now on [retrozinndev/Hyprland-Dots](https://github.com/retrozinndev/Hyprland-Dots)
 
+> [!warning]
+> This is a previous version of colorshell([1.0.0](https://github.com/retrozinndev/colorshell/releases/tag/1.0.0)), it uses the old AGS v2. <br>
+> Use this at your own risk, stuff may break since this version is unmaintained.
+
 My Hyprland Desktop Shell that I love to keep improving every day! 🤩 <br>
 
 This is the repository for my desktop shell, made with [GTK], [Astal] and [AGS] + [TypeScript]. <br>
