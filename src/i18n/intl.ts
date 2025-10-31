@@ -10,7 +10,7 @@ const i18nKeys = {
 
 const languages: Array<string> = Object.keys(i18nKeys);
 let language: string = getSystemLanguage();
-console.log(language);
+
 export function getSystemLanguage(): string {
   const sysLanguage: string | null | undefined =
       GLib.getenv("LANG") ?? GLib.getenv("LANGUAGE"),
