@@ -12,7 +12,6 @@ import GObject from "ags/gobject";
 import AstalBluetooth from "gi://AstalBluetooth";
 import AstalNetwork from "gi://AstalNetwork";
 import AstalWp from "gi://AstalWp";
-import Vips from "gi://Vips?version=8.0";
 
 export const Status = () =>
   (
