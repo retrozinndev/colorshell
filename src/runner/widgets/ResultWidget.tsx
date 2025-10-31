@@ -1,17 +1,15 @@
-import { Accessor, With } from "ags";
-import { register } from "ags/gobject";
+import { getter, gtype, property, register, setter } from "ags/gobject";
 import { Gtk } from "ags/gtk4";
 import { variableToBoolean } from "../../modules/utils";
 
 import Pango from "gi://Pango?version=1.0";
+import GdkPixbuf from "gi://GdkPixbuf?version=2.0";
 
 
-export { ResultWidget, ResultWidgetProps };
-
-type ResultWidgetProps = {
-    icon?: string | Accessor<string> | JSX.Element | Accessor<JSX.Element>;
-    title: string | Accessor<string>;
-    description?: string | Accessor<string>;
+export type ResultWidgetProps = {
+    icon?: string | GdkPixbuf.Pixbuf | Gtk.Widget | JSX.Element;
+    title: string;
+    description?: string;
     closeOnClick?: boolean;
     setup?: () => void;
     actionClick?: () => void;
@@ -19,46 +17,34 @@ type ResultWidgetProps = {
 };
 
 @register({ GTypeName: "ResultWidget" })
-class ResultWidget extends Gtk.Box {
+export class ResultWidget extends Gtk.Box {
+
+    #icon: string|Gtk.Widget|GdkPixbuf.Pixbuf|null = null;
 
     public readonly actionClick: () => void;
     public readonly setup?: () => void;
-    public icon?: (string | Accessor<string> | JSX.Element | Accessor<JSX.Element>);
-    public closeOnClick: boolean = true;
 
+    @property(Boolean)
+    closeOnClick: boolean = true;
 
-    constructor(props: ResultWidgetProps) {
+    @getter(gtype<string|Gtk.Widget|GdkPixbuf.Pixbuf|null>(Object))
+    get icon() { return this.#icon; }
+
+    @setter(gtype<string|Gtk.Widget|GdkPixbuf.Pixbuf|null>(Object))
+    set icon(newIcon: string|Gtk.Widget|GdkPixbuf.Pixbuf|null) {
+        this.set_icon(newIcon);
+    }
+
+    constructor(props: ResultWidgetProps & Partial<Gtk.Box.ConstructorProps>) {
         super();
 
         this.add_css_class("result");
 
         this.visible = props.visible ?? true;
         this.hexpand = true;
-        this.icon = props.icon;
         this.setup = props.setup;
         this.closeOnClick = props.closeOnClick ?? true;
         this.actionClick = () => props.actionClick?.();
-
-        if(this.icon !== undefined) {
-            if(this.icon instanceof Accessor) {
-                if(typeof this.icon.get() === "string") {
-                    this.prepend(<Gtk.Image iconName={
-                        this.icon as Accessor<string>
-                    } /> as Gtk.Image);
-                } else {
-                    this.prepend(<Gtk.Box>
-                        <With value={this.icon as Accessor<Gtk.Widget>}>
-                            {(widget) => widget}
-                        </With>
-                    </Gtk.Box> as Gtk.Box);
-                }
-            } else {
-                if(typeof this.icon === "string") 
-                    this.prepend(<Gtk.Image iconName={this.icon as string} /> as Gtk.Image);
-                else 
-                    this.prepend(this.icon as Gtk.Widget);
-            }
-        }
 
         this.append(<Gtk.Box orientation={Gtk.Orientation.VERTICAL} valign={Gtk.Align.CENTER}>
             <Gtk.Label class={"title"} xalign={0} ellipsize={Pango.EllipsizeMode.END}
@@ -67,5 +53,67 @@ class ResultWidget extends Gtk.Box {
             <Gtk.Label class={"description"} visible={variableToBoolean(props.description)}
               ellipsize={Pango.EllipsizeMode.END} xalign={0} label={props.description ?? ""} />
         </Gtk.Box> as Gtk.Box);
+
+        
+        if(props.icon !== undefined) 
+            this.set_icon(props.icon as Gtk.Widget|string|GdkPixbuf.Pixbuf);
+    }
+
+    /** it is recommended to not change the custom widget's name. */
+    set_icon(icon: string|Gtk.Widget|GdkPixbuf.Pixbuf|null): void {
+        const firstChild = this.get_first_child();
+
+        if(icon === null && firstChild?.name !== undefined &&
+           /^(custom\-)?icon\-widget$/.test(firstChild?.name)) {
+
+            this.remove(firstChild);
+            return;
+        }
+
+        if(firstChild && firstChild.name === "icon-widget" && 
+           firstChild instanceof Gtk.Image) {
+
+            if(typeof icon === "string") {
+                firstChild.set_from_icon_name(icon);
+                this.#icon = icon;
+                this.notify("icon");
+                return;
+            }
+
+            if(icon instanceof GdkPixbuf.Pixbuf) {
+                firstChild.set_from_pixbuf(icon);
+                this.#icon = icon;
+                this.notify("icon");
+                return;
+            }
+
+            // remove if we're not going to use it
+            this.remove(firstChild);
+        }
+
+        if(icon instanceof Gtk.Widget) {
+            if(firstChild?.name === "custom-icon-widget")
+                this.remove(firstChild);
+
+            this.prepend(icon);
+            this.#icon = this.get_first_child();
+            this.notify("icon");
+            return;
+        }
+
+        this.prepend(
+            <Gtk.Image name={"icon-widget"} $={(self) => {
+                if(typeof icon === "string") {
+                    self.set_from_icon_name(icon);
+                    this.#icon = icon;
+                    this.notify("icon");
+                    return;
+                }
+
+                self.set_from_pixbuf(icon);
+                this.#icon = icon;
+                this.notify("icon");
+            }} /> as Gtk.Image
+        );
     }
 }

@@ -1,12 +1,12 @@
 import { Astal, Gdk, Gtk } from "ags/gtk4";
+import { CCProps } from "ags";
 import { getPopupWindowContainer, PopupWindow } from "../widget/PopupWindow";
 import { updateApps } from "../modules/apps";
 import { ResultWidget, ResultWidgetProps } from "./widgets/ResultWidget";
 import { Windows } from "../windows";
-import { timeout } from "ags/time";
 
 import AstalHyprland from "gi://AstalHyprland";
-import AstalIO from "gi://AstalIO";
+import GLib from "gi://GLib?version=2.0";
 
 
 export namespace Runner {
@@ -21,7 +21,7 @@ export type RunnerProps = {
     showResultsPlaceHolderOnStartup?: boolean;
 };
 
-export type Result = ResultWidgetProps;
+export type Result = CCProps<ResultWidget, ResultWidgetProps>;
 
 export interface Plugin {
     /** prefix to call the plugin. if undefined, will be triggered like applications plugin */
@@ -31,17 +31,22 @@ export interface Plugin {
     /** runs when runner opens */
     readonly init?: () => void;
     /** handle the user input to return results (does not include plugin's prefix) */
-    readonly handle: (inputText: string, limit?: number) => (Result|Array<Result>|null|undefined);
+    readonly handle: (inputText: string, limit?: number) => Promise<Result|Array<Result>|null|undefined>|Result|Array<Result>|null|undefined;
     /** runs when runner closes */
     readonly onClose?: () => void;
     /** prioritize this plugin's results over other results.
     * (hides other results that aren't from this plugin on list) */
     prioritize?: boolean;
+    /** show a specific icon when the plugin is prioritized/only 
+    * has results from this plugin 
+    * @todo actually implement the plugin icon feature
+    * @default "system-search-symbolic" */
+    iconName?: string;
 }
 
 export let instance: (Astal.Window|null) = null;
 
-let gtkEntry: (Gtk.SearchEntry|null) = null;
+let gtkEntry: (Gtk.Entry|null) = null;
 const plugins = new Set<Runner.Plugin>();
 const ignoredKeys = [
     Gdk.KEY_space,
@@ -137,9 +142,9 @@ export function openDefault(initialText?: string) {
         {
             icon: "utilities-terminal-symbolic",
             title: "Run shell commands",
-            description: "Add '!' before your command to run it (pro tip: add a second '!' to show command output)",
+            description: "Add '!' before your command to run it (tip: add another '!' to notify command output)",
             closeOnClick: false,
-            actionClick: () => setEntryText('!!')
+            actionClick: () => setEntryText('!')
         },
         {
             icon: "media-playback-start-symbolic",
@@ -158,7 +163,7 @@ export function openDefault(initialText?: string) {
     ]);
 }
 
-function getPluginResults(input: string, limit?: number): Array<Result> {
+async function getPluginResults(input: string, limit?: number): Promise<Array<Result>> {
     let calledPlugins: Array<Plugin> = getPlugins().filter((plugin) => 
         plugin.prefix ? (input.startsWith(plugin.prefix) ? true : false) : true
     ).sort((plugin) => plugin.prefix != null ? 0 : 1);
@@ -166,26 +171,56 @@ function getPluginResults(input: string, limit?: number): Array<Result> {
     for(const plugin of calledPlugins) {
         if(plugin.prioritize) {
             calledPlugins = [ plugin ];
+            plugin.iconName !== undefined &&
+                gtkEntry
             break;
         }
     }
 
-    const results = calledPlugins.map(plugin => plugin.handle(
-        plugin.prefix ? input.replace(plugin.prefix, "") : input),
-        limit
-    ).filter(value => value !== undefined && value !== null).flat(1);
+    let results: Array<Result> = [];
+    function push(result: Result|null|undefined|void|Array<Result|null|undefined|void>) {
+        if(Array.isArray(result)) {
+            results.push(...result.filter(r => r != null));
+            return;
+        }
 
-    return limit != null && limit > 0 ? 
+        result && results.push(result);
+    }
+
+    for(const plugin of calledPlugins) {
+        const res = plugin.handle(plugin.prefix ? 
+            input.replace(plugin.prefix, "")
+        : input, limit);
+
+        res instanceof Promise ?
+            await res.then(push)
+        : push(res);
+    }
+
+    return limit !== undefined && limit > 0 && limit !== Infinity ? 
         results.splice(0, limit)
     : results;
 }
 
-function updateResultsList(listbox: Gtk.ListBox, input: string, limit?: number, placeholders?: Array<Result>) {
+async function updateResultsList(listbox: Gtk.ListBox, input: string, limit?: number, placeholders?: Array<Result>) {
     const newResults: Array<Result> = [],
         scrolledWindow = listbox.parent.parent as Gtk.ScrolledWindow;
 
+    const results = await getPluginResults(input, limit).catch((e: Error) => {
+        console.error(`Couldn't get results because of an error: ${e.message}\n${e.stack}`);
+
+        listbox.insert(<ResultWidget title={`Error: ${e.message}`}
+          description={"Try changing your search a little..."}
+          icon={"window-close-symbolic"}
+          actionClick={() => gtkEntry?.select_region(0, gtkEntry?.text.length - 1)}
+        /> as ResultWidget, -1);
+
+        return [] as Array<Result>;
+    });
+
     listbox.remove_all();
-    getPluginResults(input, limit).forEach((result) => {
+
+    results.forEach((result) => {
         listbox.insert(<ResultWidget {...result} /> as ResultWidget, -1);
         newResults.push(result);
     });
@@ -195,6 +230,7 @@ function updateResultsList(listbox: Gtk.ListBox, input: string, limit?: number, 
         placeholders.forEach(phdlr => listbox.insert(
           <ResultWidget {...phdlr} /> as ResultWidget, -1
         ));
+
 
     newResults.length > 0 ?
         (!scrolledWindow.visible && scrolledWindow.show())
@@ -237,7 +273,7 @@ export function openRunner(props: RunnerProps, placeholders?: Array<Result>): As
     props.width ??= 780;
     props.height ??= 420;
 
-    let clickTimeout: AstalIO.Time|undefined;
+    let clickTimeout: GLib.Source|undefined;
 
     if(!instance)
         instance = Windows.getDefault().createWindowForFocusedMonitor((mon, root) => 
@@ -289,27 +325,38 @@ export function openRunner(props: RunnerProps, placeholders?: Array<Result>): As
                   instance = null;
                   gtkEntry = null;
               }}>
-                <Gtk.SearchEntry class={"search"} placeholderText={props.entryPlaceHolder ?? ""}
-                  $={(self) => gtkEntry = self} searchDelay={0} onSearchChanged={(self) => {
+                <Gtk.Entry class={"search"} placeholderText={props.entryPlaceHolder ?? ""}
+                  $={(self) => gtkEntry = self} onNotifyText={(self) => {
                       const listbox = ((self.get_next_sibling()! as Gtk.ScrolledWindow)
                         .get_child() as Gtk.Viewport).get_child() as Gtk.ListBox;
-                      updateResultsList(listbox, self.text, props.resultsLimit, placeholders);
-
-                      listbox.get_row_at_index(0) && 
-                          listbox.select_row(listbox.get_row_at_index(0));
+                      updateResultsList(listbox, self.text, props.resultsLimit, placeholders).then(() =>
+                          listbox.get_row_at_index(0) && 
+                              listbox.select_row(listbox.get_row_at_index(0))
+                      );
+                  }} primaryIconName={"system-search-symbolic"}
+                  primaryIconTooltipText={"Search"}
+                  secondaryIconName={"edit-clear-symbolic"}
+                  secondaryIconTooltipText={"Clear search"}
+                  onIconRelease={(self, iconPos) => {
+                      if(iconPos === Gtk.EntryIconPosition.PRIMARY) {
+                          self.notify("text"); // emit notify::text, so it will force-search again
+                          return;
+                      }
+                        
+                      self.set_text("");
                   }} onActivate={(self) => {
                       const listbox = ((self.get_next_sibling() as Gtk.ScrolledWindow)
                         .get_child() as Gtk.Viewport).get_child() as Gtk.ListBox;
                       const resultWidget = listbox.get_selected_row()?.get_child();
 
                       if(resultWidget instanceof ResultWidget && !clickTimeout) {
-                          clickTimeout = timeout(250, () => clickTimeout = undefined);
+                          clickTimeout = setTimeout(() => clickTimeout = undefined, 250);
                           resultWidget.actionClick();
                           resultWidget.closeOnClick && 
                               Runner.close();
                       }
 
-                  }} onStopSearch={() => Runner.close()} // close Runner on Escape
+                  }} onUnrealize={() => Runner.close()}
                 />
                 <Gtk.ScrolledWindow class={"results-scrollable"} vscrollbarPolicy={Gtk.PolicyType.AUTOMATIC}
                   hscrollbarPolicy={Gtk.PolicyType.NEVER} hexpand vexpand propagateNaturalHeight visible={false}
@@ -320,7 +367,7 @@ export function openRunner(props: RunnerProps, placeholders?: Array<Result>): As
                           const child = row.get_child()!;
 
                           if(child instanceof ResultWidget && !clickTimeout) {
-                              clickTimeout = timeout(250, () => clickTimeout = undefined);
+                              clickTimeout = setTimeout(() => clickTimeout = undefined, 250);
                               child.actionClick?.();
                               child.closeOnClick && 
                                   Runner.close();
