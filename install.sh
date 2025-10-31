@@ -46,6 +46,7 @@ echo "Welcome to the colorshell installation script!"
 
 # Warn user of possible issues
 Send_log warn "!! By running this script, you assume total responsability for any issues that may occur with your filesystem"
+Send_log warn "Your current Hyprland and kitty configuration will be overwritten, please do a backup if you still want them"
 
 [[ -z "$skip_prompts" ]] && \
     Ask "Do you want to start the shell installation?"
