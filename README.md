@@ -91,6 +91,7 @@ Currently, there's support for the following languages:
 - **English** (English, United States), maintained by [@retrozinndev](https://github.com/retrozinndev)
 - **Português** (Portuguese, Brazil), maintained by [@retrozinndev](https://github.com/retrozinndev)
 - **Русский** (Russian), maintained by [@NotMephisto](https://github.com/NotMephisto)
+- **Français** (French, France & Belgium), maintained by [@Elgemp4](https://github.com/Elgemp4)
   
 Don't see your language here? You can contribute and make translations too! <br>
 You can do so by forking this repository, translating the shell in your fork and then opening a pull request to this repository, simple as that!
