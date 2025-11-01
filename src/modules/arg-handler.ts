@@ -170,19 +170,19 @@ Usage:
         return 0;
     }
 
-    if(args[2].trim() === "" || args[2] === undefined) {
+    if(args[1].trim() === "" || args[1] === undefined) {
         cmd.printerr_literal("Error: No application/alias to run provided after \"run\"");
         return 1;
     }
 
     // it's an alias
-    if(args[2].startsWith('%')) {
-        const aliasName = args[2].replace(/^\%/, "");
+    if(args[1].startsWith('%')) {
+        const aliasName = args[1].replace(/^\%/, "");
         const command = generalConfig.getProperty(`apps.${aliasName}`, "string");
 
         if(command !== undefined && command.trim() !== "") {
             cmd.print_literal("Executing from alias...");
-            execApp(command, args[3]);
+            execApp(command, args[2] || undefined);
             return 0;
         }
 
@@ -190,9 +190,9 @@ Usage:
         return 1;
     }
 
-    cmd.print_literal(`Executing app from ${args[2].endsWith(".desktop") ?
+    cmd.print_literal(`Executing app from ${args[1].endsWith(".desktop") ?
         "desktop entry" : "command"}...`);
-    execApp(args[2], args[3] || undefined);
+    execApp(args[1], args[2] || undefined);
     return 0;
 }
 
