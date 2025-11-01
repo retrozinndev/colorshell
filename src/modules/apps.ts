@@ -25,13 +25,18 @@ export function getAstalApps(): AstalApps.Apps {
     return astalApps;
 }
 
-/** handles running with uwsm if it's installed */
+/** execute apps and commands using Hyprland's exec dispatcher.
+    supports desktop entries and usage of uwsm if it's active */
 export function execApp(app: AstalApps.Application|string, dispatchExecArgs?: string) {
     const executable = (typeof app === "string") ? app 
         : app.executable.replace(/%[fFcuUik]/g, "");
 
     AstalHyprland.get_default().dispatch("exec", 
-        `${dispatchExecArgs ? `${dispatchExecArgs} ` : ""}${uwsmIsActive ? "uwsm-app -- " : ""}${executable}`
+        `${dispatchExecArgs ? `${dispatchExecArgs} ` : ""}${
+            uwsmIsActive ? "uwsm-app -- " : executable.endsWith(".desktop") ?
+                "gtk-launch "
+            : ""
+        }${executable}`
     );
 }
 

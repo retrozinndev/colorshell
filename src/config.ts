@@ -36,6 +36,11 @@ const generalConfigDefaults = {
         hide_if_single: false
     },
 
+    apps: {
+        term: "kitty",
+        media: "amberol"
+    },
+
     clock: {
         /** use the same format as gnu's `date` command */
         date_format: "%A %d, %H:%M"

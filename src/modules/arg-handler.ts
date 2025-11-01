@@ -12,6 +12,7 @@ import { generalConfig } from "../config";
 import Media from "./media";
 import AstalIO from "gi://AstalIO";
 import AstalMpris from "gi://AstalMpris";
+import { execApp } from "./apps";
 
 
 export type RemoteCaller = {
@@ -76,6 +77,9 @@ export function handleArguments(cmd: RemoteCaller, args: Array<string>): number 
 
         case "volume":
             return handleVolumeArgs(cmd, args);
+
+        case "run":
+            return handleRunnerArgs(cmd, args);
 
         case "media":
             return handleMediaArgs(cmd, args);
@@ -145,9 +149,58 @@ Options:
     return 1;
 }
 
+function handleRunnerArgs(cmd: RemoteCaller, args: Array<string>): number {
+    const help = `\
+Run applications and command aliases defined in the colorshell
+configuration.
+
+Help:
+  client_modifiers: Hyprland client modifiers(e.g.: "[animation slide]")
+
+Options:
+  h, help: show this help message.
+
+Usage:
+  run %aliasName [client_modifiers]: run a command alias defined in the config.
+  run appName[.desktop] [client_modifiers]: run an ordinary app(uses uwsm if available).`;
+
+    if(/\-?h(elp)?/.test(args[1])) {
+        cmd.print_literal(help);
+        return 0;
+    }
+
+    if(args[2].trim() === "" || args[2] === undefined) {
+        cmd.printerr_literal("Error: No application/alias to run provided after \"run\"");
+        return 1;
+    }
+
+    // it's an alias
+    if(args[2].startsWith('%')) {
+        const aliases = generalConfig.getProperty("apps", "object");
+        const aliasName = args[2].replace(/^\%/, "");
+
+        for(const alias of Object.keys(aliases)) {
+            if(aliasName === alias) {
+                const command = alias[alias as keyof typeof aliases];
+
+                cmd.print_literal("Executing from alias...");
+                execApp(command, args[3]);
+                return 0;
+            }
+        }
+
+        cmd.printerr_literal("Error: provided alias couldn't be found in the aliases list");
+        return 1;
+    }
+
+    cmd.print_literal(`Executing app from ${args[2].endsWith(".desktop") ?
+        "desktop entry" : "command"}...`);
+    execApp(args[2], args[3] || undefined);
+    return 0;
+}
+
 function handleMediaArgs(cmd: RemoteCaller, args: Array<string>): number {
-    if(/h|help/.test(args[1])) {
-        const mediaHelp = `
+    const mediaHelp = `\
 Manage colorshell's active player
 
 Options: 
@@ -159,9 +212,10 @@ Options:
   next: jump to next media if player supports it.
   bus-name: get active player's mpris bus name.
   list: show available players with their bus name.
-  select bus_name: change the active player, where bus_name is 
-    the desired player's mpris bus name(with the mediaplayer2 prefix).
-`.trim();
+  select bus_name: change the active player, where bus_name is the desired 
+    player's mpris bus name(with the mediaplayer2 prefix).`;
+
+    if(/h|help/.test(args[1])) {
         cmd.print_literal(mediaHelp);
         return 0;
     }
