@@ -70,7 +70,7 @@ export class Shell extends Adw.Application {
             version: COLORSHELL_VERSION ?? "0.0.0-unknown",
         });
 
-        setConsoleLogDomain("colorshell");
+        setConsoleLogDomain("Colorshell");
         GLib.set_application_name("colorshell");
     }
 

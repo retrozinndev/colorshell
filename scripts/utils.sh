@@ -93,6 +93,45 @@ function Is_installed() {
 }
 
 # -------------
+# Interactively backup user dotfiles that ovewritten by colorshell
+# param $1: colorshell repository directory
+# -------------
+function Backup_config() {
+    bkp_dir="$HOME/config.bkp"
+    repo_dir=${1:-"."}
+
+    Send_log "Creating backup in $bkp_dir"
+
+    if [[ -d $bkp_dir ]]; then
+        Send_log "Found existing backup in $bkp_dir!"
+        Ask "Would you like to move it to trash/override it?"
+        
+        if [[ $answer == "y" ]]; then
+            echo "Moving previous backup is goning to be moved to trash"
+            trash-put $bkp_dir || (mkdir -p "$XDG_DATA_HOME/Trash" && \
+                mv $bkp_dir "$XDG_DATA_HOME/Trash/$(basename $bkp_dir)")
+        else 
+            echo "Ok, quitting backup because it already exists"
+            return 1
+        fi
+    fi
+
+    # Make backup of existing configurations
+    mkdir -p $bkp_dir
+    for dir in $(basename `ls -A $repo_directory/config`); do
+        if [[ -d "$CONFIG_DIR/$dir" ]]; then
+            echo "-> backuping $dir"
+            cp -r "$CONFIG_DIR/$dir" $DOTFILES_BACKUP_DIR
+        else
+            Send_log "$dir not found, skipped"
+        fi
+    done
+
+    Send_log "backup has been finished"
+}
+
+
+# -------------
 # Ask the user to choose a number from the provided list
 # Input answer is exported as $answer
 # (this function is not done yet)

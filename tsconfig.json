@@ -8,9 +8,7 @@
     "lib": ["ES2024"],
     "moduleResolution": "bundler",
     "skipLibCheck": true,
-    "types": [
-        "./@types"
-    ],
+    "types": ["./@types"],
     "strict": true,
     "jsx": "react-jsx",
     "jsxImportSource": "ags/gtk4"

@@ -55,14 +55,17 @@ echo "This is colorshell's update script"
 if Is_installed; then
     Send_log "colorshell installation found"
 else
-    Send_log "no colorshell installation found, please install it before updating"
+    Send_log err "no colorshell installation found, please install it before updating"
     exit 1
 fi
 
 # Warn user of possible issues
-Send_log warn "!! By running this, you assume total responsability for issues that can occur to your filesystem"
+Send_log warn "!! By running this, you assume total responsability for \
+issues that can occur to your filesystem"
+Send_log "The updater will only change shell configs, like hypr/shell \
+and kitty/kitty.conf, not user ones(hypr/user, kitty/user.conf)"
 
-[[ -z "$skip_prompts" ]] && \
+[[ -z $skip_prompts ]] && \
     Ask "Do you want to update colorshell?"
 
 if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then

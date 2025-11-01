@@ -40,7 +40,7 @@ class _PluginClipboard implements Runner.Plugin {
         };
     }
 
-    handle(search: string, limit?: number) {
+    async handle(search: string, limit?: number) {
         if(Clipboard.getDefault().history.length < 1) 
             return {
                 icon: "edit-paste-symbolic",

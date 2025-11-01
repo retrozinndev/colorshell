@@ -60,6 +60,15 @@ export function escapeSpecialCharacters(str: string): string {
     return str.replace(/[\\^$.*?()[\]{}|]/g, "\\$&");
 }
 
+/** translate paths with environment variables in it to absolute paths */
+export function translateDirWithEnvironment(path: string): string {
+    path = path.replace(/^[~]/, GLib.get_home_dir());
+
+    return path.split('/').map(part => /^\$/.test(part) ?
+        GLib.getenv(part.replace(/^\$/, "")) ?? part
+    : part).join('/');
+}
+
 export function getChildren(widget: Gtk.Widget): Array<Gtk.Widget> {
     const firstChild = widget.get_first_child(), 
         children: Array<Gtk.Widget> = [];
