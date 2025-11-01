@@ -44,6 +44,7 @@ Development Tools:
 ` : ""}
 Other options:
   runner [initial_text]: open the application runner, optionally add an initial search.
+  run app[.desktop] [client_modifiers]: run applications from the cli, see "run help".
   peek-workspace-num [millis]: peek the workspace numbers on bar window.
   v, version: display current colorshell version.
   h, help: shows this help message.
