@@ -8,11 +8,11 @@ import { showWorkspaceNumber } from "../window/bar/widgets/Workspaces";
 import { playSystemBell } from "./utils";
 import { Shell } from "../app";
 import { generalConfig } from "../config";
+import { execApp } from "./apps";
 
 import Media from "./media";
 import AstalIO from "gi://AstalIO";
 import AstalMpris from "gi://AstalMpris";
-import { execApp } from "./apps";
 
 
 export type RemoteCaller = {
@@ -176,17 +176,13 @@ Usage:
 
     // it's an alias
     if(args[2].startsWith('%')) {
-        const aliases = generalConfig.getProperty("apps", "object");
         const aliasName = args[2].replace(/^\%/, "");
+        const command = generalConfig.getProperty(`apps.${aliasName}`, "string");
 
-        for(const alias of Object.keys(aliases)) {
-            if(aliasName === alias) {
-                const command = alias[alias as keyof typeof aliases];
-
-                cmd.print_literal("Executing from alias...");
-                execApp(command, args[3]);
-                return 0;
-            }
+        if(command !== undefined && command.trim() !== "") {
+            cmd.print_literal("Executing from alias...");
+            execApp(command, args[3]);
+            return 0;
         }
 
         cmd.printerr_literal("Error: provided alias couldn't be found in the aliases list");
