@@ -1,5 +1,8 @@
-node_modules/
+node_modules
 @types/
 build/
 
 *.log
+
+result
+.direnv/
