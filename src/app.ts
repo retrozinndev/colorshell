@@ -1,5 +1,5 @@
 // thanks Aylur!!
-import "/usr/share/ags/js/lib/overrides";
+import "ags/overrides";
 import "./config";
 import { 
     PluginApps, 

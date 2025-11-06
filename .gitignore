@@ -2,5 +2,4 @@ node_modules/
 @types/
 build/
 
-pnpm-lock.yaml
 *.log
