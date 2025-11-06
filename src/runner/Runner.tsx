@@ -105,10 +105,11 @@ export function removePlugin(plugin: Plugin): boolean {
 }
 
 export function setEntryText(text: string): void {
-    gtkEntry?.set_text(text);
-    gtkEntry?.set_position(gtkEntry.text.length);
+    if(!gtkEntry) return;
 
-    gtkEntry?.grab_focus();
+    gtkEntry.set_text(text);
+    gtkEntry.set_position(gtkEntry.text.length);
+    gtkEntry.grab_focus_without_selecting();
 }
 
 export function openDefault(initialText?: string) {
@@ -215,7 +216,7 @@ async function updateResultsList(listbox: Gtk.ListBox, input: string, limit?: nu
           actionClick={() => gtkEntry?.select_region(0, gtkEntry?.text.length - 1)}
         /> as ResultWidget, -1);
 
-        return [] as Array<Result>;
+        return [] satisfies Array<Result>;
     });
 
     listbox.remove_all();
@@ -267,7 +268,8 @@ function selectNextItem(listbox: Gtk.ListBox) {
 
     listbox.select_row(nextRow as Gtk.ListBoxRow);
     if(nextRowVAllocation > viewport.get_allocation().height) 
-        vadjustment.set_value(nextRow.get_allocation().y - viewport.get_allocation().height + nextRow.get_allocation().height);}
+        vadjustment.set_value(nextRow.get_allocation().y - viewport.get_allocation().height + nextRow.get_allocation().height);
+}
 
 export function openRunner(props: RunnerProps, placeholders?: Array<Result>): Astal.Window {
     props.width ??= 780;
