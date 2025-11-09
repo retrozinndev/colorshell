@@ -106,9 +106,9 @@ You can run the following command to update an existing colorshell installation 
 bash -c "bash <(curl -s https://raw.githubusercontent.com/retrozinndev/colorshell/refs/heads/ryo/update.sh)"
 ```
 ### Updating on Nix
-You need to update the flake:
+You need to update the profile that contains the flake:
 ```zsh
-nix profile update colorshell
+nix profile upgrade
 ```
 
 ## 🛠️ Development
