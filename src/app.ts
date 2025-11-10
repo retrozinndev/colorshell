@@ -281,7 +281,7 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
             Wallpaper.getDefault();
             Stylesheet.getDefault();
 
-            console.log("Adding runner plugins");
+            console.log("Runner: Adding plugins");
             runnerPlugins.forEach(plugin => Runner.addPlugin(plugin));
 
             createSubscription(
