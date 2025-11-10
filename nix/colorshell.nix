@@ -3,6 +3,7 @@
   lib,
   stdenv,
   stdenvNoCC,
+  moreutils,
   pnpm_10,
   buildNpmPackage,
   wrapGAppsHook4,
@@ -10,6 +11,7 @@
   glib,
   gjs,
   libadwaita,
+  socat,
 }:
 let
   packageJSON = lib.importJSON ../package.json;
@@ -106,6 +108,7 @@ buildNpmPackage (finalAttrs: {
     wrapGAppsHook4
     gobject-introspection
     inputs'.ags.packages.default
+    moreutils
   ];
 
   buildInputs = [
@@ -129,25 +132,41 @@ buildNpmPackage (finalAttrs: {
   buildPhase = ''
     runHook preBuild
 
-    mkdir -p $out/bin
-    ags bundle ./src/app.ts $out/bin/${packageJSON.name} \
+    mkdir build
+    outPath=./build/${packageJSON.name}
+    ags bundle ./src/app.ts $outPath \
       --gtk 4 \
       --root ./src \
       --define "DEVEL=false" \
       --define "COLORSHELL_VERSION='${finalAttrs.version}'" \
       --define "GRESOURCES_FILE='${colorshellResources}'"
 
+    # add socket-communication support on executable
+    { 
+      head -n1 $outPath
+      sed '1{/^#!.*$/d}' ${../scripts/colorshell-socket-interface.sh}
+      cat "$outPath" | sed '/^#!.*$/d'
+    } | sponge $outPath
+
     runHook postBuild
   '';
 
-  # the above buildPhase installs for us
-  dontInstall = true;
+  installPhase = ''
+    runHook preInstall
+
+    mkdir -p $out/bin
+    cp -rp build/${packageJSON.name} $out/bin/
+
+    runHook postInstall
+  '';
 
   preFixup = ''
     gappsWrapperArgs+=(
       --prefix PATH : ${
         lib.makeBinPath [
           # runtime executables
+          socat
+          glib
         ]
       }
     )

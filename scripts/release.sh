@@ -43,19 +43,7 @@ sh ./scripts/build.sh -o "${outdir:-./build/release}" -b -r "${gresource_file:-\
 if [[ $socket_support ]]; then
     echo "[info] adding socket communication support"
     script="\
-#!/usr/bin/bash
-
-if gdbus introspect --session \\
-  --dest io.github.retrozinndev.colorshell \\
-  --object-path /io/github/retrozinndev/colorshell > /dev/null 2>&1; then
-
-    if command -v socat > /dev/null 2>&1; then
-        echo \"\$@\" | socat - \"\${XDG_RUNTIME_DIR:-/run/user/\$(id -u)}/colorshell.sock\"
-        exit 0
-    else
-        echo \"[warn] \`socat\` not installed, falling back to remote instance communication\"
-    fi
-fi
+`cat ./scripts/colorshell-socket-interface.sh`
 `cat "${outdir:-./build/release}/colorshell" | sed -e 's/^#.*//'`" # remove shebang
 
     echo -en "$script" > "${outdir:-./build/release}/colorshell"

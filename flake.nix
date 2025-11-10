@@ -41,7 +41,7 @@
           ...
         }:
         let
-          colorshell = pkgs.callPackage ./nix/package.nix { inherit inputs'; };
+          colorshell = pkgs.callPackage ./nix/colorshell.nix { inherit inputs'; };
         in
         {
           packages = {
