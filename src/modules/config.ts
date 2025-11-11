@@ -133,8 +133,7 @@ class Config<K extends string, V = any> extends GObject.Object {
     public bindProperty(path: string, expectType: "number"): Accessor<number>;
     public bindProperty(path: string, expectType: "string"): Accessor<string>;
     public bindProperty(path: string, expectType: "object"): Accessor<object>;
-    public bindProperty(path: string, expectType: "any"): Accessor<any>;
-    public bindProperty(path: string, expectType: undefined): Accessor<any>;
+    public bindProperty(path: string, expectType?: "any"): Accessor<any>;
 
     public bindProperty(propertyPath: string, expectType?: ValueTypes): Accessor<boolean|number|string|object|any> {
         return new Accessor(() => this.getProperty(propertyPath, expectType as never), (callback: () => void) => {
@@ -147,8 +146,7 @@ class Config<K extends string, V = any> extends GObject.Object {
     public getProperty(path: string, expectType: "number"): number;
     public getProperty(path: string, expectType: "string"): string;
     public getProperty(path: string, expectType: "object"): object;
-    public getProperty(path: string, expectType: "any"): any;
-    public getProperty(path: string, expectType: undefined): any;
+    public getProperty(path: string, expectType?: "any"): any;
 
     public getProperty(path: string, expectType?: ValueTypes): boolean|number|string|object|any {
         return this._getProperty(path, this.#entries, expectType);
@@ -158,8 +156,7 @@ class Config<K extends string, V = any> extends GObject.Object {
     public getPropertyDefault(path: string, expectType: "number"): number;
     public getPropertyDefault(path: string, expectType: "string"): string;
     public getPropertyDefault(path: string, expectType: "object"): object;
-    public getPropertyDefault(path: string, expectType: "any"): any;
-    public getPropertyDefault(path: string, expectType: undefined): any;
+    public getPropertyDefault(path: string, expectType?: "any"): any;
 
     public getPropertyDefault(path: string, expectType?: ValueTypes): boolean|number|string|object|any {
         return this._getProperty(path, this.defaults, expectType);

@@ -23,7 +23,7 @@ const generalConfigDefaults = {
         position_v: "top",
         /** dismisses notification popup when unhovered after hovering 
           * @default false */
-        dismiss_after_unhover: false
+        dismiss_on_unhover: false
     },
 
     night_light: {
