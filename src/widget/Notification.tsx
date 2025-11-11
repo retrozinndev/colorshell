@@ -9,6 +9,7 @@ import GObject from "ags/gobject";
 import AstalNotifd from "gi://AstalNotifd";
 import Pango from "gi://Pango?version=1.0";
 import GLib from "gi://GLib?version=2.0";
+import { generalConfig } from "../config";
 
 
 function getNotificationImage(notif: AstalNotifd.Notification|HistoryNotification): (string|undefined) {
@@ -51,9 +52,23 @@ export function NotificationWidget({ notification, actionClicked, holdOnHover, s
 
         <Gtk.EventControllerMotion onEnter={() => holdOnHover && 
               Notifications.getDefault().holdNotification(notification.id)
-          } onLeave={() => holdOnHover &&
-              Notifications.getDefault().releaseNotification(notification.id)
-          }
+          } onLeave={() => {
+              if(!holdOnHover) 
+                  return;
+
+              const dismissOnUnhover = generalConfig
+                .getProperty("notifications.dismiss_on_unhover", "boolean");
+
+              if(dismissOnUnhover) {
+                  setTimeout(() =>
+                      Notifications.getDefault().removeNotification(notification.id),
+                  600);
+
+                  return;
+              }
+
+              Notifications.getDefault().releaseNotification(notification.id);
+          }}
         />
         <Gtk.GestureClick onReleased={(gesture) => 
             gesture.get_current_button() === Gdk.BUTTON_PRIMARY &&
