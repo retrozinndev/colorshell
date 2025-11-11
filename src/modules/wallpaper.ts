@@ -7,6 +7,7 @@ import GLib from "gi://GLib?version=2.0";
 import { createSubscription, encoder } from "./utils";
 import { Notifications } from "./notifications";
 import { generalConfig } from "../config";
+import { createRoot, getScope, Scope } from "ags";
 
 
 export { Wallpaper };
@@ -50,6 +51,7 @@ export type WallpaperPositioning = "contain"|"tile"|"cover";
 class Wallpaper extends GObject.Object {
     private static instance: Wallpaper;
     #wallpaper: (string|undefined);
+    #scope!: Scope;
     #splash: boolean = true;
     #hyprpaperFile: Gio.File;
     #wallpapersPath: string;
@@ -70,8 +72,8 @@ class Wallpaper extends GObject.Object {
 
     public get wallpapersPath() { return this.#wallpapersPath; }
 
-    @property(gtype<WallpaperMode>(String))
-    positioning: WallpaperMode = "cover";
+    @property(gtype<WallpaperPositioning>(String))
+    positioning: WallpaperPositioning = "cover";
 
     @property(gtype<WalMode>(String))
     colorMode: WalMode = "darken";
@@ -89,52 +91,60 @@ class Wallpaper extends GObject.Object {
             if(wall?.trim()) this.#wallpaper = wall.trim();
         });
 
-        createSubscription(
-            generalConfig.bindProperty("wallpaper.color_mode", "string"),
-            () => {
-                const mode = generalConfig.getProperty("wallpaper.color_mode", "string");
-                if(!mode || (mode !== "darken" && mode !== "lighten")) {
-                    Notifications.getDefault().sendNotification({
-                        appName: "colorshell",
-                        summary: "Couldn't update color mode",
-                        body: "Invalid mode. Possible values are: \"darken\" or \"lighten\""
-                    });
-                    return;
-                };
+        createRoot(() => {
+            this.#scope = getScope();
 
-                this.colorMode = mode as WalMode;
-                this.reloadColors();
-            }
-        );
+            createSubscription(
+                generalConfig.bindProperty("wallpaper.color_mode", "string"),
+                () => {
+                    const mode = generalConfig.getProperty("wallpaper.color_mode", "string");
+                    if(!mode || (mode !== "darken" && mode !== "lighten")) {
+                        Notifications.getDefault().sendNotification({
+                            appName: "colorshell",
+                            summary: "Couldn't update color mode",
+                            body: "Invalid mode. Possible values are: \"darken\" or \"lighten\""
+                        });
+                        return;
+                    };
 
-        createSubscription(
-            generalConfig.bindProperty("wallpaper.positioning", "string"),
-            () => {
-                const positioning = generalConfig
-                    .getProperty("wallpaper.positioning", "string") as WallpaperPositioning;
-
-                if(!positioning || (positioning !== "contain" && 
-                                    positioning !== "cover" && 
-                                    positioning !== "tile")) {
-
-                    Notifications.getDefault().sendNotification({
-                        appName: "colorshell",
-                        summary: "Couldn't update wallpaper position",
-                        body: "Invalid position value. Possible values are: \"cover\", \"contain\" or \"tile\""
-                    });
-                    return;
+                    this.colorMode = mode as WalMode;
+                    this.reloadColors();
                 }
+            );
 
-                this.positioning = positioning;
-                this.reloadWallpaper().catch((e: Error) => 
-                    Notifications.getDefault().sendNotification({
-                        appName: "colorshell",
-                        summary: "Couldn't update wallpaper position",
-                        body: `An error occurred while updating wallpaper's position: ${e.message}`
-                    })
-                );
-            }
-        );
+            createSubscription(
+                generalConfig.bindProperty("wallpaper.positioning", "string"),
+                () => {
+                    const positioning = generalConfig
+                        .getProperty("wallpaper.positioning", "string") as WallpaperPositioning;
+
+                    if(!positioning || (positioning !== "contain" && 
+                                        positioning !== "cover" && 
+                                        positioning !== "tile")) {
+
+                        Notifications.getDefault().sendNotification({
+                            appName: "colorshell",
+                            summary: "Couldn't update wallpaper position",
+                            body: "Invalid position value. Possible values are: \"cover\", \"contain\" or \"tile\""
+                        });
+                        return;
+                    }
+
+                    this.positioning = positioning;
+                    this.reloadWallpaper().catch((e: Error) => 
+                        Notifications.getDefault().sendNotification({
+                            appName: "colorshell",
+                            summary: "Couldn't update wallpaper position",
+                            body: `An error occurred while updating wallpaper's position: ${e.message}`
+                        })
+                    );
+                }
+            );
+        });
+    }
+
+    vfunc_dispose(): void {
+        this.#scope?.dispose();
     }
 
     public static getDefault(): Wallpaper {
