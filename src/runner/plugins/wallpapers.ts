@@ -4,6 +4,11 @@ import { Runner } from "../Runner";
 
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
+import { Gdk, Gtk } from "ags/gtk4";
+import { createScopedConnection } from "gnim-utils";
+import Gly from "gi://Gly?version=2";
+import GlyGtk4 from "gi://GlyGtk4?version=2";
+import { createRoot, getScope, Scope } from "ags";
 
 
 class _PluginWallpapers implements Runner.Plugin {
@@ -13,6 +18,8 @@ class _PluginWallpapers implements Runner.Plugin {
     #files!: Array<Gio.FileInfo>;
     #dir: string = Wallpaper.getDefault().wallpapersPath;
     #subdir: string|undefined = undefined;
+    #scope!: Scope;
+    #cache: Map<string, Gly.Frame> = new Map();
     readonly #options = {
         useExtendedSearch: false,
         shouldSort: true,
@@ -22,6 +29,8 @@ class _PluginWallpapers implements Runner.Plugin {
     init() {
         this.#files = [];
         this.#subdir = undefined;
+        if(!this.#scope)
+            this.#scope = getScope();
 
         const dir = Gio.File.new_for_path(this.#dir);
         if(dir.query_file_type(null, null) === Gio.FileType.DIRECTORY) {
@@ -40,15 +49,104 @@ class _PluginWallpapers implements Runner.Plugin {
         );
     }
 
+    onClose() {
+        this.#cache.forEach((frame) => {
+            frame.run_dispose();
+        });
+        this.#cache.clear();
+    }
+
     private result(info: Gio.FileInfo): Runner.Result {
+        const isDir: boolean = info.get_file_type() === Gio.FileType.DIRECTORY;
+        const path: string = `${Wallpaper.getDefault().wallpapersPath}/${
+            this.#subdir ? `${this.#subdir}/` : ""
+        }${info.get_name()}`;
+
         return {
-            title: `${info.get_display_name()}${info.get_file_type() === Gio.FileType.DIRECTORY ? "/" : ""}`,
-            icon: info.get_file_type() === Gio.FileType.DIRECTORY ?
-                "inode-directory-symbolic"
-            : undefined,
-            closeOnClick: info.get_file_type() !== Gio.FileType.DIRECTORY,
+            title: `${info.get_display_name()}${isDir ? "/" : ""}`,
+            icon: isDir ? "inode-directory-symbolic" : undefined,
+            closeOnClick: !isDir,
+            $: (self) => {
+                if(isDir) return;
+
+                const eventMotion = Gtk.EventControllerMotion.new(),
+                    eventFocus = Gtk.EventControllerFocus.new();
+
+                const revealer = new Gtk.Revealer({
+                    child: new Gtk.Picture({
+                        hexpand: true,
+                        heightRequest: 128,
+                        contentFit: Gtk.ContentFit.COVER
+                    })
+                });
+
+                let loaded: boolean = false;
+                const loadWallpaper = () => {
+                    if(!GLib.file_test(path, GLib.FileTest.EXISTS))
+                        return;
+
+                    const pic = revealer.get_child()! as Gtk.Picture;
+                    const loader = Gly.Loader.new(Gio.File.new_for_path(path));
+                    let image: Gly.Image|undefined,
+                        texture: Gdk.Texture|undefined;
+
+                    const onLoadFinish = () => {
+                        if(image !== undefined && texture !== undefined) {
+                            try {
+                                pic.set_paintable(texture);
+                            } catch(e) { console.error(e); }
+                        }
+                    };
+
+                    if(!this.#cache.has(path)) {
+                        loader.load_async(null, (_, res) => {
+                            try {
+                                image = loader.load_finish(res);
+                                const frame = image.next_frame();
+                                texture = GlyGtk4.frame_get_texture(frame);
+                                this.#cache.set(path, frame);
+                            } catch(e) { console.error(e); }
+
+                            onLoadFinish();
+                        });
+                    } else {
+                        texture = GlyGtk4.frame_get_texture(this.#cache.get(path)!);
+                        onLoadFinish();
+                    }
+                };
+
+                const onFocus = () => {
+                    if(!loaded) {
+                        loadWallpaper();
+                        loaded = true;
+                    }
+
+                    revealer.set_reveal_child(true);
+                };
+
+                const onFocusLost = () => revealer.set_reveal_child(false);
+
+                self.set_orientation(Gtk.Orientation.VERTICAL);
+                self.prepend(revealer);
+
+                self.add_controller(eventMotion);
+                self.add_controller(eventFocus);
+
+                createRoot(() => {
+                    if(!GLib.file_test(path, GLib.FileTest.EXISTS))
+                        return;
+
+                    const scope = getScope();
+
+                    createScopedConnection(self, "destroy", () => scope.dispose());
+                    createScopedConnection(eventMotion, "enter", () => onFocus());
+                    createScopedConnection(eventMotion, "leave", () => onFocusLost());
+                    createScopedConnection(eventFocus, "enter", () => onFocus());
+                    createScopedConnection(eventFocus, "leave", () => onFocusLost());
+                });
+            },
             actionClick: () => {
-                if(info.get_file_type() === Gio.FileType.DIRECTORY) {
+                if(isDir) {
                     Runner.setEntryText(
                         this.#subdir !== undefined ?
                             `#${this.#subdir.startsWith('/') ? 
@@ -59,11 +157,10 @@ class _PluginWallpapers implements Runner.Plugin {
                     return;
                 }
 
-                Wallpaper.getDefault().setWallpaper(
-                    `${Wallpaper.getDefault().wallpapersPath}/${
-                        this.#subdir ? `${this.#subdir}/` : ""
-                    }${info.get_name()}`
-                );
+
+                if(!GLib.file_test(path, GLib.FileTest.EXISTS))
+                    return;
+                Wallpaper.getDefault().setWallpaper(path);
             }
         };
     }

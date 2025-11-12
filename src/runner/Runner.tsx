@@ -354,8 +354,7 @@ export function openRunner(props: RunnerProps, placeholders?: Array<Result>): As
                       if(resultWidget instanceof ResultWidget && !clickTimeout) {
                           clickTimeout = setTimeout(() => clickTimeout = undefined, 250);
                           resultWidget.actionClick();
-                          resultWidget.closeOnClick && 
-                              Runner.close();
+                          resultWidget.closeOnClick && Runner.close();
                       }
 
                   }} onUnrealize={() => Runner.close()}
@@ -365,14 +364,18 @@ export function openRunner(props: RunnerProps, placeholders?: Array<Result>): As
                   maxContentHeight={props.height} focusable={false}>
 
                     <Gtk.ListBox hexpand activateOnSingleClick selectionMode={Gtk.SelectionMode.SINGLE} 
-                      onRowActivated={(_, row) => {
+                      onRowSelected={(_, row) => {
+                          if(row instanceof ResultWidget) {
+                              row.grab_focus();
+                              gtkEntry?.grab_focus_without_selecting();
+                          }
+                      }} onRowActivated={(_, row) => {
                           const child = row.get_child()!;
 
                           if(child instanceof ResultWidget && !clickTimeout) {
                               clickTimeout = setTimeout(() => clickTimeout = undefined, 250);
                               child.actionClick?.();
-                              child.closeOnClick && 
-                                  Runner.close();
+                              child.closeOnClick && Runner.close();
                           }
                       }}
                     />
