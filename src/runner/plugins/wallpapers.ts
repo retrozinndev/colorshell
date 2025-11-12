@@ -8,7 +8,7 @@ import { Gdk, Gtk } from "ags/gtk4";
 import { createScopedConnection } from "gnim-utils";
 import Gly from "gi://Gly?version=2";
 import GlyGtk4 from "gi://GlyGtk4?version=2";
-import { createRoot, getScope, Scope } from "ags";
+import { createRoot, getScope, jsx, Scope } from "ags";
 
 
 class _PluginWallpapers implements Runner.Plugin {
@@ -72,10 +72,11 @@ class _PluginWallpapers implements Runner.Plugin {
                 const eventMotion = Gtk.EventControllerMotion.new(),
                     eventFocus = Gtk.EventControllerFocus.new();
 
-                const revealer = new Gtk.Revealer({
-                    child: new Gtk.Picture({
+                const revealer = jsx(Gtk.Revealer, {
+                    child: jsx(Gtk.Picture, {
                         hexpand: true,
                         heightRequest: 128,
+                        css: "margin-bottom: 6px;",
                         contentFit: Gtk.ContentFit.COVER
                     })
                 });
