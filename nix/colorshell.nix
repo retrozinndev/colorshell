@@ -11,6 +11,7 @@
   glib,
   gjs,
   libadwaita,
+  dart-sass,
   socat,
 }:
 let
@@ -165,8 +166,9 @@ buildNpmPackage (finalAttrs: {
       --prefix PATH : ${
         lib.makeBinPath [
           # runtime executables
-          socat
+          dart-sass
           glib
+          socat
         ]
       }
     )
