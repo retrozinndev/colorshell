@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 import { NightLight } from "../modules/nightlight";
 import { Config } from "../modules/config";
+=======
+import { Config } from "../modules/config";
+import { NightLight } from "../modules/nightlight";
+>>>>>>> 9af7aff (:tada: feat: init settings app code)
 import { WallpaperPositioning, WalMode } from "../modules/wallpaper";
 
 import GLib from "gi://GLib?version=2.0";
