@@ -145,7 +145,7 @@ buildNpmPackage (finalAttrs: {
     # add socket-communication support on executable
     { 
       head -n1 $outPath
-      sed '1{/^#!.*$/d}' ${../scripts/colorshell-socket-interface.sh}
+      sed '1{/^#!.*$/d}' ${../scripts/socket.sh}
       cat "$outPath" | sed '/^#!.*$/d'
     } | sponge $outPath
 
