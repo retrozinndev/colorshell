@@ -1,5 +1,5 @@
-import { Config } from "./modules/config";
-import { WallpaperPositioning, WalMode } from "./modules/wallpaper";
+import { Config } from "../modules/config";
+import { WallpaperPositioning, WalMode } from "../modules/wallpaper";
 
 import GLib from "gi://GLib?version=2.0";
 
