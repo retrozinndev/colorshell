@@ -26,6 +26,8 @@
         <file alias="shield-danger-symbolic.svg">icons/shield-danger-symbolic.svg</file>
         <file alias="shield-safe-symbolic.svg">icons/shield-safe-symbolic.svg</file>
         <file alias="user-trash-symbolic.svg">icons/user-trash-symbolic.svg</file>
+        <file alias="collapse-rtl-symbolic.svg">icons/collapse-rtl-symbolic.svg</file>
+        <file alias="settings-symbolic.svg">icons/settings-symbolic.svg</file>
     </gresource>
 
     <!-- Configuration files -->
