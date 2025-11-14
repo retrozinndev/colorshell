@@ -1,6 +1,6 @@
-import { Config } from "./modules/config";
-import { NightLight } from "./modules/nightlight";
-import { WallpaperPositioning, WalMode } from "./modules/wallpaper";
+import { Config } from "../modules/config";
+import { NightLight } from "../modules/nightlight";
+import { WallpaperPositioning, WalMode } from "../modules/wallpaper";
 
 import GLib from "gi://GLib?version=2.0";
 
