@@ -1,7 +1,7 @@
 import { createRoot, getScope, Scope } from "ags";
 import { execAsync } from "ags/process";
 import { userData } from "../config";
-import { createScopedConnection } from "gnim-utils";
+import { createScopedConnection } from "../modules/utils";
 import GObject, { getter, gtype, property, register, setter } from "ags/gobject";
 
 import AstalBluetooth from "gi://AstalBluetooth";
@@ -21,7 +21,6 @@ export class Bluetooth extends GObject.Object {
     private static instance: Bluetooth;
     private astalBl: AstalBluetooth.Bluetooth;
 
-    #connections: Map<GObject.Object, Array<number>|number> = new Map();
     #adapter: AstalBluetooth.Adapter|null = null;
     #scope!: Scope;
     #isAvailable: boolean = false;
@@ -34,8 +33,8 @@ export class Bluetooth extends GObject.Object {
     get isAvailable() { return this.#isAvailable; }
 
     /** last connected device, can be null */
-    @getter(AstalBluetooth.Device)
-    get lastDevice() { return this.#lastDevice!; }
+    @getter(gtype<AstalBluetooth.Device|null>(AstalBluetooth.Device))
+    get lastDevice() { return this.#lastDevice; }
 
     @getter(gtype<AstalBluetooth.Adapter|null>(AstalBluetooth.Adapter))
     get adapter() { return this.#adapter; }
@@ -85,6 +84,7 @@ export class Bluetooth extends GObject.Object {
                 if(this.astalBl.adapters.length === 1)  // adapter was just added
                     this.adapter = adapter;
             });
+
             createScopedConnection(AstalBluetooth.get_default(), "adapter-removed", (adapter) => {
                 if(this.astalBl.adapters.length < 1) {
                     this.adapter = null;
@@ -111,22 +111,34 @@ export class Bluetooth extends GObject.Object {
             this.#lastDevice = this.getLastConnectedDevice();
             this.notify("last-device");
 
-            this.#connections.set(AstalBluetooth.get_default(), [
-                AstalBluetooth.get_default().connect("device-added", (_) => {
-                    this.#lastDevice = this.getLastConnectedDevice();
-                    this.notify("last-device");
-                }),
-                AstalBluetooth.get_default().connect("device-removed", (_) => {
-                    this.#lastDevice = this.getLastConnectedDevice();
-                    this.notify("last-device");
-                })
-            ]);
+            const deviceConns: Map<string, number> = new Map();
 
-            this.#scope.onCleanup(() => this.#connections.forEach((ids, gobj) => 
-                Array.isArray(ids) ? 
-                    ids.forEach(id => gobj.disconnect(id))
-                : gobj.disconnect(ids)
-            ));
+            this.astalBl.devices.forEach((dev) => {
+                deviceConns.set(dev.address, dev.connect("notify::connected", () => {
+                    this.#lastDevice = this.getLastConnectedDevice();
+                    this.notify("last-device");
+                }));
+            });
+
+            createScopedConnection(
+                AstalBluetooth.get_default(), "device-added", (dev) => {
+                    deviceConns.set(dev.address, dev.connect("notify::connected", () => {
+                        this.#lastDevice = this.getLastConnectedDevice();
+                        this.notify("last-device");
+                    }));
+                }
+            );
+
+            createScopedConnection(
+                AstalBluetooth.get_default(), "device-removed", (dev) => {
+                    const id = deviceConns.get(dev.address);
+                    if(id !== undefined)
+                        dev.disconnect(id);
+
+                    this.#lastDevice = this.getLastConnectedDevice();
+                    this.notify("last-device");
+                }
+            );
         });
     }
 
@@ -142,11 +154,10 @@ export class Bluetooth extends GObject.Object {
     }
 
     private getLastConnectedDevice(): AstalBluetooth.Device|null {
-        
-        const connectedDevices = AstalBluetooth.get_default().devices
-            .filter(d => d.connected);
+        const devices = AstalBluetooth.get_default().devices
+            .filter(d => d.paired && d.trusted && d.connected);
 
-        const lastDevice = connectedDevices[connectedDevices.length - 1];
+        const lastDevice = devices[devices.length - 1];
 
         return lastDevice ?? null;
     }

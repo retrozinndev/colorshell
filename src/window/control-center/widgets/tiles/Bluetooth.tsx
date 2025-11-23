@@ -5,21 +5,21 @@ import { createBinding, createComputed } from "ags";
 import { Bluetooth } from "../../../../modules/bluetooth";
 
 import AstalBluetooth from "gi://AstalBluetooth";
+import { secureBaseBinding } from "../../../../modules/utils";
+import { tr } from "../../../../i18n/intl";
 
 
 export const TileBluetooth = () => 
-    <Tile title={"Bluetooth"} visible={createBinding(Bluetooth.getDefault(), "isAvailable")}
-      description={createComputed([
-          createBinding(Bluetooth.getDefault(), "adapter"),
-          createBinding(AstalBluetooth.get_default(), "devices")
-      ], (adapter, devices) => {
-          const lastConnectedDevice = devices.filter(d => d.connected)[devices.length - 1];
-
-          if(!adapter || !lastConnectedDevice) 
-              return "";
-
-          return lastConnectedDevice.alias;
-      })} 
+    <Tile title={createBinding(Bluetooth.getDefault(), "lastDevice").as(dev =>
+          dev?.alias ?? "Bluetooth"
+      )} visible={createBinding(Bluetooth.getDefault(), "isAvailable")}
+      description={secureBaseBinding<typeof Bluetooth.prototype.lastDevice>(
+          createBinding(Bluetooth.getDefault(), "lastDevice"), 
+          "batteryPercentage", 
+          null
+      ).as(bat => bat !== null && bat > 0 ? 
+          `${tr("battery")}: ${Math.floor(bat*100)}%`
+      : (bat !== null ? tr("connected") : ""))} 
       onEnabled={() => Bluetooth.getDefault().adapter?.set_powered(true)}
       onDisabled={() => Bluetooth.getDefault().adapter?.set_powered(false)}
       onClicked={() => TilesPages?.toggle(BluetoothPage)}
