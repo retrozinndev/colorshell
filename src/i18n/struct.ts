@@ -20,6 +20,7 @@ export type i18nStruct = {
     apps: string,
     clear: string,
     copy_to_clipboard: string,
+    battery: string,
 
     media: {
         loop: string,

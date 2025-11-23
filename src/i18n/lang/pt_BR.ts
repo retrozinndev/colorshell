@@ -21,6 +21,7 @@ export default {
     apps: "Aplicativos",
     clear: "Limpar",
     copy_to_clipboard: "Copiar para a Área de Transferência",
+    battery: "Bateria",
 
     media: {
         next: "Próxima faixa",
