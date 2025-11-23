@@ -15,8 +15,8 @@ importers:
         specifier: ^7.1.0
         version: 7.1.0
       gnim-utils:
-        specifier: github:retrozinndev/gnim-utils#1.0.0
-        version: https://codeload.github.com/retrozinndev/gnim-utils/tar.gz/8bfb7d21817ac91a639c3cc90f1b4f66eb990b1e(gnim@1.8.2)
+        specifier: github:retrozinndev/gnim-utils
+        version: https://codeload.github.com/retrozinndev/gnim-utils/tar.gz/b2c7df145f898116322dd22032b361ad7b120391(gnim@1.8.2)
 
 packages:
 
@@ -31,8 +31,8 @@ packages:
     resolution: {integrity: sha512-trLf4SzuuUxfusZADLINj+dE8clK1frKdmqiJNb1Es75fmI5oY6X2mxLVUciLLjxqw/xr72Dhy+lER6dGd02FQ==}
     engines: {node: '>=10'}
 
-  gnim-utils@https://codeload.github.com/retrozinndev/gnim-utils/tar.gz/8bfb7d21817ac91a639c3cc90f1b4f66eb990b1e:
-    resolution: {tarball: https://codeload.github.com/retrozinndev/gnim-utils/tar.gz/8bfb7d21817ac91a639c3cc90f1b4f66eb990b1e}
+  gnim-utils@https://codeload.github.com/retrozinndev/gnim-utils/tar.gz/b2c7df145f898116322dd22032b361ad7b120391:
+    resolution: {tarball: https://codeload.github.com/retrozinndev/gnim-utils/tar.gz/b2c7df145f898116322dd22032b361ad7b120391}
     version: 1.0.0
     peerDependencies:
       gnim: ^1.8.2
@@ -49,7 +49,7 @@ snapshots:
 
   fuse.js@7.1.0: {}
 
-  gnim-utils@https://codeload.github.com/retrozinndev/gnim-utils/tar.gz/8bfb7d21817ac91a639c3cc90f1b4f66eb990b1e(gnim@1.8.2):
+  gnim-utils@https://codeload.github.com/retrozinndev/gnim-utils/tar.gz/b2c7df145f898116322dd22032b361ad7b120391(gnim@1.8.2):
     dependencies:
       gnim: 1.8.2
 
