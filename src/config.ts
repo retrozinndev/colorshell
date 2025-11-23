@@ -1,47 +1,70 @@
 import { Config } from "./modules/config";
+import { WallpaperPositioning, WalMode } from "./modules/wallpaper";
 
 import GLib from "gi://GLib?version=2.0";
 
 
 const generalConfigDefaults = {
     notifications: {
+        /** low-priority notification timeout 
+          * @default 4000 */
         timeout_low: 4000,
+        /** regular notification timeout 
+          * @default 6000 */
         timeout_normal: 6000,
+        /** critical/very important notification timeout 
+          * @default 0 */
         timeout_critical: 0,
         /** notification popup horizontal position. can be "left" or "right" 
-        * @default "right" */
+          * @default "right" */
         position_h: "right",
         /** vertical notification popup position. can be "top" or "bottom" 
-        * @default "top" */
-        position_v: "top"
+          * @default "top" */
+        position_v: "top",
+        /** dismisses notification popup when unhovered after hovering 
+          * @default false */
+        dismiss_on_unhover: false
     },
 
     night_light: {
-        /** whether to save night light values to disk */
+        /** whether to save night light/gamma filter values to disk when clicking 
+          * on power/session actions(suspend, log out, power off, reboot)
+          * @default true */
         save_on_shutdown: true
+    },
+
+    wallpaper: {
+        /** wallpaper positioning mode (hyprpaper) */
+        positioning: "cover" satisfies WallpaperPositioning,
+        /** color generation mode. 
+          * darken: picks darker colors; lighten: picks brighter colors */
+        color_mode: "darken" satisfies WalMode
     },
 
     workspaces: {
         /** breaks `enable_helper`, makes all workspaces show their respective ID 
-        * by default */
+          * by default */
         always_show_id: false,
         /** this is the function that shows the Workspace's IDs 
-        * around the current workspace if one breaks the crescent order.
-        * It basically helps keyboard navigation between workspaces.
-        * ---
-        * Example: 1(empty, current, shows ID), 2(empty, does not appear(makes 
-        * the previous not to be in a crescent order)), 3(not empty, shows ID) */
+          * around the current workspace if one breaks the crescent order.
+          * It basically helps keyboard navigation between workspaces.
+          * ---
+          * Example: 1(empty, current, shows ID), 2(empty, does not appear(makes 
+          * the previous not to be in a crescent order)), 3(not empty, shows ID) */
         enable_helper: true,
         /** hide workspace indicator if there's only one active workspace */
         hide_if_single: false
     },
 
     clock: {
-        /** use the same format as gnu's `date` command */
+        /** use the same format as gnu's `date` command 
+          * @default "%A %d, %H:%M" // -> "tuesday, 11, 15:44" */
         date_format: "%A %d, %H:%M"
     },
 
     misc: {
+        /** plays a system-bell sound effect using canberra-gtk-play on volume change 
+          * @default true */
         play_bell_on_volume_change: true
     }
 };

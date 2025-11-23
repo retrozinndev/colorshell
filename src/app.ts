@@ -1,5 +1,5 @@
 // thanks Aylur!!
-import "/usr/share/ags/js/lib/overrides";
+import "ags/overrides";
 import "./config";
 import { 
     PluginApps, 
@@ -168,7 +168,7 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
     private init(): void {
         // load gresource from build-defined path
         try {
-            this.#gresource = Gio.Resource.load(GRESOURCES_FILE.split('/').filter(s => 
+            const gresourcesPath: string = GRESOURCES_FILE.startsWith('/') ? GRESOURCES_FILE : (GRESOURCES_FILE.split('/').filter(s => 
                 s !== ""
             ).map(path => {
                 // support environment variables at runtime
@@ -179,9 +179,9 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
 
                     return env;
                 }
-
                 return path;
             }).join('/'));
+            this.#gresource = Gio.Resource.load(gresourcesPath);
             Gio.resources_register(this.#gresource);
 
             // add icons 
@@ -281,7 +281,7 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
             Wallpaper.getDefault();
             Stylesheet.getDefault();
 
-            console.log("Adding runner plugins");
+            console.log("Runner: Adding plugins");
             runnerPlugins.forEach(plugin => Runner.addPlugin(plugin));
 
             createSubscription(

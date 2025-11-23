@@ -160,7 +160,7 @@ Options:
   bus-name: get active player's mpris bus name.
   list: show available players with their bus name.
   select bus_name: change the active player, where bus_name is 
-    the desired player's mpris bus name(with the mediaplayer2 prefix).
+    the desired player's mpris bus name(without the mediaplayer2 prefix).
 `.trim();
         cmd.print_literal(mediaHelp);
         return 0;

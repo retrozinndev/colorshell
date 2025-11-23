@@ -1,7 +1,7 @@
 {
     "$schema": "https://www.schemastore.org/package.json",
     "name": "colorshell",
-    "version": "2.0.3",
+    "version": "2.0.4",
     "packageManager": "pnpm@10.12.1",
     "scripts": {
         "types": "sh ./scripts/types.sh",
@@ -13,8 +13,8 @@
         "sync-config": "sh ./scripts/sync-config.sh"
     },
     "devDependencies": {
-        "ags": "link:/usr/share/ags/js",
-        "gnim-utils": "github:retrozinndev/gnim-utils#1.0.0",
+        "ags": "file:/usr/share/ags/js",
+        "gnim-utils": "github:retrozinndev/gnim-utils",
         "fuse.js": "^7.1.0"
     }
 }
