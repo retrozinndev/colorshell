@@ -97,7 +97,7 @@ buildNpmPackage (finalAttrs: {
       ;
 
     fetcherVersion = 2;
-    hash = "sha256-m/aPNvv26r0DUvRUR4TL2GwwAHKvEIkc8Nvlm/jpnPc=";
+    hash = "sha256-Z5JP7hPEjLY9wGnWe6kM6T1qk3UUSlJnoxdDqS/ksnw=";
 
     # fetcher version 2 fails if there are no *-exec files in the output
     preFixup = ''
