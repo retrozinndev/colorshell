@@ -15,7 +15,7 @@ importers:
         specifier: ^7.1.0
         version: 7.1.0
       gnim-utils:
-        specifier: github:retrozinndev/gnim-utils#1.0.1
+        specifier: github:retrozinndev/gnim-utils
         version: https://codeload.github.com/retrozinndev/gnim-utils/tar.gz/3c3b9ac6209b47e1efb2ac219acab938e8d97426(gnim@1.8.2)
 
 packages:
