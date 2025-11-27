@@ -8,9 +8,12 @@ export default {
     commands: [{
         name: "inspector",
         help: "open the gtk's visual inspector",
-        onCalled: () => {
+        onCalled: (print) => {
             Gtk.Window.set_interactive_debugging(true);
-            return "Opening GTK Inspector..."
+            print({
+                content: "Opening GTK Inspector...",
+                type: "out"
+            });
         }
     }]
 } satisfies Cli.Module;
