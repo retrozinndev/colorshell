@@ -6,35 +6,56 @@ import { property, register, signal } from "ags/gobject";
 import Pango from "gi://Pango?version=1.0";
 
 
-@register({ GTypeName: "Tile" })
+@register({ GTypeName: "ClshTile" })
 export class Tile extends Gtk.Box {
-    @signal(Boolean) toggled(_state: boolean) {}
-    @signal() enabled() {}
-    @signal() disabled() {}
-    @signal() clicked() {
-        if(this.enableOnClicked)
-            this.enable();
-    }
-
-    @property(String)
-    public icon: string;
-    @property(String)
-    public title: string;
-    @property(String)
-    public description: string = "";
-    @property(Boolean)
-    public enableOnClicked: boolean = false;
-    @property(Boolean)
-    public state: boolean = false;
-    @property(Boolean)
-    public hasArrow: boolean = false;
-    
     declare $signals: Gtk.Box.SignalSignatures & {
         "toggled": (state: boolean) => void;
         "enabled": () => void;
         "disabled": () => void;
         "clicked": () => void;
+        "notify::icon": () => void;
+        "notify::title": () => void;
+        "notify::description": () => void;
+        "notify::toggle-on-click": () => void;
+        "notify::state": () => void;
+        "notify::has-arrow": () => void;
     };
+
+    @signal(Boolean) 
+    toggled(_: boolean) {}
+
+    @signal() 
+    enabled() {}
+
+    @signal() 
+    disabled() {}
+
+    @signal() 
+    clicked() {
+        if(!this.toggleOnClick)
+            return;
+
+        this.state ? this.disable() : this.enable();
+    }
+
+    @property(String)
+    public icon: string;
+
+    @property(String)
+    public title: string;
+
+    @property(String)
+    public description: string = "";
+
+    @property(Boolean)
+    public toggleOnClick: boolean = false;
+
+    @property(Boolean)
+    public state: boolean = false;
+
+    @property(Boolean)
+    public hasArrow: boolean = false;
+   
 
     public enable(): void {
         if(this.state) return;
@@ -61,7 +82,7 @@ export class Tile extends Gtk.Box {
         title: string;
         description?: string;
         state?: boolean;
-        enableOnClicked?: boolean;
+        toggleOnClick?: boolean;
         hasArrow?: boolean;
     }) {
         super(omitObjectKeys(props, [
@@ -69,7 +90,7 @@ export class Tile extends Gtk.Box {
             "title",
             "description",
             "state",
-            "enableOnClicked"
+            "toggleOnClick"
         ]));
 
         this.add_css_class("tile");
@@ -96,8 +117,8 @@ export class Tile extends Gtk.Box {
         if(props.state !== undefined)
             this.state = props.state;
 
-        if(props.enableOnClicked !== undefined)
-            this.enableOnClicked = props.enableOnClicked;
+        if(props.toggleOnClick !== undefined)
+            this.toggleOnClick = props.toggleOnClick;
 
         this.state &&
             this.add_css_class("enabled"); // fix no highlight when enabled on init

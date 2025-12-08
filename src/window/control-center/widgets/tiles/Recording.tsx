@@ -21,4 +21,5 @@ export const TileRecording = () =>
       onDisabled={() => Recording.getDefault().stopRecording()}
       onEnabled={() => Recording.getDefault().startRecording()}
       state={createBinding(Recording.getDefault(), "recording")}
+      toggleOnClick
     />;

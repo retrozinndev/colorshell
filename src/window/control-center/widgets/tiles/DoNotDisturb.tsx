@@ -11,4 +11,5 @@ export const TileDND = () =>
       onEnabled={() => Notifications.getDefault().getNotifd().dontDisturb = true}
       icon={"minus-circle-filled-symbolic"}
       state={Notifications.getDefault().getNotifd().dontDisturb}
+      toggleOnClick
     />;
