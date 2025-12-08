@@ -58,6 +58,7 @@ const generalConfigDefaults = {
 
     aliases: {
         terminal: "kitty",
+        file_manager: "nautilus",
         media: "amberol"
     },
 
