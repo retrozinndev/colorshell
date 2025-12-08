@@ -1,14 +1,14 @@
 import { Astal, Gdk, Gtk } from "ags/gtk4";
 import { BackgroundWindow } from "./BackgroundWindow";
-import { Accessor, CCProps, createComputed, createRoot, getScope } from "ags";
-import { omitObjectKeys, WidgetNodeType } from "../modules/utils";
+import { Accessor, CCProps, createComputed, createRoot, getScope, Node } from "ags";
+import { omitObjectKeys } from "../modules/utils";
 
 import GObject from "ags/gobject";
 
 
 type PopupWindowSpecificProps = {
     $?: (self: Astal.Window) => void;
-    children?: WidgetNodeType;
+    children?: Node;
     /** Stylesheet for the background of the popup-window */
     cssBackgroundWindow?: string;
     class?: string | Accessor<string>;
@@ -122,7 +122,9 @@ export function PopupWindow(props: PopupWindowProps): GObject.Object {
               props.actionKeyPressed?.(self, keyval, keycode);
           }));
 
-          scope.onCleanup(() => conns.forEach((id, obj) => obj.disconnect(id)));
+          scope.onCleanup(() => conns.forEach((id, obj) => 
+                GObject.signal_handler_is_connected(obj, id) && obj.disconnect(id)
+          ));
 
           props.$?.(self);
       }}>
