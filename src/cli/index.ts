@@ -1,8 +1,7 @@
 import { Scope } from "ags";
 import { createScopedConnection, decoder, encoder } from "../modules/utils";
-import { showWorkspaceNumber } from "../window/bar/widgets/Workspaces";
 
-import windows from "./modules/windows";
+import main from "./modules/main";
 import volume from "./modules/volume";
 import devel from "./modules/devel";
 import media from "./modules/media";
@@ -16,39 +15,7 @@ export namespace Cli {
     let initialized: boolean = false;
     const modules: Array<Module> = [
         // main module, no need for prefix
-        {
-            help: "manage colorshell windows and do more cool stuff.",
-            commands: [
-                ...windows,
-                // others
-                {
-                    name: "runner",
-                    onCalled: (_, data) => {
-                        return {
-                            content: `Opening runner${data ? ` with "${data}"` : ""}...`,
-                            type: "out"
-                        };
-                    }
-                },
-                {
-                    name: "peek-workspace-num",
-                    help: "peek the workspace numbers in the workspace indicator. (optional: time in millis)",
-                    onCalled: () => {
-                        showWorkspaceNumber(true);
-                        return "Peeking workspace IDs...";
-                    }
-                }
-            ],
-            arguments: [
-                {
-                    name: "version",
-                    alias: "v",
-                    help: "print the current colorshell version",
-                    onCalled: () => `colorshell by retrozinndev, version ${COLORSHELL_VERSION
-                        }${DEVEL ? "(devel)" : ""}`
-                }
-            ]
-        },
+        main,
         volume,
         media
     ];
@@ -56,7 +23,9 @@ export namespace Cli {
     export type Output = {
         type: "err"|"out";
         content: string|Uint8Array;
-    } | string;
+    };
+
+    type PrintFunction = (output: Output) => void;
 
     /** argument passed to the command / module.
         * output of onCalled is passed to */
@@ -70,16 +39,12 @@ export namespace Cli {
         /** whether the argument needs a value attribute.
             * @example --file ~/a_nice_home_file.txt */
         hasValue?: boolean;
-        /** runtime-set value for the argument(if enabled) */
+        /** data passed to the argument if it accepts a value
+          * (accessed in command's `onCalled` method) */
         value?: string;
         /** help message for the argument */
         help?: string;
-        onCalled?: (value?: string) => void;
-    };
-
-    export type ArgumentData = {
-        argument: Argument;
-        data?: string;
+        onCalled?: (print: PrintFunction, value?: string) => void;
     };
 
     export type Command = {
@@ -87,10 +52,8 @@ export namespace Cli {
             * @example `colorshell ${prefix?} ${command.name}`*/
         name: string;
         help?: string;
-        /** data passed to the command. (only works when arguments are disabled) */
-        data?: string;
         arguments?: Array<Argument>;
-        onCalled: (args: Array<ArgumentData>, data?: string) => Output;
+        onCalled: (print: PrintFunction, args: Array<Argument>) => void;
     };
 
     export type Module = {
@@ -101,11 +64,11 @@ export namespace Cli {
         arguments?: Array<Argument>;
         help?: string;
         /** called everytime the prefix is used, even when using module commands */
-        onPrefixCalled?: () => void;
+        onCalled?: (print: PrintFunction, command?: Command) => void;
     };
 
     /** initialize the cli */
-    export function init(scope: Scope, communicationMethod: Gio.SocketService|Gio.ApplicationCommandLine, app?: Gio.Application): void {
+    export function init(scope: Scope, method: Gio.SocketService|Gio.ApplicationCommandLine, app?: Gio.Application): void {
         if(initialized) return;
 
         initialized = true;
@@ -113,9 +76,9 @@ export namespace Cli {
         DEVEL && modules.push(devel);
 
         scope.run(() => {
-            if(communicationMethod instanceof Gio.SocketService) {
+            if(method instanceof Gio.SocketService) {
                 createScopedConnection(
-                    communicationMethod, "incoming", (conn) => {
+                    method, "incoming", (conn) => {
                         try {
                             return handleIncoming(conn);
                         } catch(_) {}
@@ -138,10 +101,14 @@ export namespace Cli {
                 (cmd) => {
                     let hasError: boolean = false;
                     try {
-                        handleArgs(
+                        handle(
                             cmd.get_arguments().toSpliced(0, 1), 
-                            (str, type) => {
-                                if(type === "err") {
+                            (out) => {
+                                const str = typeof out.content !== "string" ?
+                                    decoder.decode(out.content)
+                                : out.content;
+
+                                if(out.type === "err") {
                                     cmd.printerr_literal(str);
                                     hasError = true;
                                     return;
@@ -180,7 +147,13 @@ export namespace Cli {
                 parsedArgs?.splice(0, 1); // remove the unnecessary `colorshell` part
 
                 if(success) {
-                    handleArgs(parsedArgs!, conn.outputStream);
+                    handle(parsedArgs!, (out) => {
+                        conn.outputStream.write_bytes(
+                            typeof out.content === "string" ?
+                                encoder.encode(out.content)
+                            : out.content
+                        );
+                    });
 
                     conn.outputStream.flush(null);
                     conn.close(null);
@@ -203,57 +176,164 @@ export namespace Cli {
     }
 
     /** translate app arguments to modules/commands 
-    * order: module ?arg -> command ?arg */
-    function handleArgs(args: Array<string>, writeTo: Gio.OutputStream|((str: string, type: "out"|"err") => void)): void {
-        let mod: Module;
+    * order: module ?args command ?args 
+    * @example media(module) --player=spotify(arg) pause(command) */
+    function handle(args: Array<string>, print: PrintFunction): void {
+        const commandArgs: Array<Argument> = [];
+        const moduleArgs: Array<Argument> = [];
+        let mod: Module = modules[0];
         let command: Command|undefined;
-        const modArgs: Array<Argument> = [];
-        const cmdArgs: Array<Argument> = [];
 
-        function print(out: Output): void {
-            const content = `${outputToString(out)}\n`;
-            const type: "out"|"err" = typeof out === "object" ?
-                out.type
-            : "out";
+        /** @returns true if handled argument used the next parameter as a value */
+        function handleArgument(cmd: Module|Command, args: Array<string>, index: number): boolean {
+            if(cmd.arguments === undefined || cmd.arguments.length < 1 || !isArgument(args[index]))
+                return false;
 
-            typeof writeTo === "function" ?
-                writeTo(content, type)
-            : writeTo.write_bytes(
-                encoder.encode(`${outputToString(out)}\n`),
-                null
-            );
-        }
-
-        function handleCommandArguments(cmd: Module|Command, args: Array<string>, index: number, printFun: (out: Output) => void): void {
-            const argNameRegEx = /^--/, argAliasRegEx = /^-/;
-            let argName: string;
-
+            // full argument
             if(args[index].startsWith("--")) {
+                for(const arg of cmd.arguments) {
+                    if(arg.name === args[index].replace(/^--/, "")) {
+                        command ?
+                            commandArgs.push(arg)
+                        : moduleArgs.push(arg);
+
+                        if(arg.hasValue) {
+                            // support in-argument values
+                            if(args[index].includes('=')) {
+                                const value = args[index].split('=', 1).filter(s => s !== "");
+                                arg.value = value[1];
+                                arg.onCalled?.(print, arg.value);
+
+                                return false;
+                            }
+
+                            arg.value = args[index+1];
+                            if(arg.value !== undefined) {
+                                arg.onCalled?.(print, arg.value);
+                                return true;
+                            }
+
+                            print({
+                                content: `Error: no data provided for argument ${arg.name} from command ${command?.name ?? mod.prefix}`,
+                                type: "err"
+                            });
+                            return false;
+                        }
+
+                        arg.onCalled?.(print);
+                        break;
+                    }
+                }
                 
+                print({
+                    content: `Error: no such argument "${args[index]}" for command ${command?.name ?? mod?.prefix}`,
+                    type: "err"
+                });
+                return false;
             }
+
+            // it's an argument alias(e.g.: -h -> --help)
+            for(const arg of cmd.arguments) {
+                if(arg.alias === args[index].replace(/^-/, "")) {
+                    command ?
+                        commandArgs.push(arg)
+                    : moduleArgs.push(arg);
+
+                    if(arg.hasValue) {
+                        arg.value = extractValueFromArgument(args[index]);
+                        if(arg.value !== undefined) {
+                            arg.onCalled?.(print, arg.value);
+                            return false;
+                        }
+
+                        arg.value = args[index+1];
+                        if(arg.value !== undefined) {
+                            arg.onCalled?.(print, arg.value);
+                            return true;
+                        }
+
+                        print({
+                            content: `Error: no data provided for argument ${arg.name} from command ${command?.name ?? mod.prefix}`,
+                            type: "err"
+                        });
+                        return false;
+                    }
+
+                    arg.onCalled?.(print);
+                    break;
+                }
+            }
+
+            print({
+                content: `Error: no such argument "${args[index]}" for command ${command?.name ?? mod?.prefix}`,
+                type: "err"
+            });
+            return false;
         }
 
         const firstFoundMod = modules.filter(mod => mod.prefix === args[0])[0];
-        mod = firstFoundMod ?? modules[0];
+
+        if(firstFoundMod) {
+            // remove now-unnecessary module reference
+            args.splice(0, 1);
+            mod = firstFoundMod;
+        }
 
         if(!mod) {
             print({
-                content: `No command module found with the name ${args[0]}!`,
+                content: `Error: no matching command with name ${args[0]}!`,
                 type: "err"
             });
             return;
         }
 
+        // we use this to skip checking next argument when it's 
+        // used as a parameter to another argument/flag
+        let skip: boolean = false;
+
         for(let i = 1; i < args.length; i++) {
             const arg = args[i];
 
-            if(/^-/.test(arg)) {
-                handleCommandArguments(command ?? mod, args, i, print);
+            if(skip) {
+                skip = false;
                 continue;
+            }
+
+            if(isArgument(arg)) {
+                if(/-?-h(elp)?/.test(arg)) {
+                    print({
+                        content: (command ?? mod).help ?? "No help defined for this command",
+                        type: "out"
+                    });
+                }
+                skip = handleArgument(command ?? mod, args, i);
+                continue;
+            }
+
+
+
+            // TODO: support modules and module commands
+            const foundCommand = mod.commands?.filter(m => m.name === arg)[0];
+            if(!command && foundCommand) {
+                command = foundCommand;
+            }
         }
+
+        // call module and command onCalled methods after doing argument parsing and shi
+        mod.onCalled?.(print, command);
     }
 
-    function outputToString(out: Output): string {
+    function isArgument(str: string): boolean {
+        return /^-(-)?/.test(str);
+    }
+
+    function extractValueFromArgument(arg: string): string|undefined {
+        return arg.includes('=') ?
+            arg.split('=', 1).filter(s => s !== "")[1]
+        : undefined;
+    }
+
+    function outputToString(out: Output|string): string {
         if(typeof out === "object")
             return out.content instanceof Uint8Array ?
                 decoder.decode(out.content)

@@ -1,6 +1,8 @@
-node_modules/
+node_modules
 @types/
 build/
 
-pnpm-lock.yaml
 *.log
+
+result
+.direnv/

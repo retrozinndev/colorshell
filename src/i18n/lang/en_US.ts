@@ -21,6 +21,7 @@ export default {
     connect: "Connect",
     disconnect: "Disconnect",
     copy_to_clipboard: "Copy to clipboard",
+    battery: "Battery",
 
     media: {
         play: "Play",

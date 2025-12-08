@@ -1,12 +1,13 @@
 import { execAsync } from "ags/process";
-import { timeout } from "ags/time";
-import { monitorFile, readFile } from "ags/file";
-import GObject, { register, getter } from "ags/gobject";
+import { readFile } from "ags/file";
+import GObject, { register, getter, gtype, property, setter } from "ags/gobject";
 
-import AstalIO from "gi://AstalIO";
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
-import { decoder, encoder } from "./utils";
+import { createSubscription, encoder } from "./utils";
+import { Notifications } from "./notifications";
+import { generalConfig } from "../config";
+import { createRoot, getScope, Scope } from "ags";
 
 
 export { Wallpaper };
@@ -40,15 +41,20 @@ type WalData = {
     };
 };
 
+
+export type WalMode = "darken"|"lighten";
+
+/** wallpaper tiling mode */
+export type WallpaperPositioning = "contain"|"tile"|"cover";
+
 @register({ GTypeName: "Wallpaper" })
 class Wallpaper extends GObject.Object {
     private static instance: Wallpaper;
     #wallpaper: (string|undefined);
+    #scope!: Scope;
     #splash: boolean = true;
-    #monitor: Gio.FileMonitor;
     #hyprpaperFile: Gio.File;
     #wallpapersPath: string;
-    #ignoreWatch: boolean = false;
 
     @getter(Boolean)
     public get splash() { return this.#splash; }
@@ -57,13 +63,20 @@ class Wallpaper extends GObject.Object {
         this.notify("splash");
     }
 
-    /** current wallpaper's complete path
-    * can be an empty string if undefined */
+    /** current wallpaper's complete path. can be an empty string if undefined */
     @getter(String)
-    public get wallpaper() { return this.#wallpaper ?? ""; }
-    public set wallpaper(newValue: string) { this.setWallpaper(newValue); }
+    get wallpaper() { return this.#wallpaper ?? ""; }
 
-    public get wallpapersPath() { return this.#wallpapersPath; }
+    @setter(String)
+    set wallpaper(newValue: string) { this.setWallpaper(newValue); }
+
+    get wallpapersPath() { return this.#wallpapersPath; }
+
+    @property(gtype<WallpaperPositioning>(String))
+    positioning: WallpaperPositioning = "cover";
+
+    @property(gtype<WalMode>(String))
+    colorMode: WalMode = "darken";
 
     constructor() {
         super();
@@ -78,58 +91,67 @@ class Wallpaper extends GObject.Object {
             if(wall?.trim()) this.#wallpaper = wall.trim();
         });
 
-        let tmeout: (AstalIO.Time|undefined) = undefined;
+        createRoot(() => {
+            this.#scope = getScope();
 
-        this.#monitor = monitorFile(this.#hyprpaperFile.get_path()!, (_, event) => {
-            if(event !== Gio.FileMonitorEvent.CHANGED && event !== Gio.FileMonitorEvent.CREATED &&
-              event !== Gio.FileMonitorEvent.MOVED_IN)
-                return;
+            createSubscription(
+                generalConfig.bindProperty("wallpaper.color_mode", "string"),
+                () => {
+                    const mode = generalConfig.getProperty("wallpaper.color_mode", "string");
 
-            if(tmeout) return;
-            else tmeout = timeout(1500, () => tmeout = undefined);
+                    if(this.colorMode === mode)
+                        return;
 
-            if(this.#ignoreWatch) {
-                this.#ignoreWatch = false;
-                return;
-            }
+                    if(!mode || (mode !== "darken" && mode !== "lighten")) {
+                        Notifications.getDefault().sendNotification({
+                            appName: "colorshell",
+                            summary: "Couldn't update color mode",
+                            body: "Invalid mode. Possible values are: \"darken\" or \"lighten\""
+                        });
+                        return;
+                    };
 
-            const [ loaded, text ] = this.#hyprpaperFile.load_contents(null);
-            if(!loaded) 
-                console.error("Wallpaper: Couldn't read changes inside the hyprpaper file!");
-
-            const content = decoder.decode(text);
-
-            if(content) {
-                let setWall: boolean = true;
-
-                for(const line of content.split('\n')) {
-                    if(line.trim().startsWith('#'))
-                        continue;
-
-                    const lineSplit = line.split('=');
-                    const key = lineSplit[0].trim(),
-                        value = lineSplit.filter((_, i) => i !== 0).join('=').trim();
-
-                    switch(key) {
-                        case "splash": 
-                            this.splash = (/(yes|true|on|enable|enabled|1).*/.test(value)) ? true : false;
-                            break;
-
-                        case "wallpaper":
-                            if(this.#wallpaper !== value && setWall) {
-                                this.setWallpaper(value, false);
-                                setWall = false; // wallpaper already set
-                            }
-
-                            break;
-                    }
+                    this.colorMode = mode as WalMode;
+                    this.reloadColors();
                 }
-            }
+            );
+
+            createSubscription(
+                generalConfig.bindProperty("wallpaper.positioning", "string"),
+                () => {
+                    const positioning = generalConfig
+                        .getProperty("wallpaper.positioning", "string") as WallpaperPositioning;
+
+                    if(this.positioning === positioning)
+                        return;
+
+                    if(!positioning || (positioning !== "contain" && 
+                                        positioning !== "cover" && 
+                                        positioning !== "tile")) {
+
+                        Notifications.getDefault().sendNotification({
+                            appName: "colorshell",
+                            summary: "Couldn't update wallpaper position",
+                            body: "Invalid position value. Possible values are: \"cover\"(default), \"contain\" or \"tile\""
+                        });
+                        return;
+                    }
+
+                    this.positioning = positioning;
+                    this.reloadWallpaper().catch((e: Error) => 
+                        Notifications.getDefault().sendNotification({
+                            appName: "colorshell",
+                            summary: "Couldn't update wallpaper position",
+                            body: `An error occurred while updating wallpaper's position: ${e.message}`
+                        })
+                    );
+                }
+            );
         });
     }
 
     vfunc_dispose(): void {
-        this.#monitor.cancel();
+        this.#scope?.dispose();
     }
 
     public static getDefault(): Wallpaper {
@@ -140,29 +162,30 @@ class Wallpaper extends GObject.Object {
     }
 
     private writeChanges(): void {
-        this.#ignoreWatch = true; // tell monitor to ignore file replace
         this.#hyprpaperFile.replace_async(null, false,
             Gio.FileCreateFlags.REPLACE_DESTINATION,
             GLib.PRIORITY_DEFAULT, null, (_, result) => {
                 const res = this.#hyprpaperFile.replace_finish(result);
-                if(res) {
-                    // success
-                    this.#ignoreWatch = true; // tell monitor to ignore this change
-                    res.write_bytes_async(encoder.encode(`# This file was automatically generated by color-shell
-
-                        preload = ${this.#wallpaper}
-                        splash = ${this.#splash}
-                        wallpaper = , ${this.#wallpaper}`.split('\n').map(str => str.trimStart()).join('\n')),
-                        GLib.PRIORITY_DEFAULT, null, (_, asyncRes) => {
-                            if(_!.write_finish(asyncRes)) res.flush(null);
-                            res.close(null);
-                        }
-                    );
-
+                if(!res) {
+                    console.error(`Wallpaper: an error occurred when trying to replace the hyprpaper file`);
                     return;
                 }
 
-                console.error(`Wallpaper: an error occurred when trying to replace the hyprpaper file`);
+                // success
+                res.write_bytes_async(encoder.encode(`\
+                    # This file was automatically generated by colorshell
+
+                    preload = ${this.#wallpaper}
+                    splash = ${this.#splash}
+                    wallpaper = , ${this.positioning === "cover" ? "" : `${this.positioning}:`}${
+                        this.#wallpaper}`.split('\n').map(str => str.trimStart()).join('\n')),
+                    GLib.PRIORITY_DEFAULT, null, (_, asyncRes) => {
+                        if(_!.write_finish(asyncRes)) res.flush(null);
+                        res.close(null);
+                    }
+                );
+
+                return;
             }
         );
     }
@@ -174,42 +197,49 @@ class Wallpaper extends GObject.Object {
 
     public async getWallpaper(): Promise<string|undefined> {
         return await execAsync("sh -c \"hyprctl hyprpaper listactive | tail -n 1\"").then(stdout => {
-            const loaded: (string|undefined) = stdout.split('=')[1]?.trim();
+            const loaded = stdout.split('=')[1]?.trim();
 
             if(!loaded) 
                 console.warn(`Wallpaper: Couldn't get wallpaper. There is(are) no loaded wallpaper(s)`);
 
             return loaded;
-        }).catch((err: Gio.IOErrorEnum) => {
-            console.error(`Wallpaper: Couldn't get wallpaper. Stderr: \n${err.message ? `${err.message} /` : ""} Stack: \n ${err.stack}`);
+        }).catch((e: Error) => {
+            console.error(`Wallpaper: Couldn't get wallpaper. Stderr: \n${e.message}`);
             return undefined;
         });
     }
 
     public reloadColors(): void {
-        execAsync(`wal -t --cols16 darken -i "${this.#wallpaper}"`).then(() => {
+        execAsync(`wal -t --cols16 ${this.colorMode} -i "${this.#wallpaper}"`).then(() => {
             console.log("Wallpaper: reloaded shell colors");
-        }).catch(r => {
-            console.error(`Wallpaper: Couldn't update shell colors. Stderr: ${r}`);
+        }).catch((e: Error) => {
+            console.error(`Wallpaper: Couldn't update shell colors. Stderr: ${e.message}`);
         });
     }
 
+    public async reloadWallpaper(write: boolean = true): Promise<void> {
+        if(this.wallpaper.trim() === "")
+            return;
+
+        await execAsync(`hyprctl hyprpaper reload \", ${
+            this.positioning === "cover" ? "" : `${this.positioning}:`
+        }${this.wallpaper}\"`);
+        write && this.writeChanges();
+    }
+
     public setWallpaper(path: string|Gio.File, write: boolean = true): void {
-        execAsync("hyprctl hyprpaper unload all").then(() => 
-            execAsync(`hyprctl hyprpaper preload ${path}`).then(() => 
-                execAsync(`hyprctl hyprpaper wallpaper ${path}`).then(() => {
-                    this.#wallpaper = (typeof path === "string") ? path : path.get_path()!;
-                    this.reloadColors();
-                    write && this.writeChanges();
-                }).catch(r => {
-                    console.error(`Wallpaper: Couldn't set wallpaper. Stderr: ${r}`);
-                })
-            ).catch(r => {
-                console.error(`Wallpaper: Couldn't preload image. Stderr: ${r}`);
-            })
-        ).catch(r => {
-            console.error(`Wallpaper: Couldn't unload images from memory. Stderr: ${r}`);
+        path = typeof path === "string" ? path : path.peek_path()!;
+
+        if(!GLib.file_test(path, GLib.FileTest.EXISTS)) {
+            console.error("Wallpaper: file does not exist, skipped");
+            return;
+        }
+
+        this.#wallpaper = path;
+        this.reloadWallpaper(write).catch((e: Error) => {
+            console.error(`Wallpaper: Couldn't set wallpaper. Stderr: ${e.message}`);
         });
+        this.reloadColors();
     }
 
     public async pickWallpaper(): Promise<string|undefined> {
@@ -218,8 +248,8 @@ class Wallpaper extends GObject.Object {
 
             this.setWallpaper(wall);
             return wall;
-        }).catch(r => {
-            console.error(`Wallpaper: Couldn't pick wallpaper, is \`zenity\` installed? Stderr: ${r}`);
+        }).catch((e: Error) => {
+            console.error(`Wallpaper: Couldn't pick wallpaper, is \`zenity\` installed? Stderr: ${e.message}`);
             return undefined;
         }));
     }

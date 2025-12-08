@@ -21,6 +21,7 @@ export default {
   connect: "Se connecter",
   disconnect: "Se déconnecter",
   copy_to_clipboard: "Copier dans le presse-papiers",
+  battery: "Batterie",
 
   media: {
     play: "Lecture",

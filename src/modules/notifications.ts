@@ -305,8 +305,8 @@ export class Notifications extends GObject.Object {
 
         if(!notif) return;
 
-        const timeout = this.#notifications.get(notif.id)![1];
-        timeout.running && timeout.cancel();
+        const timeout = this.#notifications.get(notif.id)?.[1];
+        timeout?.running && timeout.cancel();
 
         this.#notifications.delete(notif.id);
         addToHistory && this.addHistory(notif);
@@ -322,7 +322,7 @@ export class Notifications extends GObject.Object {
 
         if(!data) return;
 
-        data[1].cancel();
+        data[1]?.cancel();
         this.notify("notifications-on-hold");
     }
 

@@ -101,9 +101,14 @@ You can do so by forking this repository, translating the shell in your fork and
 See the Installation Guide on [Wiki/Installation].
 
 ## ⬇️ Updating
-You can run the following command to update an existing colorshell installation in your system:
+You can run the following command to update an existing colorshell installation in your system(this won't work on Nix):
 ```zsh
 bash -c "bash <(curl -s https://raw.githubusercontent.com/retrozinndev/colorshell/refs/heads/ryo/update.sh)"
+```
+### Updating on Nix
+You need to update the profile that contains the flake:
+```zsh
+nix profile upgrade
 ```
 
 ## 🛠️ Development

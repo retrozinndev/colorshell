@@ -14,7 +14,7 @@ if uwsm check is-active; then
 fi
 
 if [[ $1 =~ [.]desktop$ ]]; then
-    gtk-launch $@
+    gio launch $@
     exit 0
 fi
 

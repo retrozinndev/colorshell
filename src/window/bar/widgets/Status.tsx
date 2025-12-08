@@ -13,14 +13,14 @@ import AstalBluetooth from "gi://AstalBluetooth";
 import AstalNetwork from "gi://AstalNetwork";
 import AstalWp from "gi://AstalWp";
 
+
 export const Status = () =>
-  (
-    <Gtk.Button
-      class={createBinding(Windows.getDefault(), "openWindows").as((openWins) =>
-        openWins.includes("control-center") ? "open status" : "status"
-      )}
-      onClicked={() => Windows.getDefault().toggle("control-center")}
-    >
+  <Gtk.Button class={createBinding(Windows.getDefault(), "openWindows").as((openWins) =>
+      openWins.includes("control-center") ? 
+          "open status"
+      : "status"
+    )} onClicked={() => Windows.getDefault().toggle("control-center")}>
+
       <Gtk.Box>
         <Gtk.Box class={"volume-indicators"} spacing={5}>
           <BatteryStatus
@@ -57,28 +57,21 @@ export const Status = () =>
             )}
           />
         </Gtk.Box>
-        <Gtk.Revealer
-          revealChild={createBinding(Recording.getDefault(), "recording")}
-          transitionDuration={500}
-          transitionType={Gtk.RevealerTransitionType.SLIDE_LEFT}
-        >
-          <Gtk.Box>
-            <Gtk.Image
-              class={"recording state"}
-              iconName={"media-record-symbolic"}
-              css={"margin-right: 6px;"}
-            />
+        <Gtk.Revealer revealChild={createBinding(Recording.getDefault(), "recording")}
+          transitionDuration={500} transitionType={Gtk.RevealerTransitionType.SLIDE_LEFT}>
 
-            <Gtk.Label
-              class={"rec-time"}
-              label={createBinding(Recording.getDefault(), "recordingTime")}
-            />
-          </Gtk.Box>
+            <Gtk.Box>
+                <Gtk.Image class={"recording state"} iconName={"media-record-symbolic"}
+                  css={"margin-right: 6px;"}
+                />
+                <Gtk.Label label={createBinding(Recording.getDefault(), "recordingTime")}
+                  class={"rec-time"}
+                />
+            </Gtk.Box>
         </Gtk.Revealer>
         <StatusIcons />
-      </Gtk.Box>
-    </Gtk.Button>
-  ) as Gtk.Button;
+    </Gtk.Box>
+</Gtk.Button> as Gtk.Button;
 
 function VolumeStatus(props: {
   class?: string;
