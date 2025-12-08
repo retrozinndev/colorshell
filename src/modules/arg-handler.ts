@@ -212,6 +212,8 @@ Options:
   select bus_name: change the active player, where bus_name is 
     the desired player's mpris bus name(without the mediaplayer2 prefix).
 `.trim();
+
+    if(/\-?h(elp)?/.test(args[1])) {
         cmd.print_literal(mediaHelp);
         return 0;
     }
