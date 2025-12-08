@@ -178,7 +178,7 @@ Usage:
     // it's an alias
     if(args[1].startsWith('%')) {
         const aliasName = args[1].replace(/^\%/, "");
-        const command = generalConfig.getProperty(`apps.${aliasName}`, "string");
+        const command = generalConfig.getProperty(`aliases.${aliasName}`, "string");
 
         if(command !== undefined && command.trim() !== "") {
             cmd.print_literal("Executing from alias...");

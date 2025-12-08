@@ -56,8 +56,8 @@ const generalConfigDefaults = {
         hide_if_single: false
     },
 
-    apps: {
-        term: "kitty",
+    aliases: {
+        terminal: "kitty",
         media: "amberol"
     },
 
