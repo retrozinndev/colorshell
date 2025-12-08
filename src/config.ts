@@ -56,6 +56,11 @@ const generalConfigDefaults = {
         hide_if_single: false
     },
 
+    aliases: {
+        terminal: "kitty",
+        media: "amberol"
+    },
+
     clock: {
         /** use the same format as gnu's `date` command 
           * @default "%A %d, %H:%M" // -> "tuesday, 11, 15:44" */

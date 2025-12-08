@@ -8,6 +8,7 @@ import { showWorkspaceNumber } from "../window/bar/widgets/Workspaces";
 import { playSystemBell } from "./utils";
 import { Shell } from "../app";
 import { generalConfig } from "../config";
+import { execApp } from "./apps";
 
 import Media from "./media";
 import AstalIO from "gi://AstalIO";
@@ -43,6 +44,7 @@ Development Tools:
 ` : ""}
 Other options:
   runner [initial_text]: open the application runner, optionally add an initial search.
+  run app[.desktop] [client_modifiers]: run applications from the cli, see "run help".
   peek-workspace-num [millis]: peek the workspace numbers on bar window.
   v, version: display current colorshell version.
   h, help: shows this help message.
@@ -76,6 +78,9 @@ export function handleArguments(cmd: RemoteCaller, args: Array<string>): number 
 
         case "volume":
             return handleVolumeArgs(cmd, args);
+
+        case "run":
+            return handleRunnerArgs(cmd, args);
 
         case "media":
             return handleMediaArgs(cmd, args);
@@ -145,9 +150,54 @@ Options:
     return 1;
 }
 
+function handleRunnerArgs(cmd: RemoteCaller, args: Array<string>): number {
+    const help = `\
+Run applications and command aliases defined in the colorshell
+configuration.
+
+Help:
+  client_modifiers: Hyprland client modifiers(e.g.: "[animation slide]")
+
+Options:
+  h, help: show this help message.
+
+Usage:
+  run %aliasName [client_modifiers]: run a command alias defined in the config.
+  run appName[.desktop] [client_modifiers]: run an ordinary app(uses uwsm if available).`;
+
+    if(/\-?h(elp)?/.test(args[1])) {
+        cmd.print_literal(help);
+        return 0;
+    }
+
+    if(args[1].trim() === "" || args[1] === undefined) {
+        cmd.printerr_literal("Error: No application/alias to run provided after \"run\"");
+        return 1;
+    }
+
+    // it's an alias
+    if(args[1].startsWith('%')) {
+        const aliasName = args[1].replace(/^\%/, "");
+        const command = generalConfig.getProperty(`aliases.${aliasName}`, "string");
+
+        if(command !== undefined && command.trim() !== "") {
+            cmd.print_literal("Executing from alias...");
+            execApp(command, args[2] || undefined);
+            return 0;
+        }
+
+        cmd.printerr_literal("Error: provided alias couldn't be found in the aliases list");
+        return 1;
+    }
+
+    cmd.print_literal(`Executing app from ${args[1].endsWith(".desktop") ?
+        "desktop entry" : "command"}...`);
+    execApp(args[1], args[2] || undefined);
+    return 0;
+}
+
 function handleMediaArgs(cmd: RemoteCaller, args: Array<string>): number {
-    if(/h|help/.test(args[1])) {
-        const mediaHelp = `
+    const mediaHelp = `\
 Manage colorshell's active player
 
 Options: 
