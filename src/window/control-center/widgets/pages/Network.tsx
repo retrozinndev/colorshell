@@ -6,14 +6,14 @@ import { execApp } from "../../../../modules/apps";
 import { Notifications } from "../../../../modules/notifications";
 import { AskPopup, AskPopupProps } from "../../../../widget/AskPopup";
 import { encoder, variableToBoolean } from "../../../../modules/utils";
-import { createBinding, For, With } from "ags";
+import { createBinding, createRoot, For, With } from "ags";
 
 import GLib from "gi://GLib?version=2.0";
 import NM from "gi://NM";
 import AstalNetwork from "gi://AstalNetwork";
 
 
-export const PageNetwork = <Page
+export const PageNetwork = createRoot((dispose) => <Page
     id={"network"}
     title={tr("control_center.pages.network.title")}
     headerButtons={createBinding(AstalNetwork.get_default(), "primary").as(primary =>
@@ -30,6 +30,7 @@ export const PageNetwork = <Page
             execApp("nm-connection-editor", "[animationstyle gnomed]");
         }
     }]}
+    actionClosed={() => dispose()}
     content={() => [
         <Gtk.Box class={"devices"} hexpand orientation={Gtk.Orientation.VERTICAL}
           visible={variableToBoolean(createBinding(AstalNetwork.get_default().client, "devices"))}
@@ -131,7 +132,7 @@ export const PageNetwork = <Page
             </Gtk.Box>}
         </With>
     ]}
-/> as Page;
+/> as Page);
 
 function activateWirelessConnection(connection: NM.RemoteConnection, ssid: string): void {
     AstalNetwork.get_default().get_client().activate_connection_async(

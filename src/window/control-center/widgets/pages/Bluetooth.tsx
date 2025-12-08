@@ -4,7 +4,7 @@ import { tr } from "../../../../i18n/intl";
 import { Windows } from "../../../../windows";
 import { Notifications } from "../../../../modules/notifications";
 import { execApp } from "../../../../modules/apps";
-import { createBinding, createComputed, For, With } from "ags";
+import { createBinding, createComputed, createRoot, For, With } from "ags";
 import { variableToBoolean } from "../../../../modules/utils";
 import { Bluetooth } from "../../../../modules/bluetooth";
 
@@ -14,7 +14,7 @@ import Adw from "gi://Adw?version=1";
 import Gio from "gi://Gio?version=2.0";
 
 
-export const BluetoothPage = <Page
+export const BluetoothPage = createRoot((dispose) => <Page
     id={"bluetooth"}
     title={tr("control_center.pages.bluetooth.title")}
     spacing={6}
@@ -38,8 +38,12 @@ export const BluetoothPage = <Page
             adapter.start_discovery();
         }
     }]: [])}
-    actionClosed={() => Bluetooth.getDefault().adapter?.discovering && 
-        Bluetooth.getDefault().adapter?.stop_discovery()}
+    actionClosed={() => {
+        dispose();
+
+        Bluetooth.getDefault().adapter?.discovering && 
+            Bluetooth.getDefault().adapter?.stop_discovery();
+    }}
     bottomButtons={[{
         title: tr("control_center.pages.more_settings"),
         actionClicked: () => {
@@ -111,7 +115,7 @@ export const BluetoothPage = <Page
             </Gtk.Box>
         ];
     }}
-/> as Page;
+/> as Page);
 
 function DeviceWidget({ device }: { device: AstalBluetooth.Device }): Gtk.Widget {
     const pair = async () => {
