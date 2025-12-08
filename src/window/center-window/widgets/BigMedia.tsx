@@ -1,8 +1,9 @@
 import { createBinding, For } from "ags";
 import { register } from "ags/gobject";
-import { Astal, Gtk } from "ags/gtk4";
+import { Astal, Gdk, Gtk } from "ags/gtk4";
 import { Clipboard } from "../../../modules/clipboard";
-import { pathToURI, variableToBoolean } from "../../../modules/utils";
+import { createSubscription, pathToURI, variableToBoolean } from "../../../modules/utils";
+import { Cache } from "../../../modules/cache";
 import { tr } from "../../../i18n/intl";
 
 import Media from "../../../modules/media";
@@ -10,6 +11,9 @@ import AstalMpris from "gi://AstalMpris";
 import Pango from "gi://Pango?version=1.0";
 import Adw from "gi://Adw?version=1";
 import GLib from "gi://GLib?version=2.0";
+import Gly from "gi://Gly?version=2";
+import GlyGtk4 from "gi://GlyGtk4?version=2";
+import Gio from "gi://Gio?version=2.0";
 
 
 export const BigMedia = () => {
@@ -56,18 +60,106 @@ class PlayerWidget extends Gtk.Box {
         this.set_orientation(Gtk.Orientation.VERTICAL);
         this.set_hexpand(true);
 
-        this.append(
-            <Gtk.Revealer hexpand={false} revealChild={
-                createBinding(player, "coverArt").as(Boolean)
-            } transitionType={Gtk.RevealerTransitionType.SLIDE_LEFT} transitionDuration={300}>
+        const stack = <Gtk.Stack transitionType={Gtk.StackTransitionType.CROSSFADE}
+          transitionDuration={400}
+        /> as Gtk.Stack;
 
-                <Gtk.Box class={"image"} css={createBinding(player, "artUrl").as((art) => 
-                      `background-image: url("${pathToURI(art)}");`)} 
-                  hexpand={false} vexpand={false} widthRequest={132} heightRequest={128}
-                  valign={Gtk.Align.START} halign={Gtk.Align.CENTER}
-                />
-            </Gtk.Revealer> as Gtk.Revealer
+        stack.add_named(new Adw.Spinner(), "spinner");
+
+        const picture = <Gtk.Picture class={"image"} valign={Gtk.Align.CENTER} vexpand 
+          contentFit={Gtk.ContentFit.COVER}
+        /> as Gtk.Picture;
+
+        stack.add_named(
+            <Adw.Clamp orientation={Gtk.Orientation.HORIZONTAL} maximumSize={132}>
+                <Adw.Clamp orientation={Gtk.Orientation.VERTICAL} maximumSize={128}>
+                    {picture}
+                </Adw.Clamp>
+            </Adw.Clamp> as Adw.Clamp,
+            "album-image"
         );
+
+        /** [image_path, connection_id, texture] */
+        type PlayerCache = [string, number, Gdk.Texture];
+
+        function removeAlbumImage(): void {
+            stack.hide();
+            picture.set_paintable(null);
+            const id = Cache.getDefault().getItem<PlayerCache>("player", player.busName)?.[1];
+            if(id !== undefined)
+                AstalMpris.get_default().disconnect(id);
+
+            Cache.getDefault().removeItem("player", player.busName);
+        }
+
+        function updateAlbumImage(): void {
+            const art = player.get_cover_art();
+
+            if(!art) {
+                removeAlbumImage();
+                return;
+            }
+
+            const item = Cache.getDefault().getItem<PlayerCache>("player", player.busName)!;
+
+            if(item?.[0] === art) {
+                picture.set_paintable(item[2]);
+                stack.set_visible_child_name("album-image");
+                stack.show();
+                return;
+            }
+
+            const loader = Gly.Loader.new(Gio.File.new_for_uri(pathToURI(art)));
+            stack.show();
+            stack.set_visible_child_name("spinner");
+
+            loader.load_async(null, (_, res) => {
+                let image!: Gly.Image;
+
+                try { 
+                    image = loader.load_finish(res);
+                } catch(e) {
+                    removeAlbumImage();
+                    console.error("Failed to load album art for MPRIS player", e);
+                    return;
+                }
+
+                image.next_frame_async(null, (_, res) => {
+                    let texture!: Gdk.Texture;
+                    
+                    try {
+                        texture = GlyGtk4.frame_get_texture(image.next_frame_finish(res));
+                    } catch(e) {
+                        removeAlbumImage();
+                        console.error("Failed to load first frame from album art", e);
+                        return;
+                    }
+
+                    const item = Cache.getDefault().getItem<PlayerCache>("player", player.busName);
+                    if(item !== undefined)
+                        item[2].run_dispose();
+
+                    // remove cache when player gets closed
+                    const id = AstalMpris.get_default().connect("player-closed", (_, closed) => {
+                        if(closed.busName !== player.busName)
+                            return;
+
+                        AstalMpris.get_default().disconnect(id);
+                        Cache.getDefault().getItem<PlayerCache>("player", player.busName)?.[2].run_dispose();
+                        Cache.getDefault().removeItem("player", player.busName);
+                    });
+
+                    Cache.getDefault().addItem("player", [art, id, texture] satisfies PlayerCache, player.busName);
+
+                    picture.set_paintable(texture);
+                    stack.set_visible_child_name("album-image");
+                });
+            });
+        }
+
+        updateAlbumImage();
+        createSubscription(createBinding(player, "coverArt"), () => updateAlbumImage());
+        this.prepend(stack);
 
         this.append(
             <Gtk.Box class={"info"} orientation={Gtk.Orientation.VERTICAL}
@@ -97,8 +189,8 @@ class PlayerWidget extends Gtk.Box {
 
                       if(!this.#dragTimer) {
                           this.#dragTimer = setTimeout(() => 
-                              player.position = Math.floor(value)
-                          , 200);
+                              player.position = Math.floor(value),
+                          200);
 
                           return;
                       }
@@ -229,7 +321,7 @@ class PlayerWidget extends Gtk.Box {
         );
     }
 
-    setPlayer(player: AstalMpris.Player) {
+    private setPlayer(player: AstalMpris.Player) {
         this.#player = player;
     }
 }

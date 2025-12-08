@@ -1,5 +1,4 @@
-// thanks Aylur!!
-import "ags/overrides";
+import "ags/overrides"; // thanks Aylur!!
 import "./config";
 import { 
     PluginApps, 
