@@ -145,6 +145,7 @@ export class Notification extends Gtk.Box {
 
                           // TODO implement caching
                           function buildPicture(texture: Gdk.Texture): void {
+                              self.show();
                               const picture = self.get_child_by_name("picture") as Gtk.Picture|null;
 
                               if(picture) {
@@ -223,7 +224,7 @@ export class Notification extends Gtk.Box {
                               });
                           };
 
-                          this.image !== null && loadImage();
+                          this.image !== null && this.image.trim() !== "" && loadImage();
                           createScopedConnection(
                               this, "notify::image", () => 
                                   this.image !== null && loadImage()
