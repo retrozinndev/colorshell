@@ -1,17 +1,36 @@
 @use "./colors";
 @use "./mixins";
 
-.floating-notifications-container {
-  padding: 16px;
+window.floating-notifications {
+  transition: none;
+
+  & .floating-notifications-container {
+    transition: none;
+
+    &:only-child notification {
+      padding-bottom: 12px;
+    }
+
+    & > revealer {
+      margin-bottom: 12px;
+
+      & > stack {
+        transition: none;
+      }
+    }
+  }
 
   & revealer {
     $radius: 18px;
 
-    box-shadow: 0 0 8px 1px colors.$bg-translucent;
+    margin-bottom: 12px; // spacing
     border-radius: $radius;
+    padding: 12px;
+    padding-bottom: 6px;
 
     & notification {
       padding: 4px;
+      box-shadow: 0 0 8px 1px colors.$bg-translucent;
       border-radius: $radius;
     }
   }

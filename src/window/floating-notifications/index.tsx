@@ -1,19 +1,77 @@
 import { Astal, Gdk, Gtk } from "ags/gtk4";
-import { createBinding, createComputed, For } from "ags";
+import { createBinding, createComputed, Scope } from "ags";
 import { Notifications } from "../../modules/notifications";
 import { Notification } from "../../widget/Notification";
 import { generalConfig } from "../../config";
 import { Windows } from "../../windows";
+import { createScopedConnection, pathToURI } from "../../modules/utils";
 
 import AstalNotifd from "gi://AstalNotifd";
 import Adw from "gi://Adw?version=1";
-import { pathToURI } from "../../modules/utils";
 
 
 const size = 450;
 
-export const FloatingNotifications = (mon: number) => 
-    <Astal.Window namespace={"floating-notifications"} monitor={mon} layer={Astal.Layer.OVERLAY}
+export const FloatingNotifications = (mon: number, scope: Scope) => {
+    function buildNotification(notif: AstalNotifd.Notification): Gtk.Revealer {
+        return scope.run(() => 
+            <Gtk.Revealer transitionType={Gtk.RevealerTransitionType.SWING_UP} transitionDuration={200}>
+                <Gtk.Stack transitionType={createComputed([
+                      generalConfig.bindProperty("notifications.position_h", "string"),
+                      generalConfig.bindProperty("notifications.position_v", "string")
+                  ]).as(() => { // TODO: support different animations depending on screen position
+                      return Gtk.StackTransitionType.SLIDE_RIGHT
+                  })} transitionDuration={300} 
+                  $={self => {
+                      // empty widget just for the transition
+                      self.add_named(
+                          <Adw.Bin /> as Adw.Bin,
+                          "empty"
+                      );
+
+                      self.add_named(
+                          <Notification valign={Gtk.Align.START} summary={createBinding(notif, "summary")}
+                            body={createBinding(notif, "body")} appIcon={createBinding(notif, "appIcon")}
+                            appName={createBinding(notif, "appName")} time={createBinding(notif, "time")}
+                            image={createComputed([
+                                createBinding(notif, "image"),
+                                createBinding(notif, "appIcon")
+                            ], (img, icon) => {
+                                if(img?.trim())
+                                    // pathToURI() resolves directories starting with ~/ (home)
+                                    return pathToURI(img).replace("file://", "");
+
+                                if(icon?.startsWith('/')) // only use icon as image if it starts with an absolute path
+                                    return icon;
+
+                                return "";
+                            })}
+                            onActionClicked={(_, action) => notif.invoke(action.id)}
+                            actions={notif.actions.filter(a => !/^view$/i.test(a.id) && !/^view$/i.test(a.label))}
+                            onDismissed={() => Notifications.getDefault().removeNotification(notif)}
+                            widthRequest={size} id={notif.id}>
+
+                              <Gtk.GestureClick onReleased={(gesture) => {
+                                  if(gesture.get_current_button() !== Gdk.BUTTON_PRIMARY)
+                                      return;
+
+                                  const viewActionRegEx = /^view$/i;
+                                  const viewAction = notif.actions.filter(a => 
+                                      viewActionRegEx.test(a.id) || viewActionRegEx.test(a.label)
+                                  )?.[0];
+
+                                  viewAction && notif.invoke(viewAction.id);
+                              }} />
+                          </Notification> as Notification,
+                          "notification"
+                      );
+                  }}
+                />
+            </Gtk.Revealer> as Gtk.Revealer
+        );
+    }
+
+    return <Astal.Window namespace={"floating-notifications"} monitor={mon} layer={Astal.Layer.OVERLAY}
       anchor={createComputed([
           generalConfig.bindProperty("notifications.position_h", "string"),
           generalConfig.bindProperty("notifications.position_v", "string"),
@@ -53,61 +111,43 @@ export const FloatingNotifications = (mon: number) =>
 
           return finalAnchor ?? (Astal.WindowAnchor.TOP | Astal.WindowAnchor.RIGHT);
 
-      })} exclusivity={Astal.Exclusivity.NORMAL} widthRequest={size}>
+      })} exclusivity={Astal.Exclusivity.NORMAL} widthRequest={size}
+      class={"floating-notifications"}>
 
         <Adw.Clamp orientation={Gtk.Orientation.HORIZONTAL} maximumSize={size} valign={Gtk.Align.START}>
-            <Gtk.Box class={"floating-notifications-container"} orientation={Gtk.Orientation.VERTICAL}
-              spacing={12}>
-                <For each={createBinding(Notifications.getDefault(), "notifications")}>
-                    {(notif: AstalNotifd.Notification) => 
-                        <Gtk.Revealer transitionType={Gtk.RevealerTransitionType.SWING_UP} transitionDuration={200}
-                          revealChild>
-                            <Gtk.Stack transitionType={createComputed([
-                                  generalConfig.bindProperty("notifications.position_h", "string"),
-                                  generalConfig.bindProperty("notifications.position_v", "string")
-                              ]).as(() => { // TODO: support different animations depending on screen position
-                                  return Gtk.StackTransitionType.SLIDE_RIGHT
-                              })} transitionDuration={300}>
+            <Gtk.Box class={"floating-notifications-container"}
+              $={self => {
+                  function add(notif: AstalNotifd.Notification): void {
+                      const notifId = notif.id; // store id, because the notif object can be disposed before the widget is removed
+                      const widget = buildNotification(notif);
+                      const stack = widget.get_child() as Gtk.Stack;
+                      self.prepend(widget);
+                      widget.set_reveal_child(true);
+                      stack.set_visible_child_name("notification");
 
-                                <Notification valign={Gtk.Align.START} summary={createBinding(notif, "summary")}
-                                  body={createBinding(notif, "body")} appIcon={createBinding(notif, "appIcon")}
-                                  appName={createBinding(notif, "appName")} time={createBinding(notif, "time")}
-                                  image={createComputed([
-                                      createBinding(notif, "image"),
-                                      createBinding(notif, "appIcon")
-                                  ], (img, icon) => {
-                                      if(img?.trim())
-                                          // pathToURI() resolves directories starting with ~/ (home)
-                                          return pathToURI(img).replace("file://", "");
+                      const id = Notifications.getDefault().connect("notification-removed", (_, removedId) => {
+                          if(removedId !== notifId)
+                              return;
 
-                                      if(icon?.startsWith('/')) // only use icon as image if it starts with an absolute path
-                                          return icon;
+                          stack.set_visible_child_name("empty");
+                          widget.set_reveal_child(false);
+                          setTimeout(() => {
+                              Notifications.getDefault().disconnect(id);
+                              widget.get_parent() && self.remove(widget);
+                              if(!self.get_first_child())
+                                  (self.get_root() as Astal.Window)?.close();
+                          }, stack.transitionDuration + widget.transitionDuration);
+                      });
+                  }
 
-                                      return "";
-                                  })}
-                                  onActionClicked={(_, action) => notif.invoke(action.id)}
-                                  actions={createBinding(notif, "actions").as(actions => 
-                                      actions.filter(a => !/^view$/i.test(a.id) && !/^view$/i.test(a.label))
-                                  )}
-                                  onDismissed={() => Notifications.getDefault().removeNotification(notif)}
-                                  widthRequest={size} id={notif.id}>
+                  Notifications.getDefault().notifications.length > 0 &&
+                      Notifications.getDefault().notifications.forEach(n => add(n));
 
-                                    <Gtk.GestureClick onReleased={(gesture) => {
-                                        if(gesture.get_current_button() !== Gdk.BUTTON_PRIMARY)
-                                            return;
-
-                                        const viewActionRegEx = /^view$/i;
-                                        const viewAction = notif.actions.filter(a => 
-                                            viewActionRegEx.test(a.id) || viewActionRegEx.test(a.label)
-                                        )?.[0];
-
-                                        viewAction && notif.invoke(viewAction.id);
-                                    }} />
-                                </Notification>
-                            </Gtk.Stack>
-                        </Gtk.Revealer>
-                    }
-                </For>
-            </Gtk.Box>
+                  createScopedConnection(
+                      Notifications.getDefault(), "notification-added", (notif) => add(notif)
+                  );
+              }}
+            />
         </Adw.Clamp>
     </Astal.Window> as Astal.Window;
+}

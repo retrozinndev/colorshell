@@ -84,7 +84,7 @@ export class Notification extends Gtk.Box {
             this.appIcon = props.appIcon;
 
         if(props.actions !== undefined)
-            props.actions.forEach(action => this.actions.push(action));
+            this.actions = props.actions;
 
         if(props.time !== undefined)
             this.time = props.time;
@@ -139,11 +139,12 @@ export class Notification extends Gtk.Box {
                       transitionDuration={360}
                       $={(self) => {
                           self.add_named(new Adw.Spinner(), "spinner");
+                          !this.isValidString(this.image) &&
+                              self.hide();
 
                           // [path, texture]
                           type NotifImageCache = [string, Gdk.Texture];
 
-                          // TODO implement caching
                           function buildPicture(texture: Gdk.Texture): void {
                               self.show();
                               const picture = self.get_child_by_name("picture") as Gtk.Picture|null;
@@ -171,10 +172,31 @@ export class Notification extends Gtk.Box {
                           }
 
                           const loadImage = () => {
-                              if(this.image == null || this.image.trim() === "")
+                              if(!this.isValidString(this.image))
                                   return;
 
                               self.set_visible_child_name("spinner");
+
+                              // check if it's an icon (for example, Valent(kde-connect reimplementation using gobject) sends icon names as images)
+                              if(!this.image.includes('/')) {
+                                  if(!lookupIcon(this.image)) {
+                                      console.error(`"Failed to get icon from image for notification: icon not found with icon name \"${
+                                          this.image}\"`
+                                      );
+                                      return;
+                                  }
+
+                                  const picture = self.get_child_by_name("picture") as Gtk.Picture|null ?? 
+                                      <Gtk.Picture canShrink contentFit={Gtk.ContentFit.COVER} /> as Gtk.Picture;
+
+                                  const paintable = Gtk.IconTheme.get_for_display(Gdk.Display.get_default()!)
+                                      .lookup_icon(
+                                          this.image, null, 64, self.scaleFactor, Gtk.TextDirection.LTR, Gtk.IconLookupFlags.NONE
+                                      );
+
+                                  paintable && picture.set_paintable(paintable);
+                                  return;
+                              }
 
                               const cached = Cache.getDefault().getItem<NotifImageCache>("notifications", this.id.toString());
 
@@ -224,19 +246,23 @@ export class Notification extends Gtk.Box {
                               });
                           };
 
-                          this.image !== null && this.image.trim() !== "" && loadImage();
+                          loadImage();
                           createScopedConnection(
-                              this, "notify::image", () => 
-                                  this.image !== null && loadImage()
+                              this, "notify::image", () => {
+                                  if(!this.isValidString(this.image) && self.get_visible_child_name() === "picture") {
+                                      self.hide();
+                                      return;
+                                  }
+
+                                  loadImage();
+                              }
                           );
                       }}
                       widthRequest={68} heightRequest={64}
                     />
                 </Adw.Clamp>
-                <Gtk.Box class={"text"} orientation={Gtk.Orientation.VERTICAL}
-                  vexpand>
-
-                    <Gtk.Label xalign={0} class={"summary"} useMarkup hexpand vexpand={false}
+                <Gtk.Box class={"text"} orientation={Gtk.Orientation.VERTICAL} vexpand>
+                    <Gtk.Label xalign={0} class={"summary"} hexpand vexpand={false}
                       ellipsize={Pango.EllipsizeMode.END} label={createBinding(this, "summary")}
                       valign={Gtk.Align.START}
                     />
@@ -249,16 +275,21 @@ export class Notification extends Gtk.Box {
         );
 
         this.append(
-            <Gtk.ListBox selectionMode={Gtk.SelectionMode.NONE}>
+            <Gtk.ListBox class={"actions"} selectionMode={Gtk.SelectionMode.NONE}>
                 <For each={createBinding(this, "actions")}>
-                    {(action: AstalNotifd.Action) => 
-                        <Gtk.Button class={"action"} label={action.label} hexpand
+                    {(action: AstalNotifd.Action) => {
+                        return <Gtk.Button class={"action"} label={action.label} hexpand
                           onClicked={() => this.emit("action-clicked", action)}
-                        />
-                    }
+                        />;
+                    }}
                 </For>
             </Gtk.ListBox> as Gtk.ListBox
         );
+    }
+
+
+    private isValidString(str: string|null): str is string {
+        return str !== null && str.trim() !== "";
     }
 
     connect<S extends keyof Notification.SignalSignatures>(

@@ -309,9 +309,6 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
             this.#connections.set(Notifications.getDefault(), [
                 Notifications.getDefault().connect("notification-added", () => {
                     Windows.getDefault().open("floating-notifications");
-                }),
-                Notifications.getDefault().connect("notification-removed", (self) => {
-                    self.notifications.length === 0 && Windows.getDefault().close("floating-notifications");
                 })
             ]);
 

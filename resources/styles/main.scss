@@ -121,7 +121,7 @@ notification {
     padding: 6px;
     padding-top: 0;
 
-    & picture {
+    & stack {
       $size: 78px;
       min-width: $size;
       min-height: $size;
@@ -157,15 +157,15 @@ notification {
       &:hover {
         background: colors.$bg-tertiary;
       }
+    }
 
-      &:first-child {
-        border-top-left-radius: 12px;
-        border-bottom-left-radius: 12px;
-      }
-      &:last-child {
-        border-top-right-radius: 12px;
-        border-bottom-right-radius: 12px;
-      }
+    & > flowboxchild:first-child > button {
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+    }
+    & > flowboxchild:last-child > button {
+      border-bottom-right-radius: 12px;
+      border-bottom-left-radius: 12px;
     }
   }
 }
