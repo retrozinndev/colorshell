@@ -79,7 +79,7 @@ entry {
   }
 }
 
-.notification {
+notification {
   background: colors.$bg-translucent-secondary;
   border-radius: 16px;
 
@@ -121,12 +121,10 @@ entry {
     padding: 6px;
     padding-top: 0;
 
-    & .image {
+    & picture {
       $size: 78px;
       min-width: $size;
       min-height: $size;
-      background-size: cover;
-      background-position: center;
       margin: 6px;
       border-radius: 8px;
     }

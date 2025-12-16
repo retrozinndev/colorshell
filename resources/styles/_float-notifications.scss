@@ -4,13 +4,13 @@
 .floating-notifications-container {
   padding: 16px;
 
-  & .float-notification {
+  & revealer {
     $radius: 18px;
 
     box-shadow: 0 0 8px 1px colors.$bg-translucent;
     border-radius: $radius;
 
-    & .notification {
+    & notification {
       padding: 4px;
       border-radius: $radius;
     }

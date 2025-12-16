@@ -1,8 +1,9 @@
-import { Gtk } from "ags/gtk4";
+import { Gdk, Gtk } from "ags/gtk4";
 import { HistoryNotification, Notifications } from "../../../modules/notifications";
-import { NotificationWidget } from "../../../widget/Notification";
+import { Notification } from "../../../widget/Notification";
 import { tr } from "../../../i18n/intl";
 import { createBinding, For } from "ags";
+import { pathToURI } from "../../../modules/utils";
 
 import AstalNotifd from "gi://AstalNotifd";
 
@@ -28,10 +29,24 @@ export const NotifHistory = () =>
 
                 <For each={createBinding(Notifications.getDefault(), "history")}>
                     {(notif: AstalNotifd.Notification|HistoryNotification) => 
-                        <NotificationWidget notification={notif} showTime={true}
-                          actionClose={(n) => Notifications.getDefault().removeHistory(n.id)}
-                          actionClicked={(n) => Notifications.getDefault().removeHistory(n.id)}
-                    />}
+                        <Notification summary={notif.summary} body={notif.body} time={notif.time}
+                          appName={notif.appName} appIcon={notif.appIcon} image={
+                              notif.image !== undefined && notif.image?.trim() !== "" ?
+                                  pathToURI(notif.image).replace("file://", "")
+                              : notif.appIcon !== undefined && notif.appIcon.startsWith('/') ?
+                                    notif.appIcon
+                              : ""}
+                          onDismissed={() => Notifications.getDefault().removeHistory(notif)}
+                          id={notif.id}>
+                            
+                            <Gtk.GestureClick onReleased={(gesture) => {
+                                if(gesture.get_current_button() !== Gdk.BUTTON_PRIMARY)
+                                    return;
+
+                                Notifications.getDefault().removeHistory(notif);
+                            }} />
+                        </Notification>
+                    }
                 </For>
             </Gtk.Box>
         </Gtk.ScrolledWindow>
