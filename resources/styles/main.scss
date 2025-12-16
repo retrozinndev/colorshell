@@ -144,10 +144,23 @@ notification {
   & .actions {
     padding: 6px;
 
+    & row:first-child button {
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+      margin-top: 0;
+    }
+    & row:last-child button {
+      border-bottom-right-radius: 12px;
+      border-bottom-left-radius: 12px;
+      margin-bottom: 0;
+    }
+
     & button.action {
       border-radius: 4px;
       background: colors.$bg-secondary;
       padding: 6px;
+      margin-top: 1px;
+      margin-bottom: 1px;
 
       & label {
         font-size: 14px;
@@ -157,15 +170,6 @@ notification {
       &:hover {
         background: colors.$bg-tertiary;
       }
-    }
-
-    & > flowboxchild:first-child > button {
-      border-top-left-radius: 12px;
-      border-top-right-radius: 12px;
-    }
-    & > flowboxchild:last-child > button {
-      border-bottom-right-radius: 12px;
-      border-bottom-left-radius: 12px;
     }
   }
 }
