@@ -115,7 +115,7 @@ export const FloatingNotifications = (mon: number, scope: Scope) => {
       class={"floating-notifications"}>
 
         <Adw.Clamp orientation={Gtk.Orientation.HORIZONTAL} maximumSize={size} valign={Gtk.Align.START}>
-            <Gtk.Box class={"floating-notifications-container"}
+            <Gtk.Box class={"floating-notifications-container"} orientation={Gtk.Orientation.VERTICAL}
               $={self => {
                   function add(notif: AstalNotifd.Notification): void {
                       const notifId = notif.id; // store id, because the notif object can be disposed before the widget is removed
