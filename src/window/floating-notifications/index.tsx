@@ -45,13 +45,13 @@ export const FloatingNotifications = (mon: number) =>
               break;
           }
 
-          let finalAnchor: Astal.WindowAnchor;
+          let finalAnchor!: Astal.WindowAnchor;
 
           pos.forEach(pos => finalAnchor = (finalAnchor !== undefined ? 
               finalAnchor | pos
           : pos));
 
-          return finalAnchor!;
+          return finalAnchor ?? (Astal.WindowAnchor.TOP | Astal.WindowAnchor.RIGHT);
 
       })} exclusivity={Astal.Exclusivity.NORMAL} widthRequest={size}>
 

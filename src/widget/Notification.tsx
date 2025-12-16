@@ -1,5 +1,7 @@
 import { Gdk, Gtk } from "ags/gtk4";
 import { Separator } from "./Separator";
+import { Cache } from "../modules/cache";
+import { Notifications } from "../modules/notifications";
 import { getIconByAppName, getSymbolicIcon, lookupIcon } from "../modules/apps";
 import { createScopedConnection, omitObjectKeys, pathToURI } from "../modules/utils";
 import { createBinding, createComputed, For } from "ags";
@@ -12,8 +14,6 @@ import Adw from "gi://Adw?version=1";
 import Gly from "gi://Gly?version=2";
 import Gio from "gi://Gio?version=2.0";
 import GlyGtk4 from "gi://GlyGtk4?version=2";
-import { Cache } from "../modules/cache";
-import { Notifications } from "../modules/notifications";
 
 
 @register({ GTypeName: "ClshNotification" })
@@ -174,13 +174,14 @@ export class Notification extends Gtk.Box {
                                   return;
 
                               self.set_visible_child_name("spinner");
+
                               const cached = Cache.getDefault().getItem<NotifImageCache>("notifications", this.id.toString());
+
                               if(cached && cached[0] === this.image) {
                                   buildPicture(cached[1]);
                                   return;
                               }
 
-                              self.set_visible_child_name("spinner");
                               const loader = Gly.Loader.new(Gio.File.new_for_uri(pathToURI(this.image!)));
 
                               loader.load_async(null, (_, res) => {
