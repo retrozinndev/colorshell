@@ -350,15 +350,16 @@ export class Notifications extends GObject.Object {
     }
 
     public removeDuplicateActions(actions: Array<AstalNotifd.Action>): Array<AstalNotifd.Action> {
-        const finalActions: Array<AstalNotifd.Action> = [];
+        const finalActions: Array<AstalNotifd.Action> = [...actions];
 
         for(let i = 0; i < actions.length; i++) {
             const action = actions[i];
+            const lastIndex = finalActions.findLastIndex(a => a.id === action.id);
             
-            if(actions.findIndex(a => a.id === action.id) !== i)
+            if(lastIndex !== i) {
+                finalActions.splice(lastIndex, 1);
                 continue;
-
-            finalActions.push(action);
+            }
         }
 
         return finalActions;
