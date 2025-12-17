@@ -62,6 +62,25 @@ export const FloatingNotifications = (mon: number, scope: Scope) => {
 
                                   viewAction && notif.invoke(viewAction.id);
                               }} />
+
+                              <Gtk.EventControllerMotion onEnter={() => 
+                                  generalConfig.getProperty("notifications.hold_on_hover", "boolean") &&
+                                      Notifications.getDefault().holdNotification(notif.id)
+                              } onLeave={() => {
+                                  const dismissOnUnhover = generalConfig
+                                    .getProperty("notifications.dismiss_on_unhover", "boolean");
+
+                                  if(dismissOnUnhover) {
+                                      setTimeout(() => {
+                                          Notifications.getDefault().removeNotification(notif.id)
+                                      }, 600);
+
+                                      return;
+                                  }
+
+                                  Notifications.getDefault().releaseNotification(notif.id);
+                              }}
+                            />
                           </Notification> as Notification,
                           "notification"
                       );

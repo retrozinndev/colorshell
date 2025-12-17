@@ -21,9 +21,13 @@ const generalConfigDefaults = {
         /** vertical notification popup position. can be "top" or "bottom" 
           * @default "top" */
         position_v: "top",
-        /** dismisses notification popup when unhovered after hovering 
+        /** dismiss notification popup when it gets unhovered.
+          * breaks hold_on_hover a bit, notification will instantly be dismissed after unhover
           * @default false */
-        dismiss_on_unhover: false
+        dismiss_on_unhover: false,
+        /** hold the notification popup while hovering it.
+          * @default true */
+        hold_on_hover: true
     },
 
     night_light: {
