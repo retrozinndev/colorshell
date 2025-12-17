@@ -5,6 +5,7 @@ import GObject, { getter, ParamSpec, property, register, signal } from "ags/gobj
 
 import AstalNotifd from "gi://AstalNotifd";
 import GLib from "gi://GLib?version=2.0";
+import { pathToURI } from "./utils";
 
 
 export type HistoryNotification = {
@@ -22,7 +23,7 @@ export class NotificationTimeout {
     #source?: GLib.Source;
     #args?: Array<any>;
     #millis: number;
-    #lastRemained!: number;
+    #lastRemained: number = 0;
 
     readonly callback: () => void;
     get millis(): number { return this.#millis; }
@@ -43,14 +44,17 @@ export class NotificationTimeout {
     cancel(): void {
         // use lastRemained to calculate on what time the user hold the notification, so it
         // can be released by the remaining time (works like a timeout "pause")
-        this.#lastRemained = Math.floor(Math.max(this.#source!.get_ready_time() - GLib.get_monotonic_time()) / 1000);
-        this.#source?.destroy();
-        this.#source?.unref();
+        if(!this.#source) 
+            return;
+
+        this.#lastRemained = Math.floor(Math.max(this.#source.get_ready_time() - GLib.get_monotonic_time()) / 1000);
+        this.#source.destroy();
+        this.#source.unref();
         this.#source = undefined;
     }
 
     start(newMillis?: number): GLib.Source {
-        if(this.running)
+        if(this.running || this.#source)
             throw new Error("Notifications: Can't start a new counter if it's already running!");
 
         if(newMillis !== undefined)
@@ -62,7 +66,7 @@ export class NotificationTimeout {
             this.#args
         );
 
-        this.#lastRemained = Math.floor(Math.max(this.#source!.get_ready_time() - GLib.get_monotonic_time()) / 1000);
+        this.#lastRemained = Math.floor(Math.max(this.#source.get_ready_time() - GLib.get_monotonic_time()) / 1000);
 
         return this.#source;
     }
@@ -331,9 +335,18 @@ export class Notifications extends GObject.Object {
         const data = this.#notifications.get(id);
 
         if(!data) return;
-        data[1].start(data[1].lastRemained); 
+        data[1]?.start(data[1].lastRemained); 
 
         this.notify("notifications-on-hold");
+    }
+
+    public getNotificationImage(notif: AstalNotifd.Notification|HistoryNotification): string|undefined {
+        const img = notif.image || notif.appIcon;
+
+        if(!img || !img.includes('/')) 
+            return undefined;
+
+        return pathToURI(img).replace("file://", "");
     }
 
     public toggleDoNotDisturb(value?: boolean): boolean {

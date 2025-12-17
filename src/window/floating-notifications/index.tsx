@@ -4,7 +4,7 @@ import { Notifications } from "../../modules/notifications";
 import { Notification } from "../../widget/Notification";
 import { generalConfig } from "../../config";
 import { Windows } from "../../windows";
-import { createScopedConnection, pathToURI } from "../../modules/utils";
+import { createScopedConnection } from "../../modules/utils";
 
 import AstalNotifd from "gi://AstalNotifd";
 import Adw from "gi://Adw?version=1";
@@ -15,12 +15,41 @@ const size = 450;
 export const FloatingNotifications = (mon: number, scope: Scope) => {
     function buildNotification(notif: AstalNotifd.Notification): Gtk.Revealer {
         return scope.run(() => 
-            <Gtk.Revealer transitionType={Gtk.RevealerTransitionType.SWING_UP} transitionDuration={200}>
+            <Gtk.Revealer transitionType={generalConfig.bindProperty("notifications.position_v", "string").as(vPos => {
+                switch(vPos) {
+                    case "center": // idk why anyone would want that, but here's it is anyways
+                        return Gtk.RevealerTransitionType.CROSSFADE;
+
+                    case "bottom":
+                        return Gtk.RevealerTransitionType.SLIDE_DOWN;
+                }
+
+                return Gtk.RevealerTransitionType.SLIDE_UP;
+            })} transitionDuration={200}>
                 <Gtk.Stack transitionType={createComputed([
                       generalConfig.bindProperty("notifications.position_h", "string"),
                       generalConfig.bindProperty("notifications.position_v", "string")
-                  ]).as(() => { // TODO: support different animations depending on screen position
-                      return Gtk.StackTransitionType.SLIDE_RIGHT
+                  ], (hPos, vPos) => { // TODO: support different animations depending on screen position
+
+                      if(hPos === "left") 
+                          return Gtk.StackTransitionType.SLIDE_LEFT;
+
+                      if(hPos === "right")
+                          return Gtk.StackTransitionType.SLIDE_RIGHT;
+
+                      if(hPos === "center") {
+                          switch(vPos) {
+                              case "center":
+                                  return Gtk.StackTransitionType.CROSSFADE;
+
+                              case "top":
+                                  return Gtk.StackTransitionType.SLIDE_UP;
+                          }
+
+                          return Gtk.StackTransitionType.SLIDE_DOWN;
+                      }
+
+                      return Gtk.StackTransitionType.SLIDE_UP;
                   })} transitionDuration={300} 
                   $={self => {
                       // empty widget just for the transition
@@ -36,16 +65,7 @@ export const FloatingNotifications = (mon: number, scope: Scope) => {
                             image={createComputed([
                                 createBinding(notif, "image"),
                                 createBinding(notif, "appIcon")
-                            ], (img, icon) => {
-                                if(img?.trim())
-                                    // pathToURI() resolves directories starting with ~/ (home)
-                                    return pathToURI(img).replace("file://", "");
-
-                                if(icon?.startsWith('/')) // only use icon as image if it starts with an absolute path
-                                    return icon;
-
-                                return "";
-                            })}
+                            ], () => (Notifications.getDefault().getNotificationImage(notif) ?? null)!)}
                             onActionClicked={(_, action) => notif.invoke(action.id)}
                             actions={notif.actions.filter(a => !/^view$/i.test(a.id) && !/^view$/i.test(a.label))}
                             onDismissed={() => Notifications.getDefault().removeNotification(notif)}
@@ -63,10 +83,13 @@ export const FloatingNotifications = (mon: number, scope: Scope) => {
                                   viewAction && notif.invoke(viewAction.id);
                               }} />
 
-                              <Gtk.EventControllerMotion onEnter={() => 
-                                  generalConfig.getProperty("notifications.hold_on_hover", "boolean") &&
-                                      Notifications.getDefault().holdNotification(notif.id)
-                              } onLeave={() => {
+                              <Gtk.EventControllerMotion onEnter={() => {
+                                  if(!generalConfig.getProperty("notifications.hold_on_hover", "boolean") ||
+                                        notif.get_urgency() === AstalNotifd.Urgency.CRITICAL)
+                                      return;
+
+                                  Notifications.getDefault().holdNotification(notif.id);
+                              }} onLeave={() => {
                                   const dismissOnUnhover = generalConfig
                                     .getProperty("notifications.dismiss_on_unhover", "boolean");
 
@@ -89,6 +112,8 @@ export const FloatingNotifications = (mon: number, scope: Scope) => {
             </Gtk.Revealer> as Gtk.Revealer
         );
     }
+
+    const notifs: Array<number> = [];
 
     return <Astal.Window namespace={"floating-notifications"} monitor={mon} layer={Astal.Layer.OVERLAY}
       anchor={createComputed([
@@ -140,30 +165,56 @@ export const FloatingNotifications = (mon: number, scope: Scope) => {
                       const notifId = notif.id; // store id, because the notif object can be disposed before the widget is removed
                       const widget = buildNotification(notif);
                       const stack = widget.get_child() as Gtk.Stack;
-                      self.prepend(widget);
+
+                      notifs.push(notifId);
+                      generalConfig.getProperty("notifications.position_v", "string") === "top" ?
+                          self.prepend(widget)
+                      : self.append(widget);
                       widget.set_reveal_child(true);
                       stack.set_visible_child_name("notification");
 
-                      const id = Notifications.getDefault().connect("notification-removed", (_, removedId) => {
-                          if(removedId !== notifId)
-                              return;
+                      const ids = [
+                          Notifications.getDefault().connect("notification-removed", (_, removedId) => {
+                              if(removedId !== notifId)
+                                  return;
 
-                          stack.set_visible_child_name("empty");
-                          widget.set_reveal_child(false);
-                          setTimeout(() => {
-                              Notifications.getDefault().disconnect(id);
-                              widget.get_parent() && self.remove(widget);
-                              if(!self.get_first_child())
-                                  (self.get_root() as Astal.Window)?.close();
-                          }, stack.transitionDuration + widget.transitionDuration);
-                      });
+                              notifs.splice(notifs.findIndex(id => id === notifId), 1);
+                              stack.set_visible_child_name("empty");
+                              setTimeout(() => widget.set_reveal_child(false), stack.transitionDuration);
+                              setTimeout(() => {
+                                  ids.forEach(id => Notifications.getDefault().disconnect(id));
+                                  widget.get_parent() && self.remove(widget);
+                                  if(!self.get_first_child())
+                                      (self.get_root() as Astal.Window)?.close();
+                              }, stack.transitionDuration + widget.transitionDuration);
+                          }),
+                          Notifications.getDefault().connect("notification-replaced", (_, replacedId) => {
+                              if(replacedId !== notifId)
+                                  return;
+
+                              const newNotif = Notifications.getDefault().notifications.find(n => n.id === replacedId)!;
+
+                              const notifWidget = stack.get_child_by_name("notification") as Notification;
+                              notifWidget.summary = newNotif.summary;
+                              notifWidget.body = newNotif.body;
+                              notifWidget.actions = newNotif.actions;
+                              notifWidget.appIcon = newNotif.appIcon;
+                              notifWidget.appName = newNotif.appName;
+                              notifWidget.image = Notifications.getDefault().getNotificationImage(newNotif) ?? null;
+                          })
+                      ];
                   }
 
                   Notifications.getDefault().notifications.length > 0 &&
                       Notifications.getDefault().notifications.forEach(n => add(n));
 
                   createScopedConnection(
-                      Notifications.getDefault(), "notification-added", (notif) => add(notif)
+                      Notifications.getDefault(), "notification-added", (notif) => {
+                          if(notifs.includes(notif.id))
+                              return;
+
+                          add(notif);
+                      }
                   );
               }}
             />

@@ -102,7 +102,7 @@ export class Notification extends Gtk.Box {
                         if(icon && lookupIcon(icon))
                             return icon;
 
-                        if(name == null)
+                        if(name === null)
                             return "application-x-executable-symbolic";
 
                         return getSymbolicIcon(name) ?? getIconByAppName(name) ??

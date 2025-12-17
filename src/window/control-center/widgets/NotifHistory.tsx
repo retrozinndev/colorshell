@@ -3,7 +3,6 @@ import { HistoryNotification, Notifications } from "../../../modules/notificatio
 import { Notification } from "../../../widget/Notification";
 import { tr } from "../../../i18n/intl";
 import { createBinding, For } from "ags";
-import { pathToURI } from "../../../modules/utils";
 
 import AstalNotifd from "gi://AstalNotifd";
 
@@ -31,12 +30,8 @@ export const NotifHistory = () =>
                     {(notif: AstalNotifd.Notification|HistoryNotification) => 
                         <Notification summary={notif.summary} body={notif.body} time={notif.time}
                           appName={notif.appName} appIcon={notif.appIcon} image={
-                              notif.image !== undefined && notif.image?.trim() !== "" ?
-                                  pathToURI(notif.image).replace("file://", "")
-                              : notif.appIcon !== undefined && notif.appIcon.startsWith('/') ?
-                                    notif.appIcon
-                              : ""}
-                          onDismissed={() => Notifications.getDefault().removeHistory(notif)}
+                              Notifications.getDefault().getNotificationImage(notif)
+                          } onDismissed={() => Notifications.getDefault().removeHistory(notif)}
                           id={notif.id}>
                             
                             <Gtk.GestureClick onReleased={(gesture) => {

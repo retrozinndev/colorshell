@@ -2,36 +2,24 @@
 @use "./mixins";
 
 window.floating-notifications {
+  $radius: 18px;
+
   transition: none;
 
   & .floating-notifications-container {
     transition: none;
 
     &:only-child notification {
-      padding-bottom: 12px;
-    }
-
-    & > revealer {
       margin-bottom: 12px;
-
-      & > stack {
-        transition: none;
-      }
     }
   }
 
-  & revealer {
-    $radius: 18px;
-
-    margin-bottom: 12px; // spacing
+  & notification {
+    padding: 4px;
+    padding-bottom: 0;
+    margin: 12px;
+    margin-bottom: 6px;
+    box-shadow: 0 0 8px 1px colors.$bg-translucent;
     border-radius: $radius;
-    padding: 12px;
-    padding-bottom: 6px;
-
-    & notification {
-      padding: 4px;
-      box-shadow: 0 0 8px 1px colors.$bg-translucent;
-      border-radius: $radius;
-    }
   }
 }
