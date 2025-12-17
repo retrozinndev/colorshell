@@ -349,6 +349,21 @@ export class Notifications extends GObject.Object {
         return pathToURI(img).replace("file://", "");
     }
 
+    public removeDuplicateActions(actions: Array<AstalNotifd.Action>): Array<AstalNotifd.Action> {
+        const finalActions: Array<AstalNotifd.Action> = [];
+
+        for(let i = 0; i < actions.length; i++) {
+            const action = actions[i];
+            
+            if(actions.findIndex(a => a.id === action.id) !== i)
+                continue;
+
+            finalActions.push(action);
+        }
+
+        return finalActions;
+    }
+
     public toggleDoNotDisturb(value?: boolean): boolean {
         value = value ?? !AstalNotifd.get_default().dontDisturb;
         AstalNotifd.get_default().dontDisturb = value;
