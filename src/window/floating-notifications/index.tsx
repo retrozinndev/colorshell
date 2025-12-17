@@ -29,7 +29,7 @@ export const FloatingNotifications = (mon: number, scope: Scope) => {
                 <Gtk.Stack transitionType={createComputed([
                       generalConfig.bindProperty("notifications.position_h", "string"),
                       generalConfig.bindProperty("notifications.position_v", "string")
-                  ], (hPos, vPos) => { // TODO: support different animations depending on screen position
+                  ], (hPos, vPos) => {
 
                       if(hPos === "left") 
                           return Gtk.StackTransitionType.SLIDE_LEFT;
