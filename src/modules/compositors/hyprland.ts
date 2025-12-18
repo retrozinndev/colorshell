@@ -1,8 +1,7 @@
-import { Compositors } from ".";
+import { Compositor } from ".";
 import { register } from "ags/gobject";
 import { createRoot, getScope, Scope } from "ags";
 import { createScopedConnection } from "../utils";
-
 
 import AstalHyprland from "gi://AstalHyprland";
 
@@ -11,21 +10,13 @@ type Event = "activewindow" | "activewindowv2"
             | "workspace" | "workspacev2"
             | "focusedmon" | "focusedmonv2";
 
-@register({ GTypeName: "CompositorHyprland" })
-export class CompositorHyprland extends Compositors.Compositor {
+@register({ GTypeName: "ClshCompositorHyprland" })
+export class CompositorHyprland extends Compositor {
     #scope: Scope;
-    hyprland: AstalHyprland.Hyprland;
-
-    protected _focusedClient: Compositors.Client | null = null;
+    hyprland: AstalHyprland.Hyprland = AstalHyprland.get_default();
 
     constructor() {
         super();
-
-        try {
-            this.hyprland = AstalHyprland.get_default();
-        } catch(e) {
-            throw new Error(`Couldn't initialize CompositorHyprland: ${e}`);
-        }
 
         this.#scope = createRoot(() => {
             createScopedConnection(
@@ -39,7 +30,7 @@ export class CompositorHyprland extends Compositors.Compositor {
                             )[0];
 
                             if(focusedClient) {
-                                this._focusedClient = new Compositors.Client({
+                                this._focusedClient = new Compositor.Client({
                                     address: address,
                                     class: focusedClient.class ?? "",
                                     initialClass: focusedClient.initialClass ?? "",

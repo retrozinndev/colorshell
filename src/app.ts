@@ -17,7 +17,7 @@ import { Wallpaper } from "./modules/wallpaper";
 import { Stylesheet } from "./modules/stylesheet";
 import { Clipboard } from "./modules/clipboard";
 import { Gdk, Gtk } from "ags/gtk4";
-import { createBinding, createComputed, createRoot, getScope, Scope } from "ags";
+import { createBinding, createComputed, createRoot, getScope, onCleanup, Scope } from "ags";
 import { OSDModes, triggerOSD } from "./window/osd";
 import { programArgs, programInvocationName } from "system";
 import { setConsoleLogDomain } from "console";
@@ -25,6 +25,8 @@ import { createScopedConnection, createSubscription, encoder, secureBaseBinding 
 import { exec } from "ags/process";
 import { NightLight } from "./modules/nightlight";
 import { Backlights } from "./modules/backlight";
+import { Compositor } from "./modules/compositors";
+import { CompositorHyprland } from "./modules/compositors/hyprland";
 import GObject, { register } from "ags/gobject";
 
 import Media from "./modules/media";
@@ -161,10 +163,23 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
     vfunc_activate(): void {
         super.vfunc_activate();
         this.hold();
-        this.main();
+
+        createRoot(() => {
+            this.init();
+            this.main();
+            onCleanup(() => {
+                console.log("Colorshell: disposing connections and quitting because of ::shutdown");
+                this.#connections.forEach((ids, obj) => Array.isArray(ids) ?
+                    ids.forEach(id => obj.disconnect(id))
+                : obj.disconnect(ids));
+            });
+        });
     }
 
     private init(): void {
+        console.log(`Colorshell: Initializing things`);
+        Adw.init();
+
         // load gresource from build-defined path
         try {
             const gresourcesPath: string = GRESOURCES_FILE.startsWith('/') ? GRESOURCES_FILE : (GRESOURCES_FILE.split('/').filter(s => 
@@ -258,69 +273,67 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
 
             return false;
         });
+
+        const desktopName = GLib.getenv("XDG_CURRENT_DESKTOP")?.toLowerCase();
+        switch(desktopName) {
+            case "hyprland":
+                Compositor.instance = new CompositorHyprland();
+            return;
+
+            default:
+                // TODO implement a common wayland compositor support using the proposed AstalWl library
+        }
+
+        console.error(`This compositor(${desktopName}) is not yet implemented to colorshell. \
+Please contribute by implementing it if you can! :)`);
     }
 
     private main(): void {
-        Gtk.init();
-        Adw.init();
+        this.#scope = getScope();
+        this.#connections.set(this, this.connect("shutdown", () => this.#scope.dispose()));
 
-        createRoot((dispose) => {
-            console.log(`Colorshell: Initializing things`);
-            this.#connections.set(this, this.connect("shutdown", () => dispose()));
+        NightLight.getDefault();
 
-            this.init();
-            this.#scope = getScope();
+        Media.getDefault();
+        Clipboard.getDefault();
 
-            NightLight.getDefault();
+        console.log("Colorshell: Initializing Wallpaper and Stylesheet modules");
+        Wallpaper.getDefault();
+        Stylesheet.getDefault();
 
-            Media.getDefault();
-            Clipboard.getDefault();
+        console.log("Runner: Adding plugins");
+        runnerPlugins.forEach(plugin => Runner.addPlugin(plugin));
 
-            console.log("Colorshell: Initializing Wallpaper and Stylesheet modules");
-            Wallpaper.getDefault();
-            Stylesheet.getDefault();
+        createSubscription(
+            createComputed([
+                secureBaseBinding<AstalWp.Endpoint>(createBinding(
+                    AstalWp.get_default(), "defaultSpeaker"
+                ), "volume", null),
+                secureBaseBinding<AstalWp.Endpoint>(createBinding(
+                    AstalWp.get_default(), "defaultSpeaker"
+                ), "mute", null)
+            ]),
+            () => !Windows.getDefault().isOpen("control-center") &&
+                triggerOSD(OSDModes.sink)
+        );
 
-            console.log("Runner: Adding plugins");
-            runnerPlugins.forEach(plugin => Runner.addPlugin(plugin));
+        createSubscription(
+            secureBaseBinding<Backlights.Backlight>(
+                createBinding(Backlights.getDefault(), "default"),
+                "brightness",
+                100
+            ),
+            () => !Windows.getDefault().isOpen("control-center") &&
+                triggerOSD(OSDModes.brightness)
+        );
 
-            createSubscription(
-                createComputed([
-                    secureBaseBinding<AstalWp.Endpoint>(createBinding(
-                        AstalWp.get_default(), "defaultSpeaker"
-                    ), "volume", null),
-                    secureBaseBinding<AstalWp.Endpoint>(createBinding(
-                        AstalWp.get_default(), "defaultSpeaker"
-                    ), "mute", null)
-                ]),
-                () => !Windows.getDefault().isOpen("control-center") &&
-                    triggerOSD(OSDModes.sink)
-            );
+        this.#connections.set(Notifications.getDefault(), [
+            Notifications.getDefault().connect("notification-added", () => {
+                Windows.getDefault().open("floating-notifications");
+            })
+        ]);
 
-            createSubscription(
-                secureBaseBinding<Backlights.Backlight>(
-                    createBinding(Backlights.getDefault(), "default"),
-                    "brightness",
-                    100
-                ),
-                () => !Windows.getDefault().isOpen("control-center") &&
-                    triggerOSD(OSDModes.brightness)
-            );
-
-            this.#connections.set(Notifications.getDefault(), [
-                Notifications.getDefault().connect("notification-added", () => {
-                    Windows.getDefault().open("floating-notifications");
-                })
-            ]);
-
-            defaultWindows.forEach(w => Windows.getDefault().open(w));
-        });
-
-        this.#scope.onCleanup(() => {
-            console.log("Colorshell: disposing connections and quitting because of ::shutdown");
-            this.#connections.forEach((ids, obj) => Array.isArray(ids) ?
-                ids.forEach(id => obj.disconnect(id))
-            : obj.disconnect(ids));
-        });
+        defaultWindows.forEach(w => Windows.getDefault().open(w));
     }
 
     quit(): void {

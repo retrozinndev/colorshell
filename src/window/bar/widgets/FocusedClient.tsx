@@ -1,4 +1,4 @@
-import { CompositorHyprland } from "../../../modules/compositors/hyprland";
+import { Compositor } from "../../../modules/compositors";
 import { Gtk } from "ags/gtk4";
 import { createBinding, With } from "ags";
 import { variableToBoolean } from "../../../modules/utils";
@@ -6,10 +6,8 @@ import { getAppIcon, getSymbolicIcon } from "../../../modules/apps";
 
 import Pango from "gi://Pango?version=1.0";
 
-const hyprland = new CompositorHyprland;
-
 export const FocusedClient = () => {
-    const focusedClient = createBinding(hyprland, "focusedClient");
+    const focusedClient = createBinding(Compositor.getDefault(), "focusedClient");
 
     return <Gtk.Box class={"focused-client"} visible={variableToBoolean(focusedClient)}>
         <With value={focusedClient}>

@@ -1,16 +1,59 @@
-import { CompositorHyprland } from "./hyprland";
-import GObject, { getter, gtype, property, register } from "ags/gobject";
-
-import GLib from "gi://GLib?version=2.0";
+import GObject, { getter, gtype, property, register, signal } from "ags/gobject";
 
 
 /** WIP modular implementation of a system that supports implementing
 * a variety of Wayland Compositors 
-* @todo implement more general compositor info + a lot of stuff
+* @todo implement more general compositor properties + a lot of stuff
 * */
-export namespace Compositors {
-    let compositor: Compositor|null = null;
-    
+@register({ GTypeName: "Compositor" })
+export class Compositor extends GObject.Object {
+    public static instance: Compositor;
+
+    protected _monitors: Array<Compositor.Monitor> = [];
+    protected _workspaces: Array<Compositor.Workspace> = [];
+    protected _clients: Array<Compositor.Client> = []
+    protected _focusedClient: Compositor.Client|null = null;
+
+    @getter(Array)
+    get monitors() { return this._monitors; }
+
+    @getter(Array)
+    get workspaces() { return this._workspaces; }
+
+    @getter(Array)
+    get clients() { return this._clients; }
+
+    @getter(gtype<Compositor.Client|null>(GObject.Object))
+    get focusedClient() { return this._focusedClient; }
+
+    @signal(GObject.Object)
+    clientAdded(_: Compositor.Client) {}
+
+    @signal(GObject.Object)
+    clientRemoved(_: Compositor.Client) {}
+
+    @signal(GObject.Object)
+    workspaceAdded(_: Compositor.Workspace) {}
+
+    @signal(GObject.Object)
+    workspaceRemoved(_: Compositor.Workspace) {}
+
+    @signal(GObject.Object)
+    monitorAdded(_: Compositor.Monitor) {}
+
+    @signal(GObject.Object)
+    monitorRemoved(_: Compositor.Monitor) {}
+
+    constructor() {
+        super();
+    }
+
+    public static getDefault(): Compositor {
+        return this.instance;
+    }
+};
+
+export namespace Compositor {
     @register({ GTypeName: "CompositorMonitor" })
     export class Monitor extends GObject.Object {
         #width: number;
@@ -112,51 +155,6 @@ export namespace Compositors {
             this.#initialClass = props.initialClass !== undefined ?
                 props.initialClass
             : props.class;
-        }
-    }
-
-    @register({ GTypeName: "Compositor" })
-    export class Compositor extends GObject.Object {
-        protected _workspaces: Array<Workspace> = [];
-        protected _focusedClient: Client|null = null;
-
-        @getter(Array<Workspace>)
-        get workspaces() { return this._workspaces; }
-
-        @getter(gtype<Client|null>(Client))
-        get focusedClient() { return this._focusedClient; }
-
-        constructor() {
-            super();
-        }
-    };
-
-
-    export function getDefault(): Compositor {
-        if(!compositor)
-            throw new Error("Compositors haven't been initialized correctly, please call `Compositors.init()` before calling any method in `Compositors`");
-
-        return compositor;
-    }
-
-
-    /** Uses the XDG_CURRENT_DESKTOP variable to detect running compositor's name.
-      * ---
-      * @returns running wayland compositor's name (lowercase) or `undefined` if variable's not set */
-    export function getName(): string|undefined {
-        return GLib.getenv("XDG_CURRENT_DESKTOP")?.toLowerCase() ?? undefined;
-    }
-
-    /** initialize colorshell's wayland compositor implementation abstraction.
-      * when called, and if it's implemented, sets the default compositor to an equivalent implementation for the current desktop(checks from XDG_CURRENT_DESKTOP) */
-    export function init(): void {
-        switch(Compositors.getName()) {
-            case "hyprland":
-                compositor = new CompositorHyprland();
-            break;
-
-            default:
-                console.error(`This compositor(${Compositors.getName()}) is not yet implemented to colorshell. Please contribute by implementing it if you can! :)`);
         }
     }
 }
