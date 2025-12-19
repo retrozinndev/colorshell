@@ -66,7 +66,10 @@ export const FloatingNotifications = (mon: number, scope: Scope) => {
                                 createBinding(notif, "image"),
                                 createBinding(notif, "appIcon")
                             ], () => (Notifications.getDefault().getNotificationImage(notif) ?? null)!)}
-                            onActionClicked={(_, action) => notif.invoke(action.id)}
+                            onActionClicked={(_, action) => {
+                                notif.invoke(action.id);
+                                Notifications.getDefault().removeNotification(notif);
+                            }}
                             actions={notif.actions.filter(a => !/^view$/i.test(a.id) && !/^view$/i.test(a.label))}
                             onDismissed={() => Notifications.getDefault().removeNotification(notif)}
                             widthRequest={size} id={notif.id}>
@@ -80,7 +83,11 @@ export const FloatingNotifications = (mon: number, scope: Scope) => {
                                       viewActionRegEx.test(a.id) || viewActionRegEx.test(a.label)
                                   )?.[0];
 
+                                  if(!viewAction) 
+                                      return;
+
                                   viewAction && notif.invoke(viewAction.id);
+                                  Notifications.getDefault().removeNotification(notif);
                               }} />
 
                               <Gtk.EventControllerMotion onEnter={() => {
