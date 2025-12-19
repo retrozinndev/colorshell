@@ -1,4 +1,4 @@
-import { getter, gtype, property, register, setter } from "ags/gobject";
+import { getter, gtype, property, register, setter, signal } from "ags/gobject";
 import { Gtk } from "ags/gtk4";
 import { variableToBoolean } from "../../modules/utils";
 
@@ -19,10 +19,17 @@ export type ResultWidgetProps = {
 @register({ GTypeName: "ResultWidget" })
 export class ResultWidget extends Gtk.Box {
 
+    declare $signals: ResultWidget.SignalSignatures;
     #icon: string|Gtk.Widget|GdkPixbuf.Pixbuf|null = null;
 
     public readonly actionClick: () => void;
     public readonly setup?: () => void;
+
+    @signal()
+    selected() {}
+
+    @signal()
+    unselected() {}
 
     @property(Boolean)
     closeOnClick: boolean = true;
@@ -115,5 +122,26 @@ export class ResultWidget extends Gtk.Box {
                 this.notify("icon");
             }} /> as Gtk.Image
         );
+    }
+
+    connect<S extends keyof ResultWidget.SignalSignatures>(
+        signal: S,
+        callback: (self: ResultWidget, ...params: Parameters<ResultWidget.SignalSignatures[S]>) => ReturnType<ResultWidget.SignalSignatures[S]>
+    ): number {
+        return super.connect(signal, callback);
+    }
+
+    emit<S extends keyof ResultWidget.SignalSignatures>(
+        signal: S, 
+        ...args: Parameters<ResultWidget.SignalSignatures[S]>
+    ): void {
+        super.emit(signal, ...args);
+    }
+}
+
+export namespace ResultWidget {
+    export interface SignalSignatures extends Gtk.Box.SignalSignatures {
+        "selected": () => void;
+        "unselected": () => void;
     }
 }

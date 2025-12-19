@@ -251,6 +251,11 @@ function selectPreviousItem(listbox: Gtk.ListBox) {
         prevRow.get_allocation().x, prevRow.get_allocation().y);
 
     listbox.select_row(prevRow as Gtk.ListBoxRow);
+    
+    // emit ResultWidget ::selected / ::unselected
+    (selectedRow?.get_child() as ResultWidget).emit("unselected");
+    ((prevRow as Gtk.ListBoxRow|null)?.get_child() as ResultWidget).emit("selected");
+
     if(prevRowY < vadjustment.get_value()) 
         vadjustment.set_value(prevRowY);
 }
@@ -267,6 +272,11 @@ function selectNextItem(listbox: Gtk.ListBox) {
     const nextRowVAllocation = (nextRow.get_allocation().y + nextRow.get_allocation().height);
 
     listbox.select_row(nextRow as Gtk.ListBoxRow);
+
+    // emit ResultWidget ::selected / ::unselected
+    (selectedRow?.get_child() as ResultWidget).emit("unselected");
+    ((nextRow as Gtk.ListBoxRow|null)?.get_child() as ResultWidget).emit("selected");
+
     if(nextRowVAllocation > viewport.get_allocation().height) 
         vadjustment.set_value(nextRow.get_allocation().y - viewport.get_allocation().height + nextRow.get_allocation().height);
 }
@@ -357,7 +367,7 @@ export function openRunner(props: RunnerProps, placeholders?: Array<Result>): As
                           resultWidget.closeOnClick && Runner.close();
                       }
 
-                  }} onUnrealize={() => Runner.close()}
+                  }}
                 />
                 <Gtk.ScrolledWindow class={"results-scrollable"} vscrollbarPolicy={Gtk.PolicyType.AUTOMATIC}
                   hscrollbarPolicy={Gtk.PolicyType.NEVER} hexpand vexpand propagateNaturalHeight visible={false}
