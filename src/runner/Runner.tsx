@@ -251,6 +251,11 @@ function selectPreviousItem(listbox: Gtk.ListBox) {
         prevRow.get_allocation().x, prevRow.get_allocation().y);
 
     listbox.select_row(prevRow as Gtk.ListBoxRow);
+    
+    // emit ResultWidget ::selected / ::unselected
+    (selectedRow?.get_child() as ResultWidget).emit("unselected");
+    ((prevRow as Gtk.ListBoxRow|null)?.get_child() as ResultWidget).emit("selected");
+
     if(prevRowY < vadjustment.get_value()) 
         vadjustment.set_value(prevRowY);
 }
@@ -267,6 +272,11 @@ function selectNextItem(listbox: Gtk.ListBox) {
     const nextRowVAllocation = (nextRow.get_allocation().y + nextRow.get_allocation().height);
 
     listbox.select_row(nextRow as Gtk.ListBoxRow);
+
+    // emit ResultWidget ::selected / ::unselected
+    (selectedRow?.get_child() as ResultWidget).emit("unselected");
+    ((nextRow as Gtk.ListBoxRow|null)?.get_child() as ResultWidget).emit("selected");
+
     if(nextRowVAllocation > viewport.get_allocation().height) 
         vadjustment.set_value(nextRow.get_allocation().y - viewport.get_allocation().height + nextRow.get_allocation().height);
 }
@@ -331,10 +341,13 @@ export function openRunner(props: RunnerProps, placeholders?: Array<Result>): As
                   $={(self) => gtkEntry = self} onNotifyText={(self) => {
                       const listbox = ((self.get_next_sibling()! as Gtk.ScrolledWindow)
                         .get_child() as Gtk.Viewport).get_child() as Gtk.ListBox;
-                      updateResultsList(listbox, self.text, props.resultsLimit, placeholders).then(() =>
-                          listbox.get_row_at_index(0) && 
-                              listbox.select_row(listbox.get_row_at_index(0))
-                      );
+                      updateResultsList(listbox, self.text, props.resultsLimit, placeholders).then(() => {
+                          const firstResult = listbox.get_row_at_index(0);
+                          if(firstResult) {
+                              listbox.select_row(firstResult);
+                              (firstResult.get_child() as ResultWidget).emit("selected");
+                          };
+                      });
                   }} primaryIconName={"system-search-symbolic"}
                   primaryIconTooltipText={"Search"}
                   secondaryIconName={"edit-clear-symbolic"}
@@ -354,25 +367,28 @@ export function openRunner(props: RunnerProps, placeholders?: Array<Result>): As
                       if(resultWidget instanceof ResultWidget && !clickTimeout) {
                           clickTimeout = setTimeout(() => clickTimeout = undefined, 250);
                           resultWidget.actionClick();
-                          resultWidget.closeOnClick && 
-                              Runner.close();
+                          resultWidget.closeOnClick && Runner.close();
                       }
 
-                  }} onUnrealize={() => Runner.close()}
+                  }}
                 />
                 <Gtk.ScrolledWindow class={"results-scrollable"} vscrollbarPolicy={Gtk.PolicyType.AUTOMATIC}
                   hscrollbarPolicy={Gtk.PolicyType.NEVER} hexpand vexpand propagateNaturalHeight visible={false}
                   maxContentHeight={props.height} focusable={false}>
 
                     <Gtk.ListBox hexpand activateOnSingleClick selectionMode={Gtk.SelectionMode.SINGLE} 
-                      onRowActivated={(_, row) => {
+                      onRowSelected={(_, row) => {
+                          if(row instanceof ResultWidget) {
+                              row.grab_focus();
+                              gtkEntry?.grab_focus_without_selecting();
+                          }
+                      }} onRowActivated={(_, row) => {
                           const child = row.get_child()!;
 
                           if(child instanceof ResultWidget && !clickTimeout) {
                               clickTimeout = setTimeout(() => clickTimeout = undefined, 250);
                               child.actionClick?.();
-                              child.closeOnClick && 
-                                  Runner.close();
+                              child.closeOnClick && Runner.close();
                           }
                       }}
                     />
