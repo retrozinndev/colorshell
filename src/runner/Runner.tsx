@@ -341,10 +341,13 @@ export function openRunner(props: RunnerProps, placeholders?: Array<Result>): As
                   $={(self) => gtkEntry = self} onNotifyText={(self) => {
                       const listbox = ((self.get_next_sibling()! as Gtk.ScrolledWindow)
                         .get_child() as Gtk.Viewport).get_child() as Gtk.ListBox;
-                      updateResultsList(listbox, self.text, props.resultsLimit, placeholders).then(() =>
-                          listbox.get_row_at_index(0) && 
-                              listbox.select_row(listbox.get_row_at_index(0))
-                      );
+                      updateResultsList(listbox, self.text, props.resultsLimit, placeholders).then(() => {
+                          const firstResult = listbox.get_row_at_index(0);
+                          if(firstResult) {
+                              listbox.select_row(firstResult);
+                              (firstResult.get_child() as ResultWidget).emit("selected");
+                          };
+                      });
                   }} primaryIconName={"system-search-symbolic"}
                   primaryIconTooltipText={"Search"}
                   secondaryIconName={"edit-clear-symbolic"}
