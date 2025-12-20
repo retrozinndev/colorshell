@@ -56,6 +56,17 @@ export class Cache extends GObject.Object {
         section.set(itemKey ?? this.generateID(), item);
     }
 
+    /** get the list of items in `section`.
+      *
+      * @returns array of item keys from `section`. if `section` does not exist, an empty array. */
+    getSectionItems(sectionName: string): Array<string> {
+        const section = this.#sections.get(sectionName);
+        if(section)
+            return [...section.keys()];
+
+        return [];
+    }
+
     /** get a specific `item` from `section`.
       * if item or section is not found, the method returns `undefined`.
       * to return data as a specific type, you can manually set the first type parameter `T`.

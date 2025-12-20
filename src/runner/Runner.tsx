@@ -1,5 +1,5 @@
 import { Astal, Gdk, Gtk } from "ags/gtk4";
-import { CCProps } from "ags";
+import { CCProps, createRoot } from "ags";
 import { getPopupWindowContainer, PopupWindow } from "../widget/PopupWindow";
 import { updateApps } from "../modules/apps";
 import { ResultWidget, ResultWidgetProps } from "./widgets/ResultWidget";
@@ -210,11 +210,12 @@ async function updateResultsList(listbox: Gtk.ListBox, input: string, limit?: nu
     const results = await getPluginResults(input, limit).catch((e: Error) => {
         console.error(`Couldn't get results because of an error: ${e.message}\n${e.stack}`);
 
-        listbox.insert(<ResultWidget title={`Error: ${e.message}`}
-          description={"Try changing your search a little..."}
-          icon={"window-close-symbolic"}
-          actionClick={() => gtkEntry?.select_region(0, gtkEntry?.text.length - 1)}
-        /> as ResultWidget, -1);
+        listbox.insert(
+            <ResultWidget title={`Error: ${e.message}`} description={"Try changing your search a little..."}
+              icon={"window-close-symbolic"}
+              actionClick={() => gtkEntry?.select_region(0, gtkEntry?.text.length - 1)}
+            /> as ResultWidget,
+        -1);
 
         return [] satisfies Array<Result>;
     });
@@ -222,7 +223,13 @@ async function updateResultsList(listbox: Gtk.ListBox, input: string, limit?: nu
     listbox.remove_all();
 
     results.forEach((result) => {
-        listbox.insert(<ResultWidget {...result} /> as ResultWidget, -1);
+        listbox.insert(createRoot(dispose => 
+            <ResultWidget {...result} onDestroy={(self) => {
+                result.onDestroy?.(self);
+                dispose();
+            }}
+            /> as ResultWidget
+        ), -1);
         newResults.push(result);
     });
 

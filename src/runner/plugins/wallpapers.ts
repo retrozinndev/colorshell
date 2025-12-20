@@ -2,8 +2,8 @@ import { Gdk, Gtk } from "ags/gtk4";
 import { Wallpaper } from "../../modules/wallpaper";
 import { Runner } from "../Runner";
 import { createRoot, jsx } from "ags";
-import { Cache } from "../../modules/cache";
 import { createScopedConnection } from "gnim-utils";
+import { ResultWidget } from "../widgets/ResultWidget";
 import Fuse, { IFuseOptions } from "fuse.js";
 
 import Gio from "gi://Gio?version=2.0";
@@ -48,14 +48,61 @@ class _PluginWallpapers implements Runner.Plugin {
     }
 
     onClose() {
-        Cache.getDefault().removeSection("wallpapers"); // removes all GdkTexture references, then the gc clears everything
+        //Cache.getDefault().removeSection("wallpapers"); // unrefs all the cached GdkTextures
+    }
+
+    private async loadPreview(path: string, self: ResultWidget): Promise<Gdk.Texture> {
+        const revealer = self.get_first_child() as Gtk.Revealer;
+        const stack = revealer.get_child() as Gtk.Stack;
+        const picture = stack.get_child_by_name("picture") as Gtk.Picture;
+        //const cached = Cache.getDefault().getItem<Gdk.Texture>("wallpapers", path);
+
+        //if(cached) {
+        //    picture.set_paintable(cached);
+        //    stack.set_visible_child_name("picture");
+        //    return cached;
+        //}
+
+        return new Promise((resolve, reject) => {
+            function panic(e: Error): void {
+                revealer.hide();
+                reject(`Failed to load image for wallpaper with glycin: ${e.message}`);
+                return;
+            }
+
+            Gly.Loader.new(Gio.File.new_for_path(path)).load_async(null, (loader, res) => {
+                let image!: Gly.Image;
+                try {
+                    image = loader!.load_finish(res);
+                } catch(e) {
+                    panic(e as Error);
+                    return;
+                }
+
+                image.next_frame_async(null, (_, res) => {
+                    try {
+                        const texture = GlyGtk4.frame_get_texture(image.next_frame_finish(res));
+                        picture.set_paintable(texture);
+                        stack.set_visible_child_name("picture");
+                        resolve(texture);
+                    } catch(e) {
+                        panic(e as Error);
+                        return;
+                    }
+                });
+            });
+        });
+    }
+
+    private getWallpaperPath(fileInfo: Gio.FileInfo): string {
+        return `${Wallpaper.getDefault().wallpapersPath}/${
+            this.#subdir ? `${this.#subdir}/` : ""
+        }${fileInfo.get_name()}`;
     }
 
     private result(info: Gio.FileInfo): Runner.Result {
         const isDir: boolean = info.get_file_type() === Gio.FileType.DIRECTORY;
-        const path: string = `${Wallpaper.getDefault().wallpapersPath}/${
-            this.#subdir ? `${this.#subdir}/` : ""
-        }${info.get_name()}`;
+        const path: string = this.getWallpaperPath(info);
 
         return {
             title: `${info.get_display_name()}${isDir ? "/" : ""}`,
@@ -79,14 +126,13 @@ class _PluginWallpapers implements Runner.Plugin {
                 const stack = revealer.get_child() as Gtk.Stack;
                 const picture = createRoot((dispose) => jsx(Gtk.Picture, {
                     hexpand: true,
-                    css: "margin-bottom: 6px;",
+                    css: "margin-bottom: 6px; border-radius: 10px;",
                     contentFit: Gtk.ContentFit.COVER,
                     onDestroy: () => dispose()
                 }));
 
                 stack.add_named(new Adw.Spinner(), "spinner");
                 stack.add_named(picture, "picture");
-
                 
                 self.set_orientation(Gtk.Orientation.VERTICAL);
                 self.prepend(revealer);
@@ -98,47 +144,21 @@ class _PluginWallpapers implements Runner.Plugin {
                         return;
 
                     createScopedConnection(self, "destroy", () => dispose());
-                    createScopedConnection(eventMotion, "enter", () => revealer.set_reveal_child(true));
+                    createScopedConnection(eventMotion, "enter", () => {
+                        revealer.set_reveal_child(true);
+                    });
                     createScopedConnection(eventMotion, "leave", () => revealer.set_reveal_child(false));
                     createScopedConnection(self, "selected", () => revealer.set_reveal_child(true));
                     createScopedConnection(self, "unselected", () => revealer.set_reveal_child(false));
                 });
-
-                function panic(e: Error): void {
-                    self.remove(revealer);
-                    console.error("Failed to load image for wallpaper with glycin", e);
-                }
-
-                const cached = Cache.getDefault().getItem<Gdk.Texture>("wallpapers", path);
-                if(cached) {
-                    picture.set_paintable(cached);
-                    stack.set_visible_child_name("picture");
-                    stack.remove(stack.get_child_by_name("spinner")!);
-                    return;
-                }
-
-                Gly.Loader.new(Gio.File.new_for_path(path)).load_async(null, (loader, res) => {
-                    let image!: Gly.Image;
-                    try {
-                        image = loader!.load_finish(res);
-                    } catch(e) {
-                        panic(e as Error);
-                        return;
-                    }
-
-                    image.next_frame_async(null, (_, res) => {
-                        try {
-                            const texture = GlyGtk4.frame_get_texture(image.next_frame_finish(res));
-                            picture.set_paintable(texture);
-                            Cache.getDefault().addItem("wallpapers", texture, path);
-                            stack.set_visible_child_name("picture");
-                            stack.remove(stack.get_child_by_name("spinner")!);
-                        } catch(e) {
-                            panic(e as Error);
-                            return;
-                        }
-                    });
-                });
+            },
+            onSelected: (self) => {
+                this.loadPreview(this.getWallpaperPath(info), self);
+            },
+            onUnselected: (self) => {
+                const stack = (self.get_first_child() as Gtk.Revealer).get_child() as Gtk.Stack;
+                stack.set_visible_child_name("spinner");
+                (stack.get_child_by_name("picture") as Gtk.Picture).set_paintable(null);
             },
             actionClick: () => {
                 if(isDir) {
@@ -155,6 +175,7 @@ class _PluginWallpapers implements Runner.Plugin {
 
                 if(!GLib.file_test(path, GLib.FileTest.EXISTS))
                     return;
+
                 Wallpaper.getDefault().setWallpaper(path);
             }
         };
@@ -201,8 +222,6 @@ class _PluginWallpapers implements Runner.Plugin {
                 });
             }
 
-            // TODO: recursive search for subdirectories
-
             if(GLib.file_test(`${this.#dir}/${this.#subdir}`, GLib.FileTest.IS_DIR)) {
                 const dir = Gio.File.new_for_path(`${this.#dir}/${this.#subdir}`);
                 this.#files = [];
@@ -237,7 +256,25 @@ class _PluginWallpapers implements Runner.Plugin {
                 inf.get_name() === result.item
             )[0];
 
-            results.push(this.result(info));
+            results.push(createRoot((dispose) => {
+                const widget = this.result(info),
+                    path = this.getWallpaperPath(info);
+
+                widget.onDestroy = () => dispose();
+                if(info.get_file_type() !== Gio.FileType.DIRECTORY) {
+                    widget.onSelected = (self) => {
+                        console.log("loading preview");
+                        this.loadPreview(path, self);
+                    };
+
+                    widget.onUnselected = (self) => {
+                        (((self.get_first_child() as Gtk.Revealer).get_child() as Gtk.Stack)
+                            .get_child_by_name("picture") as Gtk.Picture).set_paintable(null);
+                    };
+                }
+
+                return widget;
+            }));
         });
 
 
