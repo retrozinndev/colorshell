@@ -145,18 +145,31 @@ class _PluginWallpapers implements Runner.Plugin {
 
                     createScopedConnection(self, "destroy", () => dispose());
                     createScopedConnection(eventMotion, "enter", () => {
+                        this.loadPreview(path, self);
                         revealer.set_reveal_child(true);
                     });
-                    createScopedConnection(eventMotion, "leave", () => revealer.set_reveal_child(false));
-                    createScopedConnection(self, "selected", () => revealer.set_reveal_child(true));
-                    createScopedConnection(self, "unselected", () => revealer.set_reveal_child(false));
+                    createScopedConnection(eventMotion, "leave", () => {
+                        revealer.set_reveal_child(false);
+                        stack.set_visible_child_name("spinner");
+                        (stack.get_child_by_name("picture") as Gtk.Picture).set_paintable(null);
+                    });
                 });
             },
             onSelected: (self) => {
+                if(info.get_file_type() === Gio.FileType.DIRECTORY)
+                    return;
+
                 this.loadPreview(this.getWallpaperPath(info), self);
+                (self.get_first_child() as Gtk.Revealer).set_reveal_child(true);
             },
             onUnselected: (self) => {
-                const stack = (self.get_first_child() as Gtk.Revealer).get_child() as Gtk.Stack;
+                if(info.get_file_type() === Gio.FileType.DIRECTORY)
+                    return;
+
+                const revealer = self.get_first_child() as Gtk.Revealer;
+                const stack = revealer.get_child() as Gtk.Stack;
+
+                revealer.set_reveal_child(false);
                 stack.set_visible_child_name("spinner");
                 (stack.get_child_by_name("picture") as Gtk.Picture).set_paintable(null);
             },
@@ -263,7 +276,6 @@ class _PluginWallpapers implements Runner.Plugin {
                 widget.onDestroy = () => dispose();
                 if(info.get_file_type() !== Gio.FileType.DIRECTORY) {
                     widget.onSelected = (self) => {
-                        console.log("loading preview");
                         this.loadPreview(path, self);
                     };
 
