@@ -21,11 +21,11 @@ export const FloatingNotifications = (mon: number, scope: Scope) => {
                         return Gtk.RevealerTransitionType.CROSSFADE;
 
                     case "bottom":
-                        return Gtk.RevealerTransitionType.SLIDE_DOWN;
+                        return Gtk.RevealerTransitionType.SWING_DOWN;
                 }
 
-                return Gtk.RevealerTransitionType.SLIDE_UP;
-            })} transitionDuration={200}>
+                return Gtk.RevealerTransitionType.SWING_UP;
+            })} transitionDuration={420}>
                 <Gtk.Stack transitionType={createComputed([
                       generalConfig.bindProperty("notifications.position_h", "string"),
                       generalConfig.bindProperty("notifications.position_v", "string")
@@ -120,9 +120,53 @@ export const FloatingNotifications = (mon: number, scope: Scope) => {
         );
     }
 
+    function add(container: Gtk.Box, notif: AstalNotifd.Notification): void {
+        const notifId = notif.id; // store id, because the notif object can be disposed before the widget is removed
+        const widget = buildNotification(notif);
+        const stack = widget.get_child() as Gtk.Stack;
+
+        notifs.push(notifId);
+        generalConfig.getProperty("notifications.position_v", "string") === "top" ?
+            container.prepend(widget)
+        : container.append(widget);
+        widget.set_reveal_child(true);
+        stack.set_visible_child_name("notification");
+
+        const ids = [
+            Notifications.getDefault().connect("notification-removed", (_, removedId) => {
+                if(removedId !== notifId)
+                    return;
+
+                notifs.splice(notifs.findIndex(id => id === notifId), 1);
+                stack.set_visible_child_name("empty");
+                setTimeout(() => widget.set_reveal_child(false), stack.transitionDuration);
+                setTimeout(() => {
+                    ids.forEach(id => Notifications.getDefault().disconnect(id));
+                    widget.get_parent() && container.remove(widget);
+                    if(!container.get_first_child())
+                        (container.get_root() as Astal.Window)?.close();
+                }, stack.transitionDuration + widget.transitionDuration);
+            }),
+            Notifications.getDefault().connect("notification-replaced", (_, replacedId) => {
+                if(replacedId !== notifId)
+                    return;
+
+                const newNotif = Notifications.getDefault().notifications.find(n => n.id === replacedId)!;
+
+                const notifWidget = stack.get_child_by_name("notification") as Notification;
+                notifWidget.summary = newNotif.summary;
+                notifWidget.body = newNotif.body;
+                notifWidget.actions = newNotif.actions;
+                notifWidget.appIcon = newNotif.appIcon;
+                notifWidget.appName = newNotif.appName;
+                notifWidget.image = Notifications.getDefault().getNotificationImage(newNotif) ?? null;
+            })
+        ];
+    }
+
     const notifs: Array<number> = [];
 
-    return <Astal.Window namespace={"floating-notifications"} monitor={mon} layer={Astal.Layer.OVERLAY}
+    const window = <Astal.Window namespace={"floating-notifications"} monitor={mon} layer={Astal.Layer.OVERLAY}
       anchor={createComputed([
           generalConfig.bindProperty("notifications.position_h", "string"),
           generalConfig.bindProperty("notifications.position_v", "string"),
@@ -166,65 +210,24 @@ export const FloatingNotifications = (mon: number, scope: Scope) => {
       class={"floating-notifications"}>
 
         <Adw.Clamp orientation={Gtk.Orientation.HORIZONTAL} maximumSize={size} valign={Gtk.Align.START}>
-            <Gtk.Box class={"floating-notifications-container"} orientation={Gtk.Orientation.VERTICAL}
-              $={self => {
-                  function add(notif: AstalNotifd.Notification): void {
-                      const notifId = notif.id; // store id, because the notif object can be disposed before the widget is removed
-                      const widget = buildNotification(notif);
-                      const stack = widget.get_child() as Gtk.Stack;
-
-                      notifs.push(notifId);
-                      generalConfig.getProperty("notifications.position_v", "string") === "top" ?
-                          self.prepend(widget)
-                      : self.append(widget);
-                      widget.set_reveal_child(true);
-                      stack.set_visible_child_name("notification");
-
-                      const ids = [
-                          Notifications.getDefault().connect("notification-removed", (_, removedId) => {
-                              if(removedId !== notifId)
-                                  return;
-
-                              notifs.splice(notifs.findIndex(id => id === notifId), 1);
-                              stack.set_visible_child_name("empty");
-                              setTimeout(() => widget.set_reveal_child(false), stack.transitionDuration);
-                              setTimeout(() => {
-                                  ids.forEach(id => Notifications.getDefault().disconnect(id));
-                                  widget.get_parent() && self.remove(widget);
-                                  if(!self.get_first_child())
-                                      (self.get_root() as Astal.Window)?.close();
-                              }, stack.transitionDuration + widget.transitionDuration);
-                          }),
-                          Notifications.getDefault().connect("notification-replaced", (_, replacedId) => {
-                              if(replacedId !== notifId)
-                                  return;
-
-                              const newNotif = Notifications.getDefault().notifications.find(n => n.id === replacedId)!;
-
-                              const notifWidget = stack.get_child_by_name("notification") as Notification;
-                              notifWidget.summary = newNotif.summary;
-                              notifWidget.body = newNotif.body;
-                              notifWidget.actions = newNotif.actions;
-                              notifWidget.appIcon = newNotif.appIcon;
-                              notifWidget.appName = newNotif.appName;
-                              notifWidget.image = Notifications.getDefault().getNotificationImage(newNotif) ?? null;
-                          })
-                      ];
-                  }
-
-                  Notifications.getDefault().notifications.length > 0 &&
-                      Notifications.getDefault().notifications.forEach(n => add(n));
-
-                  createScopedConnection(
-                      Notifications.getDefault(), "notification-added", (notif) => {
-                          if(notifs.includes(notif.id))
-                              return;
-
-                          add(notif);
-                      }
-                  );
-              }}
-            />
+            <Gtk.Box class={"floating-notifications-container"} orientation={Gtk.Orientation.VERTICAL} />
         </Adw.Clamp>
     </Astal.Window> as Astal.Window;
+
+    window.show();
+    const container = (window.get_child() as Adw.Clamp).get_child() as Gtk.Box;
+    
+    Notifications.getDefault().notifications.length > 0 &&
+        Notifications.getDefault().notifications.forEach(n => add(container, n));
+
+    createScopedConnection(
+        Notifications.getDefault(), "notification-added", (notif) => {
+            if(notifs.includes(notif.id))
+                return;
+
+            add(container, notif);
+        }
+    );
+
+    return window;
 }
