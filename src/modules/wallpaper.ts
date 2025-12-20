@@ -1,4 +1,4 @@
-import { execAsync } from "ags/process";
+import { exec, execAsync } from "ags/process";
 import { readFile } from "ags/file";
 import GObject, { register, getter, gtype, property, setter } from "ags/gobject";
 
@@ -8,10 +8,7 @@ import { createSubscription, encoder } from "./utils";
 import { Notifications } from "./notifications";
 import { generalConfig } from "../config";
 import { createRoot, getScope, Scope } from "ags";
-import AstalHyprland from "gi://AstalHyprland?version=0.1";
 
-
-export { Wallpaper };
 
 type WalData = {
     checksum: string;
@@ -49,7 +46,7 @@ export type WalMode = "darken"|"lighten";
 export type WallpaperPositioning = "contain"|"tile"|"cover";
 
 @register({ GTypeName: "Wallpaper" })
-class Wallpaper extends GObject.Object {
+export class Wallpaper extends GObject.Object {
     private static instance: Wallpaper;
     #wallpaper: (string|undefined);
     #scope!: Scope;
@@ -139,13 +136,13 @@ class Wallpaper extends GObject.Object {
                     }
 
                     this.positioning = positioning;
-                    this.reloadWallpaper().catch((e: Error) => 
+                    this.reloadWallpaper().catch(e => {
                         Notifications.getDefault().sendNotification({
                             appName: "colorshell",
                             summary: "Couldn't update wallpaper position",
                             body: `An error occurred while updating wallpaper's position: ${e.message}`
-                        })
-                    );
+                        });
+                    });
                 }
             );
         });
@@ -209,13 +206,13 @@ class Wallpaper extends GObject.Object {
     }
 
     public async reloadWallpaper(write: boolean = true): Promise<void> {
-        if(this.wallpaper.trim() === "")
+        if(this.#wallpaper?.trim() === "")
             return;
 
-        AstalHyprland.get_default().message("hyprctl hyprpaper unload all")
-        AstalHyprland.get_default().message(`hyprctl preload "${this.#wallpaper}"`);
-        AstalHyprland.get_default().message(`hyprctl wallpaper ", ${this.positioning === "cover" ? 
-            "" : `${this.positioning}:`}${this.wallpaper}"`);
+        exec("hyprctl hyprpaper unload all");
+        exec(`hyprctl hyprpaper preload "${this.#wallpaper}"`);
+        exec(`hyprctl hyprpaper wallpaper ", ${this.positioning === "cover" ? 
+            "" : `${this.positioning}:`}${this.#wallpaper}"`);
 
         write && this.writeChanges();
     }
@@ -228,11 +225,14 @@ class Wallpaper extends GObject.Object {
             return;
         }
 
+        const reloadColors = this.#wallpaper !== path; // only reload colors if wallpaper is different
         this.#wallpaper = path;
-        this.reloadWallpaper(write).catch((e: Error) => {
+        this.notify("wallpaper");
+        this.reloadWallpaper(write).then(() => {
+            reloadColors && this.reloadColors();
+        }).catch((e: Error) => {
             console.error(`Wallpaper: Couldn't set wallpaper. Stderr: ${e.message}`);
         });
-        this.reloadColors();
     }
 
     public async pickWallpaper(): Promise<string|undefined> {
