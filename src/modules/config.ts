@@ -31,7 +31,11 @@ class Config<K extends string, V = any> extends GObject.Object {
     private timeout: (AstalIO.Time|boolean|undefined);
     public get file() { return this.#file; };
 
-    constructor(filePath: Gio.File|string, defaults?: Record<K, V>) {
+    constructor(
+        filePath: Gio.File|string,
+        defaults: Record<K, V> = {} as Record<K, V>,
+        watch: boolean = true
+    ) {
         super();
 
         this.defaults = (defaults ?? {}) as Record<K, V>;
@@ -53,7 +57,7 @@ class Config<K extends string, V = any> extends GObject.Object {
             }));
         }
 
-        monitorFile(this.#file.get_path()!, 
+        watch && monitorFile(this.#file.get_path()!, 
             () => {
                 if(this.timeout) return;
                 this.timeout = timeout(500, () => this.timeout = undefined);
@@ -207,7 +211,7 @@ class Config<K extends string, V = any> extends GObject.Object {
         }
 
         if(expectType !== "any" && typeof property !== expectType) {
-            console.error(`Config: property with path \`${path}\` not found in defaults/user-entries, returning \`undefined\``);
+            console.debug(`Config: property with path \`${path}\` not found in defaults/user-entries, returning \`undefined\``);
             property = undefined;
         }
 

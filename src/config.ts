@@ -103,7 +103,8 @@ export const userData = new Config<
     (typeof userDataDefaults)[keyof typeof userDataDefaults]
 >(
     `${GLib.get_user_data_dir()}/colorshell/data.json`,
-    userDataDefaults
+    userDataDefaults,
+    false
 );
 
 export const generalConfig = new Config<keyof typeof generalConfigDefaults, 
