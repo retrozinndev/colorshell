@@ -11,6 +11,7 @@ import GLib from "gi://GLib?version=2.0";
 import Gly from "gi://Gly?version=2";
 import Adw from "gi://Adw?version=1";
 import GlyGtk4 from "gi://GlyGtk4?version=2";
+import { Cache } from "../../modules/cache";
 
 
 class _PluginWallpapers implements Runner.Plugin {
@@ -48,24 +49,24 @@ class _PluginWallpapers implements Runner.Plugin {
     }
 
     onClose() {
-        //Cache.getDefault().removeSection("wallpapers"); // unrefs all the cached GdkTextures
+        Cache.getDefault().removeSection("wallpapers"); // unrefs all the cached GdkTextures
     }
 
     private async loadPreview(path: string, self: ResultWidget): Promise<Gdk.Texture> {
         const revealer = self.get_first_child() as Gtk.Revealer;
         const stack = revealer.get_child() as Gtk.Stack;
         const picture = stack.get_child_by_name("picture") as Gtk.Picture;
-        //const cached = Cache.getDefault().getItem<Gdk.Texture>("wallpapers", path);
+        const cached = Cache.getDefault().getItem<[string, Gdk.Texture]>("wallpapers", "last");
 
-        //if(cached) {
-        //    picture.set_paintable(cached);
-        //    stack.set_visible_child_name("picture");
-        //    return cached;
-        //}
+        if(cached && cached[0] === path) {
+            picture.set_paintable(cached[1]);
+            stack.set_visible_child_name("picture");
+            return cached[1];
+        }
 
         return new Promise((resolve, reject) => {
             function panic(e: Error): void {
-                revealer.hide();
+                revealer.set_reveal_child(false);
                 reject(`Failed to load image for wallpaper with glycin: ${e.message}`);
                 return;
             }
@@ -83,6 +84,7 @@ class _PluginWallpapers implements Runner.Plugin {
                     try {
                         const texture = GlyGtk4.frame_get_texture(image.next_frame_finish(res));
                         picture.set_paintable(texture);
+                        Cache.getDefault().addItem("wallpapers", [path, texture], "last");
                         stack.set_visible_child_name("picture");
                         resolve(texture);
                     } catch(e) {
@@ -103,6 +105,26 @@ class _PluginWallpapers implements Runner.Plugin {
     private result(info: Gio.FileInfo): Runner.Result {
         const isDir: boolean = info.get_file_type() === Gio.FileType.DIRECTORY;
         const path: string = this.getWallpaperPath(info);
+
+        const onSelected = (widget: ResultWidget) => {
+            if(info.get_file_type() === Gio.FileType.DIRECTORY)
+                return;
+
+            this.loadPreview(path, widget);
+            (widget.get_first_child() as Gtk.Revealer).set_reveal_child(true);
+        };
+
+        const onUnselected = (widget: ResultWidget) => {
+            if(info.get_file_type() === Gio.FileType.DIRECTORY)
+                return;
+
+            const revealer = widget.get_first_child() as Gtk.Revealer;
+            const stack = revealer.get_child() as Gtk.Stack;
+
+            revealer.set_reveal_child(false);
+            stack.set_visible_child_name("spinner");
+            (stack.get_child_by_name("picture") as Gtk.Picture).set_paintable(null);
+        };
 
         return {
             title: `${info.get_display_name()}${isDir ? "/" : ""}`,
@@ -144,35 +166,12 @@ class _PluginWallpapers implements Runner.Plugin {
                         return;
 
                     createScopedConnection(self, "destroy", () => dispose());
-                    createScopedConnection(eventMotion, "enter", () => {
-                        this.loadPreview(path, self);
-                        revealer.set_reveal_child(true);
-                    });
-                    createScopedConnection(eventMotion, "leave", () => {
-                        revealer.set_reveal_child(false);
-                        stack.set_visible_child_name("spinner");
-                        (stack.get_child_by_name("picture") as Gtk.Picture).set_paintable(null);
-                    });
+                    createScopedConnection(eventMotion, "enter", () => onSelected(self));
+                    createScopedConnection(eventMotion, "leave", () => onUnselected(self));
                 });
             },
-            onSelected: (self) => {
-                if(info.get_file_type() === Gio.FileType.DIRECTORY)
-                    return;
-
-                this.loadPreview(this.getWallpaperPath(info), self);
-                (self.get_first_child() as Gtk.Revealer).set_reveal_child(true);
-            },
-            onUnselected: (self) => {
-                if(info.get_file_type() === Gio.FileType.DIRECTORY)
-                    return;
-
-                const revealer = self.get_first_child() as Gtk.Revealer;
-                const stack = revealer.get_child() as Gtk.Stack;
-
-                revealer.set_reveal_child(false);
-                stack.set_visible_child_name("spinner");
-                (stack.get_child_by_name("picture") as Gtk.Picture).set_paintable(null);
-            },
+            onSelected: (self) => onSelected(self),
+            onUnselected: (self) => onUnselected(self),
             actionClick: () => {
                 if(isDir) {
                     Runner.setEntryText(
@@ -213,28 +212,6 @@ class _PluginWallpapers implements Runner.Plugin {
             split = split.filter(s => s !== search);
             this.#subdir = split.join('/');
 
-            if(this.#subdir === undefined) {
-                this.#fuse = new Fuse<string>(
-                    this.#files.filter(inf => 
-                        inf.get_file_type() === Gio.FileType.DIRECTORY
-                    ).map(inf => inf.get_name()) as ReadonlyArray<string>,
-                    this.#options
-                );
-
-                return this.#fuse.search(search.replace(/^\//, "")).map(r => {
-                    const info = this.#files.filter(inf => 
-                        inf.get_name() === r.item
-                    )[0];
-
-                    return createRoot((dispose) => {
-                        const widget = this.result(info);
-                        widget.onDestroy = () => dispose();
-
-                        return widget;
-                    });
-                });
-            }
-
             if(GLib.file_test(`${this.#dir}/${this.#subdir}`, GLib.FileTest.IS_DIR)) {
                 const dir = Gio.File.new_for_path(`${this.#dir}/${this.#subdir}`);
                 this.#files = [];
@@ -270,20 +247,8 @@ class _PluginWallpapers implements Runner.Plugin {
             )[0];
 
             results.push(createRoot((dispose) => {
-                const widget = this.result(info),
-                    path = this.getWallpaperPath(info);
-
+                const widget = this.result(info);
                 widget.onDestroy = () => dispose();
-                if(info.get_file_type() !== Gio.FileType.DIRECTORY) {
-                    widget.onSelected = (self) => {
-                        this.loadPreview(path, self);
-                    };
-
-                    widget.onUnselected = (self) => {
-                        (((self.get_first_child() as Gtk.Revealer).get_child() as Gtk.Stack)
-                            .get_child_by_name("picture") as Gtk.Picture).set_paintable(null);
-                    };
-                }
 
                 return widget;
             }));
