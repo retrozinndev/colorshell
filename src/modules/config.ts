@@ -1,22 +1,62 @@
-import { timeout } from "ags/time";
-import { monitorFile, readFileAsync, writeFileAsync } from "ags/file";
+import { monitorFile, readFile, writeFileAsync } from "ags/file";
 import { Notifications } from "./notifications";
 import { Accessor } from "ags";
 import GObject, { getter, gtype, register } from "ags/gobject";
 
 import Gio from "gi://Gio?version=2.0";
-import AstalIO from "gi://AstalIO";
 import AstalNotifd from "gi://AstalNotifd";
+import GLib from "gi://GLib?version=2.0";
 
 
-export { Config };
+type JSONValues = string|boolean|null|number|object;
 type ValueTypes = "string" | "boolean" | "object" | "number" | "any";
+type SelectorOption = {
+    /** this property is set at runtime, with the same zero-based index of the item in the array */
+    id?: number,
+    label: string,
+    actionSelected?: () => void;
+};
+type Section = {
+    title: string;
+    description?: string;
+    properties: Record<string, Property>;
+};
+type Property<T extends Config.PropertyType = Config.PropertyType.ENTRY> = {
+    type: T;
+    description?: string;
+} & (
+    T extends Config.PropertyType.ENTRY ? {
+        value?: string;
+        setText: (newText: string) => void;
+        getText: () => string;
+        subscribe?: (notify: () => void) => void;
+    } : T extends Config.PropertyType.LEVEL ? {
+        value: number;
+        setValue: (newValue: number) => void;
+        getValue: () => number;
+        subscribe?: (notify: () => void) => void;
+    } : T extends Config.PropertyType.SELECT ? {
+        options: Array<SelectorOption>;
+        /** pre-selected option by the index of the provided array */
+        option: number;
+        setSelection: (optionId: number) => void;
+        getSelection: () => number;
+        subscribe?: (notify: () => void) => void;
+    } : T extends Config.PropertyType.SLIDER ? {
+        maxValue: number;
+        /** @default 0 */
+        minValue?: number;
+        setValue: (newValue: number) => void;
+    } : T extends Config.PropertyType.SWITCH ? {
+        state: boolean;
+        getState: () => boolean;
+        setState: (newState: boolean) => void;
+    } : {}
+);
 
 @register({ GTypeName: "Config" })
-class Config<K extends string, V = any> extends GObject.Object {
-    declare $signals: GObject.Object.SignalSignatures & {
-        "notify::entries": (entries: Record<K, V>) => void;
-    };
+export class Config<K extends string, V = any> extends GObject.Object {
+    declare $signals: Config.SignalSignatures;
 
     /** unmodified object with default entries. User-values are stored 
     * in the `entries` field */
@@ -28,7 +68,9 @@ class Config<K extends string, V = any> extends GObject.Object {
     #file: Gio.File;
     #entries: Record<K, V>;
 
-    private timeout: (AstalIO.Time|boolean|undefined);
+    private timeout: (GLib.Source|boolean|undefined);
+
+    @getter(Gio.File)
     public get file() { return this.#file; };
 
     constructor(
@@ -55,19 +97,21 @@ class Config<K extends string, V = any> extends GObject.Object {
                 body: `Couldn't write default configuration file to "${this.#file.get_path()!
                     }".\nStderr: ${e}`
             }));
+        } else {
+            this.readFile(); // only read file if it already existed before
         }
 
         watch && monitorFile(this.#file.get_path()!, 
             () => {
                 if(this.timeout) return;
-                this.timeout = timeout(500, () => this.timeout = undefined);
+                this.timeout = setTimeout(() => this.timeout = undefined, 1000);
 
                 if(this.#file.query_exists(null)) {
-                    this.timeout?.cancel();
+                    this.timeout?.destroy();
                     this.timeout = true;
 
-                    this.readFile().finally(() => 
-                        this.timeout = undefined);
+                    this.readFile();
+                    this.timeout = undefined;
 
                     return;
                 }
@@ -79,10 +123,6 @@ class Config<K extends string, V = any> extends GObject.Object {
                 });
             }
         );
-
-        this.readFile().catch(e => console.error(
-            `Config: An error occurred while read the configuration file. Stderr: ${e}`
-        ));
     }
 
     private async writeFile(): Promise<void> {
@@ -92,12 +132,14 @@ class Config<K extends string, V = any> extends GObject.Object {
         ).finally(() => this.timeout = false);
     }
 
-    private async readFile(): Promise<void> {
-        await readFileAsync(this.#file.get_path()!).then((content) => {
-            let config: (Record<K, V>|undefined);
+    private readFile(): void {
+        try {
+            const content = readFile(this.#file.get_path()!)
+
+            let newConfig: (Record<K, V>|undefined);
 
             try {
-                config = JSON.parse(content) as Record<K, V>;
+                newConfig = JSON.parse(content) as Record<K, V>;
             } catch(e) {
                 Notifications.getDefault().sendNotification({
                     urgency: AstalNotifd.Urgency.NORMAL,
@@ -107,30 +149,49 @@ class Config<K extends string, V = any> extends GObject.Object {
                         this.#file.get_path()!}\n${
                         (e as SyntaxError).message}`
                 });
+
+                return;
             }
 
-            if(!config) return;
-
-
-            // only change valid entries that are available in the defaults (with 1 of depth)
-            for(const k of Object.keys(this.entries)) {
-                if(config[k as keyof typeof config] === undefined) 
-                    return;
-
-                // TODO needs more work, like object-recursive(infinite depth) entry attributions
-                this.#entries[k as keyof Record<K, V>] = config[k as keyof typeof config];
-            }
-
-            this.notify("entries");
-        }).catch((e: Gio.IOErrorEnum) => {
+            this.syncEntries(newConfig, this.#entries).catch((e: Error) => {
+                Notifications.getDefault().sendNotification({
+                    urgency: AstalNotifd.Urgency.NORMAL,
+                    appName: "colorshell",
+                    summary: "Config apply error",
+                    body: `Failed to apply properties: ${e.message}`
+                });
+            }).finally(() => this.notify("entries"));
+        } catch(e) {
             Notifications.getDefault().sendNotification({
                     urgency: AstalNotifd.Urgency.NORMAL,
                     appName: "colorshell",
                     summary: "Config read error",
                     body: `An error occurred while reading colorshell's config file: ${this.#file.get_path()!
-                        }\n${e.message}`.replace(/[<>]/g, "\\&")
+                        }\n${(e as Error).message}`.replace(/[<>]/g, "\\&")
                 });
-        });
+        }
+    }
+
+    /** recursively update object properties that have been changed */
+    private async syncEntries<T1 extends object, T2 extends object>(newObject: T1, targetObject: T2): Promise<void> {
+        console.debug("Syncing entries for objects:\n", "new:", newObject, "\ntarget:", targetObject);
+        for(const key of Object.keys(targetObject)) {
+            if(newObject[key as keyof T1] === undefined) // leave unchanged if unset in user config
+                continue;
+
+            if(typeof targetObject[key as keyof T2] === "object") {
+                this.syncEntries(newObject[key as keyof T1] as object, targetObject[key as keyof T2] as object);
+                continue;
+            }
+            const newVal = newObject[key as keyof T1] as JSONValues,
+                curVal = targetObject[key as keyof T2] as JSONValues;
+
+            // check if the value changed
+            if(newVal === curVal)
+                continue;
+
+            targetObject[key as keyof T2] = newObject[key as keyof T1] as never;
+        }
     }
 
     public bindProperty(path: string, expectType: "boolean"): Accessor<boolean>;
@@ -216,5 +277,24 @@ class Config<K extends string, V = any> extends GObject.Object {
         }
 
         return property;
+    }
+}
+
+export namespace Config {
+    export interface SignalSignatures extends GObject.Object.SignalSignatures {
+        "notify::entries": () => void;
+    }
+   
+    export enum PropertyType {
+        /** prefers using an increase/decrease type of UI */
+        LEVEL = 0,
+        /** prefers using an enable/disable toggle switch for the UI */
+        SWITCH = 1,
+        /** uses a text entry for value input */
+        ENTRY = 2,
+        /** prefers a selection popover to choose an option */
+        SELECT = 3,
+        /** use a slider for this property */
+        SLIDER = 4
     }
 }
