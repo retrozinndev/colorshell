@@ -19,8 +19,8 @@ export const PageNightLight = <Page
               addSliderMarksFromMinMax(self, 5, "{}K");
           }} value={createBinding(NightLight.getDefault(), "temperature")}
           tooltipText={createBinding(NightLight.getDefault(), "temperature").as(temp => 
-              `${temp}K`)} min={NightLight.getDefault().minTemperature} 
-          max={NightLight.getDefault().maxTemperature} 
+              `${temp}K`)} min={NightLight.minTemperature} 
+          max={NightLight.maxTemperature} 
           onChangeValue={(_, type, value) => {
               if(type != undefined && type !== null)
                   NightLight.getDefault().temperature = Math.floor(value)
@@ -34,7 +34,7 @@ export const PageNightLight = <Page
               addSliderMarksFromMinMax(self, 5, "{}%");
           }} value={createBinding(NightLight.getDefault(), "gamma")}
           tooltipText={createBinding(NightLight.getDefault(), "gamma").as(gamma => 
-              `${gamma}%`)} max={NightLight.getDefault().maxGamma} 
+              `${gamma}%`)} max={NightLight.maxGamma} 
           onChangeValue={(_, type, value) => {
               if(type != undefined && type !== null)
                   NightLight.getDefault().gamma = Math.floor(value)

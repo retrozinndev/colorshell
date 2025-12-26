@@ -1,5 +1,6 @@
 import "ags/overrides"; // thanks Aylur!!
 import "./config";
+import "./compositors";
 import { 
     PluginApps, 
     PluginClipboard, 
@@ -25,8 +26,6 @@ import { createScopedConnection, createSubscription, encoder, secureBaseBinding 
 import { exec } from "ags/process";
 import { NightLight } from "./modules/nightlight";
 import { Backlights } from "./modules/backlight";
-import { Compositor } from "./modules/compositors";
-import { CompositorHyprland } from "./modules/compositors/hyprland";
 import GObject, { register } from "ags/gobject";
 
 import Media from "./modules/media";
@@ -273,19 +272,6 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
 
             return false;
         });
-
-        const desktopName = GLib.getenv("XDG_CURRENT_DESKTOP")?.toLowerCase();
-        switch(desktopName) {
-            case "hyprland":
-                Compositor.instance = new CompositorHyprland();
-            return;
-
-            default:
-                // TODO implement a common wayland compositor support using the proposed AstalWl library
-        }
-
-        console.error(`This compositor(${desktopName}) is not yet implemented to colorshell. \
-Please contribute by implementing it if you can! :)`);
     }
 
     private main(): void {

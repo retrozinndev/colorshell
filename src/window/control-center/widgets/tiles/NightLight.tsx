@@ -15,9 +15,9 @@ export const TileNightLight = () =>
             createBinding(NightLight.getDefault(), "temperature"),
             createBinding(NightLight.getDefault(), "gamma")
         ], (identity, temp, gamma) => !identity ? 
-                `${temp === NightLight.getDefault().identityTemperature ? 
+                `${temp === NightLight.identityTemperature ? 
                     tr("control_center.tiles.night_light.default_desc") : `${temp}K`
-                    } ${gamma < NightLight.getDefault().maxGamma ? `(${gamma}%)` : ""}`
+                    } ${gamma < NightLight.maxGamma ? `(${gamma}%)` : ""}`
             : tr("control_center.tiles.disabled")
         )}
         hasArrow visible={isInstalled("hyprsunset")}

@@ -9,29 +9,33 @@ import GLib from "gi://GLib?version=2.0";
 export class NightLight extends GObject.Object {
     private static instance: NightLight;
 
-    public readonly maxTemperature = 20000;
-    public readonly minTemperature = 1000;
-    public readonly identityTemperature = 6000;
-    public readonly maxGamma = 100;
+    public static readonly maxTemperature = 20000;
+    public static readonly minTemperature = 1000;
+    public static readonly identityTemperature = 6000;
+    public static readonly maxGamma = 100;
 
     #watchInterval: GLib.Source;
-    #temperature: number = this.identityTemperature;
-    #gamma: number = this.maxGamma;
+    #temperature: number = NightLight.identityTemperature;
+    #gamma: number = NightLight.maxGamma;
     #identity: boolean = false;
 
     @getter(Number)
     public get temperature() { return this.#temperature; }
+    @setter(Number)
     public set temperature(newValue: number) { this.setTemperature(newValue); }
 
     @getter(Number)
     public get gamma() { return this.#gamma; }
+    @setter(Number)
     public set gamma(newValue: number) { this.setGamma(newValue); }
 
     @getter(Boolean)
     public get identity() { return this.#identity; }
-
     @setter(Boolean)
     public set identity(val: boolean) {
+        if(this.#identity === val)
+            return;
+
         val ? this.applyIdentity() : this.filter();
         this.#identity = val;
         this.notify("identity");
@@ -41,37 +45,11 @@ export class NightLight extends GObject.Object {
         super();
 
         this.loadData();
-        this.#watchInterval = setInterval(() => {
-            execAsync("hyprctl hyprsunset temperature").then(t => {
-                if(t.trim() !== "" && t.trim().length <= 5) {
-                    const val = Number.parseInt(t.trim());
-
-                    if(this.#temperature !== val) {
-                        this.identity = this.#temperature === this.identityTemperature;
-                        this.#temperature = val;
-                        this.notify("temperature");
-                    }
-                }
-            }).catch((r: Error) => console.error(`Night Light: Couldn't sync temperature. Stderr: ${
-                r.message}\n${r.stack}`));
-
-            execAsync("hyprctl hyprsunset gamma").then(g => {
-                if(g.trim() !== "" && g.trim().length <= 5) {
-                    const val = Number.parseInt(g.trim());
-
-                    if(this.#gamma !== val) {
-                        this.identity = this.#gamma === this.maxGamma;
-                        this.#gamma = val;
-                        this.notify("gamma");
-                    }
-                }
-            }).catch((r: Error) => console.error(`Night Light: Couldn't sync. Stderr: ${
-                r.message}\n${r.stack}`));
-        }, 10000);
+        this.#watchInterval = setInterval(() => this.syncData(), 10000);
     }
 
     vfunc_dispose(): void {
-        this.#watchInterval?.destroy();
+        this.#watchInterval.destroy();
     }
 
     public static getDefault(): NightLight {
@@ -81,12 +59,40 @@ export class NightLight extends GObject.Object {
         return this.instance;
     }
 
+    private syncData(): void {
+        execAsync("hyprctl hyprsunset temperature").then(t => {
+            if(t.trim() !== "" && t.trim().length <= 5) {
+                const val = Number.parseInt(t.trim());
+
+                if(this.#temperature !== val) {
+                    this.identity = val === NightLight.identityTemperature;
+                    this.#temperature = val;
+                    this.notify("temperature");
+                }
+            }
+        }).catch((r: Error) => console.error(`Night Light: Couldn't sync temperature. Stderr: ${
+            r.message}\n${r.stack}`));
+
+        execAsync("hyprctl hyprsunset gamma").then(g => {
+            if(g.trim() !== "" && g.trim().length <= 5) {
+                const val = Number.parseInt(g.trim());
+
+                if(this.#gamma !== val) {
+                    this.identity = val === NightLight.maxGamma;
+                    this.#gamma = val;
+                    this.notify("gamma");
+                }
+            }
+        }).catch((r: Error) => console.error(`Night Light: Couldn't sync. Stderr: ${
+            r.message}\n${r.stack}`));
+    }
+
     private setTemperature(value: number): void {
         if(value === this.temperature && !this.identity) return;
 
-        if(value > this.maxTemperature || value < 1000) {
+        if(value > NightLight.maxTemperature || value < 1000) {
             console.error(`Night Light: provided temperatue ${value
-                } is out of bounds (min: 1000; max: ${this.maxTemperature})`);
+                } is out of bounds (min: 1000; max: ${NightLight.maxTemperature})`);
             return;
         }
 
@@ -103,9 +109,9 @@ export class NightLight extends GObject.Object {
     private setGamma(value: number): void {
         if(value === this.gamma && !this.identity) return;
 
-        if(value > this.maxGamma || value < 0) {
+        if(value > NightLight.maxGamma || value < 0) {
             console.error(`Night Light: provided gamma ${value
-                } is out of bounds (min: 0; max: ${this.maxTemperature})`);
+                } is out of bounds (min: 0; max: ${NightLight.maxTemperature})`);
             return;
         }
 
@@ -176,6 +182,7 @@ export class NightLight extends GObject.Object {
             this.gamma = gamma;
         }
 
-        this.identity = identity;
+        this.#identity = identity;
+        this.notify("identity");
     }
 }

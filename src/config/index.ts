@@ -1,4 +1,5 @@
 import { Config } from "../modules/config";
+import { NightLight } from "../modules/nightlight";
 import { WallpaperPositioning, WalMode } from "../modules/wallpaper";
 
 import GLib from "gi://GLib?version=2.0";
@@ -90,9 +91,9 @@ const userDataDefaults = {
 
     night_light: {
         /** last blue light filter temperature */
-        temperature: 6000,
+        temperature: NightLight.identityTemperature,
         /** last gamma filter value */
-        gamma: 100,
+        gamma: NightLight.maxGamma,
         /** wheter to enable identity filters("disables" the filters) */
         identity: true
     }
@@ -107,8 +108,10 @@ export const userData = new Config<
     false
 );
 
-export const generalConfig = new Config<keyof typeof generalConfigDefaults, 
-    typeof generalConfigDefaults[keyof typeof generalConfigDefaults]>(
-        `${GLib.get_user_config_dir()}/colorshell/config.json`, 
-        generalConfigDefaults
+export const generalConfig = new Config<
+    keyof typeof generalConfigDefaults, 
+    typeof generalConfigDefaults[keyof typeof generalConfigDefaults]
+>(
+    `${GLib.get_user_config_dir()}/colorshell/config.json`, 
+    generalConfigDefaults
 );
