@@ -3,7 +3,6 @@ import { createBinding, createComputed, Scope } from "ags";
 import { Notifications } from "../../modules/notifications";
 import { Notification } from "../../widget/Notification";
 import { generalConfig } from "../../config";
-import { Windows } from "../../windows";
 import { createScopedConnection } from "../../modules/utils";
 
 import AstalNotifd from "gi://AstalNotifd";
@@ -169,8 +168,7 @@ export const FloatingNotifications = (mon: number, scope: Scope) => {
     const window = <Astal.Window namespace={"floating-notifications"} monitor={mon} layer={Astal.Layer.OVERLAY}
       anchor={createComputed([
           generalConfig.bindProperty("notifications.position_h", "string"),
-          generalConfig.bindProperty("notifications.position_v", "string"),
-          createBinding(Windows.getDefault(), "openWindows")
+          generalConfig.bindProperty("notifications.position_v", "string")
       ]).as(([posH, posV]) => {
           const pos: Array<Astal.WindowAnchor> = [];
 

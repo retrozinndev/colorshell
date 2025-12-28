@@ -7,10 +7,13 @@ import { createBinding } from "ags";
 
 import Media from "../../modules/media";
 import AstalMpris from "gi://AstalMpris";
+import { generalConfig } from "../../config";
 
 
-export const CenterWindow = (mon: number) => 
-    <PopupWindow namespace={"center-window"} marginTop={10} monitor={mon}
+export const CenterWindow = (mon: number) => {
+    const notifPopupHPos = generalConfig.getProperty("notifications.position_h", "string");
+
+    return <PopupWindow namespace={"center-window"} marginTop={10} monitor={mon}
       halign={Gtk.Align.CENTER} valign={Gtk.Align.START}
       actionKeyPressed={(_, keyval) => {
           if(keyval === Gdk.KEY_space) {
@@ -18,6 +21,17 @@ export const CenterWindow = (mon: number) =>
                   Media.getDefault().player.play_pause();
               return true;
           }
+      }} $={() => {
+          if(notifPopupHPos !== "center")
+              return;
+
+          generalConfig.setProperty("notifications.position_h", "left", false);
+      }} actionClosed={() => {
+          const currentNotifPopupHPos = generalConfig.getProperty("notifications.position_h", "string");
+          if(currentNotifPopupHPos === notifPopupHPos)
+              return;
+
+          generalConfig.setProperty("notifications.position_h", notifPopupHPos, false);
       }}>
       
         <Gtk.Box class={"center-window-container"} spacing={6}>
@@ -43,3 +57,4 @@ export const CenterWindow = (mon: number) =>
             <BigMedia />
         </Gtk.Box>
     </PopupWindow>;
+}
