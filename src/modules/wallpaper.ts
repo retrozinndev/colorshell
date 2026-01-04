@@ -167,7 +167,7 @@ export class Wallpaper extends GObject.Object {
 
 wallpaper {
     monitor = 
-    path = ${this.#wallpaper}
+    path = ${this.#wallpaper?.replaceAll(',', "\\,")}
     fit_mode = ${this.positioning}
     splash = ${this.#splash}
 }`
@@ -215,7 +215,7 @@ wallpaper {
         if(this.#wallpaper?.trim() === "")
             return;
 
-        exec(`hyprctl hyprpaper wallpaper ", ${this.#wallpaper}, ${this.positioning}"`);
+        exec(`hyprctl hyprpaper wallpaper ", ${this.#wallpaper?.replaceAll(',', "\\,")}, ${this.positioning}"`);
 
         write && this.writeChanges();
     }
