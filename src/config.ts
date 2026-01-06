@@ -43,7 +43,10 @@ const generalConfigDefaults = {
         positioning: "cover" satisfies WallpaperPositioning,
         /** color generation mode. 
           * darken: picks darker colors; lighten: picks brighter colors */
-        color_mode: "darken" satisfies WalMode
+        color_mode: "darken" satisfies WalMode,
+        /** whether to enable Hyprland's random splash text pn the wallpaper.
+         * only takes effect after a hyprpaper restart. (`systemctl restart --user hyprpaper`) */
+        splash: true
     },
 
     workspaces: {
