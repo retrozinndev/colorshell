@@ -13,6 +13,8 @@
   libadwaita,
   dart-sass,
   socat,
+  libglycin,
+  glycin-loaders,
 }:
 let
   packageJSON = lib.importJSON ../package.json;
@@ -116,6 +118,8 @@ buildNpmPackage (finalAttrs: {
     glib
     gjs
     libadwaita
+    libglycin
+    glycin-loaders
     inputs'.astal.packages.astal4
     inputs'.astal.packages.apps
     inputs'.astal.packages.auth
