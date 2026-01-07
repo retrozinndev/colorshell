@@ -25,7 +25,7 @@ packages:
     engines: {gjs: '>=1.79.0'}
     os: [linux]
     peerDependencies:
-      gnim: ^1.8.2
+      gnim: ^1.9.0
 
   fuse.js@7.1.0:
     resolution: {integrity: sha512-trLf4SzuuUxfusZADLINj+dE8clK1frKdmqiJNb1Es75fmI5oY6X2mxLVUciLLjxqw/xr72Dhy+lER6dGd02FQ==}
