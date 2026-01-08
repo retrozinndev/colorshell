@@ -79,6 +79,7 @@ Center Window and scrolling the player
   - Media(`:`): Control playing media
   - Search(`?`): Search something on the internet with your default browser
 - Support for your multiple monitors
+- Configurable behavior through a config file(see [Configuring](#-configuring))
 - Dynamic support for [UWSM](https://github.com/Vladimir-csp/uwsm)(apps will use uwsm if current session is using it)
 </details>
 
@@ -110,6 +111,9 @@ You need to update the profile that contains the flake:
 ```zsh
 nix profile upgrade
 ```
+
+## ⚙️ Configuring
+There is a configuration file! You can see its documentation on [Wiki/Configuration].
 
 ## 🛠️ Development
 This project uses `pnpm` to manage packages and running scripts.
@@ -190,6 +194,6 @@ This repo is licensed under the [BSD 3-clause] license, project is made and main
 [wiki/dependencies]: https://github.com/retrozinndev/colorshell/wiki/Dependencies
 [wiki/usage]: https://github.com/retrozinndev/colorshell/wiki/Usage
 [wiki/installation]: https://github.com/retrozinndev/colorshell/wiki/Installation
-
+[wiki/configuration]: https://github.com/retrozinndev/colorshell/wiki/Configuration
 <!-- Actions -->
 [new issue]: https://github.com/retrozinndev/colorshell/issues/new
