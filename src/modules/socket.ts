@@ -105,9 +105,10 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
       * sends a message to the socket using a GSocketConnection.
       * 
       * @param message contents to send to the socket
+      * @param wait whether to wait for the socket to finish the connection
       *
       * @returns a `string` promise, that returns the socket's response to the message, can be null. */
-    async simpleSend(message: string): Promise<string|null> {
+    async simpleSend(message: string, wait: boolean = false): Promise<string|null> {
         return new Promise((resolve, reject) => {
             const client = Gio.SocketClient.new();
             client.set_family(Gio.SocketFamily.UNIX);
@@ -144,6 +145,7 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
                                 (_, cond) => {
                                     if(cond === GLib.IOCondition.HUP) {
                                         resolve(output);
+                                        conn.close();
                                         return false;
                                     }
 
@@ -159,6 +161,12 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
                                         }
                                             
                                     });
+
+                                    if(wait) {
+                                        resolve(output);
+                                        conn.close();
+                                        return false;
+                                    }
 
                                     return true;
                                 }
