@@ -6,10 +6,6 @@ import { createScopedConnection } from "../utils";
 import AstalHyprland from "gi://AstalHyprland";
 
 
-type Event = "activewindow" | "activewindowv2"
-            | "workspace" | "workspacev2"
-            | "focusedmon" | "focusedmonv2";
-
 @register({ GTypeName: "ClshCompositorHyprland" })
 export class CompositorHyprland extends Compositor {
     #scope: Scope;
@@ -21,7 +17,7 @@ export class CompositorHyprland extends Compositor {
         this.#scope = createRoot(() => {
             createScopedConnection(
                 this.hyprland, "event", (e, args) => {
-                    switch(e as Event) {
+                    switch(e as CompositorHyprland.Event) {
                         case "activewindowv2": 
                             const address = args;
                             const clients = AstalHyprland.get_default().clients;
@@ -54,7 +50,17 @@ export class CompositorHyprland extends Compositor {
         });
     }
 
+
     vfunc_dispose(): void {
         this.#scope.dispose();
     }
+}
+
+export namespace CompositorHyprland {
+    export type Event = "activewindow"
+        | "activewindowv2"
+        | "workspace"
+        | "workspacev2"
+        | "focusedmon"
+        | "focusedmonv2";
 }
