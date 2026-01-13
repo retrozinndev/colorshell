@@ -52,7 +52,7 @@ export class CompositorHyprland extends Compositor {
                 info = undefined;
             }
 
-            console.log(event, info); // debugging
+            //console.log(event, info); // debugging
             this.handleEvents(event, data);
         });
     }
