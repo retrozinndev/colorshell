@@ -14,7 +14,7 @@ import { createScopedConnection } from "gnim-utils";
   *     console.log(client.send("help")); // client.send() returns the socket's response, then we print it
   * ```
   * 
-  * @example Socket server (receiver) ```ts
+  * @example Socket server (provider/receiver) ```ts
   *     const server = new Socket(Socket.Type.SERVER, `${GLib.get_user_runtime_dir()/colorshell.sock}`);
   *     server.connect("received", (_, content) => {
   *         
@@ -29,6 +29,7 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
     protected address: Gio.UnixSocketAddress|null = null;
     protected scope: Scope = createRoot(() => getScope());
     protected encoder: TextEncoder|null = null;
+    protected decoder: TextDecoder|null = null;
 
     @signal(String)
     protected received(_: string) {}
@@ -39,8 +40,13 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
     @signal(Gio.IOErrorEnum)
     protected panic(_: Gio.IOErrorEnum) {}
 
+    /** @param listen whether to listen to the socket as soon as the class is instantiated 
+      * @param contentSeparator server response separator, by default it's a line-break */
+    constructor(type: Socket.Type.CLIENT, path: string|Gio.File, listen?: boolean, outputSeparator?: string)
 
-    constructor(type: T, path: string|Gio.File) {
+    /** @param type defines the behavior of the instance, to send/receive to data(CLIENT) or receive/send from/to client(SERVER)
+      * @param path the socket address path, where it's phisically stored */
+    constructor(type: T, path: string|Gio.File, listen: boolean = false, outputSeparator: string = '\n') {
         super();
         path = typeof path === "string" ?
             Gio.File.new_for_path(path)
@@ -86,6 +92,74 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
             throw new Error("Socket file couldn't be found, please check if the program has permissions or if the file actually exists");
 
         this.address = Gio.UnixSocketAddress.new(path.peek_path()!);
+        if(!listen) return;
+
+        const client = Gio.SocketClient.new();
+        client.set_timeout(0);
+        client.set_socket_type(Gio.SocketType.STREAM);
+        client.set_family(Gio.SocketFamily.UNIX);
+        client.connect_async(this.address, null, (_, res) => {
+            let conn!: Gio.SocketConnection;
+
+            try {
+                conn = client.connect_finish(res);
+            } catch(e) {
+                console.error("Socket: Failed to create a connection to listen to socket");
+                return;
+            }
+
+            const sock = conn.get_socket();
+            sock.set_timeout(0);
+            sock.set_blocking(false);
+            sock.set_keepalive(true); // keep listening to the socket
+
+            GLib.io_add_watch(
+                GLib.IOChannel.unix_new(sock.get_fd()),
+                GLib.PRIORITY_DEFAULT,
+                GLib.IOCondition.IN | GLib.IOCondition.PRI | GLib.IOCondition.HUP,
+                (_, cond: GLib.IOCondition) => {
+                    if(cond === GLib.IOCondition.HUP) {
+                        conn.close();
+                        console.log(`Socket: Connection was hang up`);
+                        return false;
+                    }
+
+
+                    if(conn.is_closed()) {
+                        console.log("Socket: The listening input stream has been closed, ignoring current call");
+                        return false;
+                    }
+
+                    if(conn.inputStream.is_closed()) {
+                        console.log("Socket: The input stream got closed, the i/o watch will be removed");
+                        return false;
+                    }
+
+                    if(conn.outputStream.is_closed()) {
+                        console.log("Socket: The input stream got closed, the i/o watch will be removed");
+                        return false;
+                    }
+
+                    conn.inputStream.read_bytes_async(4096, GLib.PRIORITY_DEFAULT, null, (_, res) => {
+                        let str!: string;
+
+                        try {
+                            str = (this.decoder ?? (this.decoder = new TextDecoder))
+                                .decode(conn.inputStream.read_bytes_finish(res).toArray());
+                        } catch(e) {
+                            console.error(`Socket: An error occurred while reading the input stream bytes: ${(e as Error).message}`);
+                            console.debug(e);
+                            return;
+                        }
+
+                        str.split(outputSeparator).filter(s => s.trim() !== "").forEach(msg =>
+                            this.emit("received", msg)
+                        );
+                    });
+                    return true;
+                }
+            );
+        });
     }
 
     /** allows to create a connection paired with the instance scope.
@@ -245,7 +319,7 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
 
 export namespace Socket {
     export interface SignalSignatures extends GObject.Object.SignalSignatures {
-        /** server-only signal */
+        /** server: when a client sends a message; client: when the server sends a message */
         "received": (content: string) => boolean|void;
         /** client-only signal. emitted when a message is sent to the server */
         "sent": (content: string) => void;
