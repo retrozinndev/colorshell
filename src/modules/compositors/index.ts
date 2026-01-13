@@ -7,6 +7,7 @@ import GObject, { getter, gtype, property, register, signal } from "ags/gobject"
 * */
 @register({ GTypeName: "Compositor" })
 export class Compositor extends GObject.Object {
+    declare $signals: Compositor.SignalSignatures;
     public static instance: Compositor;
 
     protected _monitors: Array<Compositor.Monitor> = [];
@@ -51,9 +52,25 @@ export class Compositor extends GObject.Object {
     public static getDefault(): Compositor {
         return this.instance;
     }
+
+    connect<S extends keyof Compositor.SignalSignatures>(
+        signal: S,
+        callback: (self: Compositor, ...params: Parameters<Compositor.SignalSignatures[S]>) => ReturnType<Compositor.SignalSignatures[S]>
+    ): number {
+        return super.connect(signal, callback);
+    }
 };
 
 export namespace Compositor {
+    export interface SignalSignatures extends GObject.Object.SignalSignatures {
+        "client-added": (client: Compositor.Client) => void;
+        "client-removed": (client: Compositor.Client) => void;
+        "workspace-added": (workspace: Compositor.Workspace) => void;
+        "workspace-removed": (Workspace: Compositor.Workspace) => void;
+        "monitor-added": (monitor: Compositor.Monitor) => void;
+        "monitor-removed": (monitor: Compositor.Monitor) => void;
+    }
+
     @register({ GTypeName: "CompositorMonitor" })
     export class Monitor extends GObject.Object {
         #width: number;
