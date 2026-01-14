@@ -1,6 +1,5 @@
 import "ags/overrides"; // thanks Aylur!!
 import "./config";
-import "./compositors";
 import { 
     PluginApps, 
     PluginClipboard, 
@@ -26,6 +25,7 @@ import { createScopedConnection, createSubscription, encoder, secureBaseBinding 
 import { exec } from "ags/process";
 import { NightLight } from "./modules/nightlight";
 import { Backlights } from "./modules/backlight";
+import { initCompositor } from "./compositors";
 import GObject, { register } from "ags/gobject";
 
 import Media from "./modules/media";
@@ -204,6 +204,8 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
             const e = _e as Error;
             console.error(`Error: couldn't load gresource! Stderr: ${e.message}\n${e.stack}`);
         }
+
+        initCompositor();
 
         this.#socketFile = Gio.File.new_for_path(`${GLib.get_user_runtime_dir() ?? 
             `/run/user/${exec("id -u").trim()}`}/colorshell.sock`);
