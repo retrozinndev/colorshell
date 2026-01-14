@@ -30,12 +30,12 @@
 
     <!-- Compositor-specific configuration -->
     <gresource prefix="/io/github/retrozinndev/colorshell/config/hyprland">
+        <file alias=".last-updated">config/hyprland/.last-updated</file>
         <file alias="environment.conf">config/hyprland/environment.conf</file>
         <file alias="vars.conf">config/hyprland/vars.conf</file>
         <file alias="decorations.conf">config/hyprland/decorations.conf</file>
         <file alias="bindings.conf">config/hyprland/bindings.conf</file>
         <file alias="rules.conf">config/hyprland/rules.conf</file>
-        <file alias="hyprland.conf">config/hyprland/hyprland.conf</file>
     </gresource>
     <!--
     <gresource prefix="/io/github/retrozinndev/colorshell/config/niri">
