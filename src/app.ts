@@ -21,7 +21,7 @@ import { createBinding, createComputed, createRoot, getScope, onCleanup, Scope }
 import { OSDModes, triggerOSD } from "./window/osd";
 import { programArgs, programInvocationName } from "system";
 import { setConsoleLogDomain } from "console";
-import { createScopedConnection, createSubscription, encoder, secureBaseBinding } from "./modules/utils";
+import { createScopedConnection, createSubscription, encoder, makeDirectory, secureBaseBinding } from "./modules/utils";
 import { exec } from "ags/process";
 import { NightLight } from "./modules/nightlight";
 import { Backlights } from "./modules/backlight";
@@ -47,17 +47,23 @@ const runnerPlugins: Array<Runner.Plugin> = [
 
 const defaultWindows: Array<string> = [ "bar" ];
 
-GLib.unsetenv("LD_PRELOAD");
+GLib.unsetenv("LD_PRELOAD"); // so child processes won't run with gtk-layer-shell
 
 
 @register({ GTypeName: "Shell" })
 export class Shell extends Adw.Application {
     private static instance: Shell;
 
+    public static runtimeDir: Gio.File = Gio.File.new_for_path(`${
+        GLib.get_user_runtime_dir() ?? `/run/user/${exec("id -u").trim()}`}/colorshell`);
+    public static dataDir: Gio.File = Gio.File.new_for_path(`${
+        GLib.get_user_data_dir() ?? `${GLib.get_home_dir()}/.local/share`}/colorshell`);
+    public static cacheDir: Gio.File = Gio.File.new_for_path(`${
+        GLib.get_user_cache_dir() ?? `${GLib.get_home_dir()}/.cache`}/colorshell`);
+
     #scope!: Scope;
     #connections = new Map<GObject.Object, Array<number> | number>();
     #providers: Array<Gtk.CssProvider> = [];
-    #gresource: Gio.Resource|null = null;
     #socketService!: Gio.SocketService;
     #socketFile!: Gio.File;
 
@@ -177,38 +183,57 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
 
     private init(): void {
         console.log(`Colorshell: Initializing things`);
-        Adw.init();
+        !Shell.runtimeDir.query_exists(null) &&
+            Shell.runtimeDir.make_directory_with_parents(null);
+
+        // TODO: find a way to get the pid of colorshell (it's ridiculous that glib doesn't have a method for this, really)
+        //const pidFile = Gio.File.new_for_path(`${Shell.runtimeDir.peek_path()!}/.pid`);
+        //pidFile.replace_contents(encoder.encode(""), null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null);
 
         // load gresource from build-defined path
         try {
-            const gresourcesPath: string = GRESOURCES_FILE.startsWith('/') ? GRESOURCES_FILE : (GRESOURCES_FILE.split('/').filter(s => 
-                s !== ""
-            ).map(path => {
-                // support environment variables at runtime
-                if(/^\$/.test(path)) {
-                    const env = GLib.getenv(path.replace(/^\$/, ""));
-                    if(env === null)
-                        throw new Error(`Couldn't get environment variable: ${path}`);
+            const gresourcesPath: string = !/^\//.test(GRESOURCES_FILE) ?
+                (GRESOURCES_FILE.split('/').filter(s => s !== "").map(path => {
+                    // support environment variables at runtime
+                    if(/^\$/.test(path)) {
+                        const env = GLib.getenv(path.replace(/^\$/, ""));
+                        if(env === null)
+                            throw new Error(`Couldn't get environment variable: ${path}`);
 
-                    return env;
-                }
-                return path;
-            }).join('/'));
-            this.#gresource = Gio.Resource.load(gresourcesPath);
-            Gio.resources_register(this.#gresource);
+                        return env;
+                    }
+                    return path;
+                }).join('/'))
+            : GRESOURCES_FILE;
 
-            // add icons 
-            Gtk.IconTheme.get_for_display(Gdk.Display.get_default()!)
-                .add_resource_path("/io/github/retrozinndev/colorshell/icons")
+            const gresource = Gio.Resource.load(gresourcesPath);
+            Gio.resources_register(gresource);
         } catch(_e) {
             const e = _e as Error;
             console.error(`Error: couldn't load gresource! Stderr: ${e.message}\n${e.stack}`);
         }
 
+        // add icons 
+        Gtk.IconTheme.get_for_display(Gdk.Display.get_default()!)
+            .add_resource_path("/io/github/retrozinndev/colorshell/icons")
+
+        makeDirectory(`${Shell.runtimeDir.peek_path()!}/config`);
+        Gio.resources_enumerate_children(
+            "/io/github/retrozinndev/colorshell/config",
+            Gio.ResourceLookupFlags.NONE
+        ).forEach(name => {
+            if(!/\..*$/.test(name))
+                return;
+
+            const data = Gio.resources_lookup_data(`/io/github/retrozinndev/colorshell/config/${name}`, null),
+                file = Gio.File.new_for_path(`${Shell.runtimeDir.peek_path()!}/config/${name}`);
+
+            file.replace_contents_bytes_async(data, null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null, null);
+        });
+
         initCompositor();
 
-        this.#socketFile = Gio.File.new_for_path(`${GLib.get_user_runtime_dir() ?? 
-            `/run/user/${exec("id -u").trim()}`}/colorshell.sock`);
+        this.#socketFile = Gio.File.new_for_path(`${Shell.runtimeDir.peek_path()!}/.sock`);
 
         if(this.#socketFile.query_exists(null)) {
             console.log(`Colorshell: Deleting previous instance's socket`);
@@ -281,7 +306,6 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
         this.#connections.set(this, this.connect("shutdown", () => this.#scope.dispose()));
 
         NightLight.getDefault();
-
         Media.getDefault();
         Clipboard.getDefault();
 

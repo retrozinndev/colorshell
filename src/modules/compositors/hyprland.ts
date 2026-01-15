@@ -6,13 +6,15 @@ import GLib from "gi://GLib?version=2.0";
 import { Socket } from "../socket";
 import { exec } from "ags/process";
 import Gio from "gi://Gio?version=2.0";
-import { decoder, makeDirectory } from "../utils";
+import { decoder, makeDirectory, playSystemBell } from "../utils";
+import { Shell } from "../../app";
 
 
 @register({ GTypeName: "ClshCompositorHyprland" })
 export class CompositorHyprland extends Compositor {
     #eventSock: Socket;
-    #configDir: Gio.File = Gio.File.new_for_path(`${GLib.get_user_data_dir()}/colorshell/hyprland`);
+    #configDir: Gio.File = Gio.File.new_for_path(`${Shell.runtimeDir.peek_path()!}/config/hyprland`);
+    #ignoreConfigReload: boolean = false;
     hyprland: AstalHyprland.Hyprland = AstalHyprland.get_default();
 
     constructor() {
@@ -86,9 +88,15 @@ export class CompositorHyprland extends Compositor {
                 this._focusedClient = null;
                 this.notify("focused-client");
                 break;
+
             case "configreloaded":
-                this.source();
+                if(!this.#ignoreConfigReload)
+                    this.source();
                 break;
+
+            case "beep":
+                playSystemBell();
+            break;
         }
     }
 
@@ -98,6 +106,12 @@ export class CompositorHyprland extends Compositor {
 
     
     private source(): void {
+        if(this.#ignoreConfigReload) {
+            this.#ignoreConfigReload = false;
+            return;
+        }
+
+        this.#ignoreConfigReload = true;
         const names = Gio.resources_enumerate_children(
             "/io/github/retrozinndev/colorshell/config/hyprland",
             Gio.ResourceLookupFlags.NONE
@@ -148,7 +162,7 @@ export class CompositorHyprland extends Compositor {
             )
         ] satisfies [string, GLib.Bytes]);
 
-        makeDirectory(`${GLib.get_user_data_dir()}/colorshell/hyprland`);
+        makeDirectory(`${Shell.runtimeDir.peek_path()!}/config/hyprland`);
         files.forEach(([name, data]) => {
             const file = Gio.File.new_for_path(`${this.#configDir.peek_path()!}/${name}`);
 
@@ -187,6 +201,7 @@ export namespace CompositorHyprland {
         | "windowtitlev2"
         | "workspacev2"
         | "focusedmon"
+        | "beep"
         | "focusedmonv2";
 
     export type Client = {
