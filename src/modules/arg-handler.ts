@@ -13,6 +13,9 @@ import { execApp } from "./apps";
 import Media from "./media";
 import AstalIO from "gi://AstalIO";
 import AstalMpris from "gi://AstalMpris";
+import { exec, execAsync } from "ags/process";
+import GLib from "gi://GLib?version=2.0";
+import { Notifications } from "./notifications";
 
 
 export type RemoteCaller = {
@@ -42,14 +45,16 @@ ${DEVEL ? `
 Development Tools:
   dev: tools to help debugging colorshell
 ` : ""}
-Other options:
+Others:
   runner [initial_text]: open the application runner, optionally add an initial search.
   run app[.desktop] [client_modifiers]: run applications from the cli, see "run help".
+  lock: quick-lock your user with hyprlock.
+  screenshot [full]: select an area to screenshot(optionally add "full" to take a complete screenshot).
   peek-workspace-num [millis]: peek the workspace numbers on bar window.
   v, version: display current colorshell version.
   h, help: shows this help message.
 
-2025 (c) retrozinndev's colorshell, licensed under the BSD 3-Clause License.
+2026 (c) colorshell, licensed under the BSD 3-Clause License.
 https://github.com/retrozinndev/colorshell
 `.trim();
 
@@ -121,6 +126,43 @@ export function handleArguments(cmd: RemoteCaller, args: Array<string>): number 
                 wsTimeout = undefined;
             });
             cmd.print_literal("Toggled workspace numbers");
+            return 0;
+
+        case "lock":
+            execApp(
+                `hyprlock --config ${Shell.runtimeDir.peek_path()!}/config/hyprlock.conf`
+            );
+            return 0;
+
+        case "screenshot":
+            const outputDir = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_PICTURES) 
+                ?? `${GLib.get_home_dir()}/Pictures/Screenshots`;
+
+            try {
+                exec("killall slurp"); // kill any active selection layer
+            } catch(_) {}
+
+            if(args[1] !== undefined && /^f(ull)?$/.test(args[1])) {
+                execAsync(`hyprshot -m active -m output -o ${outputDir}`).catch(e =>
+                    Notifications.getDefault().sendNotification({
+                        appName: "hyprshot",
+                        summary: "Failed to take screenshot",
+                        body: (e as Error)?.message
+                    })
+                );
+                return 0;
+            }
+
+            execAsync(`hyprshot -m region -o ${outputDir}`).catch(e => {
+                if((e as Error).message.toLowerCase().split('\n')[0] === "selection cancelled")
+                    return;
+
+                Notifications.getDefault().sendNotification({
+                    appName: "hyprshot",
+                    summary: "Failed to take screenshot",
+                    body: (e as Error)?.message
+                })
+            });
             return 0;
     }
 
