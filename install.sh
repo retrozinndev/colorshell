@@ -3,11 +3,11 @@
 trap "printf \"\nOk, quitting beacuse you entered an exit signal. (SIGINT).\n\"; exit 1" SIGINT
 trap "printf \"\nOh noo!! Some application just killed the script! (SIGTERM)\"; exit 2" SIGTERM
 
-XDG_DATA_HOME=`[[ -z "$XDG_DATA_HOME" ]] && echo -n "$HOME/.local/share" || echo -n "$XDG_DATA_HOME"`
-XDG_CACHE_HOME=`[[ -z "$XDG_CACHE_HOME" ]] && echo -n $HOME/.cache || echo -n $XDG_CACHE_HOME`
-XDG_CONFIG_HOME=`[[ -z "$XDG_CONFIG_HOME" ]] && echo -n "$HOME/.config" || echo -n "$XDG_CONFIG_HOME"`
-BIN_HOME=`[[ -z "$BIN_HOME" ]] && echo -n "$HOME/.local/bin" || echo -n "$BIN_HOME"`
-APPS_HOME=`[[ -z "$APPS_HOME" ]] && echo -n "$XDG_DATA_HOME/applications" || echo -n "$APPS_HOME"`
+XDG_DATA_HOME=${XDG_DATA_HOME:-"$HOME/.local/share"}
+XDG_CACHE_HOME=${XDG_CACHE_HOME:-"$HOME/.cache"}
+XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-"$HOME/.config"}
+BIN_HOME=${BIN_HOME:-"$HOME/.local/bin"}
+APPS_HOME=${APPS_HOME:-"$XDG_DATA_HOME/applications"}
 
 skip_prompts=`[[ "$1" == -y ]] && echo -n true`
 is_standalone=`(git remote -v > /dev/null 2>&1) || echo -n true`
@@ -45,16 +45,7 @@ sleep .5
 echo "Welcome to the colorshell installation script!"
 
 # Warn user of possible issues
-Send_log warn "!! By running this script, you assume total responsability for any issues that may occur with your filesystem"
-
-[[ -z $skip_prompts ]] && \
-    Send_log warn "Your current Hyprland and kitty configuration will be overwritten, accept the backup prompt if you still want them"
-
-[[ -z $skip_prompts ]] && \
-    Ask "Do you want to backup what is going to be modified/overwritten?"
-
-[[ $answer == y ]] || [[ $skip_prompts ]] && \
-    Backup_config $repo_directory
+Send_log warn "!! By running this, you're assuming total responsability for any issues that may occur with your filesystem"
 
 [[ -z "$skip_prompts" ]] && \
     Ask "Do you want to start the shell installation?"
@@ -68,7 +59,7 @@ if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
             Send_log "repo is already cloned! let's just fetch the latest changes..."
             git -C "$repo_directory" stash # if there are changes, let's just stash them
             git -C "$repo_directory" checkout ryo
-            git -C "$repo_directory" fetch && git -C "$repo_directory" pull --rebase
+            git -C "$repo_directory" fetch && git -C "$repo_directory" pull --rebase # rebase just in case
         else
             git clone https://github.com/retrozinndev/colorshell.git "$repo_directory"
         fi
@@ -85,23 +76,9 @@ if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
         git -C "$repo_directory" checkout $latest_tag > /dev/null 2>&1
     fi
 
-    Send_log "Starting installation..."
-
-    Send_log "Installing default configurations"
-    for dir in $(ls -A -w1 "$repo_directory/config"); do
-        dest=$XDG_CONFIG_HOME/$dir
-
-        Send_log "Installing $dir in $dest"
-        mkdir -p `dirname "$dest"` # create parents
-
-        [[ -d "$dest" ]] || [[ -f "$dest" ]] && \
-            rm -rf $dest
-
-        cp -rf $repo_directory/config/$dir "$dest" # copy
-    done
-
+    Send_log "Starting build process..."
     Send_log "Updating dependencies"
-    pnpm -C "$repo_directory" i && pnpm -C "$repo_directory" update
+    pnpm -C "$repo_directory" i && pnpm -C "$repo_directory" update > /dev/null
 
     Send_log "Building colorshell"
     pnpm -C "$repo_directory" build:release

@@ -3,25 +3,17 @@
 trap "printf \"\nOk, quitting beacuse you entered an exit signal. (SIGINT).\n\"; exit 1" SIGINT
 trap "printf \"\nOh noo!! Some application just killed the script! (SIGTERM)\"; exit 2" SIGTERM
 
-XDG_DATA_HOME=`[[ -z "$XDG_DATA_HOME" ]] && echo -n "$HOME/.local/share" || echo -n "$XDG_DATA_HOME"`
-XDG_CACHE_HOME=`[[ -z "$XDG_CACHE_HOME" ]] && echo -n $HOME/.cache || echo -n $XDG_CACHE_HOME`
-XDG_CONFIG_HOME=`[[ -z "$XDG_CONFIG_HOME" ]] && echo -n "$HOME/.config" || echo -n "$XDG_CONFIG_HOME"`
-BIN_HOME=`[[ -z "$BIN_HOME" ]] && echo -n "$HOME/.local/bin" || echo -n "$BIN_HOME"`
-APPS_HOME=`[[ -z "$APPS_HOME" ]] && echo -n "$XDG_DATA_HOME/applications" || echo -n "$APPS_HOME"`
+XDG_DATA_HOME=${XDG_DATA_HOME:-"$HOME/.local/share"}
+XDG_CACHE_HOME=${XDG_CACHE_HOME:-"$HOME/.cache"}
+XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-"$HOME/.config"}
+BIN_HOME=${BIN_HOME:-"$HOME/.local/bin"}
+APPS_HOME=${APPS_HOME:-"$XDG_DATA_HOME/applications"}
 
 skip_prompts=`[[ "$1" == -y ]] && echo -n true`
 is_standalone=`(git remote -v > /dev/null 2>&1) || echo -n true`
 
 temp_dir="$XDG_CACHE_HOME/colorshell-installer"
 repo_directory=`[[ "$is_standalone" ]] && echo -n "$temp_dir/repo" || echo -n "."`
-shell_configs=(
-    "hypr/shell"
-    "hypr/hypridle.conf"
-    "hypr/scripts"
-    "hypr/hyprland.conf"
-    "hypr/hyprlock.conf"
-    "kitty/kitty.conf"
-)
 
 
 # source utils script before installation
@@ -60,10 +52,9 @@ else
 fi
 
 # Warn user of possible issues
-Send_log warn "!! By running this, you assume total responsability for \
-issues that can occur to your filesystem"
-Send_log "The updater will only change shell configs, like hypr/shell \
-and kitty/kitty.conf, not user ones(hypr/user, kitty/user.conf)"
+Send_log warn "!! By running this, you're assuming total responsability for any \
+issues that may occur to your filesystem"
+Send_log "The updater won't modify your config files, it'll only update colorshell"
 
 [[ -z $skip_prompts ]] && \
     Ask "Do you want to update colorshell?"
@@ -82,34 +73,20 @@ if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
         fi
     fi
 
-    Ask "Nice! Update to latest stable version instead of unstable(latest commit)?"
+    Send_log "Fetching latest release from colorshell repository"
+    # use `head -n1` because for some reason, github api shows the same release 3 times :'(
+    latest_tag=`curl -s "$repo_api_url/releases" | jq -r '. | select(.[].prerelease == false) | .[0].tag_name' | head -n1`
+
+    Send_log "Done fetching"
+    Ask "Nice! Use stable $latest_tag instead of the unstable/pre-release version?"
 
     if [[ -z "$skip_prompts" ]] && [[ "$answer" == y ]]; then
-        Send_log "fetching latest release from colorshell repository"
-        # use `head -n1` because for some reason, github api shows the same release 3 times :'(
-        latest_tag=`curl -s "$repo_api_url/releases" | jq -r '. | select(.[].prerelease == false) | .[0].tag_name' | head -n1`
-        
-        Send_log "Done fetching"
-        Send_log "Checking out latest non-pre-release version: $latest_tag"
+        Send_log "Checking out $latest_tag"
         git -C "$repo_directory" checkout $latest_tag > /dev/null 2>&1
     fi
 
-    Send_log "Updating..."
-
-    Send_log "Updating configurations"
-    for dir in ${shell_configs[@]}; do
-        dest=$XDG_CONFIG_HOME/$dir
-
-        Send_log "Installing $dir in $dest"
-        mkdir -p `dirname "$dest"` # create parents
-
-        [[ -d "$dest" ]] || [[ -f "$dest" ]] && \
-            rm -rf $dest
-
-        cp -rf $repo_directory/config/$dir "$dest" # copy
-    done
-
-    Send_log "Updating dependencies"
+    Send_log "Starting update process..."
+    Send_log "Updating colorshell dependencies"
     pnpm -C "$repo_directory" i && pnpm -C "$repo_directory" update
 
     Send_log "Building colorshell"
