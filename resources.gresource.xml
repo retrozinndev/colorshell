@@ -28,6 +28,11 @@
         <file alias="user-trash-symbolic.svg">icons/user-trash-symbolic.svg</file>
     </gresource>
 
+    <!-- Configuration files -->
+    <gresource prefix="/io/github/retrozinndev/colorshell/config">
+        <file alias="hyprlock.conf">config/hyprlock.conf</file>
+    </gresource>
+
     <!-- Compositor-specific configuration -->
     <gresource prefix="/io/github/retrozinndev/colorshell/config/hyprland">
         <file alias=".last-updated">config/hyprland/.last-updated</file>
