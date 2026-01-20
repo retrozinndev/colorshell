@@ -33,6 +33,7 @@ import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import Adw from "gi://Adw?version=1";
 import AstalWp from "gi://AstalWp";
+import { Input } from "./modules/input";
 
 
 const runnerPlugins: Array<Runner.Plugin> = [
@@ -305,6 +306,7 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
         this.#scope = getScope();
         this.#connections.set(this, this.connect("shutdown", () => this.#scope.dispose()));
 
+        Input.getDefault();
         NightLight.getDefault();
         Media.getDefault();
         Clipboard.getDefault();

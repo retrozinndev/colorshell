@@ -44,6 +44,7 @@ class Clipboard extends GObject.Object {
     #history = new Array<ClipboardItem>;
     #changesTimeout: (AstalIO.Time|undefined);
     #ignoreChanges: boolean = false;
+    #procs: Array<Gio.Subprocess> = [];
 
     @signal(GObject.TYPE_JSOBJECT) copied(_item: object) {}
     @signal() wiped() {};
@@ -54,6 +55,17 @@ class Clipboard extends GObject.Object {
 
     constructor() {
         super();
+
+        this.#procs = [
+            Gio.Subprocess.new(
+                ["wl-paste", "--type", "text", "--watch", "cliphist", "store"],
+                Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
+            ),
+            Gio.Subprocess.new(
+                ["wl-paste", "--type", "image", "--watch", "cliphist", "store"],
+                Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
+            )
+        ];
 
         this.#dbFile = this.getCliphistDatabase();
 
