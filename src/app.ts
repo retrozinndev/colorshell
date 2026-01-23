@@ -26,6 +26,7 @@ import { exec } from "ags/process";
 import { NightLight } from "./modules/nightlight";
 import { Backlights } from "./modules/backlight";
 import { initCompositor } from "./compositors";
+import { Input } from "./modules/input";
 import GObject, { register } from "ags/gobject";
 
 import Media from "./modules/media";
@@ -33,7 +34,6 @@ import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import Adw from "gi://Adw?version=1";
 import AstalWp from "gi://AstalWp";
-import { Input } from "./modules/input";
 
 
 const runnerPlugins: Array<Runner.Plugin> = [
@@ -48,7 +48,7 @@ const runnerPlugins: Array<Runner.Plugin> = [
 
 const defaultWindows: Array<string> = [ "bar" ];
 
-GLib.unsetenv("LD_PRELOAD"); // so child processes won't run with gtk-layer-shell
+GLib.unsetenv("LD_PRELOAD"); // so child processes won't use gtk-layer-shell by default
 
 
 @register({ GTypeName: "Shell" })
@@ -184,6 +184,7 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
 
     private init(): void {
         console.log(`Colorshell: Initializing things`);
+
         !Shell.runtimeDir.query_exists(null) &&
             Shell.runtimeDir.make_directory_with_parents(null);
 

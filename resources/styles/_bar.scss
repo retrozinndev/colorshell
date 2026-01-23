@@ -92,7 +92,9 @@ $color-hover: colors.$bg-primary;
   }
 
   .focused-client {
+    margin: 3px 0;
     padding: 0 6px;
+    border-radius: 16px;
 
     & image {
       margin-right: 6px;
@@ -113,6 +115,10 @@ $color-hover: colors.$bg-primary;
         font-weight: 500;
         margin-top: -2px;
       }
+    }
+
+    &:hover {
+      background: rgba(colors.$fg-primary, .3);
     }
   }
 

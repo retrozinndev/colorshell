@@ -1,8 +1,6 @@
-import Gio from "gi://Gio?version=2.0";
-import GLib from "gi://GLib?version=2.0";
-import IBus from "gi://IBus?version=1.0"
-import { Notifications } from "./notifications";
 import { exec } from "ags/process";
+import Gio from "gi://Gio?version=2.0";
+import { Notifications } from "./notifications";
 
 
 export class Input {
@@ -10,33 +8,42 @@ export class Input {
 
     #proc: Gio.Subprocess|null = null;
 
-    /** how many times IBus has crashed */
-    protected ibusAttempts: number = 0;
-    /** if IBus crashes this much, this instance won't attempt to restart it again */
-    public maxIbusAttempts: number = 5;
+    /** how many times the IME has crashed */
+    protected attempts: number = 0;
+    /** if the IME crashes this much, this instance won't attempt to start it again */
+    public maxAttempts: number = 5;
 
 
     constructor() {
-        IBus.init();
-        this.restartIBus();
+        this.restart();
     }
 
-    /** @param keep whether to restart ibus after a crash (restart attempts are limited in {@link maxIbusAttempts}) */
-    public restartIBus(keep: boolean = true): void {
+    public static getDefault(): Input {
+        if(!this.instance)
+            this.instance = new Input();
+
+        return this.instance;
+    }
+
+    /** @param keep whether to restart the IME daemon after a crash/exit (restart attempts are limited by {@link maxIbusAttempts}) */
+    public restart(keep: boolean = true): void {
+        if(this.#proc)
+            return;
+
         this.#proc = Gio.Subprocess.new(
-            ["ibus-daemon", "--xim", "--replace", "--desktop", GLib.getenv("XDG_CURRENT_DESKTOP")?.toLowerCase()!, "--restart" ],
-            Gio.SubprocessFlags.STDERR_PIPE | Gio.SubprocessFlags.STDOUT_PIPE
+            ["fcitx5", "-r", "-s", "2"],
+            Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
         );
 
-        this.#proc.wait_async(null, (self, res) => {
+        this.#proc.wait_async(null, (_, res) => {
             try {
-                self!.wait_finish(res);
+                this.#proc!.wait_finish(res);
             } catch(e) {
-                if(this.ibusAttempts === this.maxIbusAttempts) {
+                if(this.attempts === this.maxAttempts) {
                     Notifications.getDefault().sendNotification({
                         appName: "colorshell",
-                        summary: "Failed to restore IBus",
-                        body: `Attempted to restart IBus, but it crashed in all the ${this.maxIbusAttempts
+                        summary: "Failed to restore IME",
+                        body: `Attempted to restart the IME Daemon, but it crashed in all the ${this.maxAttempts
                             } tries, try checking for a config error or a dependency in fault.`
                     });
 
@@ -45,43 +52,37 @@ export class Input {
 
                 Notifications.getDefault().sendNotification({
                     appName: "colorshell",
-                    summary: "IBus crashed",
-                    body: `An error occurred and IBus had to exit: ${(e as Error).message
+                    summary: "IME crashed",
+                    body: `An error occurred and the Daemon had to exit: ${(e as Error).message
                         }${keep ? ". The daemon will be automatically restarted" : ""}`
                 });
 
-                keep && this.restartIBus();
+                keep && this.restart(keep);
             }
+
+            console.log("Input: Fcitx5: Exited normally");
         });
     }
 
-    public exitIBus(): void {
+    /** force the IME daemon to quit */
+    public exit(): void {
         try {
-            exec("ibus exit");
+            exec("fcitx5-remote --check -e");
         } catch(e) {
-            console.error("Input: IBus: Failed to exit the IBus Daemon:", e);
+            // so we throw a prettier error
+            throw new Error("Input: Fcitx5: Failed to quit the daemon. Is it running?");
         }
     }
 
-    public async exitIBusAsync(): Promise<void> {
-        return new Promise((resolve, reject) => {
-            GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
-                try {
-                    this.exitIBus();
-                    resolve();
-                } catch(e) {
-                    reject(e);
-                }
+    protected getDaemonPid(): number|null {
+        try {
+            const str = exec("pgrep '^fcitx5$' | head -n1")?.trim();
+            if(str.trim() === "") 
+                return null;
 
-                return false;
-            });
-        });
-    }
-
-    public static getDefault(): Input {
-        if(!this.instance)
-            this.instance = new Input();
-
-        return this.instance;
+            return Number.parseInt(str.trim());
+        } catch(e) {
+            return null;
+        }
     }
 }
