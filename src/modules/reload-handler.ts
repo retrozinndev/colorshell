@@ -1,15 +1,8 @@
-import { uwsmIsActive } from "./apps";
-
-import Gio from "gi://Gio?version=2.0";
+import { execApp } from "./apps";
 import { Shell } from "../app";
 
 
 export function restartInstance(): void {
-    Gio.Subprocess.new(
-        ( uwsmIsActive ? 
-            [ "uwsm", "app", "--", "colorshell" ]
-         : [ "colorshell" ]), 
-        Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
-    );
+    execApp("colorshell");
     Shell.getDefault().quit();
 }

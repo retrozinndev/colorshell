@@ -77,7 +77,8 @@ export class CompositorHyprland extends Compositor {
                         class: focusedClient.class ?? "",
                         initialClass: focusedClient.initialClass ?? "",
                         mapped: focusedClient.mapped,
-                        position: [focusedClient.at[0], focusedClient.at[1]],
+                        position: focusedClient.at,
+                        size: focusedClient.size,
                         title: focusedClient.title ?? ""
                     });
 
