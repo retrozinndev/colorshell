@@ -4,11 +4,10 @@ import { Wallpaper } from "../../../modules/wallpaper";
 import { execApp } from "../../../modules/apps";
 import { Accessor } from "ags";
 import { createPoll } from "ags/time";
-
-import GLib from "gi://GLib?version=2.0";
-import Gio from "gi://Gio?version=2.0";
 import { Shell } from "../../../app";
 import { Screenshot } from "../../../modules/screenshot";
+import GLib from "gi://GLib?version=2.0";
+import Gio from "gi://Gio?version=2.0";
 
 
 const userFace: Gio.File = Gio.File.new_for_path(`${GLib.get_home_dir()}/.face`);
@@ -36,7 +35,7 @@ function ScreenshotButton(): Gtk.Button {
     return <Gtk.Button iconName={"applets-screenshooter-symbolic"}
       onClicked={() => {
           Windows.getDefault().close("control-center");
-          setTimeout(() => Screenshot.getDefault().select(), 1000);
+          setTimeout(() => Screenshot.getDefault().take(), 1000);
 
       }}
     /> as Gtk.Button;
