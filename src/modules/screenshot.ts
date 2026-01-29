@@ -1,6 +1,7 @@
 import { gtype, property, register, signal } from "ags/gobject";
 import { execAsync } from "ags/process";
 import { Compositor } from "./compositors";
+import { Notifications } from "./notifications";
 import GObject from "gi://GObject?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
@@ -15,11 +16,17 @@ export class Screenshot extends GObject.Object {
     @signal(String)
     tookScreenshot(_: string) {}
 
+    /** default screenshot mode to fallback to if none is specified */
     @property(gtype<Screenshot.Mode>(Number))
     mode: Screenshot.Mode = Screenshot.Mode.SELECT;
 
+    /** include mouse cursors in the screenshot */
     @property(Boolean)
     includeCursors: boolean = false;
+
+    /** whether to copy the screenshot image to clipboard */
+    @property(Boolean)
+    copyToClipboard: boolean = true;
 
     @property(Gio.File)
     outputDir: Gio.File = Gio.File.new_for_path(`${
@@ -39,7 +46,7 @@ export class Screenshot extends GObject.Object {
       * @returns the screenshot image output path; or null if the screenshot was cancelled\
       * (only possible in SELECT mode) */
     async take(mode: Screenshot.Mode = this.mode, area?: Screenshot.Area): Promise<string|null> {
-        const output = `${this.outputDir.peek_path()!}/${this.genFileName()}_screenshot`;
+        const output = `${this.outputDir.peek_path()!}/${this.genFileName()}_screenshot.png`;
 
         if(mode === Screenshot.Mode.SELECT) {
             const selection = area ?? await this.select();
@@ -107,7 +114,33 @@ export class Screenshot extends GObject.Object {
 
     protected async grim(output: string, area?: Screenshot.Area): Promise<void> {
         try {
-            await execAsync(`grim ${area ? `-g "${this.areaToSlurp(area)}"` : ""} ${output}`);
+            await execAsync(`grim ${
+                area ? `-g "${this.areaToSlurp(area)}"` : ""
+            } ${this.includeCursors ? "-c" : ""} ${output}`);
+            execAsync(`sh -c "cat '${output}' | wl-copy"`).catch(e =>
+                Notifications.getDefault().sendNotification({
+                    appName: "colorshell",
+                    summary: "Failed to copy Screenshot",
+                    body: `The recent screenshot you took couldn't be automatically copied because of an error: ${(e as Gio.IOErrorEnum).message}`
+                })
+            );
+            Notifications.getDefault().sendNotification({
+                appName: "colorshell",
+                summary: "Screenshot",
+                body: `The screenshot was saved as ${output}`,
+                image: output,
+                actions: [{
+                    id: "view",
+                    text: "View",
+                    onAction: () => execAsync(`xdg-open "${output}"`).catch(e =>
+                        Notifications.getDefault().sendNotification({
+                            appName: "colorshell",
+                            summary: "Failed to open screenshot",
+                            body: `Failed to open image with xdg-open: ${(e as Error).message}`,
+                        })
+                    )
+                }]
+            });
         } catch(e) {
             throw new Error(`Screenshot: Failed to take a screenshot. Stderr: ${(e as Error).message}`);
         }

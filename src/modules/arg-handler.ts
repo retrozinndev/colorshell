@@ -47,7 +47,7 @@ Others:
   runner [initial_text]: open the application runner, optionally add an initial search.
   run app[.desktop] [client_modifiers]: run applications from the cli, see "run help".
   lock: quick-lock your user with hyprlock.
-  screenshot [full]: select an area to screenshot(optionally add "full" to take a complete screenshot).
+  screenshot [full|active]: select an area to screenshot(add "full" to take a full screenshot or "active" to take from the active client).
   peek-workspace-num [millis]: peek the workspace numbers on bar window.
   v, version: display current colorshell version.
   h, help: shows this help message.
