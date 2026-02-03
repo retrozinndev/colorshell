@@ -91,8 +91,13 @@ export class CompositorHyprland extends Compositor {
                 break;
 
             case "configreloaded":
-                if(!this.#ignoreConfigReload)
+                if(!this.#ignoreConfigReload) {
+                    this.#ignoreConfigReload = true;
                     this.source();
+                    return;
+                }
+
+                this.#ignoreConfigReload &&= false;
                 break;
 
             case "beep":
@@ -107,12 +112,6 @@ export class CompositorHyprland extends Compositor {
 
     
     private source(): void {
-        if(this.#ignoreConfigReload) {
-            this.#ignoreConfigReload = false;
-            return;
-        }
-
-        this.#ignoreConfigReload = true;
         const names = Gio.resources_enumerate_children(
             "/io/github/retrozinndev/colorshell/config/hyprland",
             Gio.ResourceLookupFlags.NONE
