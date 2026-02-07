@@ -56,7 +56,7 @@ if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
         rm -rf $repo_directory 2> /dev/null
         Send_log "Cloning repository in \`$repo_directory\`..."
         if [[ -d $repo_directory/.git ]]; then
-            Send_log "repo is already cloned! let's just fetch the latest changes..."
+            Send_log "Repo is already cloned! let's just fetch the latest changes..."
             git -C "$repo_directory" stash # if there are changes, let's just stash them
             git -C "$repo_directory" checkout ryo
             git -C "$repo_directory" fetch && git -C "$repo_directory" pull --rebase # rebase just in case
@@ -68,7 +68,7 @@ if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
     Ask "Nice! Do you want to use the stable version instead of the unstable(latest commit)?"
 
     if [[ -z "$skip_prompts" ]] && [[ "$answer" == y ]]; then
-        Send_log "fetching latest release from colorshell repository"
+        Send_log "Fetching latest release from colorshell repository"
         latest_tag=`curl -s "$repo_api_url/releases" | jq -r '. | select(.[].prerelease == false) | .[0].tag_name'`
         
         Send_log "Done fetching"

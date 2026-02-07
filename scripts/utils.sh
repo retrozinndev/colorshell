@@ -56,7 +56,7 @@ function Print_header() {
 function Ask() {
     read -n 1 -p "$@ [y/n] " answer
     printf '\n'
-    if [[ ! $answer =~ [yn] ]]; then
+    if [[ ! $answer =~ [ynYN] ]]; then
         Ask "$@" # restart if different from accepted chars
     fi
 
