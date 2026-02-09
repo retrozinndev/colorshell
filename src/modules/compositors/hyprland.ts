@@ -59,13 +59,12 @@ export class CompositorHyprland extends Compositor {
                 info = undefined;
             }
 
-            //console.log(event, info); // debugging
+            //console.log(`${event}:`, info); // debugging
             this.handleEvents(event, data);
         });
     }
 
     private handleEvents(event: CompositorHyprland.Event, data: string): void {
-        console.log(event);
         switch(event as CompositorHyprland.Event) {
             case "activewindowv2":
                 const address = data;
