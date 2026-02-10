@@ -1,6 +1,7 @@
 import { exec } from "ags/process";
 import Gio from "gi://Gio?version=2.0";
 import { Notifications } from "./notifications";
+import { getPID, killProc } from "./utils";
 
 
 export class Input {
@@ -15,6 +16,10 @@ export class Input {
 
 
     constructor() {
+        const pid = getPID("fcitx5");
+        if(pid != null)
+            killProc(pid);
+
         this.restart();
     }
 
@@ -25,14 +30,24 @@ export class Input {
         return this.instance;
     }
 
+    /** force the IME daemon to quit */
+    public exit(): void {
+        try {
+            exec("fcitx5-remote --check -e");
+        } catch(e) {
+            // so we throw a prettier error
+            throw new Error("Input: Fcitx5: Failed to quit the daemon. Is it running?");
+        }
+    }
+
     /** @param keep whether to restart the IME daemon after a crash/exit (restart attempts are limited by {@link maxIbusAttempts}) */
     public restart(keep: boolean = true): void {
         if(this.#proc)
             return;
 
         this.#proc = Gio.Subprocess.new(
-            ["fcitx5", "-r", "-s", "2"],
-            Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
+            ["fcitx5", "-r"],
+            Gio.SubprocessFlags.STDOUT_SILENCE | Gio.SubprocessFlags.STDERR_SILENCE
         );
 
         this.#proc.wait_async(null, (_, res) => {
@@ -62,27 +77,5 @@ export class Input {
 
             console.log("Input: Fcitx5: Exited normally");
         });
-    }
-
-    /** force the IME daemon to quit */
-    public exit(): void {
-        try {
-            exec("fcitx5-remote --check -e");
-        } catch(e) {
-            // so we throw a prettier error
-            throw new Error("Input: Fcitx5: Failed to quit the daemon. Is it running?");
-        }
-    }
-
-    protected getDaemonPid(): number|null {
-        try {
-            const str = exec("pgrep '^fcitx5$' | head -n1")?.trim();
-            if(str.trim() === "") 
-                return null;
-
-            return Number.parseInt(str.trim());
-        } catch(e) {
-            return null;
-        }
     }
 }

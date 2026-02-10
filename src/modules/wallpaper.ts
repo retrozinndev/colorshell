@@ -232,7 +232,7 @@ export class Wallpaper extends GObject.Object {
         if(this.#proc)
             await this.quitDaemon();
 
-        this.#proc = Gio.Subprocess.new(["hyprpaper"], Gio.SubprocessFlags.NONE);
+        this.#proc = Gio.Subprocess.new(["hyprpaper"], Gio.SubprocessFlags.STDOUT_SILENCE);
     }
 
     private writeChanges(): void {

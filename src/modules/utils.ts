@@ -91,9 +91,6 @@ export function getPID(search: string): number|undefined {
     try {
         result = exec(`pgrep -x "${search}"`).trim().replaceAll('\n', '');
     } catch(e) {
-        if((e as Gio.IOErrorEnum).code !== 1) 
-            console.error("Couldn't search for process by name:", e);
-
         return undefined;
     }
 
