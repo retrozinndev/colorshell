@@ -4,7 +4,7 @@ import GObject, { register, getter, gtype, property, setter } from "ags/gobject"
 
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
-import { createSubscription, encoder } from "./utils";
+import { createSubscription, encoder, getPID, killProc } from "./utils";
 import { Notifications } from "./notifications";
 import { generalConfig } from "../config";
 import { createRoot, getScope, Scope } from "ags";
@@ -54,6 +54,7 @@ export class Wallpaper extends GObject.Object {
     #splash: boolean = true;
     #hyprpaperFile: Gio.File;
     #wallpapersPath: string;
+    #proc: Gio.Subprocess|null = null;
 
     @getter(Boolean)
     public get splash() { return this.#splash; }
@@ -88,7 +89,14 @@ export class Wallpaper extends GObject.Object {
 
         this.getWallpaper().then((wall) => {
             if(wall?.trim()) this.#wallpaper = wall.trim();
-        });
+        }); 
+
+        const pid = getPID("hyprpaper");
+        console.log(pid);
+        if(pid != null)
+            killProc(pid);
+
+        this.restartDaemon();
 
         createRoot(() => {
             this.#scope = getScope();
@@ -164,13 +172,12 @@ export class Wallpaper extends GObject.Object {
                     Notifications.getDefault().sendNotification({
                         appName: "colorshell",
                         summary: "Wallpaper configuration",
-                        body: "This setting will only take effect after a hyprpaper restart. If you're using systemd, \
-click the action to restart hyprpaper",
+                        body: "This change will only take effect after a hyprpaper restart. Click the \"restart\" button to restart the wallpaper daemon",
                         actions: [{
-                            text: "Restart service",
-                            id: "restart-service",
+                            text: "Restart",
+                            id: "restart-daemon",
                             onAction: () => {
-                                execAsync("systemctl --user restart hyprpaper").catch((e) => {
+                                this.restartDaemon().catch(e => {
                                     Notifications.getDefault().sendNotification({
                                         appName: "colorshell",
                                         summary: "Failed to restart service",
@@ -194,6 +201,38 @@ click the action to restart hyprpaper",
             this.instance = new Wallpaper();
 
         return this.instance;
+    }
+
+
+    /** tries to kill the wallpaper daemon.
+      * @returns `true` on success, or else, `false` */
+    public async quitDaemon(): Promise<boolean> {
+        if(!this.#proc)
+            return false;
+
+        return new Promise((resolve, reject) => {
+            // wait for it to close, so we can resolve() the Promise
+            this.#proc!.wait_async(null, (_, res) => {
+                let result!: boolean;
+                try {
+                    result = this.#proc!.wait_finish(res);
+                } catch(e) {
+                    reject(e);
+                    return;
+                }
+
+                resolve(result);
+            });
+
+            this.#proc!.force_exit();
+        });
+    }
+
+    public async restartDaemon(): Promise<void> {
+        if(this.#proc)
+            await this.quitDaemon();
+
+        this.#proc = Gio.Subprocess.new(["hyprpaper"], Gio.SubprocessFlags.NONE);
     }
 
     private writeChanges(): void {
