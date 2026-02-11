@@ -35,6 +35,9 @@ import Gio from "gi://Gio?version=2.0";
 import Adw from "gi://Adw?version=1";
 import AstalWp from "gi://AstalWp";
 
+Gio._promisify(Gio.DBus, "get", "get_finish");
+Gio._promisify(Gio.DBusProxy, "new", "new_finish");
+Gio._promisify(Gio.DBusConnection.prototype, "call", "call_finish");
 
 const runnerPlugins: Array<Runner.Plugin> = [
     PluginApps,
@@ -67,6 +70,7 @@ export class Shell extends Adw.Application {
     #providers: Array<Gtk.CssProvider> = [];
     #socketService!: Gio.SocketService;
     #socketFile!: Gio.File;
+    #pid: number|null = null;
 
     get scope() { return this.#scope; }
 
@@ -182,15 +186,67 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
         });
     }
 
+    private async getAppPID(): Promise<number> {
+        if(this.#pid != null)
+            return this.#pid;
+
+        const session = await (Gio.DBus.get(Gio.BusType.SESSION, null) as unknown as Promise<Gio.DBusConnection>);
+        const proxy = await (Gio.DBusProxy.new(
+            session,
+            Gio.DBusProxyFlags.NONE,
+            null,
+            "io.github.retrozinndev.colorshell",
+            "/io/github/retrozinndev/colorshell",
+            "org.freedesktop.Application",
+            null
+        ) as unknown as Promise<Gio.DBusProxy>);
+
+        const owner = proxy.get_name_owner();
+
+        if(!owner)
+            throw new Error("DBus: Couldn't get name owner to retrieve PID");
+
+        // @ts-ignore
+        const params = GLib.Variant.new_tuple([GLib.Variant.new_string(owner)]);
+
+        const pidVariant: GLib.Variant<"(u)"> = await session.call(
+            "org.freedesktop.DBus",
+            "/org/freedesktop/DBus",
+            "org.freedesktop.DBus",
+            "GetConnectionUnixProcessID",
+            params,
+            GLib.VariantType.new("(u)"),
+            Gio.DBusCallFlags.NONE,
+            300,
+            null
+        );
+
+        if(!pidVariant)
+            throw new Error("DBus: call to org.freedesktop.DBus.GetConnectionUnixProcessID returned a nullish value");
+
+        this.#pid = pidVariant.get_child_value(0).get_uint32();
+
+        return this.#pid;
+    }
+
     private init(): void {
-        console.log(`Colorshell: Initializing things`);
+        console.log("Colorshell: Initializing things");
 
         !Shell.runtimeDir.query_exists(null) &&
             Shell.runtimeDir.make_directory_with_parents(null);
 
-        // TODO: find a way to get the pid of colorshell (it's ridiculous that glib doesn't have a method for this, really)
-        //const pidFile = Gio.File.new_for_path(`${Shell.runtimeDir.peek_path()!}/.pid`);
-        //pidFile.replace_contents(encoder.encode(""), null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null);
+        const pidFile = Gio.File.new_for_path(`${Shell.runtimeDir.peek_path()!}/.pid`);
+        this.getAppPID().then((pid) => {
+            try {
+                pidFile.replace_contents(encoder.encode(
+                    pid.toString()
+                ), null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null);
+            } catch(e) {
+                console.error(e);
+            }
+        }).catch(e => {
+            console.error(e);
+        });
 
         // load gresource from build-defined path
         try {

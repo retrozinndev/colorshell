@@ -92,7 +92,7 @@ export class Wallpaper extends GObject.Object {
         }); 
 
         const pid = getPID("hyprpaper");
-        console.log(pid);
+
         if(pid != null)
             killProc(pid);
 
