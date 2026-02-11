@@ -99,7 +99,7 @@ export class CompositorHyprland extends Compositor {
                 this.#ignoreConfigReload &&= false;
                 break;
 
-            case "beep":
+            case "bell":
                 playSystemBell();
             break;
         }
@@ -200,7 +200,7 @@ export namespace CompositorHyprland {
         | "windowtitlev2"
         | "workspacev2"
         | "focusedmon"
-        | "beep"
+        | "bell"
         | "focusedmonv2";
 
     export type Client = {

@@ -94,7 +94,6 @@ export function getPID(search: string): number|undefined {
         return undefined;
     }
 
-    console.log(result);
     const pid = Number.parseInt(result);
 
     if(!isNaN(pid))
