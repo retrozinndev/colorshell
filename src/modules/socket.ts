@@ -28,8 +28,8 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
     protected server: Gio.SocketService|null = null;
     protected address: Gio.UnixSocketAddress|null = null;
     protected scope: Scope = createRoot(() => getScope());
-    protected encoder: TextEncoder|null = null;
-    protected decoder: TextDecoder|null = null;
+    protected readonly encoder = new TextEncoder();
+    protected readonly decoder = new TextDecoder("utf-8");
 
     @signal(String)
     protected received(_: string) {}
@@ -113,39 +113,40 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
             sock.set_blocking(false);
             sock.set_keepalive(true); // keep listening to the socket
 
+            let pending: boolean = false;
             GLib.io_add_watch(
                 GLib.IOChannel.unix_new(sock.get_fd()),
-                GLib.PRIORITY_DEFAULT,
+                GLib.PRIORITY_LOW,
                 GLib.IOCondition.IN | GLib.IOCondition.PRI | GLib.IOCondition.HUP,
                 (_, cond: GLib.IOCondition) => {
                     if(cond === GLib.IOCondition.HUP) {
-                        conn.close();
+                        conn.close(null);
                         console.log(`Socket: Connection was hang up`);
                         return false;
                     }
 
-
                     if(conn.is_closed()) {
-                        console.log("Socket: The listening input stream has been closed, ignoring current call");
+                        console.warn("Socket: The socket connection has been closed, current call is being ignored");
                         return false;
                     }
 
-                    if(conn.inputStream.is_closed()) {
-                        console.log("Socket: The input stream got closed, the i/o watch will be removed");
+                    if(conn.inputStream.is_closed() || conn.outputStream.is_closed()) {
+                        console.warn("Socket: One of the streams got closed, the IO watch will be removed");
                         return false;
                     }
 
-                    if(conn.outputStream.is_closed()) {
-                        console.log("Socket: The input stream got closed, the i/o watch will be removed");
-                        return false;
+                    if(pending) {
+                        console.log("Socket: Stream: There already is a read on its way, this call was ignored");
+                        return true;
                     }
 
+                    pending = true;
                     conn.inputStream.read_bytes_async(4096, GLib.PRIORITY_DEFAULT, null, (_, res) => {
                         let str!: string;
+                        pending = false;
 
                         try {
-                            str = (this.decoder ?? (this.decoder = new TextDecoder))
-                                .decode(conn.inputStream.read_bytes_finish(res).toArray());
+                            str = this.decoder.decode(conn.inputStream.read_bytes_finish(res).toArray());
                         } catch(e) {
                             console.error(`Socket: An error occurred while reading the input stream bytes: ${(e as Error).message}`);
                             console.debug(e);
@@ -185,6 +186,7 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
     async simpleSend(message: string, wait: boolean = false): Promise<string|null> {
         return new Promise((resolve, reject) => {
             const client = Gio.SocketClient.new();
+
             client.set_family(Gio.SocketFamily.UNIX);
             client.set_socket_type(Gio.SocketType.STREAM);
             client.connect_async(this.address!, null, (_, res) => {
@@ -197,7 +199,7 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
                 }
 
                 conn.outputStream.write_bytes_async(
-                    (this.encoder ?? (this.encoder = new TextEncoder())).encode(message),
+                    this.encoder.encode(message),
                     GLib.PRIORITY_DEFAULT,
                     null,
                     (_, res) => {
@@ -275,7 +277,7 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
                 }
 
                 conn.outputStream.write_bytes_async(
-                    (this.encoder ?? (this.encoder = new TextEncoder())).encode(message),
+                    this.encoder.encode(message),
                     GLib.PRIORITY_DEFAULT,
                     null,
                     (_, res) => {
