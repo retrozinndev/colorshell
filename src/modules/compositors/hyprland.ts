@@ -136,7 +136,7 @@ export class CompositorHyprland extends Compositor {
         const userLastUpdatedFile = Gio.File.new_for_path(`${this.#configDir.peek_path()!}/.last-updated`);
         const names = Gio.resources_enumerate_children(
             "/io/github/retrozinndev/colorshell/config/hyprland",
-            Gio.ResourceLookupFlags.NONE
+            null
         );
 
         if(userLastUpdatedFile.query_exists(null)) {
@@ -157,7 +157,7 @@ export class CompositorHyprland extends Compositor {
             name,
             Gio.resources_lookup_data(
                 `/io/github/retrozinndev/colorshell/config/hyprland/${name}`,
-                Gio.ResourceLookupFlags.NONE
+                null
             )
         ] satisfies [string, GLib.Bytes]);
 
