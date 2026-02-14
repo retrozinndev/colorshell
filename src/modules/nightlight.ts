@@ -51,12 +51,15 @@ export class NightLight extends GObject.Object {
         if(pid != null)
             killProc(pid);
 
-        this.restartDaemon().then(() => {
-            this.loadData();
-            this.#watchInterval = setInterval(() => this.syncData(), 10000);
-        }).catch(e => {
-            console.error("Night Light: Failed to initialize daemon(is it installed?):", e);
-        });
+        // we wait, because the process can take some time to quit
+        setTimeout(() => {
+            this.restartDaemon().then(() => {
+                this.loadData();
+                this.#watchInterval = setInterval(() => this.syncData(), 10000);
+            }).catch(e => {
+                console.error("Night Light: Failed to initialize daemon(is it installed?):", e);
+            });
+        }, 500);
     }
 
     vfunc_dispose(): void {
