@@ -96,10 +96,28 @@ if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
     mkdir -p $APPS_HOME
     cp -f $repo_directory/build/release/colorshell.desktop $APPS_HOME
 
+    # Check if user has a Hyprland config file
+    if [[ ! -f "$XDG_CONFIG_HOME/hypr/hyprland.conf" ]] && [[ -f "/usr/share/hypr/hyprland.conf" ]]; then
+        Send_log "Looks like Hyprland wasn't launched yet! Copying default config file..."
+        mkdir -p "$XDG_CONFIG_HOME/hypr"
+        cp -f "/usr/share/hypr/hyprland.conf" "$XDG_CONFIG_HOME/hypr/hyprland.conf"
+        Send_log "Adding exec for colorshell in Hyprland config..."
+        echo -ne "\nexec-once = ~/.local/bin/colorshell" >> "$XDG_CONFIG_HOME/hypr/hyprland.conf"
+    else
+        Ask "Do you want to autostart colorshell with Hyprland?"
+        if [ "$answer" == "y" ]; then
+            Send_log "Adding exec-once for colorshell to Hyprland..."
+            echo -ne "\nexec-once = ~/.local/bin/colorshell" >> "$XDG_CONFIG_HOME/hypr/hyprland.conf"
+        fi
+    fi
 
-    Send_log "Adding default wallpaper in ~/wallpapers"
-    mkdir -p $HOME/wallpapers
-    cp -f $repo_directory/resources/wallpaper_default.jpg "$HOME/wallpapers/Default Hypr-chan.jpg"
+    # Check for wallpaper configuration
+    if [[ ! -f "$XDG_CONFIG_HOME/hypr/hyprpaper.conf" ]]; then
+        Send_log "No hyprpaper config found, using colorshell's default..."
+        mkdir -p $HOME/wallpapers
+        cp -f $repo_directory/resources/wallpaper_default.jpg "$HOME/wallpapers/Default Hypr-chan.jpg"
+        cp -f $repo_directory/resources/config/hyprpaper.conf "$XDG_CONFIG_HOME/hypr/hyprpaper.conf"
+    fi
 
     if [[ -z "$skip_prompts" ]]; then
         echo "Colorshell is installed! :D"
