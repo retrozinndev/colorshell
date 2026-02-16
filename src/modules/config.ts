@@ -250,7 +250,7 @@ export class Config<K extends string, V = any> extends GObject.Object {
         ));
     }
 
-    private _getProperty(path: string, entries: Record<K, V>, expectType?: ValueTypes): (any|undefined) {
+    private _getProperty(path: string, entries: Record<K, V>, expectType?: ValueTypes, ignoreUndefined: boolean = false): (any|undefined) {
         let property: any = entries;
         const pathArray = path.split('.').filter(str => str);
 
@@ -260,20 +260,9 @@ export class Config<K extends string, V = any> extends GObject.Object {
             property = property[currentPath as keyof typeof property];
         }
 
-        if(expectType !== "any" && typeof property !== expectType) {
-            // return default value if not defined by user
-            property = this.defaults;
-
-            for(let i = 0; i < pathArray.length; i++) {
-                const currentPath = pathArray[i];
-
-                property = property[currentPath as keyof typeof property];
-            }
-        }
-
-        if(expectType !== "any" && typeof property !== expectType) {
-            console.debug(`Config: property with path \`${path}\` not found in defaults/user-entries, returning \`undefined\``);
-            property = undefined;
+        if(!ignoreUndefined && property === undefined) {
+            const defaultValue = this._getProperty(path, this.defaults, expectType, true);
+            return defaultValue;
         }
 
         return property;
