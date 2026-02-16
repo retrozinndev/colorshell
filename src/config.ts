@@ -38,6 +38,11 @@ const generalConfigDefaults = {
         save_on_shutdown: true
     },
 
+    screen_recording: {
+        /** include desktop audio output when screen-recording */
+        include_audio: true
+    },
+
     wallpaper: {
         /** wallpaper positioning mode (hyprpaper) */
         positioning: "cover" satisfies WallpaperPositioning,
