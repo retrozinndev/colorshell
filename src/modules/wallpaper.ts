@@ -54,6 +54,8 @@ export class Wallpaper extends GObject.Object {
     #splash: boolean = true;
     #hyprpaperFile: Gio.File;
     #wallpapersPath: string;
+    /** pywal-generated colors file */
+    #walFile: Gio.File = Gio.File.new_for_path(`${GLib.get_user_cache_dir()}/wal/colors`);
     #proc: Gio.Subprocess|null = null;
 
     @getter(Boolean)
@@ -87,9 +89,20 @@ export class Wallpaper extends GObject.Object {
         this.#hyprpaperFile = Gio.File.new_for_path(`${
             GLib.get_user_config_dir()}/hypr/hyprpaper.conf`);
 
-        this.getWallpaper().then((wall) => {
-            if(wall?.trim()) this.#wallpaper = wall.trim();
-        }); 
+        if(!this.#hyprpaperFile.query_exists(null)) {
+            throw new Error("Wallpaper: Couldn't find hyprpaper config file! \
+Please provide the configuration file for colorshell to be able to generate colors!!"); // TODO: integrate a default wallpaper in gresource
+        }
+
+        try {
+            this.#wallpaper = this.getWallpaper();
+        } catch(_) {
+            throw new Error("Wallpaper: Couldn't get wallpaper from hyprpaper file! You \
+may check the syntax of your hyprpaper.conf for errors");
+        }
+
+        if(!this.#walFile.query_exists(null))
+            this.reloadColors();
 
         const pid = getPID("hyprpaper");
 
@@ -119,7 +132,7 @@ export class Wallpaper extends GObject.Object {
                     };
 
                     this.colorMode = mode as WalMode;
-                    this.reloadColors();
+                    this.reloadColorsAsync().catch(console.error);
                 }
             );
 
@@ -262,8 +275,21 @@ wallpaper {
         return JSON.parse(content) as WalData;
     }
 
-    public async getWallpaper(): Promise<string|undefined> {
-        return await readFileAsync(`${GLib.get_user_config_dir()}/hypr/hyprpaper.conf`).then(stdout => {
+    
+    public getWallpaper(): string|undefined {
+        const content = readFile(this.#hyprpaperFile);
+        const loaded = content.split('\n').find(line => 
+            /^( *)?path( *)?\=( *)?.*/.test(line.trimStart())
+        )?.split('=')[1]?.trim().replace(/\\(.)/g, "$1"); // fix escaped characters
+
+        if(!loaded) 
+            return undefined;
+
+        return loaded;
+    }
+
+    public async getWallpaperAsync(): Promise<string|undefined> {
+        return await readFileAsync(this.#hyprpaperFile).then(stdout => {
             const loaded = stdout.split('\n').find(line => 
                 /^path( )?\=/.test(line.trimStart())
             )?.split('=')[1]?.trim();
@@ -279,11 +305,19 @@ wallpaper {
     }
 
     public reloadColors(): void {
-        execAsync(`wal -t --cols16 "${this.colorMode}" -i "${this.#wallpaper}"`).then(() => {
-            console.log("Wallpaper: reloaded shell colors");
-        }).catch((e: Error) => {
-            console.error(`Wallpaper: Couldn't update shell colors. Stderr: ${e.message}`);
-        });
+        try {
+            exec(`wal -t --cols16 "${this.colorMode}" -i "${this.#wallpaper}"`);
+        } catch(e) {
+            throw new Error(`Wallpaper: Couldn't update shell colors. Stderr: ${(e as Error).message}`);
+        }
+    }
+
+    public async reloadColorsAsync(): Promise<void> {
+        try {
+            await execAsync(`wal -t --cols16 "${this.colorMode}" -i "${this.#wallpaper}"`);
+        } catch(e) {
+            throw new Error(`Wallpaper: Couldn't update shell colors. Stderr: ${(e as Error).message}`);
+        }
     }
 
     public async reloadWallpaper(write: boolean = true): Promise<void> {
@@ -307,7 +341,7 @@ wallpaper {
         this.#wallpaper = path;
         this.notify("wallpaper");
         this.reloadWallpaper(write).then(() => {
-            reloadColors && this.reloadColors();
+            reloadColors && this.reloadColorsAsync().catch(console.error);
         }).catch((e: Error) => {
             console.error(`Wallpaper: Couldn't set wallpaper. Stderr: ${e.message}`);
         });
