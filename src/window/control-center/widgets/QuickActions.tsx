@@ -26,7 +26,7 @@ function ColorPickerButton(): Gtk.Button {
     return <Gtk.Button iconName={"color-select-symbolic"}
       onClicked={() => {
           Windows.getDefault().close("control-center");
-          execApp("sh $HOME/.config/hypr/scripts/color-picker.sh");
+          setTimeout(() => execApp("hyprpicker"), 700);
       }}
     /> as Gtk.Button;
 }
@@ -35,7 +35,7 @@ function ScreenshotButton(): Gtk.Button {
     return <Gtk.Button iconName={"applets-screenshooter-symbolic"}
       onClicked={() => {
           Windows.getDefault().close("control-center");
-          setTimeout(() => Screenshot.getDefault().take(), 1000);
+          setTimeout(() => Screenshot.getDefault().take(), 700);
 
       }}
     /> as Gtk.Button;

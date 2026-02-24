@@ -34,6 +34,7 @@ import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import Adw from "gi://Adw?version=1";
 import AstalWp from "gi://AstalWp";
+import { Idle } from "./modules/idle";
 
 Gio._promisify(Gio.DBus, "get", "get_finish");
 Gio._promisify(Gio.DBusProxy, "new", "new_finish");
@@ -64,6 +65,8 @@ export class Shell extends Adw.Application {
         GLib.get_user_data_dir() ?? `${GLib.get_home_dir()}/.local/share`}/colorshell`);
     public static cacheDir: Gio.File = Gio.File.new_for_path(`${
         GLib.get_user_cache_dir() ?? `${GLib.get_home_dir()}/.cache`}/colorshell`);
+    /** where runtime-generated config files are stored */
+    public static runtimeConfigDir: Gio.File = Gio.File.new_for_path(`${this.runtimeDir.peek_path()}/config`);
 
     #scope!: Scope;
     #connections = new Map<GObject.Object, Array<number> | number>();
@@ -235,6 +238,16 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
         !Shell.runtimeDir.query_exists(null) &&
             Shell.runtimeDir.make_directory_with_parents(null);
 
+        !Shell.cacheDir.query_exists(null) &&
+            Shell.cacheDir.make_directory_with_parents(null);
+
+        !Shell.dataDir.query_exists(null) &&
+            Shell.dataDir.make_directory_with_parents(null);
+
+        !Shell.runtimeConfigDir.query_exists(null) &&
+            Shell.runtimeConfigDir.make_directory_with_parents(null);
+
+
         const pidFile = Gio.File.new_for_path(`${Shell.runtimeDir.peek_path()!}/.pid`);
         this.getAppPID().then((pid) => {
             try {
@@ -244,9 +257,7 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
             } catch(e) {
                 console.error(e);
             }
-        }).catch(e => {
-            console.error(e);
-        });
+        }).catch(e => console.error(e));
 
         // load gresource from build-defined path
         try {
@@ -365,6 +376,7 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
 
         Input.getDefault();
         NightLight.getDefault();
+        Idle.getDefault();
         Media.getDefault();
         Clipboard.getDefault();
 
