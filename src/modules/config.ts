@@ -1,7 +1,7 @@
 import { monitorFile, readFile, writeFileAsync } from "ags/file";
 import { Notifications } from "./notifications";
 import { Accessor } from "ags";
-import GObject, { getter, gtype, register } from "ags/gobject";
+import GObject, { getter, gtype, register, signal } from "ags/gobject";
 
 import Gio from "gi://Gio?version=2.0";
 import AstalNotifd from "gi://AstalNotifd";
@@ -72,6 +72,9 @@ export class Config<K extends string, V = any> extends GObject.Object {
 
     @getter(Gio.File)
     public get file() { return this.#file; };
+
+    @signal(String)
+    propertyChanged(_: string) {}
 
     constructor(
         filePath: Gio.File|string,
@@ -173,24 +176,52 @@ export class Config<K extends string, V = any> extends GObject.Object {
     }
 
     /** recursively update object properties that have been changed */
-    private async syncEntries<T1 extends object, T2 extends object>(newObject: T1, targetObject: T2): Promise<void> {
-        console.debug("Syncing entries for objects:\n", "new:", newObject, "\ntarget:", targetObject);
-        for(const key of Object.keys(targetObject)) {
+    private async syncEntries<T1 extends object, T2 extends object>(
+        newObject: T1,
+        targetObject: T2,
+        lastPath?: string
+    ): Promise<void> {
+        for(const key of Object.keys(newObject)) {
             if(newObject[key as keyof T1] === undefined) // leave unchanged if unset in user config
                 continue;
 
-            if(typeof targetObject[key as keyof T2] === "object") {
-                this.syncEntries(newObject[key as keyof T1] as object, targetObject[key as keyof T2] as object);
+            if(targetObject === undefined || targetObject[key as keyof T2] === undefined) {
+                const lastObj = targetObject[key as keyof T2] ?? 
+                    lastPath === undefined ? targetObject : this.getProperty(lastPath!, "object")
+
+                lastObj[key as keyof typeof lastObj] = newObject[key as keyof T1] as never;
+                this.emit("property-changed", `${lastPath === undefined ? "" : `${lastPath}.`}${key}`);
+                return;
+            }
+
+            if(typeof targetObject?.[key as keyof T2] === "object" || (
+                targetObject?.[key as keyof T2] === undefined &&
+                    typeof newObject[key as keyof T1] === "object"
+            )) {
+                await this.syncEntries(
+                    newObject[key as keyof T1] as object,
+                    targetObject[key as keyof T2] as object,
+                    `${lastPath !== undefined ? `${lastPath}.` : ""}${key}`
+                );
                 continue;
             }
+
             const newVal = newObject[key as keyof T1] as JSONValues,
-                curVal = targetObject[key as keyof T2] as JSONValues;
+                curVal = targetObject?.[key as keyof T2] as JSONValues|undefined;
 
             // check if the value changed
-            if(newVal === curVal)
+            if(curVal !== undefined && newVal === curVal)
                 continue;
 
             targetObject[key as keyof T2] = newObject[key as keyof T1] as never;
+            
+            // notify for property source object
+            if(lastPath !== undefined)
+                this.emit("property-changed", lastPath);
+
+            this.emit("property-changed", `${
+                lastPath !== undefined ? `${lastPath}.` : ""
+            }${key}`);
         }
     }
 
@@ -202,7 +233,11 @@ export class Config<K extends string, V = any> extends GObject.Object {
 
     public bindProperty(propertyPath: string, expectType?: ValueTypes): Accessor<boolean|number|string|object|any> {
         return new Accessor(() => this.getProperty(propertyPath, expectType as never), (callback: () => void) => {
-            const id = this.connect("notify::entries", () => callback());
+            const id = this.connect("property-changed", (_, path: string) => {
+                if(path === propertyPath || path.startsWith(propertyPath))
+                    callback();
+
+            });
             return () => this.disconnect(id);
         });
     }
@@ -272,6 +307,9 @@ export class Config<K extends string, V = any> extends GObject.Object {
 export namespace Config {
     export interface SignalSignatures extends GObject.Object.SignalSignatures {
         "notify::entries": () => void;
+        /** a property has been updated
+          * @param path the property path (e.g.: `"wallpaper.splash"`) */
+        "property-changed": (path: string) => void;
     }
    
     export enum PropertyType {
