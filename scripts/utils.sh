@@ -64,14 +64,11 @@ function Ask() {
 }
 
 # -------------
-# Checks if there's currently a colorshell instance running
-# Returns code 0 if none, 1 if there is one
+# Checks if colorshell is up and running
+# Returns code 0 if running, 1 if not
 # -------------
 function Is_running() {
-    if gdbus introspect --session \
-        --dest io.github.retrozinndev.colorshell \
-        --object-path /io/github/retrozinndev/colorshell > /dev/null 2>&1
-    then
+    if ps -p `cat "$XDG_RUNTIME_DIR/colorshell/.pid"` > /dev/null; then
         return 0
     fi
 
