@@ -185,19 +185,7 @@ export class Config<K extends string, V = any> extends GObject.Object {
             if(newObject[key as keyof T1] === undefined) // leave unchanged if unset in user config
                 continue;
 
-            if(targetObject === undefined || targetObject[key as keyof T2] === undefined) {
-                const lastObj = targetObject[key as keyof T2] ?? 
-                    lastPath === undefined ? targetObject : this.getProperty(lastPath!, "object")
-
-                lastObj[key as keyof typeof lastObj] = newObject[key as keyof T1] as never;
-                this.emit("property-changed", `${lastPath === undefined ? "" : `${lastPath}.`}${key}`);
-                return;
-            }
-
-            if(typeof targetObject?.[key as keyof T2] === "object" || (
-                targetObject?.[key as keyof T2] === undefined &&
-                    typeof newObject[key as keyof T1] === "object"
-            )) {
+            if(typeof newObject[key as keyof T1] === "object") {
                 await this.syncEntries(
                     newObject[key as keyof T1] as object,
                     targetObject[key as keyof T2] as object,
