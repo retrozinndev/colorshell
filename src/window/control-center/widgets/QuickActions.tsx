@@ -4,7 +4,8 @@ import { Wallpaper } from "../../../modules/wallpaper";
 import { execApp } from "../../../modules/apps";
 import { Accessor } from "ags";
 import { createPoll } from "ags/time";
-
+import { Shell } from "../../../app";
+import { Screenshot } from "../../../modules/screenshot";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 
@@ -16,7 +17,7 @@ function LockButton(): Gtk.Button {
     return <Gtk.Button iconName={"system-lock-screen-symbolic"} 
       onClicked={() => {
           Windows.getDefault().close("control-center");
-          execApp("hyprlock");
+          execApp(`hyprlock --config ${Shell.runtimeDir.peek_path()!}/config/hyprlock.conf`);
       }} 
     /> as Gtk.Button;
 }
@@ -25,7 +26,7 @@ function ColorPickerButton(): Gtk.Button {
     return <Gtk.Button iconName={"color-select-symbolic"}
       onClicked={() => {
           Windows.getDefault().close("control-center");
-          execApp("sh $HOME/.config/hypr/scripts/color-picker.sh");
+          setTimeout(() => execApp("hyprpicker"), 700);
       }}
     /> as Gtk.Button;
 }
@@ -34,7 +35,8 @@ function ScreenshotButton(): Gtk.Button {
     return <Gtk.Button iconName={"applets-screenshooter-symbolic"}
       onClicked={() => {
           Windows.getDefault().close("control-center");
-          execApp(`sh ${GLib.get_user_config_dir()}/hypr/scripts/screenshot.sh`);
+          setTimeout(() => Screenshot.getDefault().take(), 700);
+
       }}
     /> as Gtk.Button;
 }

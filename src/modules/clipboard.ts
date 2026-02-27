@@ -8,42 +8,19 @@ import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 
 
-export enum ClipboardItemType {
-    TEXT = 0,
-    IMAGE = 1
-}
-
-export class ClipboardItem {
-    id: number;
-    type: ClipboardItemType;
-    preview: string;
-
-    constructor(id: number, type: ClipboardItemType, preview: string) {
-        this.id = id;
-        this.type = type;
-        this.preview = preview;
-    }
-}
-
-export { Clipboard };
-
 /** Cliphist Manager and event listener
   * This only supports wipe and store events from cliphist */
 @register({ GTypeName: "Clipboard" })
-class Clipboard extends GObject.Object {
+export class Clipboard extends GObject.Object {
     private static instance: Clipboard;
-
-    declare $signals: GObject.Object.SignalSignatures & {
-        "copied": Clipboard["copied"];
-        "wiped": Clipboard["wiped"];
-    };
 
     #dbFile: Gio.File;
     #dbMonitor: Gio.FileMonitor;
     #updateDone: boolean = false;
-    #history = new Array<ClipboardItem>;
+    #history = new Array<Clipboard.Item>;
     #changesTimeout: (AstalIO.Time|undefined);
     #ignoreChanges: boolean = false;
+    #procs: Array<Gio.Subprocess> = [];
 
     @signal(GObject.TYPE_JSOBJECT) copied(_item: object) {}
     @signal() wiped() {};
@@ -54,6 +31,17 @@ class Clipboard extends GObject.Object {
 
     constructor() {
         super();
+
+        this.#procs = [
+            Gio.Subprocess.new(
+                ["wl-paste", "--type", "text", "--watch", "cliphist", "store"],
+                Gio.SubprocessFlags.STDOUT_SILENCE
+            ),
+            Gio.Subprocess.new(
+                ["wl-paste", "--type", "image", "--watch", "cliphist", "store"],
+                Gio.SubprocessFlags.STDOUT_SILENCE
+            )
+        ];
 
         this.#dbFile = this.getCliphistDatabase();
 
@@ -115,7 +103,7 @@ stderr for more info.`);
         return proc.get_exit_status() === 0;
     }
 
-    public async selectItem(itemToSelect: number|ClipboardItem): Promise<boolean> {
+    public async selectItem(itemToSelect: number|Clipboard.Item): Promise<boolean> {
         const item = await this.getItemContent(itemToSelect);
         let res: boolean = true;
 
@@ -127,7 +115,7 @@ stderr for more info.`);
 
     /** Gets history item's content by its ID.
         * @returns the clipboard item's content */
-    public async getItemContent(item: number|ClipboardItem): Promise<string|undefined> {
+    public async getItemContent(item: number|Clipboard.Item): Promise<string|undefined> {
         const id = (typeof item === "number") ?
             item : item.id;
 
@@ -171,10 +159,10 @@ stderr for more info.`);
         return Gio.File.new_for_path(`${GLib.get_user_cache_dir()}/cliphist/db`);
     }
 
-    private getContentType(preview: string): ClipboardItemType {
+    private getContentType(preview: string): Clipboard.ItemType {
         return /^\[\[.*binary data.*x.*\]\]$/u.test(preview) ?
-            ClipboardItemType.IMAGE
-        : ClipboardItemType.TEXT;
+            Clipboard.ItemType.IMAGE
+        : Clipboard.ItemType.TEXT;
     }
 
     public async wipeHistory(noExec?: boolean): Promise<void> {
@@ -220,7 +208,7 @@ stderr for more info.`);
                     id: Number.parseInt(id),
                     preview,
                     type: this.getContentType(preview)
-                } as ClipboardItem;
+                } as Clipboard.Item;
                 
                 this.#history.unshift(clipItem);
 
@@ -238,7 +226,7 @@ stderr for more info.`);
                     id: Number.parseInt(id),
                     preview,
                     type: this.getContentType(preview)
-                } as ClipboardItem;
+                } as Clipboard.Item;
 
                 this.#history.push(clipItem);
 
@@ -256,5 +244,29 @@ stderr for more info.`);
             this.instance = new Clipboard();
 
         return this.instance;
+    }
+}
+
+export namespace Clipboard {   
+    export enum ItemType {
+        TEXT = 0,
+        IMAGE = 1
+    }
+
+    export class Item {
+        id: number;
+        type: ItemType;
+        preview: string;
+
+        constructor(id: number, type: ItemType, preview: string) {
+            this.id = id;
+            this.type = type;
+            this.preview = preview;
+        }
+    }
+
+    export interface SignalSignatures extends GObject.Object.SignalSignatures {
+        "copied": (item: Clipboard.Item) => void;
+        "wiped": () => void;
     }
 }

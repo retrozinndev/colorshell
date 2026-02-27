@@ -83,6 +83,38 @@ export function getChildren(widget: Gtk.Widget): Array<Gtk.Widget> {
     return children;
 }
 
+/** search for a process by its name. (exact match)
+  * @returns the pid for the first search result, `undefined` if no process was found */
+export function getPID(search: string): number|undefined {
+    let result!: string;
+
+    try {
+        result = exec(`pgrep -x "${search}"`).trim().replaceAll('\n', '');
+    } catch(e) {
+        return undefined;
+    }
+
+    const pid = Number.parseInt(result);
+
+    if(!isNaN(pid))
+        return pid;
+
+    return undefined;
+}
+
+/** forces a process to quit with the desired signal. 
+  * @param pid the process id
+  * @param signal process signal code. default: `2` */
+export function killProc(pid: number, signal: number = 2): boolean {
+    try {
+        exec(`kill -s ${signal} ${pid}`);
+    } catch(_) {
+        return false;
+    }
+
+    return true;
+}
+
 export function omitObjectKeys<ObjT = object>(obj: ObjT, keys: keyof ObjT|Array<keyof ObjT>): object {
     const finalObject = { ...obj };
 

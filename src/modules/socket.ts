@@ -28,8 +28,8 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
     protected server: Gio.SocketService|null = null;
     protected address: Gio.UnixSocketAddress|null = null;
     protected scope: Scope = createRoot(() => getScope());
-    protected encoder: TextEncoder|null = null;
-    protected decoder: TextDecoder|null = null;
+    protected readonly encoder = new TextEncoder();
+    protected readonly decoder = new TextDecoder("utf-8");
 
     @signal(String)
     protected received(_: string) {}
@@ -37,8 +37,8 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
     @signal(String)
     protected sent(_: string) {}
 
-    @signal(Gio.IOErrorEnum)
-    protected panic(_: Gio.IOErrorEnum) {}
+    @signal(Object)
+    protected panic(_: Error) {}
 
     /** @param listen whether to listen to the socket as soon as the class is instantiated 
       * @param contentSeparator server response separator, by default it's a line-break */
@@ -76,7 +76,7 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
                             try {
                                 str = data.read_upto_finish(res)[0];
                             } catch(e) {
-                                this.emit("panic", e as Gio.IOErrorEnum);
+                                this.emit("panic", e as Error);
                                 return;
                             }
 
@@ -108,58 +108,123 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
                 return;
             }
 
-            const sock = conn.get_socket();
-            sock.set_timeout(0);
-            sock.set_blocking(false);
-            sock.set_keepalive(true); // keep listening to the socket
-
-            GLib.io_add_watch(
-                GLib.IOChannel.unix_new(sock.get_fd()),
-                GLib.PRIORITY_DEFAULT,
-                GLib.IOCondition.IN | GLib.IOCondition.PRI | GLib.IOCondition.HUP,
-                (_, cond: GLib.IOCondition) => {
-                    if(cond === GLib.IOCondition.HUP) {
-                        conn.close();
-                        console.log(`Socket: Connection was hang up`);
-                        return false;
-                    }
-
-
-                    if(conn.is_closed()) {
-                        console.log("Socket: The listening input stream has been closed, ignoring current call");
-                        return false;
-                    }
-
-                    if(conn.inputStream.is_closed()) {
-                        console.log("Socket: The input stream got closed, the i/o watch will be removed");
-                        return false;
-                    }
-
-                    if(conn.outputStream.is_closed()) {
-                        console.log("Socket: The input stream got closed, the i/o watch will be removed");
-                        return false;
-                    }
-
-                    conn.inputStream.read_bytes_async(4096, GLib.PRIORITY_DEFAULT, null, (_, res) => {
-                        let str!: string;
-
-                        try {
-                            str = (this.decoder ?? (this.decoder = new TextDecoder))
-                                .decode(conn.inputStream.read_bytes_finish(res).toArray());
-                        } catch(e) {
-                            console.error(`Socket: An error occurred while reading the input stream bytes: ${(e as Error).message}`);
-                            console.debug(e);
-                            return;
-                        }
-
-                        str.split(outputSeparator).filter(s => s.trim() !== "").forEach(msg =>
-                            this.emit("received", msg)
-                        );
-                    });
-                    return true;
-                }
-            );
+            this.watchOutput(conn, (data) => {
+                // separate messages by line-break
+                data.split(outputSeparator).filter(s => s.trim() !== "").forEach(msg =>
+                    this.emit("received", msg)
+                );
+            });
         });
+    }
+
+    /** watch a socket for new messages using `GIOWatch`.
+      * @param socket the socket or connection to watch
+      * @param callback called when the watch triggers one of the `conditions` 
+      * @param conditions `GIOConditions` to watch the socket IO for. default: `IN`|`PRI`|`HUP`
+      * (when `HUP`, the watch is internally removed, so you just need to disconnect from the socket) 
+      *
+      * @returns a `GCancellable`, which can be used to stop the `GIOWatch` of the method */
+    protected watchSocket(
+        socket: Gio.Socket|Gio.SocketConnection,
+        callback?: (condition: GLib.IOCondition) => void,
+        conditions: GLib.IOCondition = GLib.IOCondition.IN|GLib.IOCondition.PRI|GLib.IOCondition.HUP
+    ): Gio.Cancellable {
+        socket = socket instanceof Gio.SocketConnection ?
+            socket.get_socket()
+        : socket;
+
+        const cancellable = Gio.Cancellable.new();
+        const chaneru = GLib.IOChannel.unix_new(socket.get_fd());
+        const source = GLib.io_create_watch(chaneru, conditions);
+
+        source.set_priority(GLib.PRIORITY_LOW);
+        source.set_callback(((_: GLib.IOChannel, condition: GLib.IOCondition) => {
+            if(condition === GLib.IOCondition.HUP) {
+                cancellable.cancel();
+                callback?.(condition);
+                return false;
+            }
+
+            if(callback)
+                return callback(condition);
+
+            return true;
+        }) as never);
+        source.attach(null);
+        
+        const id = GObject.Object.prototype.connect.call(cancellable, "cancelled", () => {
+            cancellable.disconnect(id);
+            source.destroy();
+        });
+
+        return cancellable;
+    }
+
+    /** watch a socket connection for output
+      * when `timeout` is reached, the `GIOWatch` will be destroyed and `GCancellable::cancelled` eimtted.
+      *
+      * @param conn the `GSocketConnection` to watch for output 
+      * @param callback called when the connection receives data
+      * @param timeout maximum time to wait for a response in milliseconds. set to -1 to run indefinitely.
+      *
+      * @returns a `GCancellable`, which can be used to cancel the `GIOWatch` */
+    protected watchOutput(
+        conn: Gio.SocketConnection,
+        callback?: (data: string) => void,
+        timeout: number = -1,
+        onTimeout?: () => void
+    ): Gio.Cancellable {
+        let pending: boolean = false;
+        const cancellable = this.watchSocket(conn, (cond) => {
+            if(cond === GLib.IOCondition.HUP) {
+                conn.close(null);
+                console.log("Socket: IO and Socket Connection were closed");
+                cancellable.cancel();
+                return false;
+            }
+
+            if(conn.is_closed()) {
+                console.warn("Socket: The Socket connection is closed");
+                cancellable.cancel();
+                return false;
+            }
+
+            if(conn.inputStream.is_closed() || conn.outputStream.is_closed()) {
+                console.warn("Socket: One of the streams got closed, the IO watch will be removed");
+                cancellable.cancel();
+                return false;
+            }
+
+            if(pending) {
+                console.debug("Socket: Stream: There already is a read on its way, this call was ignored");
+                cancellable.cancel();
+                return true;
+            }
+
+            pending = true;
+            conn.inputStream.read_bytes_async(2048, GLib.PRIORITY_DEFAULT, null, (_, res) => {
+                let str!: string;
+                pending = false;
+
+                try {
+                    str = this.decoder.decode(conn.inputStream.read_bytes_finish(res).toArray());
+                } catch(e) {
+                    console.error("Socket: An error occurred while reading the input stream bytes:", e);
+                    return;
+                }
+
+                callback?.(str);
+            });
+            return true;
+        });
+
+        if(timeout >= 0)
+            setTimeout(() => {
+                cancellable.cancel();
+                onTimeout?.();
+            }, timeout);
+
+        return cancellable;
     }
 
     /** allows to create a connection paired with the instance scope.
@@ -179,12 +244,13 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
       * sends a message to the socket using a GSocketConnection.
       * 
       * @param message contents to send to the socket
-      * @param wait whether to wait for the socket to finish the connection
+      * @param wait whether to wait for the socket to send a response
       *
       * @returns a `string` promise, that returns the socket's response to the message, can be null. */
     async simpleSend(message: string, wait: boolean = false): Promise<string|null> {
         return new Promise((resolve, reject) => {
             const client = Gio.SocketClient.new();
+
             client.set_family(Gio.SocketFamily.UNIX);
             client.set_socket_type(Gio.SocketType.STREAM);
             client.connect_async(this.address!, null, (_, res) => {
@@ -197,8 +263,8 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
                 }
 
                 conn.outputStream.write_bytes_async(
-                    (this.encoder ?? (this.encoder = new TextEncoder())).encode(message),
-                    GLib.PRIORITY_DEFAULT,
+                    this.encoder.encode(message),
+                    GLib.PRIORITY_LOW,
                     null,
                     (_, res) => {
                         try {
@@ -210,43 +276,20 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
                                 return;
                             }
 
-                            let output: string = "";
-                            const chaneru = GLib.IOChannel.unix_new(conn.get_socket().get_fd());
-                            GLib.io_add_watch(
-                                chaneru, 
-                                GLib.PRIORITY_DEFAULT, 
-                                GLib.IOCondition.IN | GLib.IOCondition.PRI | GLib.IOCondition.HUP,
-                                (_, cond) => {
-                                    if(cond === GLib.IOCondition.HUP) {
-                                        resolve(output);
-                                        conn.close();
-                                        return false;
-                                    }
+                            if(!wait) {
+                                resolve(null);
+                                return;
+                            }
 
-                                    const data = Gio.DataInputStream.new(conn.inputStream);
-                                    data.read_upto_async('\x00', -1, GLib.PRIORITY_DEFAULT, null, (_, res) => {
-                                        let out!: string;
-                                        try {
-                                            out = data.read_upto_finish(res)[0];
-                                            output = out;
-                                        } catch(e) {
-                                            resolve(output);
-                                            return;
-                                        }
-                                            
-                                    });
-
-                                    if(wait) {
-                                        resolve(output);
-                                        conn.close();
-                                        return false;
-                                    }
-
-                                    return true;
-                                }
-                            );
+                            this.watchOutput(conn, (data) => {
+                                resolve(data);
+                                conn.close();
+                            }, 10000, () => {
+                                const err = new Error("Socket: 10 Seconds timeout reached");
+                                reject(err);
+                                this.emit("panic", err);
+                            });
                         } catch(e) {
-                            this.emit("panic", e as Gio.IOErrorEnum);
                         }
                     }
                 );
@@ -275,7 +318,7 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
                 }
 
                 conn.outputStream.write_bytes_async(
-                    (this.encoder ?? (this.encoder = new TextEncoder())).encode(message),
+                    this.encoder.encode(message),
                     GLib.PRIORITY_DEFAULT,
                     null,
                     (_, res) => {
@@ -290,7 +333,7 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
 
                             resolve(conn.inputStream);
                         } catch(e) {
-                            this.emit("panic", e as Gio.IOErrorEnum);
+                            this.emit("panic", e as Error);
                         }
                     }
                 );
@@ -324,7 +367,7 @@ export namespace Socket {
         /** client-only signal. emitted when a message is sent to the server */
         "sent": (content: string) => void;
         /** emitted when a stream error occurs, if it ever happen */
-        "panic": (error: Gio.IOErrorEnum) => void;
+        "panic": (error: Error) => void;
     }
 
     export enum Type {

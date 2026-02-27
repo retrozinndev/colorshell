@@ -2,13 +2,14 @@ import { execAsync } from "ags/process";
 import { getter, register, signal } from "ags/gobject";
 import { Gdk } from "ags/gtk4";
 import { createRoot, getScope, Scope } from "ags";
-import { makeDirectory } from "./utils";
+import { createSubscription, makeDirectory } from "./utils";
 import { Notifications } from "./notifications";
 import { time } from "./utils";
 
 import GObject from "ags/gobject";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
+import { generalConfig } from "../config";
 
 
 @register({ GTypeName: "Recording" })
@@ -24,7 +25,6 @@ export class Recording extends GObject.Object {
 
     /** Default extension: mp4(h264) */
     #extension: string = "mp4";
-    #recordAudio: boolean = false;
     #area: (Gdk.Rectangle|null) = null;
     #startedAt: number = -1;
     #process: (Gio.Subprocess|null) = null;
@@ -82,19 +82,10 @@ export class Recording extends GObject.Object {
     /** Recording output file name. null if screen is not being recorded */
     public get output() { return this.#output; }
 
-    /** Currently unsupported property */
-    public get recordAudio() { return this.#recordAudio; }
-    public set recordAudio(newValue: boolean) {
-        if(this.recording) return;
-
-        this.#recordAudio = newValue;
-        this.notify("record-audio");
-    }
 
     constructor() {
         super();
-        const videosDir = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_VIDEOS);
-        if(videosDir) this.#path = `${videosDir}/Recordings`;
+        this.#path = `${GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_VIDEOS)}/Recordings`;
     }
 
     public static getDefault() {
@@ -122,6 +113,7 @@ export class Recording extends GObject.Object {
             this.#process = Gio.Subprocess.new([
                 "wf-recorder", 
                 ...(area ? [ `-g`, areaString ] : []),
+                ...(generalConfig.getProperty("screen_recording.include_audio") ? ["-a"] : []),
                 "-f",
                 `${this.path}/${this.output!}`
             ], Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE);
@@ -133,11 +125,7 @@ export class Recording extends GObject.Object {
             this.#startedAt = time.get().to_unix();
             this.notify("started-at");
 
-            const timeSub = time.subscribe(() => {
-                this.notify("recording-time");
-            });
-
-            this.#recordingScope.onCleanup(timeSub);
+            createSubscription(time, () => this.notify("recording-time"));
         });
     }
 
@@ -168,11 +156,15 @@ export class Recording extends GObject.Object {
                     onAction: () => {
                         execAsync(["xdg-open", `${path}/${output}`]);
                     }
+                }, {
+                    text: "Open file directory",
+                    id: "view-directory",
+                    onAction: () => execAsync(`xdg-open '${path}'`)
                 }
             ],
-            appName: "Screen Recording",
-            summary: "Screen Recording saved",
-            body: `Saved as ${path}/${output}`
+            appName: "colorshell",
+            summary: "Screen Recording",
+            body: `Saved recording as "${path}/${output}"`
         });
     }
 };

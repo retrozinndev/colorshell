@@ -27,4 +27,22 @@
         <file alias="shield-safe-symbolic.svg">icons/shield-safe-symbolic.svg</file>
         <file alias="user-trash-symbolic.svg">icons/user-trash-symbolic.svg</file>
     </gresource>
+
+    <!-- Configuration files -->
+    <gresource prefix="/io/github/retrozinndev/colorshell/config">
+        <file alias="hyprlock.conf">config/hyprlock.conf</file>
+    </gresource>
+
+    <!-- Compositor-specific configuration -->
+    <gresource prefix="/io/github/retrozinndev/colorshell/config/hyprland">
+        <file alias=".last-updated">config/hyprland/.last-updated</file>
+        <file alias="environment.conf">config/hyprland/environment.conf</file>
+        <file alias="decorations.conf">config/hyprland/decorations.conf</file>
+        <file alias="bindings.conf">config/hyprland/bindings.conf</file>
+        <file alias="rules.conf">config/hyprland/rules.conf</file>
+    </gresource>
+    <!--
+    <gresource prefix="/io/github/retrozinndev/colorshell/config/niri">
+    </gresource>
+    -->
 </gresources>

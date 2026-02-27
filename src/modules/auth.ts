@@ -9,7 +9,7 @@ import GLib from "gi://GLib?version=2.0";
 import AstalAuth from "gi://AstalAuth?version=0.1";
 
 
-@register({ GTypeName: "AuthAgent" })
+@register({ GTypeName: "ClshPolKit" })
 export class Auth extends PolkitAgent.Listener {
     private static instance: Auth;
     #handle: any;

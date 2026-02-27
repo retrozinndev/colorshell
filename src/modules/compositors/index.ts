@@ -121,6 +121,7 @@ export namespace Compositor {
         #title: string = "";
         #mapped: boolean = true;
         #position: [number, number] = [0, 0];
+        #size: [number, number] = [1, 1];
         #xwayland: boolean = false;
 
         @getter(gtype<string|null>(String))
@@ -144,6 +145,9 @@ export namespace Compositor {
         @getter(Boolean)
         get mapped() { return this.#mapped; }
 
+        @getter(Array)
+        get size() { return this.#size; }
+
         constructor(props: {
             address?: string;
             title?: string;
@@ -152,6 +156,8 @@ export namespace Compositor {
             initialClass?: string;
             /** [x, y] */
             position?: [number, number];
+            /** [width, height] */
+            size?: [number, number];
         }) {
             super();
 
@@ -168,6 +174,9 @@ export namespace Compositor {
 
             if(props.position !== undefined)
                 this.#position = props.position;
+
+            if(props.size !== undefined)
+                this.#size = props.size;
 
             this.#initialClass = props.initialClass !== undefined ?
                 props.initialClass

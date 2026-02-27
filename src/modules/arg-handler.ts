@@ -2,17 +2,18 @@ import { Gtk } from "ags/gtk4";
 import { Wireplumber } from "./volume";
 import { Windows } from "../windows";
 import { restartInstance } from "./reload-handler";
-import { timeout } from "ags/time";
 import { Runner } from "../runner/Runner";
 import { showWorkspaceNumber } from "../window/bar/widgets/Workspaces";
 import { playSystemBell } from "./utils";
 import { Shell } from "../app";
+import { Screenshot } from "./screenshot";
 import { generalConfig } from "../config";
 import { execApp } from "./apps";
+import { exec } from "ags/process";
 
 import Media from "./media";
-import AstalIO from "gi://AstalIO";
 import AstalMpris from "gi://AstalMpris";
+import GLib from "gi://GLib?version=2.0";
 
 
 export type RemoteCaller = {
@@ -20,7 +21,7 @@ export type RemoteCaller = {
     print_literal: (message: string) => void
 };
 
-let wsTimeout: AstalIO.Time|undefined;
+let wsPeekTimeout: GLib.Source|undefined;
 const help = `Manage Astal Windows and do more stuff. From retrozinndev's colorshell, \
 made using GTK4, AGS, Gnim and Astal libraries by Aylur.
 
@@ -42,14 +43,16 @@ ${DEVEL ? `
 Development Tools:
   dev: tools to help debugging colorshell
 ` : ""}
-Other options:
+Others:
   runner [initial_text]: open the application runner, optionally add an initial search.
   run app[.desktop] [client_modifiers]: run applications from the cli, see "run help".
+  lock: quick-lock your user with hyprlock.
+  screenshot [full|active]: select an area to screenshot(add "full" to take a full screenshot or "active" to take from the active client).
   peek-workspace-num [millis]: peek the workspace numbers on bar window.
   v, version: display current colorshell version.
   h, help: shows this help message.
 
-2025 (c) retrozinndev's colorshell, licensed under the BSD 3-Clause License.
+2026 (c) colorshell, licensed under the BSD 3-Clause License.
 https://github.com/retrozinndev/colorshell
 `.trim();
 
@@ -110,17 +113,42 @@ export function handleArguments(cmd: RemoteCaller, args: Array<string>): number 
             return 0;
 
         case "peek-workspace-num":
-            if(wsTimeout) {
+            if(wsPeekTimeout) {
                 cmd.print_literal("Workspace numbers are already showing");
                 return 0;
             }
 
             showWorkspaceNumber(true);
-            wsTimeout = timeout(Number.parseInt(args[1]) || 2200, () => {
+            wsPeekTimeout = setTimeout(() => {
                 showWorkspaceNumber(false);
-                wsTimeout = undefined;
-            });
+                wsPeekTimeout = undefined;
+            }, Number.parseInt(args[1]) || 2200);
             cmd.print_literal("Toggled workspace numbers");
+            return 0;
+
+        case "lock":
+            execApp(
+                `hyprlock --config ${Shell.runtimeDir.peek_path()!}/config/hyprlock.conf`
+            );
+            return 0;
+
+        case "screenshot":
+            try {
+                exec("killall slurp"); // kill any active selection layer
+            } catch(_) {}
+
+            if(args[1] !== undefined) {
+                if(/^f(ull)?$/.test(args[1])) {
+                    Screenshot.getDefault().take(Screenshot.Mode.FULL).catch(e => console.error(e));
+                    return 0;
+                }
+                if(/^a(ctive)?$/.test(args[1])) {
+                    Screenshot.getDefault().take(Screenshot.Mode.ACTIVE_WINDOW).catch(e => console.error(e));
+                    return 0;
+                }
+            }
+
+            Screenshot.getDefault().take().catch(e => console.error(e)); // take screenshot in default mode
             return 0;
     }
 

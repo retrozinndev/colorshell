@@ -3,9 +3,11 @@ import { userData } from "../config";
 import GObject, { getter, register, setter } from "ags/gobject";
 
 import GLib from "gi://GLib?version=2.0";
+import Gio from "gi://Gio?version=2.0";
+import { getPID, killProc } from "./utils";
 
 
-@register({ GTypeName: "NightLight" })
+@register({ GTypeName: "ClshNightLight" })
 export class NightLight extends GObject.Object {
     private static instance: NightLight;
 
@@ -14,10 +16,11 @@ export class NightLight extends GObject.Object {
     public static readonly identityTemperature = 6000;
     public static readonly maxGamma = 100;
 
-    #watchInterval: GLib.Source;
+    #watchInterval?: GLib.Source;
     #temperature: number = NightLight.identityTemperature;
     #gamma: number = NightLight.maxGamma;
     #identity: boolean = false;
+    #proc: Gio.Subprocess|null = null;
 
     @getter(Number)
     public get temperature() { return this.#temperature; }
@@ -44,12 +47,23 @@ export class NightLight extends GObject.Object {
     constructor() {
         super();
 
-        this.loadData();
-        this.#watchInterval = setInterval(() => this.syncData(), 10000);
+        const pid = getPID("hyprsunset");
+        if(pid != null)
+            killProc(pid);
+
+        // we wait, because the process can take some time to quit
+        setTimeout(() => {
+            this.restartDaemon().then(() => {
+                this.loadData();
+                this.#watchInterval = setInterval(() => this.syncData(), 10000);
+            }).catch(e => {
+                console.error("Night Light: Failed to initialize daemon(is it installed?):", e);
+            });
+        }, 500);
     }
 
     vfunc_dispose(): void {
-        this.#watchInterval.destroy();
+        this.#watchInterval?.destroy();
     }
 
     public static getDefault(): NightLight {
@@ -57,6 +71,34 @@ export class NightLight extends GObject.Object {
             this.instance = new NightLight();
 
         return this.instance;
+    }
+
+    public async quitDaemon(): Promise<boolean> {
+        if(!this.#proc)
+            return false;
+
+        return new Promise((resolve, reject) => {
+            this.#proc!.wait_async(null, (_, res) => {
+                let result!: boolean;
+                try {
+                    result = this.#proc!.wait_finish(res);
+                } catch(e) {
+                    reject(e);
+                    return;
+                }
+
+                resolve(result);
+            });
+
+            this.#proc!.force_exit();
+        });
+    }
+
+    public async restartDaemon(): Promise<void> {
+        if(this.#proc)
+            await this.quitDaemon();
+
+        this.#proc = Gio.Subprocess.new(["hyprsunset"], Gio.SubprocessFlags.STDOUT_SILENCE);
     }
 
     private syncData(): void {

@@ -64,6 +64,10 @@ export function getIconByAppName(appName: string): (string|undefined) {
 
     if(lookupIcon(appName.toLowerCase()))
        return appName.toLowerCase();
+
+    const nameNoSpecialChars = appName.toLowerCase().replace(/[!?:,~]/g, ""); // solution for cases like "osu!"
+    if(lookupIcon(nameNoSpecialChars))
+        return nameNoSpecialChars;
    
     const nameReverseDNS = appName.split('.');
     const lastItem = nameReverseDNS[nameReverseDNS.length - 1];
@@ -102,6 +106,17 @@ export function getAppIcon(app: (string|AstalApps.Application)): (string|undefin
 
 export function getSymbolicIcon(app: (string|AstalApps.Application)): (string|undefined) {
     const icon = getAppIcon(app);
+
+    if(icon === undefined)
+        return undefined;
+
+    const commonSymbolic = `${icon}-symbolic`;
+    if(lookupIcon(commonSymbolic))
+        return commonSymbolic;
+
+    const nameNoSpecialChars = `${icon.replace(/[!?:,~]/g, "")}-symbolic`;
+    if(lookupIcon(nameNoSpecialChars))
+        return nameNoSpecialChars;
 
     return (icon && lookupIcon(`${icon}-symbolic`)) ?
         `${icon}-symbolic`

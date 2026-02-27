@@ -5,11 +5,16 @@ import AstalHyprland from "gi://AstalHyprland";
 import GLib from "gi://GLib?version=2.0";
 import { Socket } from "../socket";
 import { exec } from "ags/process";
+import Gio from "gi://Gio?version=2.0";
+import { decoder, makeDirectory, playSystemBell } from "../utils";
+import { Shell } from "../../app";
 
 
 @register({ GTypeName: "ClshCompositorHyprland" })
 export class CompositorHyprland extends Compositor {
     #eventSock: Socket;
+    #configDir: Gio.File = Gio.File.new_for_path(`${Shell.runtimeDir.peek_path()!}/config/hyprland`);
+    #ignoreConfigReload: boolean = false;
     hyprland: AstalHyprland.Hyprland = AstalHyprland.get_default();
 
     constructor() {
@@ -18,6 +23,8 @@ export class CompositorHyprland extends Compositor {
         const instSignature = GLib.getenv("HYPRLAND_INSTANCE_SIGNATURE");
         if(instSignature === null || instSignature.trim() === "")
             throw new Error("Compositor: Hyprland: Couldn't get instance signature");
+
+        this.loadConfigs();
 
         this.#eventSock = new Socket(
             Socket.Type.CLIENT,
@@ -52,7 +59,7 @@ export class CompositorHyprland extends Compositor {
                 info = undefined;
             }
 
-            //console.log(event, info); // debugging
+            //console.log(`${event}:`, info); // debugging
             this.handleEvents(event, data);
         });
     }
@@ -69,7 +76,8 @@ export class CompositorHyprland extends Compositor {
                         class: focusedClient.class ?? "",
                         initialClass: focusedClient.initialClass ?? "",
                         mapped: focusedClient.mapped,
-                        position: [focusedClient.at[0], focusedClient.at[1]],
+                        position: focusedClient.at,
+                        size: focusedClient.size,
                         title: focusedClient.title ?? ""
                     });
 
@@ -80,11 +88,97 @@ export class CompositorHyprland extends Compositor {
                 this._focusedClient = null;
                 this.notify("focused-client");
                 break;
+
+            case "configreloaded":
+                if(!this.#ignoreConfigReload) {
+                    this.#ignoreConfigReload = true;
+                    this.source();
+                    return;
+                }
+
+                this.#ignoreConfigReload &&= false;
+                break;
+
+            case "bell":
+                playSystemBell();
+            break;
         }
     }
 
     private getClients(): Array<CompositorHyprland.Client> {
         return (JSON.parse(exec("hyprctl clients -j")) as Array<CompositorHyprland.Client>);
+    }
+
+    
+    private source(): void {
+        const names = Gio.resources_enumerate_children(
+            "/io/github/retrozinndev/colorshell/config/hyprland",
+            Gio.ResourceLookupFlags.NONE
+        );
+        exec("hyprctl reload");
+        names.forEach(name => {
+            if(!name.endsWith(".conf"))
+                return;
+
+            try {
+                const out = exec(
+                    `hyprctl keyword source ${this.#configDir.peek_path()!}/${name}`
+                );
+                !/^ok.*$/.test(out) && console.log(out)
+            } catch(e) {
+                console.error(e);
+            }
+        });
+    }
+
+    /** load necessary hyprland configs from gresource */
+    private loadConfigs(): void {
+        const userLastUpdatedFile = Gio.File.new_for_path(`${this.#configDir.peek_path()!}/.last-updated`);
+        const names = Gio.resources_enumerate_children(
+            "/io/github/retrozinndev/colorshell/config/hyprland",
+            null
+        );
+
+        if(userLastUpdatedFile.query_exists(null)) {
+            // check if data is different
+            const configlastUpdated = decoder.decode(Gio.resources_lookup_data(
+                "/io/github/retrozinndev/colorshell/config/hyprland/.last-updated", null
+            ).toArray());
+
+            const userLastUpdated = decoder.decode(userLastUpdatedFile.read(null).read_bytes(32, null).toArray());
+
+            if(configlastUpdated === userLastUpdated) {
+                this.source();
+                return; // no need to update, since it's unchanged/same
+            }
+        }
+
+        const files = names.map(name => [
+            name,
+            Gio.resources_lookup_data(
+                `/io/github/retrozinndev/colorshell/config/hyprland/${name}`,
+                null
+            )
+        ] satisfies [string, GLib.Bytes]);
+
+        makeDirectory(`${Shell.runtimeDir.peek_path()!}/config/hyprland`);
+        files.forEach(([name, data]) => {
+            const file = Gio.File.new_for_path(`${this.#configDir.peek_path()!}/${name}`);
+
+            try {
+                !file.query_exists(null) && 
+                    file.create(null, null);
+
+                file.replace_contents(
+                    data.toArray(), null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null
+                );
+            } catch(e) {
+                console.error(`Compositor: Hyprland: Failed to write config file "${name}": ${(e as Error).message}`);
+                console.debug(e);
+            }
+        });
+
+        this.source();
     }
 
     private getActiveClient(): CompositorHyprland.Client|null {
@@ -101,10 +195,12 @@ export namespace CompositorHyprland {
     export type Event = "activewindow"
         | "activewindowv2"
         | "workspace"
+        | "configreloaded"
         | "windowtitle"
         | "windowtitlev2"
         | "workspacev2"
         | "focusedmon"
+        | "bell"
         | "focusedmonv2";
 
     export type Client = {
