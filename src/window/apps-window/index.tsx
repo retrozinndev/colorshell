@@ -4,7 +4,7 @@ import { getPopupWindowContainer, PopupWindow } from "../../widget/PopupWindow";
 
 import AstalApps from "gi://AstalApps";
 import Pango from "gi://Pango?version=1.0";
-import { createBinding, createRoot, createState, For } from "ags";
+import { createRoot, createState } from "ags";
 import { escapeUnintendedMarkup } from "../../modules/utils";
 
 
