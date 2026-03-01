@@ -1,5 +1,5 @@
 import { execApp, getAstalApps, lookupIcon, updateApps } from "../../modules/apps";
-import { Runner } from "../Runner";
+import { Runner } from "..";
 
 export const PluginApps = {
     // Do not provide prefix, so it always runs.

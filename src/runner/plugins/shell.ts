@@ -1,4 +1,4 @@
-import { Runner } from "../Runner";
+import { Runner } from "..";
 import { Notifications } from "../../modules/notifications";
 
 import GLib from "gi://GLib?version=2.0";

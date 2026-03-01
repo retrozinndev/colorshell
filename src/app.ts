@@ -1,16 +1,6 @@
 import "ags/overrides"; // thanks Aylur!!
 import "./config";
-import { 
-    PluginApps, 
-    PluginClipboard, 
-    PluginMedia, 
-    PluginShell, 
-    PluginWallpapers, 
-    PluginWebSearch,
-    PluginKill
-} from "./runner/plugins";
 import { handleArguments } from "./modules/arg-handler";
-import { Runner } from "./runner/Runner";
 import { Windows } from "./windows";
 import { Notifications } from "./modules/notifications";
 import { Wallpaper } from "./modules/wallpaper";
@@ -21,39 +11,24 @@ import { createBinding, createComputed, createRoot, getScope, onCleanup, Scope }
 import { OSDModes, triggerOSD } from "./window/osd";
 import { programArgs, programInvocationName } from "system";
 import { setConsoleLogDomain } from "console";
-import { createScopedConnection, createSubscription, encoder, makeDirectory, secureBaseBinding } from "./modules/utils";
+import { createScopedConnection, createSubscription, encoder, secureBaseBinding } from "./modules/utils";
 import { exec } from "ags/process";
 import { NightLight } from "./modules/nightlight";
 import { Backlights } from "./modules/backlight";
 import { initCompositor } from "./compositors";
 import { Input } from "./modules/input";
+import { Idle } from "./modules/idle";
 import GObject, { register } from "ags/gobject";
-
 import Media from "./modules/media";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import Adw from "gi://Adw?version=1";
 import AstalWp from "gi://AstalWp";
-import { Idle } from "./modules/idle";
+
 
 Gio._promisify(Gio.DBus, "get", "get_finish");
 Gio._promisify(Gio.DBusProxy, "new", "new_finish");
 Gio._promisify(Gio.DBusConnection.prototype, "call", "call_finish");
-
-const runnerPlugins: Array<Runner.Plugin> = [
-    PluginApps,
-    PluginShell,
-    PluginWebSearch,
-    PluginKill,
-    PluginMedia,
-    PluginWallpapers,
-    PluginClipboard
-];
-
-const defaultWindows: Array<string> = [ "bar" ];
-
-GLib.unsetenv("LD_PRELOAD"); // so child processes won't use gtk-layer-shell by default
-
 
 @register({ GTypeName: "Shell" })
 export class Shell extends Adw.Application {
@@ -145,10 +120,6 @@ export class Shell extends Adw.Application {
 
         if(cmd.isRemote) {
             try {
-                // warn user that this method is pretty slow
-                cmd.print_literal("\nColorshell: !! Using a remote instance to communicate is pretty slow, \
-you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster response.\n\n");
-
                 const res = handleArguments(cmd, args);
 
                 cmd.done();
@@ -174,18 +145,18 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
     }
 
     vfunc_activate(): void {
-        super.vfunc_activate();
         this.hold();
 
-        createRoot(() => {
-            this.init();
-            this.main();
+        createRoot((dispose) => {
+            this.#connections.set(this, this.connect("shutdown", () => dispose()));
             onCleanup(() => {
-                console.log("Colorshell: disposing connections and quitting because of ::shutdown");
                 this.#connections.forEach((ids, obj) => Array.isArray(ids) ?
                     ids.forEach(id => obj.disconnect(id))
                 : obj.disconnect(ids));
             });
+
+            this.#scope = getScope();
+            this.main();
         });
     }
 
@@ -235,18 +206,18 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
     private init(): void {
         console.log("Colorshell: Initializing things");
 
-        !Shell.runtimeDir.query_exists(null) &&
-            Shell.runtimeDir.make_directory_with_parents(null);
+        // create shell directories
+        [
+            Shell.runtimeDir,
+            Shell.cacheDir,
+            Shell.dataDir,
+            Shell.runtimeConfigDir
+        ].forEach(dir => {
+            if(dir.query_exists(null))
+                return;
 
-        !Shell.cacheDir.query_exists(null) &&
-            Shell.cacheDir.make_directory_with_parents(null);
-
-        !Shell.dataDir.query_exists(null) &&
-            Shell.dataDir.make_directory_with_parents(null);
-
-        !Shell.runtimeConfigDir.query_exists(null) &&
-            Shell.runtimeConfigDir.make_directory_with_parents(null);
-
+            dir.make_directory_with_parents(null);
+        });
 
         const pidFile = Gio.File.new_for_path(`${Shell.runtimeDir.peek_path()!}/.pid`);
         this.getAppPID().then((pid) => {
@@ -286,7 +257,6 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
         Gtk.IconTheme.get_for_display(Gdk.Display.get_default()!)
             .add_resource_path("/io/github/retrozinndev/colorshell/icons")
 
-        makeDirectory(`${Shell.runtimeDir.peek_path()!}/config`);
         Gio.resources_enumerate_children(
             "/io/github/retrozinndev/colorshell/config",
             Gio.ResourceLookupFlags.NONE
@@ -299,8 +269,6 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
 
             file.replace_contents_bytes_async(data, null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null, null);
         });
-
-        initCompositor();
 
         this.#socketFile = Gio.File.new_for_path(`${Shell.runtimeDir.peek_path()!}/.sock`);
 
@@ -371,21 +339,22 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
     }
 
     private main(): void {
-        this.#scope = getScope();
-        this.#connections.set(this, this.connect("shutdown", () => this.#scope.dispose()));
+        this.init();
 
+        console.log("Colorshell: Initializing modules");
+        Wallpaper.getDefault();
+        Stylesheet.getDefault();
+
+        initCompositor();
+
+        Clipboard.getDefault();
         Input.getDefault();
         NightLight.getDefault();
         Idle.getDefault();
         Media.getDefault();
-        Clipboard.getDefault();
 
-        console.log("Colorshell: Initializing Wallpaper and Stylesheet modules");
-        Wallpaper.getDefault();
-        Stylesheet.getDefault();
-
-        console.log("Runner: Adding plugins");
-        runnerPlugins.forEach(plugin => Runner.addPlugin(plugin));
+        if(!Windows.getDefault().isOpen("bar"))
+            Windows.getDefault().open("bar");
 
         createSubscription(
             createComputed([
@@ -415,12 +384,11 @@ you should use the socket in the XDG_RUNTIME_DIR/colorshell.sock for a faster re
                 Windows.getDefault().open("floating-notifications");
             })
         ]);
-
-        defaultWindows.forEach(w => Windows.getDefault().open(w));
     }
 
     quit(): void {
         this.release();
+        super.quit();
     }
 }
 

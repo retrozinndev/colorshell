@@ -1,6 +1,6 @@
 import { Gdk, Gtk } from "ags/gtk4";
 import { Wallpaper } from "../../modules/wallpaper";
-import { Runner } from "../Runner";
+import { Runner } from "..";
 import { createRoot, jsx } from "ags";
 import { createScopedConnection } from "gnim-utils";
 import { ResultWidget } from "../widgets/ResultWidget";

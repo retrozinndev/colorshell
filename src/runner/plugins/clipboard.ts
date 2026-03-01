@@ -1,6 +1,6 @@
 import { Gtk } from "ags/gtk4";
-import { Clipboard, ClipboardItem } from "../../modules/clipboard";
-import { Runner } from "../Runner";
+import { Clipboard } from "../../modules/clipboard";
+import { Runner } from "..";
 import { jsx } from "ags/gtk4/jsx-runtime";
 
 import Fuse from "fuse.js";
@@ -12,11 +12,11 @@ class _PluginClipboard implements Runner.Plugin {
     prioritize = true;
     
     init() {
-        const items: ReadonlyArray<ClipboardItem> = [...Clipboard.getDefault().history];
+        const items: ReadonlyArray<Clipboard.Item> = [...Clipboard.getDefault().history];
         this.#fuse = new Fuse(
             items,
             {
-                keys: [ "id", "preview" ] satisfies Array<keyof ClipboardItem>,
+                keys: [ "id", "preview" ] satisfies Array<keyof Clipboard.Item>,
                 ignoreDiacritics: false,
                 isCaseSensitive: false,
                 shouldSort: true,
@@ -25,7 +25,7 @@ class _PluginClipboard implements Runner.Plugin {
         );
     }
 
-    private clipboardResult(item: ClipboardItem): Runner.Result {
+    private clipboardResult(item: Clipboard.Item): Runner.Result {
         return {
             icon: jsx(Gtk.Label, { 
                 label: `${item.id}`,
@@ -55,7 +55,7 @@ class _PluginClipboard implements Runner.Plugin {
         
         return this.#fuse.search(search, {
             limit: limit ?? Infinity
-        }).map(result => this.clipboardResult(result.item as ClipboardItem))
+        }).map(result => this.clipboardResult(result.item as Clipboard.Item))
     }
 }
 

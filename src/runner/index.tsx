@@ -4,6 +4,15 @@ import { getPopupWindowContainer, PopupWindow } from "../widget/PopupWindow";
 import { updateApps } from "../modules/apps";
 import { ResultWidget, ResultWidgetProps } from "./widgets/ResultWidget";
 import { Windows } from "../windows";
+import { 
+    PluginApps, 
+    PluginClipboard, 
+    PluginMedia, 
+    PluginShell, 
+    PluginWallpapers, 
+    PluginWebSearch,
+    PluginKill
+} from "./plugins";
 
 import AstalHyprland from "gi://AstalHyprland";
 import GLib from "gi://GLib?version=2.0";
@@ -47,7 +56,15 @@ export interface Plugin {
 export let instance: (Astal.Window|null) = null;
 
 let gtkEntry: (Gtk.Entry|null) = null;
-const plugins = new Set<Runner.Plugin>();
+const plugins = new Set<Runner.Plugin>([
+    PluginApps,
+    PluginClipboard, 
+    PluginMedia, 
+    PluginShell, 
+    PluginWallpapers, 
+    PluginWebSearch,
+    PluginKill
+]);
 const ignoredKeys = [
     Gdk.KEY_space,
     Gdk.KEY_Shift_L,

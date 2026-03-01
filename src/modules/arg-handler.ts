@@ -2,7 +2,7 @@ import { Gtk } from "ags/gtk4";
 import { Wireplumber } from "./volume";
 import { Windows } from "../windows";
 import { restartInstance } from "./reload-handler";
-import { Runner } from "../runner/Runner";
+import { Runner } from "../runner";
 import { showWorkspaceNumber } from "../window/bar/widgets/Workspaces";
 import { playSystemBell } from "./utils";
 import { Shell } from "../app";

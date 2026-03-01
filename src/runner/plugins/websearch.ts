@@ -1,5 +1,5 @@
 import AstalHyprland from "gi://AstalHyprland";
-import { Runner } from "../Runner";
+import { Runner } from "..";
 
 
 const searchEngines = {

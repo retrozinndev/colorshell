@@ -1,5 +1,5 @@
 import { execAsync } from "ags/process";
-import { Runner } from "../Runner";
+import { Runner } from "..";
 import { Notifications } from "../../modules/notifications";
 
 export const PluginKill = {

@@ -1,5 +1,5 @@
 import { createBinding, createComputed } from "ags";
-import { Runner } from "../Runner";
+import { Runner } from "..";
 import { secureBaseBinding } from "../../modules/utils";
 import { tr } from "../../i18n/intl";
 
