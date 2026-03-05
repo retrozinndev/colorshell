@@ -22,34 +22,34 @@ export type RemoteCaller = {
 };
 
 let wsPeekTimeout: GLib.Source|undefined;
-const help = `Manage Astal Windows and do more stuff. From retrozinndev's colorshell, \
-made using GTK4, AGS, Gnim and Astal libraries by Aylur.
+const help = `Manage colorshell's windows, features and get extra info.
+Made using GTK4, AGS, Gnim and Astal libraries.
 
 Window Management:
-  open [window]: opens the specified window.
-  close [window]: closes all instances of specified window.
-  toggle [window]: toggle-open/close the specified window.
-  windows: list shell windows and their respective status.
-  reload: quit this instance and start a new one.
-  reopen: restart all open-windows.
-  quit: exit the main instance of the shell.
+  windows: list all the available windows and their states
+  reopen: close all of the currently-open windows and re-open them
+  open [name]: open the window with "name"
+  close [name]: close an already-open window with "name"
+  toggle [name]: toggle-open a window with "name"(closes if open, opens if closed)
 
 Audio Controls:
-  volume: speaker and microphone volume controller, see "volume help".
+  volume: speaker and microphone volume controller, see "volume help"
 
 Media Controls:
-  media: manage colorshell's active player, see "media help".
+  media: manage colorshell's active player, see "media help"
 ${DEVEL ? `
 Development Tools:
   dev: tools to help debugging colorshell
 ` : ""}
 Others:
-  runner [initial_text]: open the application runner, optionally add an initial search.
-  run app[.desktop] [client_modifiers]: run applications from the cli, see "run help".
-  lock: quick-lock your user with hyprlock.
-  screenshot [full|active]: select an area to screenshot(add "full" to take a full screenshot or "active" to take from the active client).
-  peek-workspace-num [millis]: peek the workspace numbers on bar window.
-  v, version: display current colorshell version.
+  runner [prefix]: open the application runner, optionally add an initial search(prefix)
+  run app[.desktop] [client_modifiers]: run applications from the cli, see "run help"
+  lock: quick-lock your user with hyprlock
+  screenshot [full|active]: select an area to screenshot(add "full" to take a full screenshot or "active" to take from the active client)
+  peek-workspace-num [millis]: peek the workspace numbers on bar window
+  v, version [-r]: display current colorshell version. (optionally add "-r" to only show the raw version string)
+  reload: restart current colorshell instance
+  quit: exit the main instance of the shell.
   h, help: shows this help message.
 
 2026 (c) colorshell, licensed under the BSD 3-Clause License.
@@ -59,12 +59,18 @@ https://github.com/retrozinndev/colorshell
 export function handleArguments(cmd: RemoteCaller, args: Array<string>): number {
     switch(args[0]) {
         case "help":
+        case "-help":
         case "h":
+        case "-h":
             cmd.print_literal(help);
             return 0;
 
         case "version":
         case "v":
+            if(args[1]?.includes("-r")) {
+                cmd.print_literal(COLORSHELL_VERSION);
+                return 0;
+            }
             cmd.print_literal(`colorshell by retrozinndev, version ${COLORSHELL_VERSION
                 }${DEVEL ? " (devel)" : ""}\nhttps://github.com/retrozinndev/colorshell`);
             return 0;
@@ -109,7 +115,7 @@ export function handleArguments(cmd: RemoteCaller, args: Array<string>): number 
                 Runner.openDefault(args[1] || undefined)
             : Runner.close();
 
-            cmd.print_literal(`Opening runner${args[1] ? ` with predefined text: "${args[1]}"` : ""}`);
+            cmd.print_literal(`Opening runner${args[1] ? ` with prefix: "${args[1]}"` : ""}`);
             return 0;
 
         case "peek-workspace-num":
@@ -157,7 +163,7 @@ export function handleArguments(cmd: RemoteCaller, args: Array<string>): number 
 }
 
 function handleDevArgs(cmd: RemoteCaller, args: Array<string>): number {
-    if(/h|help/.test(args[1])) {
+    if(/^-?h(elp)?$/.test(args[1])) {
         cmd.print_literal(`
 Debugging tools for colorshell.
 
@@ -193,7 +199,7 @@ Usage:
   run %aliasName [client_modifiers]: run a command alias defined in the config.
   run appName[.desktop] [client_modifiers]: run an ordinary app(uses uwsm if available).`;
 
-    if(/\-?h(elp)?/.test(args[1])) {
+    if(/^\-?h(elp)?$/.test(args[1]?.trim())) {
         cmd.print_literal(help);
         return 0;
     }
@@ -241,7 +247,7 @@ Options:
     the desired player's mpris bus name(without the mediaplayer2 prefix).
 `.trim();
 
-    if(/\-?h(elp)?/.test(args[1])) {
+    if(/^-?h(elp)?$/.test(args[1])) {
         cmd.print_literal(mediaHelp);
         return 0;
     }
@@ -360,13 +366,13 @@ function handleWindowArgs(cmd: RemoteCaller, args: Array<string>): number {
     const specifiedWindow: string = args[1];
 
     if(!specifiedWindow) {
-        cmd.printerr_literal("Error: window argument not specified!");
+        cmd.printerr_literal("Error: \"name\" argument not specified!");
         return 1;
     }
 
     if(!Windows.getDefault().hasWindow(specifiedWindow)) {
         cmd.printerr_literal(
-            `Error: "${specifiedWindow}" not found on window list! Make sure to add new windows to the system before using them`
+            `Error: "${specifiedWindow}" not found in window list!`
         );
         return 1;
     }
@@ -379,7 +385,7 @@ function handleWindowArgs(cmd: RemoteCaller, args: Array<string>): number {
                 return 0;
             }
 
-            cmd.print_literal(`Window is already open, ignored`);
+            cmd.print_literal(`Window is already open! Ignored.`);
             return 0;
 
         case "close":
