@@ -44,7 +44,7 @@ if [[ $socket_support ]]; then
     echo "[info] adding socket communication support"
     script="\
 `cat ./scripts/socket.sh`
-`cat "${outdir:-./build/release}/colorshell" | sed -e 's/^#.*//'`" # remove shebang
+`cat "${outdir:-./build/release}/colorshell" | sed -e 's/^#!.*//'`" # remove shebang
 
     echo -en "$script" > "${outdir:-./build/release}/colorshell"
     chmod +x "${outdir:-./build/release}/colorshell"
