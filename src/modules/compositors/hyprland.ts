@@ -202,6 +202,9 @@ export class CompositorHyprland extends Compositor {
             null
         ).filter(name => !name.includes("bindings"));
 
+        if(!this.#configDir.query_exists(null))
+            this.#configDir.make_directory_with_parents(null);
+
         if(userLastUpdatedFile.query_exists(null)) {
             const userLastUpdated = decoder.decode(userLastUpdatedFile.read(null).read_bytes(32, null).toArray());
             const configlastUpdated = decoder.decode(Gio.resources_lookup_data(
