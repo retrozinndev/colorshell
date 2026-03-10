@@ -91,7 +91,7 @@ export default class Media extends GObject.Object {
         const cancellable = Gio.Cancellable.new();
 
         return new Promise((resolve, reject) => {
-            const id = cancellable.connect("cancelled", () => {
+            const id = cancellable.connect(() => {
                 cancellable.disconnect(id);
                 reject(new Error("Couldn't get Session Bus: Operation was cancelled"));
             });
