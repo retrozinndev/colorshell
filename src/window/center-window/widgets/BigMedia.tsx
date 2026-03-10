@@ -181,27 +181,25 @@ class PlayerWidget extends Gtk.Box {
         );
         
         this.append(
-            <Gtk.Box class={"progress"} hexpand visible={createBinding(player, "canSeek")}>
-                <Astal.Slider hexpand max={createBinding(player, "length").as(Math.floor)}
-                  value={createBinding(player, "position").as(Math.floor)}
-                  onChangeValue={(_, type, value) => {
-                      if(type == null) return;
+            <Astal.Slider hexpand max={createBinding(player, "length").as(Math.floor)}
+              value={createBinding(player, "position").as(Math.floor)}
+              onChangeValue={(_, type, value) => {
+                  if(type == null) return;
 
-                      if(!this.#dragTimer) {
-                          this.#dragTimer = setTimeout(() => 
-                              player.position = Math.floor(value),
-                          200);
-
-                          return;
-                      }
-
-                      this.#dragTimer?.destroy(); 
+                  if(!this.#dragTimer) {
                       this.#dragTimer = setTimeout(() => 
-                          player.position = Math.floor(value)
-                      , 200);
-                  }}
-                />
-            </Gtk.Box> as Gtk.Box
+                          player.position = Math.floor(value),
+                      200);
+
+                      return;
+                  }
+
+                  this.#dragTimer?.destroy(); 
+                  this.#dragTimer = setTimeout(() => 
+                      Media.playerSeek(player, value).catch(console.error)
+                  , 200);
+              }}
+            /> as Astal.Slider
         );
 
         this.append(

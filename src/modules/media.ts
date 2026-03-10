@@ -4,6 +4,8 @@ import { createScopedConnection, decoder } from "./utils";
 import AstalMpris from "gi://AstalMpris";
 import GObject from "gi://GObject?version=2.0";
 import { property, register } from "ags/gobject";
+import Gio from "gi://Gio?version=2.0";
+import GLib from "gi://GLib?version=2.0";
 
 
 @register({ GTypeName: "Media" })
@@ -70,6 +72,50 @@ export default class Media extends GObject.Object {
                 decoder.decode(byteString.toArray())
             : undefined;
           })
+    }
+
+    public static async playerSeek(player: AstalMpris.Player, position: number): Promise<void> {
+        if(!player.canSeek)
+            return;
+
+
+        position = position < 0 ? 0 : Math.floor((position * 1000000)); // to microseconds
+        const trackID = player.get_meta("mpris:trackid");
+
+        if(trackID && trackID.get_string()?.[0].startsWith('/')) {
+            player.set_position(position);
+            return;
+        }
+
+        const name = player.busName;
+        const cancellable = Gio.Cancellable.new();
+
+        return new Promise((resolve, reject) => {
+            Gio.DBus.get(Gio.BusType.SESSION, cancellable, (_, res) => {
+                let bus!: Gio.DBusConnection;
+                try {
+                    bus = Gio.DBus.get_finish(res);
+                } catch(e) {
+                    reject(e);
+                    return;
+                }
+
+                bus.call_sync(
+                    name,
+                    "/org/mpris/MediaPlayer2",
+                    "org.mpris.MediaPlayer2.Player",
+                    "SetPosition",
+                    GLib.Variant.new("(ox)", ["/", position]),
+                    null,
+                    Gio.DBusCallFlags.NONE,
+                    3000,
+                    null,
+                    //() => resolve()
+                );
+
+                resolve();
+            });
+        });
     }
 
     

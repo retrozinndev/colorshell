@@ -180,8 +180,7 @@ export class Shell extends Adw.Application {
         if(!owner)
             throw new Error("DBus: Couldn't get name owner to retrieve PID");
 
-        // @ts-ignore
-        const params = GLib.Variant.new_tuple([GLib.Variant.new_string(owner)]);
+        const params = GLib.Variant.new("(s)", [owner]);
 
         const pidVariant: GLib.Variant<"(u)"> = await session.call(
             "org.freedesktop.DBus",

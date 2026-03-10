@@ -258,7 +258,6 @@ export class CompositorHyprland extends Compositor {
             }
 
             modmasks[i] = 1 << modkeyIndex;
-            console.log(key, modmasks[i]);
         });
 
         let mask: number|undefined = undefined;
