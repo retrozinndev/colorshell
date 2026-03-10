@@ -91,6 +91,11 @@ export default class Media extends GObject.Object {
         const cancellable = Gio.Cancellable.new();
 
         return new Promise((resolve, reject) => {
+            const id = cancellable.connect("cancelled", () => {
+                cancellable.disconnect(id);
+                reject(new Error("Couldn't get Session Bus: Operation was cancelled"));
+            });
+
             Gio.DBus.get(Gio.BusType.SESSION, cancellable, (_, res) => {
                 let bus!: Gio.DBusConnection;
                 try {
@@ -100,7 +105,7 @@ export default class Media extends GObject.Object {
                     return;
                 }
 
-                bus.call_sync(
+                bus.call(
                     name,
                     "/org/mpris/MediaPlayer2",
                     "org.mpris.MediaPlayer2.Player",
@@ -110,10 +115,8 @@ export default class Media extends GObject.Object {
                     Gio.DBusCallFlags.NONE,
                     3000,
                     null,
-                    //() => resolve()
+                    () => resolve()
                 );
-
-                resolve();
             });
         });
     }
