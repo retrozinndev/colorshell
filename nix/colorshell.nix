@@ -150,7 +150,7 @@ buildNpmPackage (finalAttrs: {
       --root ./src \
       --define "DEVEL=false" \
       --define "COLORSHELL_VERSION='${finalAttrs.version}'" \
-      --define "GRESOURCES_FILE='${colorshellResources}'"
+      --define "GRESOURCES_FILE='\$COLORSHELL_GRESOURCE'"
 
     # add socket-communication support on executable
     {
@@ -165,14 +165,17 @@ buildNpmPackage (finalAttrs: {
   installPhase = ''
     runHook preInstall
 
-    mkdir -p $out/bin
-    cp -rp build/${packageJSON.name} $out/bin/
+      mkdir -p $out/bin
+      mkdir -p $out/share/${pname}
+      cp -rp build/${packageJSON.name} $out/bin/
+      cp ${colorshellResources} $out/share/${pname}/resources.gresource
 
     runHook postInstall
   '';
 
   preFixup = ''
     gappsWrapperArgs+=(
+      --set COLORSHELL_GRESOURCE "$out/share/${pname}/resources.gresource"
       --prefix PATH : ${
         lib.makeBinPath [
           # runtime executables
