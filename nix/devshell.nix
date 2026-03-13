@@ -1,8 +1,7 @@
 {
   self',
   pkgs,
-}:
-let
+}: let
   colorshell = self'.packages.colorshell;
 
   packages = [
@@ -10,7 +9,7 @@ let
 
   devPackages = with pkgs; [
     nodePackages.nodejs
-    pnpm
+    pnpm_10
 
     # dev scripts
     jq
@@ -24,16 +23,16 @@ let
     inherit (colorshell.pnpmDeps) name src;
     inherit (colorshell) pnpmDeps sourceRoot;
 
-    buildInputs = [ colorshell.npmConfigHook ];
+    nativeBuildInputs = [pkgs.pnpm_10];
+    buildInputs = [colorshell.npmConfigHook];
     installPhase = ''
       mkdir -p $out/lib
       cp -rp node_modules $out/lib/node_modules
     '';
   };
-in
-{
+in {
   default = pkgs.mkShell {
-    inputsFrom = [ colorshell ];
+    inputsFrom = [colorshell];
     packages = devPackages ++ packages;
 
     shellHook = ''

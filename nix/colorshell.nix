@@ -4,6 +4,8 @@
   stdenv,
   stdenvNoCC,
   moreutils,
+  pnpmConfigHook,
+  fetchPnpmDeps,
   pnpm_10,
   buildNpmPackage,
   wrapGAppsHook4,
@@ -13,7 +15,8 @@
   libadwaita,
   dart-sass,
   socat,
-  libglycin,
+  fcitx5,
+  libglycin-gtk4,
   glycin-loaders,
 }:
 let
@@ -88,15 +91,17 @@ buildNpmPackage (finalAttrs: {
   src = colorshellSrc;
   sourceRoot = "${finalAttrs.src.name}";
 
-  npmConfigHook = pnpm_10.configHook;
+  npmConfigHook = pnpmConfigHook;
   npmDeps = finalAttrs.pnpmDeps;
-  pnpmDeps = pnpm_10.fetchDeps {
+  pnpmDeps = fetchPnpmDeps {
     inherit (finalAttrs)
       pname
       version
       src
       sourceRoot
       ;
+
+    nativeBuildInputs = [ pnpm_10 ];
 
     fetcherVersion = 2;
     hash = "sha256-Z5JP7hPEjLY9wGnWe6kM6T1qk3UUSlJnoxdDqS/ksnw=";
@@ -108,6 +113,7 @@ buildNpmPackage (finalAttrs: {
   };
 
   nativeBuildInputs = [
+    pnpm_10
     wrapGAppsHook4
     gobject-introspection
     inputs'.ags.packages.default
@@ -118,7 +124,7 @@ buildNpmPackage (finalAttrs: {
     glib
     gjs
     libadwaita
-    libglycin
+    libglycin-gtk4
     glycin-loaders
     inputs'.astal.packages.astal4
     inputs'.astal.packages.apps
@@ -144,10 +150,10 @@ buildNpmPackage (finalAttrs: {
       --root ./src \
       --define "DEVEL=false" \
       --define "COLORSHELL_VERSION='${finalAttrs.version}'" \
-      --define "GRESOURCES_FILE='${colorshellResources}'"
+      --define "GRESOURCES_FILE='\$COLORSHELL_GRESOURCE'"
 
     # add socket-communication support on executable
-    { 
+    {
       head -n1 $outPath
       sed '1{/^#!.*$/d}' ${../scripts/socket.sh}
       cat "$outPath" | sed '/^#!.*$/d'
@@ -159,20 +165,24 @@ buildNpmPackage (finalAttrs: {
   installPhase = ''
     runHook preInstall
 
-    mkdir -p $out/bin
-    cp -rp build/${packageJSON.name} $out/bin/
+      mkdir -p $out/bin
+      mkdir -p $out/share/${pname}
+      cp -rp build/${packageJSON.name} $out/bin/
+      cp ${colorshellResources} $out/share/${pname}/resources.gresource
 
     runHook postInstall
   '';
 
   preFixup = ''
     gappsWrapperArgs+=(
+      --set COLORSHELL_GRESOURCE "$out/share/${pname}/resources.gresource"
       --prefix PATH : ${
         lib.makeBinPath [
           # runtime executables
           dart-sass
           glib
           socat
+          fcitx5
         ]
       }
     )
