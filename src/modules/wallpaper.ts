@@ -109,7 +109,9 @@ may check the syntax of your hyprpaper.conf for errors");
         if(pid != null)
             killProc(pid);
 
-        this.restartDaemon();
+        this.restartDaemon().catch((e: Error) => {
+            console.error(`Wallpaper: Couldn't restart hyprpaper daemon. Stderr: ${e.message}`);
+        });
 
         createRoot(() => {
             this.#scope = getScope();
