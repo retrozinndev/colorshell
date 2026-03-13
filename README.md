@@ -29,12 +29,12 @@ It's a cli tool to generate color schemes from an image.
 These are not included in the shell anymore, because the repository was getting too big in size. 
 So you'll have to add it in your own.
 
-You can add more wallpapers either by adding your custom images to `~/wallpapers` or by defining `WALLPAPERS` 
-in your `hypr/user/environment`, pointing to the custom location.
+You can add more wallpapers either by adding your custom images to `~/wallpapers` or by defining the `WALLPAPERS` 
+environment variable in your Hyprland config/UWSM env file, pointing to the custom directory.
 
-Also, you can select any of the images inside `~/wallpapers` by pressing 
-<kbd>SUPER</kbd> + <kbd>W</kbd> or by accessing the Control Center and clicking in the image 
-icon on top.
+Also, you can select any of the images inside your preferred wallpapers directory by pressing 
+<kbd>SUPER</kbd> + <kbd>W</kbd>. Choose a wallpaper from a path out of the default by accessing 
+the Control Center and clicking the little image icon on top.
 
 ## ✨ Features
 <details>
@@ -80,6 +80,7 @@ Center Window and scrolling the player
   - Search(`?`): Search something on the internet with your default browser
 - Support for your multiple monitors
 - Configurable behavior through a config file(see [Configuring](#-configuring))
+- Nix flake support (maintained by [@conroy-cheers](https://github.com/conroy-cheers))
 - Dynamic support for [UWSM](https://github.com/Vladimir-csp/uwsm)(apps will use uwsm if current session is using it)
 </details>
 
