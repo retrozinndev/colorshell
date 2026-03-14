@@ -6,6 +6,7 @@ const i18nKeys = {
   fr_BE: (await import("./lang/fr_FR")).default,
   pt_BR: (await import("./lang/pt_BR")).default,
   ru_RU: (await import("./lang/ru_RU")).default,
+  tr_TR: (await import("./lang/tr_TR")).default,
 };
 
 const languages: Array<string> = Object.keys(i18nKeys);
