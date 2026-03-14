@@ -95,6 +95,7 @@ Currently, there's support for the following languages:
 - **Русский** (Russian), maintained by [@NotMephisto](https://github.com/NotMephisto)
 - **Français** (French, France & Belgium), maintained by [@Elgemp4](https://github.com/Elgemp4)
 - **Türkçe** (Turkish, Turkey), maintained by [@Bayyuz](https://github.com/Bayyuz)
+- **日本語** (Japanese, Japan), maintained by [@Bayyuz](https://github.com/Bayyuz)
   
 Don't see your language here? You can contribute and make translations too! <br>
 You can do so by forking this repository, translating the shell in your fork and then opening a pull request to this repository, simple as that!
