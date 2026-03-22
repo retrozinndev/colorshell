@@ -6,8 +6,9 @@ import GLib from "gi://GLib?version=2.0";
 import { Socket } from "../socket";
 import { exec, execAsync } from "ags/process";
 import Gio from "gi://Gio?version=2.0";
-import { decoder, playSystemBell } from "../utils";
+import { createScopedConnection, decoder, playSystemBell } from "../utils";
 import { Shell } from "../../app";
+import { Wallpaper } from "../wallpaper";
 
 
 @register({ GTypeName: "ClshCompositorHyprland" })
@@ -50,6 +51,7 @@ export class CompositorHyprland extends Compositor {
             this.notify("focused-client");
         }
 
+        // handle events from socket and others
         this.#eventSock.scopeConnect("received", (data: string) => {
             let [event, info] = data.split(">>") as [CompositorHyprland.Event, string|undefined];
 
@@ -61,6 +63,8 @@ export class CompositorHyprland extends Compositor {
             //console.log(`${event}:`, info); // debugging
             this.handleEvents(event, data);
         });
+
+        createScopedConnection(Wallpaper.getDefault(), "colors-reloaded", () => this.reload());
     }
 
     private handleEvents(event: CompositorHyprland.Event, data: string): void {
