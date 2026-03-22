@@ -116,7 +116,9 @@ if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
         Send_log "No hyprpaper config found, using colorshell's default..."
         mkdir -p $HOME/wallpapers
         cp -f $repo_directory/resources/wallpaper_default.jpg "$HOME/wallpapers/Default Hypr-chan.jpg"
-        cp -f $repo_directory/resources/config/hyprpaper.conf "$XDG_CONFIG_HOME/hypr/hyprpaper.conf"
+        cat $repo_directory/resources/config/hyprpaper.conf \
+            | sed -e 's/\$WALL_PATH/~\/wallpapers\/Default Hypr-chan.jpg/g' \
+            > "$XDG_CONFIG_HOME/hypr/hyprpaper.conf"
     fi
 
     if [[ -z "$skip_prompts" ]]; then
