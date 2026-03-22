@@ -1,6 +1,6 @@
 import { exec, execAsync } from "ags/process";
 import { readFile, readFileAsync } from "ags/file";
-import GObject, { register, getter, gtype, property, setter } from "ags/gobject";
+import GObject, { register, getter, gtype, property, setter, signal } from "ags/gobject";
 
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
@@ -49,6 +49,9 @@ export type WallpaperPositioning = "contain"|"tile"|"cover"|"fill";
 @register({ GTypeName: "Wallpaper" })
 export class Wallpaper extends GObject.Object {
     private static instance: Wallpaper;
+
+    declare $signals: Wallpaper.SignalSignatures;
+
     #wallpaper: (string|undefined);
     #scope!: Scope;
     #splash: boolean = true;
@@ -57,6 +60,13 @@ export class Wallpaper extends GObject.Object {
     /** pywal-generated colors file */
     #walFile: Gio.File = Gio.File.new_for_path(`${GLib.get_user_cache_dir()}/wal/colors`);
     #proc: Gio.Subprocess|null = null;
+
+    @signal()
+    colorsReloaded() {}
+
+    @signal(String)
+    wallpaperChanged(_: string) {}
+
 
     @getter(Boolean)
     public get splash() { return this.#splash; }
@@ -309,6 +319,7 @@ wallpaper {
     public reloadColors(): void {
         try {
             exec(`wal -t --cols16 "${this.colorMode}" -i "${this.#wallpaper}"`);
+            this.emit("colors-reloaded");
         } catch(e) {
             throw new Error(`Wallpaper: Couldn't update shell colors. Stderr: ${(e as Error).message}`);
         }
@@ -317,6 +328,7 @@ wallpaper {
     public async reloadColorsAsync(): Promise<void> {
         try {
             await execAsync(`wal -t --cols16 "${this.colorMode}" -i "${this.#wallpaper}"`);
+            this.emit("colors-reloaded");
         } catch(e) {
             throw new Error(`Wallpaper: Couldn't update shell colors. Stderr: ${(e as Error).message}`);
         }
@@ -343,7 +355,11 @@ wallpaper {
         this.#wallpaper = path;
         this.notify("wallpaper");
         this.reloadWallpaper(write).then(() => {
-            reloadColors && this.reloadColorsAsync().catch(console.error);
+            this.emit("wallpaper-changed", this.#wallpaper!);
+            if(!reloadColors)
+                return;
+
+            this.reloadColorsAsync().catch(console.error);
         }).catch((e: Error) => {
             console.error(`Wallpaper: Couldn't set wallpaper. Stderr: ${e.message}`);
         });
@@ -359,5 +375,27 @@ wallpaper {
             console.error(`Wallpaper: Couldn't pick wallpaper, is \`zenity\` installed? Stderr: ${e.message}`);
             return undefined;
         }));
+    }
+
+    
+    connect<S extends keyof Wallpaper.SignalSignatures>(
+        signal: S,
+        callback: (self: Wallpaper, ...params: Parameters<Wallpaper.SignalSignatures[S]>) => ReturnType<Wallpaper.SignalSignatures[S]>
+    ): number {
+        return super.connect(signal, callback);
+    }
+
+    emit<S extends keyof Wallpaper.SignalSignatures>(
+        signal: S,
+        ...args: Parameters<Wallpaper.SignalSignatures[S]>
+    ): void {
+        super.emit(signal, ...args);
+    }
+}
+
+export namespace Wallpaper {
+    export interface SignalSignatures extends GObject.Object.SignalSignatures {
+        "colors-reloaded": () => void;
+        "wallpaper-changed": (path: string) => void;
     }
 }
