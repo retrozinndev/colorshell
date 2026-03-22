@@ -1,9 +1,9 @@
 import { Astal, Gtk } from "ags/gtk4";
-import { createBinding, createState, With } from "ags";
+import { createBinding, createComputed, createState, With } from "ags";
 import { Wireplumber } from "../../modules/volume";
 import { Windows } from "../../windows";
 import { Backlights } from "../../modules/backlight";
-import { secureBaseBinding, variableToBoolean } from "../../modules/utils";
+import { createSubscription, secureBaseBinding, variableToBoolean } from "../../modules/utils";
 
 import Pango from "gi://Pango?version=1.0";
 import GLib from "gi://GLib?version=2.0";
@@ -56,8 +56,8 @@ export const OSDModes = {
 const [osdMode, setOSDMode] = createState(OSDModes.sink);
 let osdTimer: (GLib.Source|undefined), osdTimeout = 3500;
 
-export const OSD = (mon: number) => 
-    <Astal.Window namespace={"osd"} class={"osd-window"} layer={Astal.Layer.OVERLAY}
+export function OSD(mon: number): Astal.Window { 
+    return <Astal.Window namespace={"osd"} class={"osd-window"} layer={Astal.Layer.OVERLAY}
       anchor={Astal.WindowAnchor.BOTTOM} focusable={false} marginBottom={80} monitor={mon}>
 
         <Gtk.Box class={"osd"}>
@@ -82,7 +82,9 @@ export const OSD = (mon: number) =>
                 }}
             </With>
         </Gtk.Box>
-    </Astal.Window>;
+    </Astal.Window> as Astal.Window;
+}
+
 
 export function triggerOSD(mode: OSDMode) {
     setOSDMode(mode);
@@ -102,4 +104,31 @@ export function triggerOSD(mode: OSDMode) {
         Windows.getDefault().close("osd");
         osdTimer = undefined;
     }, osdTimeout);
+}
+
+export namespace OSD {
+    export function init(): void {
+        createSubscription(
+            createComputed([
+                secureBaseBinding<AstalWp.Endpoint>(createBinding(
+                    AstalWp.get_default(), "defaultSpeaker"
+                ), "volume", null),
+                secureBaseBinding<AstalWp.Endpoint>(createBinding(
+                    AstalWp.get_default(), "defaultSpeaker"
+                ), "mute", null)
+            ]),
+            () => !Windows.getDefault().isOpen("control-center") &&
+                triggerOSD(OSDModes.sink)
+        );
+
+        createSubscription(
+            secureBaseBinding<Backlights.Backlight>(
+                createBinding(Backlights.getDefault(), "default"),
+                "brightness",
+                100
+            ),
+            () => !Windows.getDefault().isOpen("control-center") &&
+                triggerOSD(OSDModes.brightness)
+        );
+    }
 }

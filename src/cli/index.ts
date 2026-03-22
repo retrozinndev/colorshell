@@ -9,7 +9,8 @@ import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
 
 
-/** cli implementation for colorshell */
+/** cli implementation for colorshell 
+ * (this is a big of a WIP, it's still using the old implementation in `modules/arg-handler`) */
 export namespace Cli {
     let rootScope: Scope;
     let initialized: boolean = false;

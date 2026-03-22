@@ -7,28 +7,22 @@ import { Wallpaper } from "./modules/wallpaper";
 import { Stylesheet } from "./modules/stylesheet";
 import { Clipboard } from "./modules/clipboard";
 import { Gdk, Gtk } from "ags/gtk4";
-import { createBinding, createComputed, createRoot, getScope, onCleanup, Scope } from "ags";
-import { OSDModes, triggerOSD } from "./window/osd";
+import { createRoot, getScope, Scope } from "ags";
+import { OSD } from "./window/osd";
 import { programArgs, programInvocationName } from "system";
 import { setConsoleLogDomain } from "console";
-import { createScopedConnection, createSubscription, encoder, secureBaseBinding } from "./modules/utils";
+import { createScopedConnection, encoder, getDBusNamePID } from "./modules/utils";
 import { exec } from "ags/process";
 import { NightLight } from "./modules/nightlight";
-import { Backlights } from "./modules/backlight";
 import { initCompositor } from "./compositors";
 import { Input } from "./modules/input";
 import { Idle } from "./modules/idle";
-import GObject, { register } from "ags/gobject";
+import { register } from "ags/gobject";
 import Media from "./modules/media";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import Adw from "gi://Adw?version=1";
-import AstalWp from "gi://AstalWp";
 
-
-Gio._promisify(Gio.DBus, "get", "get_finish");
-Gio._promisify(Gio.DBusProxy, "new", "new_finish");
-Gio._promisify(Gio.DBusConnection.prototype, "call", "call_finish");
 
 @register({ GTypeName: "Shell" })
 export class Shell extends Adw.Application {
@@ -44,12 +38,12 @@ export class Shell extends Adw.Application {
     public static runtimeConfigDir: Gio.File = Gio.File.new_for_path(`${this.runtimeDir.peek_path()}/config`);
 
     #scope!: Scope;
-    #connections = new Map<GObject.Object, Array<number> | number>();
     #providers: Array<Gtk.CssProvider> = [];
     #socketService!: Gio.SocketService;
     #socketFile!: Gio.File;
     #pid: number|null = null;
 
+    get pid() { return this.#pid; }
     get scope() { return this.#scope; }
 
     constructor() {
@@ -116,90 +110,38 @@ export class Shell extends Adw.Application {
     }
 
     vfunc_command_line(cmd: Gio.ApplicationCommandLine): number {
-        const args = cmd.get_arguments().toSpliced(0, 1); // remove executable
+        const args = cmd.get_arguments();
+        const _exec = args.splice(0, 1)[0]; // get exec from arguments
 
-        if(cmd.isRemote) {
-            try {
-                const res = handleArguments(cmd, args);
 
-                cmd.done();
-                cmd.set_exit_status(res);
-                return res;
-            } catch(_e) {
-                const e = _e as Error;
-                cmd.printerr_literal(`Error: something went wrong! Stderr: ${e.message}\n${e.stack}`);
-                cmd.done();
-                return 1;
-            }
-        } else {
-            if(args.length > 0) {
-                cmd.printerr_literal("Error: colorshell not running. Try to clean-run before using arguments");
-                cmd.done();
-                return 1;
-            }
-            
+        if(!cmd.isRemote && !args[0]?.includes("h"))
             this.activate();
+
+        let res: number = 0;
+
+        try {
+            res = args.length > 0 ? handleArguments(cmd, args) : 0;
+        } catch(_e) {
+            const e = _e as Error;
+            cmd.printerr_literal(`Error: something went wrong! Stderr: ${e.message}\n${e.stack}`);
+            cmd.done();
+            cmd.set_exit_status(1);
+            return 1;
         }
-        
-        return 0;
+
+        cmd.set_exit_status(res);
+        return res;
     }
 
     vfunc_activate(): void {
         this.hold();
 
         createRoot((dispose) => {
-            this.#connections.set(this, this.connect("shutdown", () => dispose()));
-            onCleanup(() => {
-                this.#connections.forEach((ids, obj) => Array.isArray(ids) ?
-                    ids.forEach(id => obj.disconnect(id))
-                : obj.disconnect(ids));
-            });
+            createScopedConnection(this as Adw.Application, "shutdown", dispose);
 
             this.#scope = getScope();
             this.main();
         });
-    }
-
-    private async getAppPID(): Promise<number> {
-        if(this.#pid != null)
-            return this.#pid;
-
-        const session = await (Gio.DBus.get(Gio.BusType.SESSION, null) as unknown as Promise<Gio.DBusConnection>);
-        const proxy = await (Gio.DBusProxy.new(
-            session,
-            Gio.DBusProxyFlags.NONE,
-            null,
-            "io.github.retrozinndev.colorshell",
-            "/io/github/retrozinndev/colorshell",
-            "org.freedesktop.Application",
-            null
-        ) as unknown as Promise<Gio.DBusProxy>);
-
-        const owner = proxy.get_name_owner();
-
-        if(!owner)
-            throw new Error("DBus: Couldn't get name owner to retrieve PID");
-
-        const params = GLib.Variant.new("(s)", [owner]);
-
-        const pidVariant: GLib.Variant<"(u)"> = await session.call(
-            "org.freedesktop.DBus",
-            "/org/freedesktop/DBus",
-            "org.freedesktop.DBus",
-            "GetConnectionUnixProcessID",
-            params,
-            GLib.VariantType.new("(u)"),
-            Gio.DBusCallFlags.NONE,
-            300,
-            null
-        );
-
-        if(!pidVariant)
-            throw new Error("DBus: call to org.freedesktop.DBus.GetConnectionUnixProcessID returned a nullish value");
-
-        this.#pid = pidVariant.get_child_value(0).get_uint32();
-
-        return this.#pid;
     }
 
     private init(): void {
@@ -219,7 +161,13 @@ export class Shell extends Adw.Application {
         });
 
         const pidFile = Gio.File.new_for_path(`${Shell.runtimeDir.peek_path()!}/.pid`);
-        this.getAppPID().then((pid) => {
+        getDBusNamePID(
+            "io.github.retrozinndev.colorshell",
+            "/io/github/retrozinndev/colorshell",
+            "org.freedesktop.Application"
+        ).then((pid) => {
+            this.#pid = pid;
+
             try {
                 pidFile.replace_contents(encoder.encode(
                     pid.toString()
@@ -341,48 +289,29 @@ export class Shell extends Adw.Application {
         this.init();
 
         console.log("Colorshell: Initializing modules");
+        initCompositor();
+
+        // we run the windowing system asynchronously to avoid completely freezing the shell
+        (async () =>
+            Windows.getDefault()
+        )().catch(console.error);
         Wallpaper.getDefault();
         Stylesheet.getDefault();
-
-        initCompositor();
+        Media.getDefault();
 
         Clipboard.getDefault();
         Input.getDefault();
         NightLight.getDefault();
         Idle.getDefault();
-        Media.getDefault();
+        OSD.init();
 
         if(!Windows.getDefault().isOpen("bar"))
             Windows.getDefault().open("bar");
 
-        createSubscription(
-            createComputed([
-                secureBaseBinding<AstalWp.Endpoint>(createBinding(
-                    AstalWp.get_default(), "defaultSpeaker"
-                ), "volume", null),
-                secureBaseBinding<AstalWp.Endpoint>(createBinding(
-                    AstalWp.get_default(), "defaultSpeaker"
-                ), "mute", null)
-            ]),
-            () => !Windows.getDefault().isOpen("control-center") &&
-                triggerOSD(OSDModes.sink)
-        );
 
-        createSubscription(
-            secureBaseBinding<Backlights.Backlight>(
-                createBinding(Backlights.getDefault(), "default"),
-                "brightness",
-                100
-            ),
-            () => !Windows.getDefault().isOpen("control-center") &&
-                triggerOSD(OSDModes.brightness)
-        );
-
-        this.#connections.set(Notifications.getDefault(), [
-            Notifications.getDefault().connect("notification-added", () => {
-                Windows.getDefault().open("floating-notifications");
-            })
-        ]);
+        createScopedConnection(Notifications.getDefault(), "notification-added", () => {
+            Windows.getDefault().open("floating-notifications");
+        });
     }
 
     quit(): void {

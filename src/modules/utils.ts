@@ -17,6 +17,9 @@ export {
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 
+Gio._promisify(Gio.DBus, "get", "get_finish");
+Gio._promisify(Gio.DBusProxy, "new", "new_finish");
+Gio._promisify(Gio.DBusConnection.prototype, "call", "call_finish");
 
 export const decoder = new TextDecoder("utf-8"),
     encoder = new TextEncoder();
@@ -100,6 +103,49 @@ export function getPID(search: string): number|undefined {
         return pid;
 
     return undefined;
+}
+
+/** asynchronously get the PID(Process ID) for a DBus name
+  * @param name the bus name you want to get the PID of 
+  * @param objectPath the object path of `name`
+  * @param iface the interface for `name` 
+  *
+  * @returns a `number` indicating the process ID, or a broken promise if an error occurred */
+export async function getDBusNamePID(name: string, objectPath: string, iface: string): Promise<number> {
+    const session = await (Gio.DBus.get(Gio.BusType.SESSION, null) as unknown as Promise<Gio.DBusConnection>);
+    const proxy = await (Gio.DBusProxy.new(
+        session,
+        Gio.DBusProxyFlags.NONE,
+        null,
+        name,
+        objectPath,
+        iface,
+        null
+    ) as unknown as Promise<Gio.DBusProxy>);
+
+    const owner = proxy.get_name_owner();
+
+    if(!owner)
+        throw new Error("DBus: Couldn't get name owner to retrieve PID");
+
+    const params = GLib.Variant.new("(s)", [owner]);
+
+    const pidVariant: GLib.Variant<"(u)"> = await session.call(
+        "org.freedesktop.DBus",
+        "/org/freedesktop/DBus",
+        "org.freedesktop.DBus",
+        "GetConnectionUnixProcessID",
+        params,
+        GLib.VariantType.new("(u)"),
+        Gio.DBusCallFlags.NONE,
+        300,
+        null
+    );
+
+    if(!pidVariant)
+        throw new Error("DBus: call to org.freedesktop.DBus.GetConnectionUnixProcessID returned a nullish value");
+
+    return pidVariant.get_child_value(0).get_uint32();
 }
 
 /** forces a process to quit with the desired signal. 
