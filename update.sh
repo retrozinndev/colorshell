@@ -64,7 +64,7 @@ if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
         Send_log "The installer noticed that you're calling the script remotely"
         Send_log "Cloning repository in \`$repo_directory\`..."
         if [[ -d $repo_directory/.git ]]; then
-            Send_log "repo is already cloned! let's just fetch the latest changes..."
+            Send_log "repo is already cloned! Let's just fetch the latest changes..."
             git -C "$repo_directory" stash # if there are changes, let's just stash them
             git -C "$repo_directory" checkout ryo
             git -C "$repo_directory" fetch && git -C "$repo_directory" pull --rebase
@@ -86,8 +86,8 @@ if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
     fi
 
     Send_log "Starting update process..."
-    Send_log "Updating colorshell dependencies"
-    pnpm -C "$repo_directory" i && pnpm -C "$repo_directory" update
+    Send_log "Installing project modules"
+    pnpm -C "$repo_directory" i > /dev/null 2>&1
 
     Send_log "Building colorshell"
     pnpm -C "$repo_directory" build:release

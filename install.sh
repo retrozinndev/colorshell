@@ -33,8 +33,8 @@ fi
 # Start #
 #########
 
-# makes bash force-load the script into memory to avoid issues when 
-# switching source to a tag
+# wrapping the script with '{}' makes bash force-load the script into memory, so we
+# avoid issues when switching the repository source to a tag / another branch
 
 {
 Print_header
@@ -56,7 +56,7 @@ if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
         rm -rf $repo_directory 2> /dev/null
         Send_log "Cloning repository in \`$repo_directory\`..."
         if [[ -d $repo_directory/.git ]]; then
-            Send_log "Repo is already cloned! let's just fetch the latest changes..."
+            Send_log "Repo is already cloned! Let's just fetch the latest changes..."
             git -C "$repo_directory" stash # if there are changes, let's just stash them
             git -C "$repo_directory" checkout ryo
             git -C "$repo_directory" fetch && git -C "$repo_directory" pull --rebase # rebase just in case
@@ -77,8 +77,8 @@ if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
     fi
 
     Send_log "Starting build process..."
-    Send_log "Updating dependencies"
-    pnpm -C "$repo_directory" i && pnpm -C "$repo_directory" update > /dev/null
+    Send_log "Installing project modules"
+    pnpm -C "$repo_directory" i > /dev/null 2>&1
 
     Send_log "Building colorshell"
     pnpm -C "$repo_directory" build:release
