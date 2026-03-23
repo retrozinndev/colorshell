@@ -83,4 +83,4 @@ export default {
     ask_popup: {
         title: "Вопрос"
     }
-} as i18nStruct;
+} satisfies i18nStruct;
