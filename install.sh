@@ -13,89 +13,33 @@ skip_prompts=`[[ "$1" == -y ]] && echo -n true`
 is_standalone=`(git remote -v > /dev/null 2>&1) || echo -n true`
 
 temp_dir="$XDG_CACHE_HOME/colorshell-installer"
-repo_directory=`[[ "$is_standalone" ]] && echo -n "$temp_dir/repo" || echo -n "."`
+repo_directory=`[ "$is_standalone" ] && echo -n "$temp_dir/repo" || echo -n "."`
+target_branch=ryo
+utils_path=`[ -z "$is_standalone" ] && echo -n "$repo_directory/scripts/utils.sh"`
+mode="install"
 
+function Load_utils() {
+    local url="https://raw.githubusercontent.com/\
+retrozinndev/colorshell/refs/heads/$target_branch/scripts/utils.sh"
 
-# source utils script before installation
-if [[ "$is_standalone" ]]; then
-    mkdir -p "$repo_directory"
-    default_branch="ryo" # `curl -s https://api.github.com/repos/retrozinndev/colorshell | jq -r .default_branch`
-    # get utils script
-    echo "fetching utils script..."
-    curl -s https://raw.githubusercontent.com/retrozinndev/colorshell/refs/heads/$default_branch/scripts/utils.sh > $temp_dir/utils.sh
-    source $temp_dir/utils.sh
-else
-    source ./scripts/utils.sh
-fi
-
-
-#########
-# Start #
-#########
-
-# wrapping the script with '{}' makes bash force-load the script into memory, so we
-# avoid issues when switching the repository source to a tag / another branch
-
-{
-Print_header
-echo -e "Colorshell is a project made by retrozinndev. 
-Source: https://github.com/retrozinndev/colorshell\n"
-sleep .5
-
-echo "Welcome to the colorshell installation script!"
-
-# Warn user of possible issues
-Send_log warn "!! By running this, you're assuming total responsability for any issues that may occur with your filesystem"
-
-[[ -z "$skip_prompts" ]] && \
-    Ask "Do you want to start the shell installation?"
-
-if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
-    if [[ "$is_standalone" ]]; then
-        Send_log "The installer noticed that you're calling the script remotely"
-        rm -rf $repo_directory 2> /dev/null
-        Send_log "Cloning repository in \`$repo_directory\`..."
-        if [[ -d $repo_directory/.git ]]; then
-            Send_log "Repo is already cloned! Let's just fetch the latest changes..."
-            git -C "$repo_directory" stash # if there are changes, let's just stash them
-            git -C "$repo_directory" checkout ryo
-            git -C "$repo_directory" fetch && git -C "$repo_directory" pull --rebase # rebase just in case
+    if [[ -z $utils_path ]] || [[ ! -f $utils_path ]]; then
+        if curl -s "$url" > $temp_dir/utils.sh; then
+            utils_path=$temp_dir/utils.sh
         else
-            git clone https://github.com/retrozinndev/colorshell.git "$repo_directory"
+            echo "[error] Failed to fetch utils script! Check your internet connection and try again ;)"
+            rm -f $temp_dir/utils.sh
+            exit 1
+        fi
+
+        if ! source "$utils_path"; then
+            echo "[error] Failed to source utils script. Please, try again" > /dev/stderr
+            rm -rf $temp_dir
+            exit 1
         fi
     fi
+}
 
-    Ask "Nice! Do you want to use the stable version instead of the unstable(latest commit)?"
-
-    if [[ -z "$skip_prompts" ]] && [[ "$answer" == y ]]; then
-        Send_log "Fetching latest release from colorshell repository"
-        latest_tag=`curl -s "$repo_api_url/releases" | jq -r '. | select(.[].prerelease == false) | .[0].tag_name'`
-        
-        Send_log "Done fetching"
-        Send_log "Checking out latest non-pre-release version: $latest_tag"
-        git -C "$repo_directory" checkout $latest_tag > /dev/null 2>&1
-    fi
-
-    Send_log "Starting build process..."
-    Send_log "Installing project modules"
-    pnpm -C "$repo_directory" i > /dev/null 2>&1
-
-    Send_log "Building colorshell"
-    pnpm -C "$repo_directory" build:release
-
-    Send_log "Installing colorshell"
-    # install shell
-    mkdir -p $BIN_HOME
-    cp -f $repo_directory/build/release/colorshell $BIN_HOME
-
-    # install gresource
-    mkdir -p $XDG_DATA_HOME/colorshell
-    cp -f $repo_directory/build/release/resources.gresource $XDG_DATA_HOME/colorshell
-
-    # install desktop entry
-    mkdir -p $APPS_HOME
-    cp -f $repo_directory/build/release/colorshell.desktop $APPS_HOME
-
+function Post_install() {
     # Check if user has a Hyprland config file
     if [[ ! -f "$XDG_CONFIG_HOME/hypr/hyprland.conf" ]] && [[ -f "/usr/share/hypr/hyprland.conf" ]]; then
         Send_log "Looks like Hyprland wasn't launched yet! Copying default config file..."
@@ -120,23 +64,145 @@ if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
             | sed -e 's/\$WALL_PATH/~\/wallpapers\/Default Hypr-chan.jpg/g' \
             > "$XDG_CONFIG_HOME/hypr/hyprpaper.conf"
     fi
+}
 
-    if [[ -z "$skip_prompts" ]]; then
-        echo "Colorshell is installed! :D"
-        sleep .8
-        echo "If you have issues, please report it!"
-        echo "Issue Tracker: https://github.com/retrozinndev/colorshell/issues"
-        sleep .5
-        echo "Thanks for using colorshell! I really appreciate that :P"
-        printf "\n"
+# check if the script is running in standalone mode(without having cloned the repo)
+remotes=`git remote -v 2> /dev/null || echo -n ""`
+remote_origin=`echo "$remotes" | head -n1 | awk -F "\t| " '{print $2}'`
+if [ "$remotes" ] && [[ $remote_origin =~ colorshell\.git$ ]]; then
+    is_standalone=
+else
+    is_standalone=true
+fi
 
-        exit 0
+# handle arguments and modes
+while getopts b:huy -l branch,help,update,yes arg; do
+    case $arg in
+        b|branch)
+            target_branch=${OPTARG:-"ryo"}
+            ;;
+
+        u|update)
+            mode="update"
+            echo "Let's update :D"
+            ;;
+
+        y|yes)
+            skip_prompts=true
+            ;;
+
+        ?|h|help)
+            echo "\
+Install colorshell, override or update an existing installation.
+
+Options:
+  -b, --branch [branch_name]: install colorshell from a specific \$branch_name than the main one
+  -u, --update: update an existing colorshell installation instead of overriding
+  -y, --yes: skip all of the questions (answer \"y\" to all of them)
+  -h, --help: print this help message
+"
+            ;;
+
+        *)
+            echo "Unrecognized argument \"$arg\", please check \`--help\`" > /dev/stderr
+            ;;
+    esac
+done
+
+
+# load utils script before installation
+mkdir -p "$repo_directory"
+Load_utils
+
+
+# installation part
+# wrapping the script with '{}' makes bash force-load the script into memory, so we
+# avoid issues when switching the repository source to a tag / another branch
+
+{
+Print_header
+echo -e "Colorshell is a project made by retrozinndev. 
+Source: https://github.com/retrozinndev/colorshell\n"
+sleep .5
+
+echo "Welcome to colorshell's $mode script!"
+
+# Warn user of possible issues
+Send_log warn "!! By running this, you're assuming total responsability for any issues that may occur with your filesystem"
+
+[[ -z "$skip_prompts" ]] && \
+    Ask "Do you want to $mode the shell?"
+
+if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
+    if [[ "$is_standalone" ]]; then
+        Send_log "The installer noticed that you're calling the script remotely"
+        Send_log "Cloning repository in \`$repo_directory\`..."
+        if [[ -d $repo_directory/.git ]]; then
+            Send_log "Repo is already cloned! Let's just fetch the latest changes..."
+            git -C "$repo_directory" stash # if there are changes, let's just stash them
+
+            if ! git -C "$repo_directory" checkout $target_branch; then
+                Send_log err "Couldn't switch to specified target branch \"$target_branch\". Please check the branch list!")
+                git -C "$repo_directory" branch -lr
+                exit 1
+            fi
+
+            git -C "$repo_directory" fetch && git -C "$repo_directory" pull --rebase # rebase just in case
+        else
+            rm -rf $repo_directory 2> /dev/null
+            git clone https://github.com/retrozinndev/colorshell.git "$repo_directory"
+        fi
     fi
 
-    Send_log "Colorshell is installed!"
+    Ask "Nice! Do you want to use the stable version instead of the unstable(latest commit)?"
+
+    if [[ -z "$skip_prompts" ]] && [[ "$answer" == y ]]; then
+        Send_log "Fetching latest release from colorshell repository"
+        latest_tag=`curl -s "$repo_api_url/releases" | jq -r '. | select(.[].prerelease == false) | .[0].tag_name'`
+        
+        Send_log "Done fetching"
+        Send_log "Checking out latest non-pre-release version: $latest_tag"
+        git -C "$repo_directory" checkout $latest_tag > /dev/null 2>&1
+    fi
+
+    Send_log "Starting build process..."
+    Send_log "Installing project modules"
+    pnpm -C "$repo_directory" i > /dev/null 2>&1
+
+    Send_log "Building colorshell"
+    pnpm -C "$repo_directory" build:release
+
+    local action_prefix=${mode/e/}
+    Send_log "${action_prefix^}ing colorshell" # hell yeah
+    # install shell
+    mkdir -p $BIN_HOME
+    cp -f $repo_directory/build/release/colorshell $BIN_HOME
+
+    # install gresource
+    mkdir -p $XDG_DATA_HOME/colorshell
+    cp -f $repo_directory/build/release/resources.gresource $XDG_DATA_HOME/colorshell
+
+    # install desktop entry
+    mkdir -p $APPS_HOME
+    cp -f $repo_directory/build/release/colorshell.desktop $APPS_HOME
+
+    [[ $mode == "install" ]] && \
+        Post_install
+
+    # finish with a nice message
+    Send_log "Colorshell is ${mode/e/}ed!"
+    if [[ -z "$skip_prompts" ]]; then
+        sleep .4
+        echo "If you run into an issue with it, please report!"
+        echo "Issue Tracker: https://github.com/retrozinndev/colorshell/issues"
+        sleep .2
+        echo "Thanks for using colorshell! I really appreciate that :3"
+        printf "\n"
+    fi
     exit 0
 fi
 
+# quit if user cancel the installation
 printf "Ok, doing as you said! Bye bye!\n"
 exit 0
 }

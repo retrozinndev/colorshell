@@ -3,136 +3,36 @@
 trap "printf \"\nOk, quitting beacuse you entered an exit signal. (SIGINT).\n\"; exit 1" SIGINT
 trap "printf \"\nOh noo!! Some application just killed the script! (SIGTERM)\"; exit 2" SIGTERM
 
-XDG_DATA_HOME=${XDG_DATA_HOME:-"$HOME/.local/share"}
 XDG_CACHE_HOME=${XDG_CACHE_HOME:-"$HOME/.cache"}
-XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-"$HOME/.config"}
-BIN_HOME=${BIN_HOME:-"$HOME/.local/bin"}
-APPS_HOME=${APPS_HOME:-"$XDG_DATA_HOME/applications"}
 
-skip_prompts=`[[ "$1" == -y ]] && echo -n true`
 is_standalone=`(git remote -v > /dev/null 2>&1) || echo -n true`
 
 temp_dir="$XDG_CACHE_HOME/colorshell-installer"
 repo_directory=`[[ "$is_standalone" ]] && echo -n "$temp_dir/repo" || echo -n "."`
 
 
-# source utils script before installation
-if [[ "$is_standalone" ]]; then
-    mkdir -p "$repo_directory"
-    default_branch="ryo" # `curl -s https://api.github.com/repos/retrozinndev/colorshell | jq -r .default_branch`
-    # get utils script
-    echo "fetching utils script..."
-    curl -s https://raw.githubusercontent.com/retrozinndev/colorshell/refs/heads/$default_branch/scripts/utils.sh > $temp_dir/utils.sh
-    source $temp_dir/utils.sh
+# check if the script is running in standalone mode(without having cloned the repo)
+remotes=`git remote -v 2> /dev/null || echo -n ""`
+remote_origin=`echo "$remotes" | head -n1 | awk -F "\t| " '{print $2}'`
+if [ "$remotes" ] && [[ $remote_origin =~ colorshell\.git$ ]]; then
+    is_standalone=
 else
-    source ./scripts/utils.sh
+    is_standalone=true
 fi
 
 
-#########
-# Start #
-#########
+if [[ -z "$is_standalone" ]]; then
+    local branch=ryo
+    local url="https://raw.githubusercontent.com/\
+retrozinndev/colorshell/refs/heads/$branch/install.sh"
 
-# makes bash force-load the script into memory to avoid issues when 
-# switching source to a tag
+    if ! curl -s $url > $temp_dir/install.sh; then
+        echo "[error] Failed to fetch installation script from the web. \
+Please check your internet connection and try again ;)" > /dev/stderr
 
-{
-Print_header
-echo -e "Colorshell is a project made by retrozinndev. 
-Source: https://github.com/retrozinndev/colorshell\n"
-sleep .5
+        rm -f $temp_dir/install.sh
+        exit 1
+    fi
 
-echo "This is colorshell's update script"
-
-if Is_installed; then
-    Send_log "colorshell installation found"
-else
-    Send_log err "no colorshell installation found, please install it before updating"
-    exit 1
+    bash $temp_dir/install.sh --update
 fi
-
-# Warn user of possible issues
-Send_log warn "!! By running this, you're assuming total responsability for any \
-issues that may occur to your filesystem"
-Send_log "The updater won't modify your config files, it'll only update colorshell"
-
-[[ -z $skip_prompts ]] && \
-    Ask "Do you want to update colorshell?"
-
-if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
-    if [[ "$is_standalone" ]]; then
-        Send_log "The installer noticed that you're calling the script remotely"
-        Send_log "Cloning repository in \`$repo_directory\`..."
-        if [[ -d $repo_directory/.git ]]; then
-            Send_log "repo is already cloned! Let's just fetch the latest changes..."
-            git -C "$repo_directory" stash # if there are changes, let's just stash them
-            git -C "$repo_directory" checkout ryo
-            git -C "$repo_directory" fetch && git -C "$repo_directory" pull --rebase
-        else
-            git clone https://github.com/retrozinndev/colorshell.git "$repo_directory"
-        fi
-    fi
-
-    Send_log "Fetching latest release from colorshell repository"
-    # use `head -n1` because for some reason, github api shows the same release 3 times :'(
-    latest_tag=`curl -s "$repo_api_url/releases" | jq -r '. | select(.[].prerelease == false) | .[0].tag_name' | head -n1`
-
-    Send_log "Done fetching"
-    Ask "Nice! Use stable $latest_tag instead of the unstable/pre-release version?"
-
-    if [[ -z "$skip_prompts" ]] && [[ "$answer" == y ]]; then
-        Send_log "Checking out $latest_tag"
-        git -C "$repo_directory" checkout $latest_tag > /dev/null 2>&1
-    fi
-
-    Send_log "Starting update process..."
-    Send_log "Installing project modules"
-    pnpm -C "$repo_directory" i > /dev/null 2>&1
-
-    Send_log "Building colorshell"
-    pnpm -C "$repo_directory" build:release
-
-    Send_log "Installing colorshell"
-    # install shell
-    mkdir -p $BIN_HOME
-    cp -f $repo_directory/build/release/colorshell $BIN_HOME
-
-    # install gresource
-    mkdir -p $XDG_DATA_HOME/colorshell
-    cp -f $repo_directory/build/release/resources.gresource $XDG_DATA_HOME/colorshell
-
-    # install desktop entry
-    mkdir -p $APPS_HOME
-    cp -f $repo_directory/build/release/colorshell.desktop $APPS_HOME
-
-    # reload hyprland settings, because it stops monitoring when too much changes are made
-    hyprctl reload
-
-    if Is_running; then
-        Send_log "colorshell is running, restarting shell..."
-        colorshell quit || killall gjs
-        # wait 2s, because the shell can take a little bit of time to close
-        # (the cli is closed before the action is completed)
-        sleep 2s && hyprctl dispatch exec "bash $XDG_CONFIG_HOME/hypr/scripts/exec.sh colorshell"
-    fi
-
-
-    if [[ -z "$skip_prompts" ]]; then
-        echo "Colorshell is updated! :D"
-        sleep .8
-        echo "If you have issues with this update, please report it!"
-        echo "Issue Tracker: https://github.com/retrozinndev/colorshell/issues"
-        sleep .5
-        echo "Thanks for using colorshell! I really appreciate that :P"
-        printf "\n"
-
-        exit 0
-    fi
-
-    Send_log "Colorshell is updated!"
-    exit 0
-fi
-
-printf "Ok, doing as you said! Bye bye!\n"
-exit 0
-}
