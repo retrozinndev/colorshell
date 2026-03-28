@@ -31,11 +31,12 @@ retrozinndev/colorshell/refs/heads/$target_branch/scripts/utils.sh"
             exit 1
         fi
 
-        if ! source "$utils_path"; then
-            echo "[error] Failed to source utils script. Please, try again" > /dev/stderr
-            rm -rf $temp_dir
-            exit 1
-        fi
+    fi
+
+    if ! source "$utils_path"; then
+        echo "[error] Failed to source utils script. Please, try again" > /dev/stderr
+        rm -rf $temp_dir
+        exit 1
     fi
 }
 
@@ -76,7 +77,7 @@ else
 fi
 
 # handle arguments and modes
-while getopts b:huy -l branch,help,update,yes arg; do
+while getopts b:huy arg; do
     case $arg in
         b|branch)
             target_branch=${OPTARG:-"ryo"}
@@ -96,11 +97,12 @@ while getopts b:huy -l branch,help,update,yes arg; do
 Install colorshell, override or update an existing installation.
 
 Options:
-  -b, --branch [branch_name]: install colorshell from a specific \$branch_name than the main one
-  -u, --update: update an existing colorshell installation instead of overriding
-  -y, --yes: skip all of the questions (answer \"y\" to all of them)
-  -h, --help: print this help message
+  -b [branch_name]: install colorshell from a specific \$branch_name than the main one
+  -u: update an existing colorshell installation instead of overriding
+  -y: skip all of the questions (answer \"y\" to all of them)
+  -h: print this help message
 "
+            exit 0
             ;;
 
         *)
@@ -142,7 +144,7 @@ if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
             git -C "$repo_directory" stash # if there are changes, let's just stash them
 
             if ! git -C "$repo_directory" checkout $target_branch; then
-                Send_log err "Couldn't switch to specified target branch \"$target_branch\". Please check the branch list!")
+                Send_log err "Couldn't switch to specified target branch \"$target_branch\". Please check the branch list!"
                 git -C "$repo_directory" branch -lr
                 exit 1
             fi
@@ -172,7 +174,7 @@ if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
     Send_log "Building colorshell"
     pnpm -C "$repo_directory" build:release
 
-    local action_prefix=${mode/e/}
+    action_prefix=${mode/e/}
     Send_log "${action_prefix^}ing colorshell" # hell yeah
     # install shell
     mkdir -p $BIN_HOME

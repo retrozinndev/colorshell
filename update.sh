@@ -21,9 +21,9 @@ else
 fi
 
 
-if [[ -z "$is_standalone" ]]; then
-    local branch=ryo
-    local url="https://raw.githubusercontent.com/\
+if [[ "$is_standalone" ]]; then
+    branch=ryo
+    url="https://raw.githubusercontent.com/\
 retrozinndev/colorshell/refs/heads/$branch/install.sh"
 
     if ! curl -s $url > $temp_dir/install.sh; then
@@ -34,5 +34,7 @@ Please check your internet connection and try again ;)" > /dev/stderr
         exit 1
     fi
 
-    bash $temp_dir/install.sh --update
+    bash $temp_dir/install.sh -u
+else
+    bash $repo_directory/install.sh -u
 fi
