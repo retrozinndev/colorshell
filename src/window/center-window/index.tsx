@@ -8,9 +8,10 @@ import { createBinding } from "ags";
 import Media from "../../modules/media";
 import AstalMpris from "gi://AstalMpris";
 import { generalConfig } from "../../config";
+import { Windows } from "..";
 
 
-export const CenterWindow = (mon: number) => {
+export const CenterWindow = Windows.forFocusedMonitor((mon) => {
     const notifPopupHPos = generalConfig.getProperty("notifications.position_h", "string");
 
     return <PopupWindow namespace={"center-window"} marginTop={10} monitor={mon}
@@ -57,4 +58,4 @@ export const CenterWindow = (mon: number) => {
             <BigMedia />
         </Gtk.Box>
     </PopupWindow>;
-}
+});

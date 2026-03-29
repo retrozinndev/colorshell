@@ -6,10 +6,12 @@ import { Apps } from "./widgets/Apps";
 import { Clock } from "./widgets/Clock";
 import { Status } from "./widgets/Status";
 import { Media } from "./widgets/Media";
+import { Windows } from "..";
 
 
-export const Bar = (mon: number) => {
+export const Bar = Windows.forMonitors((mon) => {
     const widgetSpacing = 4;
+
     return <Astal.Window namespace={"top-bar"} layer={Astal.Layer.TOP}
       anchor={Astal.WindowAnchor.TOP | Astal.WindowAnchor.LEFT | Astal.WindowAnchor.RIGHT}
       exclusivity={Astal.Exclusivity.EXCLUSIVE} heightRequest={46} monitor={mon} 
@@ -17,7 +19,7 @@ export const Bar = (mon: number) => {
 
         <Gtk.Box class={"bar-container"}>
             <Gtk.CenterBox class={"bar-centerbox"} hexpand>
-                <Gtk.Box class={"widgets-left"} homogeneous={false}
+                <Gtk.Box class={"widgets-left"}
                   halign={Gtk.Align.START} spacing={widgetSpacing}
                   $type="start">
 
@@ -25,14 +27,14 @@ export const Bar = (mon: number) => {
                     <Workspaces />
                     <FocusedClient />
                 </Gtk.Box>
-                <Gtk.Box class={"widgets-center"} homogeneous={false}
+                <Gtk.Box class={"widgets-center"}
                   spacing={widgetSpacing} halign={Gtk.Align.CENTER}
                   $type="center">
 
                     <Clock />
                     <Media />
                 </Gtk.Box>
-                <Gtk.Box class={"widgets-right"} homogeneous={false}
+                <Gtk.Box class={"widgets-right"}
                   spacing={widgetSpacing} halign={Gtk.Align.END}
                   $type="end">
                     <Tray />
@@ -41,4 +43,4 @@ export const Bar = (mon: number) => {
             </Gtk.CenterBox>
         </Gtk.Box>
     </Astal.Window>
-}
+});

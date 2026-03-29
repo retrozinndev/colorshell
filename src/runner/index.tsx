@@ -312,7 +312,7 @@ export function openRunner(props: RunnerProps, placeholders?: Array<Result>): As
     let clickTimeout: GLib.Source|undefined;
 
     if(!instance)
-        instance = Windows.getDefault().createWindowForFocusedMonitor((mon, root) => 
+        instance = Windows.forFocusedMonitor((mon, root) => 
             <PopupWindow namespace={"runner"} monitor={mon} widthRequest={props.width} 
               heightRequest={props.height} exclusivity={Astal.Exclusivity.IGNORE} halign={Gtk.Align.CENTER}
               marginTop={(AstalHyprland.get_default().get_monitor(mon)?.height / 2) - (props.height! / 2)}

@@ -1,7 +1,7 @@
 import "ags/overrides"; // thanks Aylur!!
 import "./config";
-import { handleArguments } from "./modules/arg-handler";
 import { Windows } from "./window";
+import { handleArguments } from "./modules/arg-handler";
 import { Notifications } from "./modules/notifications";
 import { Wallpaper } from "./modules/wallpaper";
 import { Stylesheet } from "./modules/stylesheet";
@@ -18,6 +18,7 @@ import { initCompositor } from "./compositors";
 import { Input } from "./modules/input";
 import { Idle } from "./modules/idle";
 import { register } from "ags/gobject";
+import { initWindows } from "./windows";
 import Media from "./modules/media";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
@@ -290,14 +291,11 @@ export class Shell extends Adw.Application {
 
         console.log("Colorshell: Initializing modules");
         initCompositor();
-
-        // we run the windowing system asynchronously to avoid completely freezing the shell
-        (async () =>
-            Windows.getDefault()
-        )().catch(console.error);
         Wallpaper.getDefault();
         Stylesheet.getDefault();
         Media.getDefault();
+
+        initWindows()
 
         Clipboard.getDefault();
         Input.getDefault();

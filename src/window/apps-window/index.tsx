@@ -6,6 +6,7 @@ import AstalApps from "gi://AstalApps";
 import Pango from "gi://Pango?version=1.0";
 import { createRoot, createState } from "ags";
 import { escapeUnintendedMarkup } from "../../modules/utils";
+import { Windows } from "..";
 
 
 const ignoredKeys = [
@@ -20,7 +21,7 @@ const ignoredKeys = [
     Gdk.KEY_space
 ];
 
-export const AppsWindow = (mon: number) => {
+export const AppsWindow = Windows.forFocusedMonitor((mon) => {
     const [results, setResults] = createState(getApps() as Array<AstalApps.Application>);
 
     return <PopupWindow namespace="apps-window" layer={Astal.Layer.OVERLAY}
@@ -72,7 +73,7 @@ export const AppsWindow = (mon: number) => {
             />
         </Gtk.ScrolledWindow>
     </PopupWindow>
-}
+});
 
 function AppWidget(app: AstalApps.Application): Gtk.Widget {
     return createRoot((dispose) => 

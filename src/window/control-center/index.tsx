@@ -5,9 +5,10 @@ import { NotifHistory } from "./widgets/NotifHistory";
 import { Tiles } from "./widgets/tiles";
 import { Sliders } from "./widgets/Sliders";
 import { generalConfig } from "../../config";
+import { Windows } from "..";
 
 
-export const ControlCenter = (mon: number) => {
+export const ControlCenter = Windows.forFocusedMonitor((mon) => {
     const notifPopupHPos = generalConfig.getProperty("notifications.position_h", "string");
 
     return <PopupWindow namespace={"control-center"} class={"control-center"}
@@ -38,5 +39,5 @@ export const ControlCenter = (mon: number) => {
             </Gtk.Box>
             <NotifHistory />
         </Gtk.Box>
-    </PopupWindow> as Astal.Window;
-}
+    </PopupWindow>;
+});

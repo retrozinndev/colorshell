@@ -1,53 +1,23 @@
 import { Astal } from "ags/gtk4";
-import { Shell } from "../app";
 import GObject, { getter, register, signal } from "ags/gobject";
-import { variableToBoolean } from "../modules/utils";
-import { createRoot, getScope, onCleanup } from "ags";
-import { Bar } from "./bar";
-import { OSD } from "./osd";
-import { ControlCenter } from "./control-center";
-import { FloatingNotifications } from "./floating-notifications";
-import { CenterWindow } from "./center-window";
-import { LogoutMenu } from "./logout-menu";
-import { AppsWindow } from "./apps-window";
-
+import { createScopedConnection, variableToBoolean } from "../modules/utils";
+import { createRoot, getScope, Scope } from "ags";
 import AstalHyprland from "gi://AstalHyprland";
+import { shellWindows } from "../windows";
 
 
-export type WindowInstance = { instance?: Astal.Window, connections: Array<number> };
-export type WindowData = {
-    create: () => (Astal.Window | Array<Astal.Window>);
-    instance?: WindowInstance | Array<WindowInstance>;
-    status?: "open" | "closed";
-};
-
-
-/**
- * Windowing System
- * Possible actions: getting window states, close, open, toggle windows and
- * registering windows.
- * Also contains util functions to create dynamic windows, opening the window only on focused 
- * monitor, or all available monitors!
- */
+/** Manage shell windows and in which monitors they appear.
+  *
+  * Also contains util functions to create multi-monitor and 
+  * focused-monitor-only windows */
 @register({ GTypeName: "Windows" })
-export class Windows extends GObject.Object {
+export class Windows<T extends string = string> extends GObject.Object {
     private static instance: (Windows | null);
 
-    declare $signals: GObject.Object.SignalSignatures & {
-        "window-open": (name: string) => void;
-        "window-closed": (name: string) => void;
-    };
+    declare $signals: Windows.SignalSignatures
 
-    #scope!: ReturnType<typeof getScope>;
-    #windows: Record<string, WindowData> = {
-        "bar": { create: this.createWindowForMonitors(Bar) },
-        "osd": { create: this.createWindowForFocusedMonitor(OSD), },
-        "control-center": { create: this.createWindowForFocusedMonitor(ControlCenter), },
-        "center-window": { create: this.createWindowForFocusedMonitor(CenterWindow), },
-        "logout-menu": { create: this.createWindowForFocusedMonitor(LogoutMenu), },
-        "floating-notifications": { create: this.createWindowForFocusedMonitor(FloatingNotifications), },
-        "apps-window": { create: this.createWindowForFocusedMonitor(AppsWindow) }
-    };
+    #scope: Scope;
+    #windows: Record<string, Windows.Window> = {};
 
     @signal(String) windowOpen(_name: string) {}
     @signal(String) windowClosed(_name: string) {}
@@ -58,34 +28,28 @@ export class Windows extends GObject.Object {
     @getter(Array)
     get openWindows(): Array<string> {
         return Object.keys(this.#windows).filter((key) => 
-            this.#windows[key].status === "open");
+            this.#windows[key].status === Windows.Status.OPEN);
     }
 
     constructor() {
         super();
 
-        createRoot((dispose) => {
-            this.#scope = getScope();
-            Shell.getDefault().scope.onMount(dispose);
-
+        this.#scope = getScope();
+        this.#scope.run(() => {
             // Listen to monitor events
-            const hyprConnections = [
-                AstalHyprland.get_default().connect("monitor-added", () => 
-                    this.reopen()),
-                AstalHyprland.get_default().connect("monitor-removed", () => 
-                    AstalHyprland.get_default().get_monitors().length > 0 &&
-                        this.reopen())
-            ];
-
-            onCleanup(() => {
-                hyprConnections.forEach(id => AstalHyprland.get_default().disconnect(id));
-                this.openWindows.forEach(name => this.disconnectWindow(name));
-            });
-
+            createScopedConnection(
+                AstalHyprland.get_default(), "monitor-added",
+                () => setTimeout(() => this.reopen(), 1200) // we wait a little bit for the monitor to display
+            );
+            createScopedConnection(
+                AstalHyprland.get_default(), "monitor-removed",
+                () => AstalHyprland.get_default().get_monitors().length > 0 &&
+                    setTimeout(() => this.reopen(), 1200)
+            );
         });
     }
 
-    private disconnectWindow(name: string) {
+    private disconnectWindow(name: T) {
         if(!variableToBoolean(this.#windows[name]?.instance) || !this.#windows[name]) {
             console.error(`Windows: couldn't disconnect window's connections: either the window \`${name
                 }\` doesn't exist in the windows list or it has no valid instance to disconnect signals from(not open)`);
@@ -97,14 +61,14 @@ export class Windows extends GObject.Object {
         if(Array.isArray(window)) {
             window.forEach(win => {
                 this._disconnectAllFromInstance(win.instance!, win.connections!)
-                win.connections = [];
+                win.connections.splice(0, win.connections.length);
             });
 
             return;
         }
 
         this._disconnectAllFromInstance(window.instance!, window.connections!);
-        window.connections = [];
+        window.connections.splice(0, window.connections.length);
     }
 
     private _disconnectAllFromInstance(instance: GObject.Object, connections: Array<number>): void {
@@ -113,7 +77,7 @@ export class Windows extends GObject.Object {
                 instance.disconnect(id));
     }
 
-    private hasConnections(name: string): boolean {
+    private hasConnections(name: T): boolean {
         if(!this.openWindows.includes(name))
             return false;
 
@@ -132,7 +96,7 @@ export class Windows extends GObject.Object {
         return window.connections?.length > 0;
     }
 
-    private connectWindow(name: string) {
+    private connectWindow(name: T) {
         if(this.hasConnections(name)) {
             console.log(`Windows: skipped connecting window: \`${name}\`. Already connected`);
             return;
@@ -154,7 +118,7 @@ export class Windows extends GObject.Object {
                 inst.instance!.connect("close-request", () => {
                     this.disconnectWindow(name);
                     delete window.instance;
-                    window.status = "closed";
+                    window.status = Windows.Status.CLOSED;
                     this.notify("open-windows");
                 })
             ]);
@@ -166,13 +130,13 @@ export class Windows extends GObject.Object {
             window.instance.instance!.connect("close-request", () => {
                 this.disconnectWindow(name);
                 delete window.instance;
-                window.status = "closed";
+                window.status = Windows.Status.CLOSED;
                 this.notify("open-windows");
             })
         ];
     }
 
-    public static getDefault(): Windows {
+    public static getDefault(): Windows<keyof typeof shellWindows> {
         if(!this.instance)
             this.instance = new Windows();
 
@@ -185,32 +149,32 @@ export class Windows extends GObject.Object {
      * @returns a function that when called, returns Array<Astal.Window>
      * @throws Error if there are no monitors connected
      */
-    public createWindowForMonitors(create: (mon: number, scope: ReturnType<typeof getScope>) => GObject.Object|Astal.Window): (() => Array<Astal.Window>) {
-        const monitors = AstalHyprland.get_default().get_monitors();
-
-        if(monitors.length < 1) 
-            throw new Error("Couldn't create window for monitors", {
-                cause: "No monitors connected on Hyprland"
-            });
-
+    public static forMonitors(create: (mon: number, scope: Scope) => JSX.Element|Astal.Window): (() => Array<Astal.Window>) {
         // create a scope for every window generator function and dispose on ::close-request
-        return () => monitors.map(mon => {
-            return createRoot(() => {
-                const scope = getScope();
-                const instance = create(mon.id, scope) as Astal.Window;
-                const connection: number = instance.connect("close-request", () => 
-                    scope.dispose());
+        return () => {
+            const monitors = AstalHyprland.get_default().get_monitors();
 
-                this.#scope.onMount(scope.dispose);
+            if(monitors.length < 1) 
+                throw new Error("Couldn't create window for monitors", {
+                    cause: "No monitors connected on Hyprland"
+                });
 
-                scope.onCleanup(() => 
-                    GObject.signal_handler_is_connected(instance, connection) &&
-                        instance.disconnect(connection)
-                );
+            return monitors.map(mon => {
+                return createRoot(() => {
+                    const scope = getScope();
+                    const instance = create(mon.id, scope) as Astal.Window;
+                    const connection: number = instance.connect("close-request", () => 
+                        scope.dispose());
 
-                return instance;
+                    scope.onCleanup(() => 
+                        GObject.signal_handler_is_connected(instance, connection) &&
+                            instance.disconnect(connection)
+                    );
+
+                    return instance;
+                })
             })
-        })
+        }
     }
 
     /**
@@ -219,21 +183,20 @@ export class Windows extends GObject.Object {
      * @returns a function that when called, returns a Astal.Window instance
      * @throws Error if no focused monitor is found
      */
-    public createWindowForFocusedMonitor(create: (mon: number, scope: ReturnType<typeof getScope>) => GObject.Object|Astal.Window): (() => Astal.Window) {
-        const focusedMonitor = this.getFocusedMonitorId();
-
-        if(focusedMonitor == null) 
-            throw new Error("Couldn't create window for focused monitor", { 
-                cause: `No focused monitor found (${typeof focusedMonitor})` 
-            });
-
+    public static forFocusedMonitor(create: (mon: number, scope: ReturnType<typeof getScope>) => GObject.Object|Astal.Window): (() => Astal.Window) {
         return () => {
+            const focusedMonitor = this.getFocusedMonitorId();
+
+            if(focusedMonitor == null) 
+                throw new Error("Couldn't create window for focused monitor", { 
+                    cause: `No focused monitor found (${typeof focusedMonitor})` 
+                });
+
             return createRoot((dispose) => {
                 const scope = getScope();
                 const instance = create(focusedMonitor, scope) as Astal.Window;
                 const connection = instance.connect("close-request", () => dispose());
 
-                this.#scope.onMount(dispose)
                 scope.onCleanup(() => 
                     GObject.signal_handler_is_connected(instance, connection) &&
                         instance.disconnect(connection)
@@ -244,11 +207,17 @@ export class Windows extends GObject.Object {
         }
     }
 
-    public addWindow(name: string, create: () => Astal.Window|Array<Astal.Window>): void {
-        this.#windows[name] = { create };
+    public addWindow<T1 extends string>(name: T1, create: () => Astal.Window|Array<Astal.Window>, autoOpen: boolean = false): this is Windows<T|T1> {
+        this.#windows[name] = { create, status: Windows.Status.CLOSED };
+        if(autoOpen)
+            this.open(name as unknown as T);
+
+        return true;
     }
 
-    public hasWindow(name: string): boolean {
+    public hasWindow(name: T): boolean;
+    public hasWindow(name: string): boolean;
+    public hasWindow(name: string|T): boolean {
         return Boolean(this.windows?.[name as keyof typeof this.windows]);
     }
 
@@ -256,15 +225,15 @@ export class Windows extends GObject.Object {
         return Object.values(this.windows);
     }
     
-    public getFocusedMonitorId(): (number|null) {
-        return AstalHyprland.get_default().get_monitors().filter(mon => mon.focused)?.[0]?.id ?? null;
+    public static getFocusedMonitorId(): (number|null) {
+        return AstalHyprland.get_default().get_monitors().find(mon => mon.focused)?.id ?? null;
     }
 
-    public isOpen(name: string): boolean {
+    public isOpen(name: T): boolean {
         return this.openWindows.includes(name);
     }
 
-    public open(name: string, ignoreOpenStatus: boolean = false): void {
+    public open(name: T, ignoreOpenStatus: boolean = false): void {
         if(this.isOpen(name) && !ignoreOpenStatus) return;
 
         const window = this.#windows[name];
@@ -273,7 +242,7 @@ export class Windows extends GObject.Object {
             return;
         }
 
-        this.#windows[name].status = "open";
+        this.#windows[name].status = Windows.Status.OPEN;
         const windowInstance = window.create();
 
         if(Array.isArray(windowInstance)) {
@@ -292,7 +261,7 @@ export class Windows extends GObject.Object {
         this.notify("open-windows");
     }
 
-    public close(name: string): void {
+    public close(name: T): void {
         if(!this.isOpen(name)) return;
 
         this.disconnectWindow(name);
@@ -303,23 +272,42 @@ export class Windows extends GObject.Object {
         else 
             window.instance!.instance!.close();
 
-        this.#windows[name].status = "closed";
+        this.#windows[name].status = Windows.Status.CLOSED;
 
         this.emit("window-closed", name);
         this.notify("open-windows");
     }
 
-    public toggle(name: string): void {
+    public toggle(name: T): void {
         this.isOpen(name) ? this.close(name) : this.open(name);
     }
 
     public closeAll(): void {
-        this.openWindows.forEach(name => this.close(name));
+        this.openWindows.forEach(name => this.close(name as T));
     }
 
     public reopen(): void {
         const openWins = [ ...this.openWindows ];
         this.closeAll();
-        openWins.forEach(name => this.open(name));
+        openWins.forEach(name => this.open(name as T));
+    }
+}
+
+export namespace Windows {
+    export enum Status {
+        CLOSED = 0,
+        OPEN = 1
+    }
+
+    export type Data = { instance?: Astal.Window, connections: Array<number> };
+    export type Window = {
+        create: () => (Astal.Window | Array<Astal.Window>);
+        instance?: Data | Array<Data>;
+        status: Status;
+    };
+
+    export interface SignalSignatures extends GObject.Object.SignalSignatures {
+        "window-open": (name: string) => void;
+        "window-closed": (name: string) => void;
     }
 }

@@ -56,55 +56,37 @@ export const OSDModes = {
 const [osdMode, setOSDMode] = createState(OSDModes.sink);
 let osdTimer: (GLib.Source|undefined), osdTimeout = 3500;
 
-export function OSD(mon: number): Astal.Window { 
-    return <Astal.Window namespace={"osd"} class={"osd-window"} layer={Astal.Layer.OVERLAY}
-      anchor={Astal.WindowAnchor.BOTTOM} focusable={false} marginBottom={80} monitor={mon}>
+export function OSD(): Astal.Window { 
+    return Windows.forFocusedMonitor(mon =>
+        <Astal.Window namespace={"osd"} class={"osd-window"} layer={Astal.Layer.OVERLAY}
+          anchor={Astal.WindowAnchor.BOTTOM} focusable={false} marginBottom={80} monitor={mon}>
 
-        <Gtk.Box class={"osd"}>
-            <With value={osdMode}>
-                {(mode: OSDMode) => {
-                    if(!mode.available) return;
+            <Gtk.Box class={"osd"}>
+                <With value={osdMode}>
+                    {(mode: OSDMode) => {
+                        if(!mode.available) return;
 
-                    return <Gtk.Box>
-                        <Gtk.Image class={"icon"} iconName={
-                            createBinding(mode, "icon")
-                        } />
-                        <Gtk.Box orientation={Gtk.Orientation.VERTICAL} class={"level"} vexpand hexpand>
-                            <Gtk.Label class={"text"} label={createBinding(mode, "text").as(t => t ?? "")}
-                              ellipsize={Pango.EllipsizeMode.END}
-                              visible={variableToBoolean(createBinding(mode, "text"))}
-                            />
-                            <Gtk.LevelBar value={createBinding(mode, "value")} hexpand
-                              maxValue={createBinding(mode, "max")}
-                            />
-                        </Gtk.Box>
-                    </Gtk.Box>;
-                }}
-            </With>
-        </Gtk.Box>
-    </Astal.Window> as Astal.Window;
+                        return <Gtk.Box>
+                            <Gtk.Image class={"icon"} iconName={
+                                createBinding(mode, "icon")
+                            } />
+                            <Gtk.Box orientation={Gtk.Orientation.VERTICAL} class={"level"} vexpand hexpand>
+                                <Gtk.Label class={"text"} label={createBinding(mode, "text").as(t => t ?? "")}
+                                  ellipsize={Pango.EllipsizeMode.END}
+                                  visible={variableToBoolean(createBinding(mode, "text"))}
+                                />
+                                <Gtk.LevelBar value={createBinding(mode, "value")} hexpand
+                                  maxValue={createBinding(mode, "max")}
+                                />
+                            </Gtk.Box>
+                        </Gtk.Box>;
+                    }}
+                </With>
+            </Gtk.Box>
+        </Astal.Window>
+    )();
 }
 
-
-export function triggerOSD(mode: OSDMode) {
-    setOSDMode(mode);
-    Windows.getDefault().open("osd");
-
-    if(!osdTimer) {
-        osdTimer = setTimeout(() => {
-            osdTimer = undefined;
-            Windows.getDefault().close("osd");
-        }, osdTimeout);
-
-        return;
-    }
-
-    osdTimer.destroy();
-    osdTimer = setTimeout(() => {
-        Windows.getDefault().close("osd");
-        osdTimer = undefined;
-    }, osdTimeout);
-}
 
 export namespace OSD {
     export function init(): void {
@@ -118,7 +100,7 @@ export namespace OSD {
                 ), "mute", null)
             ]),
             () => !Windows.getDefault().isOpen("control-center") &&
-                triggerOSD(OSDModes.sink)
+                trigger(OSDModes.sink)
         );
 
         createSubscription(
@@ -128,7 +110,27 @@ export namespace OSD {
                 100
             ),
             () => !Windows.getDefault().isOpen("control-center") &&
-                triggerOSD(OSDModes.brightness)
+                trigger(OSDModes.brightness)
         );
+    }
+
+    export function trigger(mode: OSDMode) {
+        setOSDMode(mode);
+        Windows.getDefault().open("osd");
+
+        if(!osdTimer) {
+            osdTimer = setTimeout(() => {
+                osdTimer = undefined;
+                Windows.getDefault().close("osd");
+            }, osdTimeout);
+
+            return;
+        }
+
+        osdTimer.destroy();
+        osdTimer = setTimeout(() => {
+            Windows.getDefault().close("osd");
+            osdTimer = undefined;
+        }, osdTimeout);
     }
 }

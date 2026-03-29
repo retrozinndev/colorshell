@@ -9,11 +9,12 @@ import { time } from "../../modules/utils";
 import GObject from "ags/gobject";
 import AstalNotifd from "gi://AstalNotifd";
 import Gio from "gi://Gio?version=2.0";
+import { Windows } from "..";
 
 
 const { TOP, LEFT, RIGHT, BOTTOM } = Astal.WindowAnchor;
 
-export const LogoutMenu = (mon: number) => 
+export const LogoutMenu = Windows.forFocusedMonitor((mon) => 
     <Astal.Window namespace={"logout-menu"} anchor={TOP | LEFT | RIGHT | BOTTOM}
       layer={Astal.Layer.OVERLAY} exclusivity={Astal.Exclusivity.IGNORE}
       keymode={Astal.Keymode.EXCLUSIVE} monitor={mon} $={(self) => {
@@ -125,4 +126,5 @@ export const LogoutMenu = (mon: number) =>
                 />
             </Gtk.Box>
         </Gtk.Box>
-    </Astal.Window> as Astal.Window;
+    </Astal.Window>
+);
