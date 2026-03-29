@@ -1,5 +1,5 @@
 import { Astal, Gtk } from "ags/gtk4";
-import { Windows } from "../windows";
+import { Windows } from "../window";
 import { getPopupWindowContainer, PopupWindow } from "./PopupWindow";
 import { Separator } from "./Separator";
 import { tr } from "../i18n/intl";

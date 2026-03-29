@@ -2,7 +2,7 @@ import { Gtk } from "ags/gtk4";
 import { Wireplumber } from "../../../modules/volume";
 import { Battery } from "../../../modules/battery";
 import { Notifications } from "../../../modules/notifications";
-import { Windows } from "../../../windows";
+import { Windows } from "../../../window";
 import { Recording } from "../../../modules/recording";
 import { Accessor, createBinding, createComputed, With } from "ags";
 import { variableToBoolean } from "../../../modules/utils";

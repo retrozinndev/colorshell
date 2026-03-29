@@ -1,7 +1,7 @@
 import { Astal, Gtk } from "ags/gtk4";
 import { createBinding, createComputed, createState, With } from "ags";
 import { Wireplumber } from "../../modules/volume";
-import { Windows } from "../../windows";
+import { Windows } from "../../window";
 import { Backlights } from "../../modules/backlight";
 import { createSubscription, secureBaseBinding, variableToBoolean } from "../../modules/utils";
 

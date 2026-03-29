@@ -1,7 +1,7 @@
 import "ags/overrides"; // thanks Aylur!!
 import "./config";
 import { handleArguments } from "./modules/arg-handler";
-import { Windows } from "./windows";
+import { Windows } from "./window";
 import { Notifications } from "./modules/notifications";
 import { Wallpaper } from "./modules/wallpaper";
 import { Stylesheet } from "./modules/stylesheet";

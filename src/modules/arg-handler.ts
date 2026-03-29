@@ -1,6 +1,6 @@
 import { Gtk } from "ags/gtk4";
 import { Wireplumber } from "./volume";
-import { Windows } from "../windows";
+import { Windows } from "../window";
 import { restartInstance } from "./reload-handler";
 import { Runner } from "../runner";
 import { showWorkspaceNumber } from "../window/bar/widgets/Workspaces";

@@ -1,7 +1,7 @@
 import GLib from "gi://GLib?version=2.0";
 import { Cli } from "..";
 import { showWorkspaceNumber } from "../../window/bar/widgets/Workspaces";
-import { Windows } from "../../windows";
+import { Windows } from "../../window";
 
 
 let window: string|undefined;

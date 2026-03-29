@@ -1,15 +1,15 @@
 import { Astal } from "ags/gtk4";
-import { Shell } from "./app";
+import { Shell } from "../app";
 import GObject, { getter, register, signal } from "ags/gobject";
-import { variableToBoolean } from "./modules/utils";
+import { variableToBoolean } from "../modules/utils";
 import { createRoot, getScope, onCleanup } from "ags";
-import { Bar } from "./window/bar";
-import { OSD } from "./window/osd";
-import { ControlCenter } from "./window/control-center";
-import { FloatingNotifications } from "./window/floating-notifications";
-import { CenterWindow } from "./window/center-window";
-import { LogoutMenu } from "./window/logout-menu";
-import { AppsWindow } from "./window/apps-window";
+import { Bar } from "./bar";
+import { OSD } from "./osd";
+import { ControlCenter } from "./control-center";
+import { FloatingNotifications } from "./floating-notifications";
+import { CenterWindow } from "./center-window";
+import { LogoutMenu } from "./logout-menu";
+import { AppsWindow } from "./apps-window";
 
 import AstalHyprland from "gi://AstalHyprland";
 

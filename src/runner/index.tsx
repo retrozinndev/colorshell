@@ -3,7 +3,7 @@ import { CCProps, createRoot } from "ags";
 import { getPopupWindowContainer, PopupWindow } from "../widget/PopupWindow";
 import { updateApps } from "../modules/apps";
 import { ResultWidget, ResultWidgetProps } from "./widgets/ResultWidget";
-import { Windows } from "../windows";
+import { Windows } from "../window";
 import { 
     PluginApps, 
     PluginClipboard, 

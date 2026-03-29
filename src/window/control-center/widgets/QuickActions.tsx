@@ -1,5 +1,5 @@
 import { Gtk } from "ags/gtk4";
-import { Windows } from "../../../windows";
+import { Windows } from "../../../window";
 import { Wallpaper } from "../../../modules/wallpaper";
 import { execApp } from "../../../modules/apps";
 import { Accessor } from "ags";
@@ -36,7 +36,6 @@ function ScreenshotButton(): Gtk.Button {
       onClicked={() => {
           Windows.getDefault().close("control-center");
           setTimeout(() => Screenshot.getDefault().take(), 700);
-
       }}
     /> as Gtk.Button;
 }

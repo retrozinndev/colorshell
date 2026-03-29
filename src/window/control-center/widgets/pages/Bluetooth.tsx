@@ -1,7 +1,7 @@
 import { Gtk } from "ags/gtk4";
 import { Page, PageButton } from "../Page";
 import { tr } from "../../../../i18n/intl";
-import { Windows } from "../../../../windows";
+import { Windows } from "../../../../window";
 import { Notifications } from "../../../../modules/notifications";
 import { execApp } from "../../../../modules/apps";
 import { createBinding, createComputed, createRoot, For, With } from "ags";
