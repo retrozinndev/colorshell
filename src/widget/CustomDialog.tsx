@@ -41,7 +41,7 @@ function CustomDialogOption({closeOnClick = true, ...props}: CustomDialogOption 
 }
 
 export function CustomDialog({ options = [{ text: tr("accept") }], ...props}: CustomDialogProps) {
-    return Windows.getDefault().createWindowForFocusedMonitor((mon) => {
+    return Windows.forFocusedMonitor((mon) => {
         const popup = <PopupWindow namespace={props.namespace ?? "custom-dialog"} monitor={mon}
           cssBackgroundWindow={props.cssBackground ?? "background: rgba(0, 0, 0, .3);"}
           exclusivity={Astal.Exclusivity.IGNORE} layer={Astal.Layer.OVERLAY}
