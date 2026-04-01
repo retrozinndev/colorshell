@@ -21,157 +21,135 @@ Commands:
   bus-name: get active player's mpris bus name.
   list: show available players with their bus name.
   select bus_name: change the active player, where bus_name is 
-    the desired player's mpris bus name(with the mediaplayer2 prefix).`,
+    the desired player's mpris bus name(with the mediaplayer2 prefix).
+`,
+
     arguments: [{
         name: "select",
         alias: "s",
         hasValue: true,
         help: "select a new active player by its bus name",
-        onCalled: (print, name) => {
-            const player = AstalMpris.get_default().players
-                .filter(p => p.available && p.busName === name)[0];
+        onCalled: (remote, name) => {
+            const player = AstalMpris.get_default().players.find(p => 
+                p.available && p.busName === name
+            );
 
             if(!player || player.available) {
-                print({
-                    content: `Error: no such available player with bus name "${name}" was found`,
-                    type: "err"
-                });
+                remote.println(
+                    `Error: no such available player with bus name "${name}" was found`,
+                    true
+                );
+                remote.exit(1);
                 return;
             }
 
             Media.getDefault().player = player;
-            print({
-                content: "Done setting active player",
-                type: "out"
-            });
+            remote.println("Done setting active player");
         }
     }],
     commands: [
         {
             name: "play",
             help: "resume/start active player's media",
-            onCalled: (print) => {
+            onCalled: (remote) => {
                 if(!Media.getDefault().player.available ||
                    !Media.getDefault().player.canPlay)
                     return;
 
                 Media.getDefault().player.play();
-                print({
-                    content: "Now playing",
-                    type: "out"
-                });
+                remote.println("Now playing");
             }
         }, {
             name: "pause",
             help: "pause the active player",
-            onCalled: (print) => {
+            onCalled: (remote) => {
                 if(!Media.getDefault().player.available ||
                    !Media.getDefault().player.canPause)
                     return;
 
                 Media.getDefault().player.pause();
-                print({
-                    content: "Paused",
-                    type: "out"
-                });
+                remote.println("Paused");
             }
         }, {
             name: "play-pause",
             help: "toggle pause/resume the active player",
-            onCalled: (print) => {
+            onCalled: (remote) => {
                 if(!Media.getDefault().player.available ||
                    !Media.getDefault().player.canControl)
                     return;
 
                 Media.getDefault().player.play_pause();
-                print({
-                    content: Media.getDefault().player
-                      .playbackStatus === AstalMpris.PlaybackStatus.PAUSED ?
+                remote.println(Media.getDefault().player
+                    .playbackStatus === AstalMpris.PlaybackStatus.PAUSED ?
                         "Toggle pause"
-                    : "Toggle play",
-                    type: "out"
-                });
+                    : "Toggle play"
+                );
             }
         }, {
             name: "stop",
             help: "stop the active player (if compatible)",
-            onCalled: (print) => {
+            onCalled: (remote) => {
                 if(!Media.getDefault().player.available ||
                    !Media.getDefault().player.canControl)
                     return;
 
                 Media.getDefault().player.stop();
-                print({
-                    content: "Stopped",
-                    type: "out"
-                });
+                remote.println("Stopped");
             }
         }, {
             name: "previous",
             help: "go back to previous media in the active player",
-            onCalled: (print) => {
+            onCalled: (remote) => {
                 if(!Media.getDefault().player.available ||
                    !Media.getDefault().player.canGoPrevious)
                     return;
 
                 Media.getDefault().player.previous();
-                print({
-                    content: "Back to previous",
-                    type: "out"
-                });
+                remote.println("Back to previous");
             }
         }, {
             name: "next",
             help: "jump to the next media in active player",
-            onCalled: (print) => {
+            onCalled: (remote) => {
                 if(!Media.getDefault().player.available ||
                    !Media.getDefault().player.canGoNext)
                     return;
 
                 Media.getDefault().player.next();
-                print({
-                    content: "Jump to next",
-                    type: "out"
-                });
+                remote.println("Jump to next");
             }
         }, {
             name: "bus-name",
             help: "retrieve the active player's mpris bus name",
-            onCalled: (print) => {
+            onCalled: (remote) => {
                 if(!Media.getDefault().player.available)
                     return;
 
-                print({
-                    content: Media.getDefault().player.busName,
-                    type: "out"
-                });
+                remote.println(Media.getDefault().player.busName);
             }
         }, {
             name: "list",
             help: "list available players implementing mpris",
-            onCalled: (print) => {
+            onCalled: (remote) => {
                 const players = AstalMpris.get_default().players
                     .filter(p => p.available);
 
-                print({
-                    content: `Available players:\n${players.map(pl => {
-                        let playbackStatusStr: string;
-                        switch(pl.playbackStatus) {
-                            case AstalMpris.PlaybackStatus.PAUSED:
-                                playbackStatusStr = "paused";
-                            break;
-                            case AstalMpris.PlaybackStatus.PLAYING:
-                                playbackStatusStr = "playing";
-                            break;
-                            default:
-                                playbackStatusStr = "stopped";
-                            break;
-                        }
+                remote.println(`Available players:\n${players.map(pl => {
+                    let playbackStatusStr: string;
+                    switch(pl.playbackStatus) {
+                        case AstalMpris.PlaybackStatus.PAUSED:
+                            playbackStatusStr = "paused";
+                        break;
+                        case AstalMpris.PlaybackStatus.PLAYING:
+                            playbackStatusStr = "playing";
+                        break;
+                        default:
+                            playbackStatusStr = "stopped";
+                        break;
+                    }
 
-                        return `  ${pl.busName}: ${playbackStatusStr}`;
-                    }).join('\n')}`,
-                    type: "out"
-                });
+                    return `  ${pl.busName}: ${playbackStatusStr}`;
+                }).join('\n')}`);
             }
         }
     ]

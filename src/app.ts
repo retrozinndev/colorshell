@@ -1,7 +1,6 @@
 import "ags/overrides"; // thanks Aylur!!
 import "./config";
 import { Windows } from "./window";
-import { handleArguments } from "./modules/arg-handler";
 import { Notifications } from "./modules/notifications";
 import { Wallpaper } from "./modules/wallpaper";
 import { Stylesheet } from "./modules/stylesheet";
@@ -23,6 +22,9 @@ import Media from "./modules/media";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import Adw from "gi://Adw?version=1";
+import { SocketCli } from "./cli/interface/socket";
+import { Cli } from "./cli";
+import { CmdCli } from "./cli/interface/cmd";
 
 
 @register({ GTypeName: "Shell" })
@@ -40,8 +42,6 @@ export class Shell extends Adw.Application {
 
     #scope!: Scope;
     #providers: Array<Gtk.CssProvider> = [];
-    #socketService!: Gio.SocketService;
-    #socketFile!: Gio.File;
     #pid: number|null = null;
 
     get pid() { return this.#pid; }
@@ -111,27 +111,11 @@ export class Shell extends Adw.Application {
     }
 
     vfunc_command_line(cmd: Gio.ApplicationCommandLine): number {
-        const args = cmd.get_arguments();
-        const _exec = args.splice(0, 1)[0]; // get exec from arguments
+        if(cmd.isRemote)
+            return 0;
 
-
-        if(!cmd.isRemote && !args[0]?.includes("h"))
-            this.activate();
-
-        let res: number = 0;
-
-        try {
-            res = args.length > 0 ? handleArguments(cmd, args) : 0;
-        } catch(_e) {
-            const e = _e as Error;
-            cmd.printerr_literal(`Error: something went wrong! Stderr: ${e.message}\n${e.stack}`);
-            cmd.done();
-            cmd.set_exit_status(1);
-            return 1;
-        }
-
-        cmd.set_exit_status(res);
-        return res;
+        this.activate();
+        return 0;
     }
 
     vfunc_activate(): void {
@@ -218,72 +202,26 @@ export class Shell extends Adw.Application {
             file.replace_contents_bytes_async(data, null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null, null);
         });
 
-        this.#socketFile = Gio.File.new_for_path(`${Shell.runtimeDir.peek_path()!}/.sock`);
+        Cli.init([
+            new CmdCli(this),
+            new SocketCli(Gio.UnixSocketAddress.new(`${Shell.runtimeDir.peek_path()!}/.sock`))
+        ]);
 
-        if(this.#socketFile.query_exists(null)) {
-            console.log(`Colorshell: Deleting previous instance's socket`);
-            this.#socketFile.delete(null);
-        }
-        
-        this.#socketService = Gio.SocketService.new();
-        this.#socketService.add_address(
-            Gio.UnixSocketAddress.new(this.#socketFile.get_path()!),
-            Gio.SocketType.STREAM,
-            Gio.SocketProtocol.DEFAULT,
-            null
-        );
+        // @ts-ignore
+        /**createScopedConnection(this.#socket, "received", (args: Array<string>, remote: CliInterface.Remote) => {
+            if(args.length < 1) {
+                remote.println("No args were provided", true);
+                remote.exit(1);
+                return;
+            }
 
-        // handle communication via socket
-        createScopedConnection(this.#socketService, "incoming", (conn) => {
-             const inputStream = Gio.DataInputStream.new(conn.inputStream);
-             inputStream.read_upto_async('\x00', -1, GLib.PRIORITY_DEFAULT, null, (_, res) => {
-             const [args, len] = inputStream.read_upto_finish(res);
-             inputStream.close(null);
-             conn.inputStream.close(null);
-
-             if(len < 1) {
-                 console.error(`Colorshell: No args provided via socket call`);
-                 return;
-             }
-
-             try {
-                 const [success, parsedArgs] = GLib.shell_parse_argv(`colorshell ${args}`);
-                 parsedArgs?.splice(0, 1); // remove the unnecessary `colorshell` part
-
-                 if(success) {
-                     handleArguments({
-                         print_literal: (msg) => conn.outputStream.write_bytes(
-                                encoder.encode(`${msg}\n`),
-                                null
-                            ),
-                            // TODO: support writing to stderr(i don't know how to do that :sob:)
-                            printerr_literal: (msg) => conn.outputStream.write_bytes(
-                                encoder.encode(`${msg}\n`),
-                                null
-                            )
-                        }, parsedArgs!);
-
-                        conn.outputStream.flush(null);
-                        conn.close(null);
-                        return;
-                    }
-
-                    conn.outputStream.write_bytes(
-                        encoder.encode("Error: Unexpected error occurred on argument parsing!"),
-                        null
-                    );
-
-                    conn.outputStream.flush(null);
-                    conn.close(null);
-                } catch(_e) {
-                    const e = _e as Error;
-                    console.error(`Colorshell: An error occurred while writing to socket output. Stderr:\n${
-                        e.message}\n${e.stack}`);
-                }
-            });
-
-            return false;
-        });
+            remote.exit(
+                handleArguments({
+                    print_literal: (msg) => remote.println(msg),
+                    printerr_literal: (msg) => remote.println(msg, true)
+                }, args)
+            );
+        });*/
     }
 
     private main(): void {

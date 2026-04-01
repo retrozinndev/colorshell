@@ -12,7 +12,7 @@ export default {
 Control speaker and microphone volume levels.
 
 Extra help: 
-  sink is the default speaker and source is the default microphone.
+  "sink" is the default speaker and "source" is the default microphone.
 
 Arguments:
   --device, -d [sink/source]: set the device to be controlled.
@@ -29,12 +29,9 @@ Commands:
             alias: 'd',
             help: "Specify the device to control. Can be \"sink\" or \"source\"",
             hasValue: true,
-            onCalled: (print, value) => {
+            onCalled: (remote, value) => {
                 if(!value || !/sink|source/.test(value)) {
-                    print({
-                        content: `Device ${value} does not exist/isn't defined`,
-                        type: "err"
-                    });
+                    remote.println(`Device ${value} does not exist/isn't defined`, true);
                     return;
                 }
 
@@ -45,21 +42,15 @@ Commands:
             alias: 'p',
             hasValue: true,
             help: "increase volume/sensitivity the provided device",
-            onCalled: (print, value) => {
+            onCalled: (remote, value) => {
                 if(!device || value === undefined) return;
                 const increase = Number.parseInt(value);
                 if(Number.isNaN(increase)) {
-                    print({
-                        content: "Provided value is not a number/percentage!",
-                        type: "err"
-                    });
+                    remote.println("Provided value is not a number/percentage!", true);
                     return;
                 }
 
-                print({
-                    content: `Increasing volume of ${device} by ${value}`,
-                    type: "out"
-                });
+                remote.println(`Increasing volume of ${device} by ${value}`);
                 if(device === "sink") {
                     Wireplumber.getDefault().increaseSinkVolume(increase);
                     return;
@@ -72,21 +63,15 @@ Commands:
             alias: 'm',
             help: "decrease volume/sensitivity of a sink/source",
             hasValue: true,
-            onCalled: (print, value) => {
+            onCalled: (remote, value) => {
                 if(!device || value === undefined) return;
                 const decrease = Number.parseInt(value);
                 if(Number.isNaN(decrease)) {
-                    print({
-                        content: "Provided value is not a number/percentage!",
-                        type: "err"
-                    });
+                    remote.println("Provided value is not a number/percentage!", true);
                     return;
                 }
 
-                print({
-                    content: `Decreasing volume of ${device} by ${value}`,
-                    type: "out"
-                });
+                remote.println(`Decreasing volume of ${device} by ${value}`,);
                 if(device === "sink") {
                     Wireplumber.getDefault().decreaseSinkVolume(decrease);
                     return;
@@ -99,21 +84,15 @@ Commands:
             alias: 's',
             help: "set the volume/sensitivity of a sink/source",
             hasValue: true,
-            onCalled: (print, value) => {
+            onCalled: (remote, value) => {
                 if(!device || value === undefined) return;
                 const volume = Number.parseInt(value);
                 if(Number.isNaN(volume)) {
-                    print({
-                        content: "Provided value is not a number!",
-                        type: "err"
-                    });
+                    remote.println("Provided value is not a number!", true);
                     return;
                 }
 
-                print({
-                    content: `Setting volume of ${device} by ${value}`,
-                    type: "out"
-                });
+                remote.println(`Setting volume of ${device} by ${value}`);
                 if(device === "sink") {
                     Wireplumber.getDefault().setSinkVolume(volume);
                     return;
@@ -126,13 +105,10 @@ Commands:
     commands: [{
         name: "mute",
         help: "toggle-mute a sink/source's audio",
-        onCalled: (print) => {
+        onCalled: (remote) => {
             if(!device) return;
 
-            print({
-                content: `Toggling mute for ${device}`,
-                type: "out"
-            });
+            remote.println(`Toggling mute for ${device}`);
             if(device === "sink") {
                 Wireplumber.getDefault().toggleMuteSink();
                 return;
