@@ -2,7 +2,7 @@ import { Gtk } from "ags/gtk4";
 import { getAppIcon, getSymbolicIcon } from "../../../modules/apps";
 import { Separator } from "../../../widget/Separator";
 import { generalConfig } from "../../../config";
-import { createBinding, createComputed, createState, For, With } from "ags";
+import { Accessor, createBinding, createComputed, createState, For, With } from "ags";
 import { variableToBoolean } from "../../../modules/utils";
 
 import AstalHyprland from "gi://AstalHyprland";
@@ -19,7 +19,7 @@ export const Workspaces = () => {
             wss.filter(ws => ws.id > 0).sort((a, b) => a.id - b.id)),
         specialWorkspaces = workspaces.as(wss => 
             wss.filter(ws => ws.id < 0).sort((a, b) => a.id - b.id)),
-        focusedWorkspace = createBinding(AstalHyprland.get_default(), "focusedWorkspace");
+        focusedWorkspace = createBinding(AstalHyprland.get_default(), "focusedWorkspace") as Accessor<AstalHyprland.Workspace|null>;
 
 
     return <Gtk.Box class={"workspaces-row"} visible={createComputed([
@@ -97,15 +97,15 @@ export const Workspaces = () => {
                     });
                     
                     return <Gtk.Button class={createComputed([
-                          createBinding(AstalHyprland.get_default(), "focusedWorkspace"),
+                          focusedWorkspace,
                           showId
                       ], (focusedWs, showWsNumbers) =>
-                          `workspace ${focusedWs.id === ws.id ? "focus" : ""} ${
+                          `workspace ${focusedWs?.id === ws.id ? "focus" : ""} ${
                               showWsNumbers ? "show" : ""}`
                       )} tooltipText={createComputed([
                           createBinding(ws, "lastClient"),
-                          createBinding(AstalHyprland.get_default(), "focusedWorkspace")
-                      ], (lastClient, focusWs) => focusWs.id === ws.id ? "" : 
+                          focusedWorkspace
+                      ], (lastClient, focusWs) => focusWs?.id === ws.id ? "" : 
                           `workspace ${ws.id}${ lastClient ? ` - ${
                               !lastClient.title.toLowerCase().includes(lastClient.class) ?
                                   `${lastClient.get_class()}: `
@@ -117,8 +117,8 @@ export const Workspaces = () => {
                             {(lastClient: AstalHyprland.Client) => 
                                 <Gtk.Box class={"last-client"} hexpand>
                                     <Gtk.Revealer transitionDuration={280} revealChild={showId}
-                                      transitionType={focusedWorkspace.as(
-                                          fws => fws.id !== ws.id ? 
+                                      transitionType={focusedWorkspace(
+                                          fws => fws?.id !== ws.id ? 
                                               Gtk.RevealerTransitionType.SLIDE_LEFT
                                           : Gtk.RevealerTransitionType.SLIDE_RIGHT
                                       )}>
@@ -130,8 +130,7 @@ export const Workspaces = () => {
                                       createBinding(lastClient, "initialClass").as(initialClass =>
                                           getSymbolicIcon(initialClass) ?? getAppIcon(initialClass) ??
                                               "application-x-executable-symbolic")} 
-                                      hexpand vexpand visible={createBinding(AstalHyprland.get_default(), "focusedWorkspace")
-                                          .as(fws => fws.id !== ws.id)}
+                                      hexpand vexpand visible={focusedWorkspace(fws => fws?.id !== ws.id)}
                                     />}
                                 </Gtk.Box>
                             }

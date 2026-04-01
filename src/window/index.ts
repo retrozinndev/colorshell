@@ -1,9 +1,10 @@
-import { Astal } from "ags/gtk4";
+import { Astal, Gdk } from "ags/gtk4";
 import GObject, { getter, register, signal } from "ags/gobject";
 import { createScopedConnection, variableToBoolean } from "../modules/utils";
 import { createRoot, getScope, Scope } from "ags";
 import AstalHyprland from "gi://AstalHyprland";
 import { shellWindows } from "../windows";
+import { Shell } from "../app";
 
 
 /** Manage shell windows and in which monitors they appear.
@@ -39,12 +40,36 @@ export class Windows<T extends string = string> extends GObject.Object {
             // Listen to monitor events
             createScopedConnection(
                 AstalHyprland.get_default(), "monitor-added",
-                () => setTimeout(() => this.reopen(), 1200) // we wait a little bit for the monitor to display
+                (m) => {
+                    const monitors = AstalHyprland.get_default().get_monitors();
+                    const focused = monitors.find(m => m.focused);
+
+                    console.log("Monitor added!", m?.id);
+                    console.log(monitors.map(m => m.id));
+
+                    if(typeof m?.id !== "number" || !focused)
+                        return;
+
+                    this.reopen();
+                }
             );
+
             createScopedConnection(
                 AstalHyprland.get_default(), "monitor-removed",
-                () => AstalHyprland.get_default().get_monitors().length > 0 &&
-                    setTimeout(() => this.reopen(), 1200)
+                (m) => {
+                    const monitors = AstalHyprland.get_default().get_monitors();
+                    const focused = monitors.find(m => m.focused);
+
+                    console.log("Monitor removed!", m);
+                    console.log(monitors.map(m => m.id));
+
+                    if(monitors.length < 1 || !focused) {
+                        this.closeAll();
+                        return;
+                    }
+
+                    this.reopen();
+                }
             );
         });
     }
@@ -160,15 +185,14 @@ export class Windows<T extends string = string> extends GObject.Object {
                 });
 
             return monitors.map(mon => {
-                return createRoot(() => {
+                return createRoot((dispose) => {
                     const scope = getScope();
                     const instance = create(mon.id, scope) as Astal.Window;
-                    const connection: number = instance.connect("close-request", () => 
-                        scope.dispose());
+                    const id = instance.connect("destroy", () => dispose());
 
-                    scope.onCleanup(() => 
-                        GObject.signal_handler_is_connected(instance, connection) &&
-                            instance.disconnect(connection)
+                    scope.onCleanup(() =>
+                        GObject.signal_handler_is_connected(instance, id) &&
+                            instance.disconnect(id)
                     );
 
                     return instance;
@@ -195,11 +219,11 @@ export class Windows<T extends string = string> extends GObject.Object {
             return createRoot((dispose) => {
                 const scope = getScope();
                 const instance = create(focusedMonitor, scope) as Astal.Window;
-                const connection = instance.connect("close-request", () => dispose());
+                const id = instance.connect("destroy", () => dispose());
 
-                scope.onCleanup(() => 
-                    GObject.signal_handler_is_connected(instance, connection) &&
-                        instance.disconnect(connection)
+                scope.onCleanup(() =>
+                    GObject.signal_handler_is_connected(instance, id) &&
+                        instance.disconnect(id)
                 );
 
                 return instance;
@@ -225,8 +249,14 @@ export class Windows<T extends string = string> extends GObject.Object {
         return Object.values(this.windows);
     }
     
+    /** get the hyprland focused monitor's id. 
+      * if there's no focused monitor, fallback to `0`.
+      * `null` if no monitors were found 
+      *
+      * @returns the monitor id. if none are found, `null` */
     public static getFocusedMonitorId(): (number|null) {
-        return AstalHyprland.get_default().get_monitors().find(mon => mon.focused)?.id ?? null;
+        const monitors = AstalHyprland.get_default().get_monitors();
+        return monitors.find(mon => mon.focused)?.id ?? monitors[0]?.id ?? null;
     }
 
     public isOpen(name: T): boolean {
