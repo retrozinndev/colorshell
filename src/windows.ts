@@ -29,4 +29,7 @@ export function initWindows(): void {
         name, shellWindows[name as keyof typeof shellWindows]
     ));
     initialized = true;
+
+    if(!Windows.getDefault().isOpen("bar"))
+        Windows.getDefault().open("bar");
 }

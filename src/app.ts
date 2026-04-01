@@ -206,22 +206,6 @@ export class Shell extends Adw.Application {
             new CmdCli(this),
             new SocketCli(Gio.UnixSocketAddress.new(`${Shell.runtimeDir.peek_path()!}/.sock`))
         ]);
-
-        // @ts-ignore
-        /**createScopedConnection(this.#socket, "received", (args: Array<string>, remote: CliInterface.Remote) => {
-            if(args.length < 1) {
-                remote.println("No args were provided", true);
-                remote.exit(1);
-                return;
-            }
-
-            remote.exit(
-                handleArguments({
-                    print_literal: (msg) => remote.println(msg),
-                    printerr_literal: (msg) => remote.println(msg, true)
-                }, args)
-            );
-        });*/
     }
 
     private main(): void {
@@ -233,17 +217,13 @@ export class Shell extends Adw.Application {
         Stylesheet.getDefault();
         Media.getDefault();
 
-        initWindows()
+        initWindows();
 
         Clipboard.getDefault();
         Input.getDefault();
         NightLight.getDefault();
         Idle.getDefault();
         OSD.init();
-
-        if(!Windows.getDefault().isOpen("bar"))
-            Windows.getDefault().open("bar");
-
 
         createScopedConnection(Notifications.getDefault(), "notification-added", () => {
             Windows.getDefault().open("floating-notifications");
