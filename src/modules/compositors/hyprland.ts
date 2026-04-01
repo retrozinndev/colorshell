@@ -14,6 +14,7 @@ import { Wallpaper } from "../wallpaper";
 @register({ GTypeName: "ClshCompositorHyprland" })
 export class CompositorHyprland extends Compositor {
     #eventSock: Socket;
+    #cmdSock: Socket;
     #configDir: Gio.File = Gio.File.new_for_path(`${Shell.runtimeDir.peek_path()!}/config/hyprland`);
     #ignoreConfigReload: boolean = false;
     hyprland: AstalHyprland.Hyprland = AstalHyprland.get_default();
@@ -25,12 +26,19 @@ export class CompositorHyprland extends Compositor {
         if(instSignature === null || instSignature.trim() === "")
             throw new Error("Compositor: Hyprland: Couldn't get instance signature");
 
-        this.initConfig();
         this.#eventSock = new Socket(
             Socket.Type.CLIENT,
             `${GLib.get_user_runtime_dir()}/hypr/${instSignature}/.socket2.sock`,
             true
         );
+        this.#cmdSock = new Socket(
+            Socket.Type.CLIENT,
+            `${GLib.get_user_runtime_dir()}/hypr/${instSignature}/.socket.sock`,
+            false,
+            "\x00"
+        );
+
+        this.initConfig();
 
         const clients = this.getClients();
         if(clients && clients.length > 0) {
@@ -144,14 +152,12 @@ export class CompositorHyprland extends Compositor {
     /** loads shell-specific binds from the binds.conf file packed into gresource.
       * this smartly excludes binds that the user has already set, avoiding duplicate binds */
     private loadBinds(): void {
-        type Bind = { params: string, flags?: string, modmask: number, key: string };
+        const bindExpr = /^bind([lrcgoenmtisdpu]*)?[ ]+=[ ]+(.*)$/;
+        const binds: Array<CompositorHyprland.Bind> = [];
         const bindingsConf = decoder.decode(Gio.resources_lookup_data(
             "/io/github/retrozinndev/colorshell/config/hyprland/bindings.conf",
             null
         )?.toArray());
-        const bindExpr = /^bind([lrcgoenmtisdpu]*)?[ ]+=[ ]+(.*)$/;
-        const binds: Array<Bind> = [];
-
 
         for(const line of bindingsConf.split('\n')) {
             if(/^#/.test(line.trim()) || /^\n$/.test(line.trim()))
@@ -169,7 +175,7 @@ export class CompositorHyprland extends Compositor {
                 params: params.replace(/, /g, ","),
                 flags: flags ?? undefined,
                 modmask: 0
-            } as Bind;
+            } as CompositorHyprland.Bind;
 
             binds.push(bind);
 
@@ -277,19 +283,46 @@ export class CompositorHyprland extends Compositor {
 
         return mask ?? 0;
     }
+
+    protected hyprctl(command: string, args?: string): string {
+        const promise = this.#cmdSock.simpleSend(
+            `json/${command}${args !== undefined ? ` ${args}` : ""}`,
+            true
+        );
+
+        let fulfilled: boolean = false,
+            result: string|null = null,
+            error: any;
+
+        promise.then((r) => result = r).catch(e => error = e)
+            .finally(() => fulfilled = true);
+
+        while(!fulfilled) {}
+
+        if(error)
+            throw (error instanceof Error ?
+                error
+            : new Error(error));
+
+        return result ?? "";
+    }
+
+    protected async hyprctlAsync(command: string, args?: string): Promise<string> {
+        return (await this.#cmdSock.simpleSend(
+            `json/${command}${args !== undefined ? ` ${args}` : ""}`,
+            true
+        )) ?? "";
+    }
 }
 
 export namespace CompositorHyprland {
-    export type Event = "activewindow"
-        | "activewindowv2"
-        | "workspace"
-        | "configreloaded"
-        | "windowtitle"
-        | "windowtitlev2"
-        | "workspacev2"
-        | "focusedmon"
-        | "bell"
-        | "focusedmonv2";
+    export type Event = keyof Events;
+    export type Bind = {
+        params: string;
+        flags?: string;
+        modmask: number;
+        key: string;
+    };
 
     export type Client = {
         address: string,
@@ -321,5 +354,51 @@ export namespace CompositorHyprland {
         xdgTag: string,
         xdgDescription: string,
         contentType: string
+    };
+    
+    export type Events = {
+        workspace: [string];
+        workspacev2: [number, string];
+        focusedmon: [string, string];
+        focusedmonv2: [string, number];
+        activewindow: [string, string];
+        activewindowv2: [string];
+        fullscreen: [number];
+        monitorremoved: [string];
+        monitorremovedv2: [number, string, string];
+        monitoradded: [string];
+        monitoraddedv2: [number, string, string];
+        createworkspace: [string];
+        createworkspacev2: [number, string];
+        destroyworkspace: [string];
+        destroyworkspacev2: [number, string];
+        moveworkspace: [string, string];
+        moveworkspacev2: [number, string, string];
+        renameworkspace: [number, string];
+        activespecial: [string, string];
+        activespecialv2: [number, string, string];
+        activelayout: [string, string];
+        openwindow: [string, string, string, string];
+        closewindow: [string];
+        kill: [string];
+        movewindow: [string, string];
+        movewindowv2: [string, number, string];
+        openlayer: [string];
+        closelayer: [string];
+        submap: [string];
+        changefloatingmode: [string, 0|1];
+        urgent: [string];
+        screencast: [0|1, 0|1];
+        windowtitle: [string];
+        windowtitlev2: [string, string];
+        togglegroup: [0|1, ...string[]];
+        moveintogroup: [string];
+        moveoutofgroup: [string];
+        ignoregrouplock: [0|1];
+        lockgroups: [0|1];
+        configreloaded: undefined;
+        pin: [string, any]; // TODO: discover what the hell is PINSTATE
+        minimized: [string, 0|1];
+        bell: [string];
     };
 }
