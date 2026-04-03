@@ -1,9 +1,9 @@
-import { Accessor, createConnection, getScope, Scope } from "ags";
+import { Accessor, createConnection } from "ags";
 import { createScopedConnection, decoder } from "./utils";
 
 import AstalMpris from "gi://AstalMpris";
 import GObject from "gi://GObject?version=2.0";
-import { property, register } from "ags/gobject";
+import { gtype, property, register } from "ags/gobject";
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
 
@@ -11,53 +11,160 @@ import GLib from "gi://GLib?version=2.0";
 @register({ GTypeName: "Media" })
 export default class Media extends GObject.Object {
     private static instance: Media;
-    public static readonly dummyPlayer = {
-        available: false,
-        busName: "dummy_player",
-        bus_name: "dummy_player"
-    } as AstalMpris.Player;
 
-    @property(AstalMpris.Player)
-    player: AstalMpris.Player = Media.dummyPlayer;
+    /** player connections */
+    #players: Map<string, Array<number>> = new Map();
 
-    constructor(scope: Scope) {
+    @property(gtype<AstalMpris.Player|null>(AstalMpris.Player))
+    player: AstalMpris.Player|null = null;
+
+    constructor() {
         super();
-        
-        scope.run(() => {
-            const firstPlayer = AstalMpris.get_default().players[0];
-            if(firstPlayer) 
-                this.player = firstPlayer;
 
-            createScopedConnection(
-                AstalMpris.get_default(), 
-                "player-added", 
-                (player) => {
-                    if(player.available) 
-                        this.player = player;
+        const firstPlayer = AstalMpris.get_default().players[0];
+        if(firstPlayer) 
+            this.player = firstPlayer;
+
+        createScopedConnection(
+            AstalMpris.get_default(), 
+            "player-added", 
+            (player) => {
+                if(player.available) 
+                    this.player = player;
+
+                this.addConnections(player);
+            }
+        );
+
+        createScopedConnection(
+            AstalMpris.get_default(),
+            "player-closed", (closedPlayer) => {
+                // we need this, because AstalMpris removes the closed player from the `:players` array.
+                const closedPlayerIndex = [...this.#players.keys()]
+                    .findIndex(s => s === closedPlayer.busName);
+                const players = [...AstalMpris.get_default().get_players()];
+
+                if(closedPlayerIndex < 0) {
+                    this.player = players[0] ?? null;
+                    this.removeConnections(closedPlayer);
+                    return;
                 }
-            );
 
-            createScopedConnection(
-                AstalMpris.get_default(),
-                "player-closed", (closedPlayer) => {
-                    const players = AstalMpris.get_default().players.filter(pl => pl?.available && 
-                        pl.busName !== closedPlayer.busName);
+                players.splice(closedPlayerIndex, 0, closedPlayer); // add closed player back to the list
+                const nextPlayer = this.getNextPlayer(closedPlayer, true, players);
+                this.player = nextPlayer ?? players[0] ?? null;
 
-                    // go back to first player(if available) when the active player is closed
-                    if(players.length > 0 && players[0]) {
-                        this.player = players[0];
-                        return;
-                    } 
-                    
-                    this.player = Media.dummyPlayer;
+                this.removeConnections(closedPlayer);
+            }
+        );
+    }
+
+    public addConnections(player: AstalMpris.Player): void {
+        const conns = this.#players.get(player.busName);
+        if(conns && conns.length > 1)
+            conns.forEach(id => player.disconnect(id));
+
+        this.#players.set(player.busName, [
+            player.connect("notify::playback-status", () => {
+                const status = player.get_playback_status();
+
+                if(status !== AstalMpris.PlaybackStatus.PLAYING) {
+                    const activePlayer = this.findLastActivePlayer();
+                    if(activePlayer)
+                        this.player = activePlayer;
+
+                    return;
                 }
-            );
-        });
+
+                this.player = player;
+            })
+        ]);
+    }
+
+    public removeConnections(player: AstalMpris.Player): void {
+        const conns = this.#players.get(player.busName);
+
+        if(!conns || conns.length < 1)
+            return;
+
+        conns.forEach(id => player.disconnect(id));
+        this.#players.delete(player.busName);
+    }
+
+    /** get the player that comes after the provided `player`. if there's no such player,
+      * you get `undefined`.
+      * 
+      * @param allowLoop whether to allow looping around the list(running this for the last
+      * player would return the first player in the list, if enabled. default: `true`)
+      * @param list the list of `AstalMpris.Player` to lookup(by default we get them from `Mpris`)
+      *
+      * @returns the next `AstalMpris.Player` if found, or else, `undefined` */
+    public getNextPlayer(player: AstalMpris.Player, allowLoop: boolean = true, list?: Array<AstalMpris.Player>): AstalMpris.Player|undefined {
+        const players = list ?? AstalMpris.get_default().get_players();
+        const i = players.findIndex(p => p.get_bus_name() === player.busName);
+
+        // just in case
+        if(i < 0)
+            return undefined;
+
+        if(i === players.length) {
+            const firstPlayer = players[0];
+            if(firstPlayer && allowLoop && firstPlayer.busName !== player.busName)
+                return firstPlayer;
+
+            return undefined;
+        }
+
+        const nextPlayer: AstalMpris.Player|undefined = players[i+1];
+        return nextPlayer;
+    }
+
+    /** get the previous `AstalMpris.Player` to `player`. if there's no such player,
+      * you get `undefined`.
+      * 
+      * @param allowLoop whether to allow looping around the list(running this for the first
+      * player would return the last player in the list, if enabled. default: `true`)
+      * @param list the list of `AstalMpris.Player` to lookup(by default we get them from `Mpris`)
+      *
+      * @returns the previous `AstalMpris.Player` to `player`, if found; if not, `undefined` */
+    public getPreviousPlayer(player: AstalMpris.Player, allowLoop: boolean = true, list?: Array<AstalMpris.Player>): AstalMpris.Player|undefined {
+        const players = list ?? AstalMpris.get_default().get_players();
+        const i = players.findIndex(p => p.get_bus_name() === player.busName);
+
+        if(i < 0)
+            return undefined;
+
+        if(i === 0) {
+            const lastPlayer = players[players.length-1];
+            if(lastPlayer && allowLoop && lastPlayer.busName !== player.busName)
+                return lastPlayer;
+
+            return undefined;
+        }
+
+        const prevPlayer: AstalMpris.Player|undefined = players[i-1];
+        return prevPlayer;
+    }
+
+    /** gets the last active player(a player is "active" if it's playing something)
+     * @param list the player list to lookup from(by default we get it from `Mpris`)
+     * @returns the last active `AstalMpris.Player` if found; or else, `undefined` */
+    public findLastActivePlayer(list?: Array<AstalMpris.Player>): AstalMpris.Player|undefined {
+        return (list ?? AstalMpris.get_default().get_players())
+            .findLast(p => p.playbackStatus === AstalMpris.PlaybackStatus.PLAYING);
+    }
+
+    /** gets the first active player(a player is "active" if it's playing something)
+     * @param list the player list to lookup from(by default we get it from `Mpris`)
+     * @returns the first active `AstalMpris.Player` if found; or else, `undefined` */
+    public findActivePlayer(list?: Array<AstalMpris.Player>): AstalMpris.Player|undefined {
+        return (list ?? AstalMpris.get_default().get_players())
+            .find(p => p.playbackStatus === AstalMpris.PlaybackStatus.PLAYING);
     }
 
     public static getDefault(): Media {
         if(!this.instance)
-            this.instance = new Media(getScope());
+            this.instance = new Media();
 
         return this.instance;
     }
@@ -123,7 +230,8 @@ export default class Media extends GObject.Object {
 
     
     public static getMediaUrl(player: AstalMpris.Player): string|undefined {
-        if(!player.available) return;
+        if(!player.available)
+            return undefined;
 
         const meta = player.get_meta("xesam:url");
         const byteString = meta?.get_data_as_bytes();

@@ -23,11 +23,11 @@ export const BigMedia = () => {
     const carousel = <Adw.Carousel orientation={Gtk.Orientation.HORIZONTAL} spacing={6} 
       onPageChanged={(self, num) => {
           const page = self.get_nth_page(num);
-          if(page instanceof PlayerWidget && Media.getDefault().player.busName !== page.player.busName) 
+          if(page instanceof PlayerWidget && Media.getDefault().player?.busName !== page.player.busName) 
               Media.getDefault().player = page.player;
     }}>
         <For each={availablePlayers.as(players => players.sort(pl => 
-            pl.busName === Media.getDefault().player.busName ? -1 : 1))}>
+            pl.busName === Media.getDefault().player?.busName ? -1 : 1))}>
 
             {(player: AstalMpris.Player) => <PlayerWidget player={player} />}
         </For>
