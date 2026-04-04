@@ -1,10 +1,10 @@
 import { Astal, Gdk } from "ags/gtk4";
 import GObject, { getter, register, signal } from "ags/gobject";
-import { createScopedConnection, variableToBoolean } from "../modules/utils";
 import { createRoot, getScope, Scope } from "ags";
 import AstalHyprland from "gi://AstalHyprland";
 import { shellWindows } from "../windows";
-import { Shell } from "../app";
+import Gio from "gi://Gio?version=2.0";
+import Adw from "gi://Adw?version=1";
 
 
 /** Manage shell windows and in which monitors they appear.
@@ -13,101 +13,86 @@ import { Shell } from "../app";
   * focused-monitor-only windows */
 @register({ GTypeName: "Windows" })
 export class Windows<T extends string = string> extends GObject.Object {
-    private static instance: (Windows | null);
-
     declare $signals: Windows.SignalSignatures
 
-    #scope: Scope;
+    private static instance: (Windows | null);
     #windows: Record<string, Windows.Window> = {};
 
-    @signal(String) windowOpen(_name: string) {}
-    @signal(String) windowClosed(_name: string) {}
+    @signal(String) windowOpen(_: string) {}
+    @signal(String) windowClosed(_: string) {}
 
     @getter(Object)
-    get windows(): object { return this.#windows; }
+    get windows() { return this.#windows; }
 
     @getter(Array)
     get openWindows(): Array<string> {
         return Object.keys(this.#windows).filter((key) => 
-            this.#windows[key].status === Windows.Status.OPEN);
+            this.#windows[key].status === Windows.Status.OPEN
+        );
     }
 
     constructor() {
         super();
 
-        this.#scope = getScope();
-        this.#scope.run(() => {
-            // Listen to monitor events
-            createScopedConnection(
-                AstalHyprland.get_default(), "monitor-added",
-                (m) => {
-                    const monitors = AstalHyprland.get_default().get_monitors();
-                    const focused = monitors.find(m => m.focused);
+        const monitors = Gdk.Display.get_default()?.get_monitors() as Gio.ListModel<Gdk.Monitor>|undefined;
+        if(!monitors)
+            throw new Error("Windows: Couldn't get GdkDisplay for the window/widget management system!!");
 
-                    console.log("Monitor added!", m?.id);
-                    console.log(monitors.map(m => m.id));
+        if(monitors.get_n_items() < 1)
+            console.warn("Windows: There are no monitors/displays plugged in for colorshell to open the widgets. You might have to manually open them after plugging in a monitor to your system");
 
-                    if(typeof m?.id !== "number" || !focused)
-                        return;
+        monitors.connect("items-changed", (
+            _: Gio.ListModel<Gdk.Monitor>,
+            _pos: number,
+            nRemoved: number,
+            nAdded: number
+        ) => {
+            const nMonitors = monitors.get_n_items();
 
-                    this.reopen();
+            // handle monitor removed
+            if(nRemoved > 0) {
+                if(nMonitors < 1) {
+                    const windowList = [...this.openWindows]; // save window list
+                    this.closeAll();
+                    // wait for a monitor to be connected, so we can bring all of the previous windows back
+                    const id = monitors.connect("items-changed", (_, __, ___, nAdded: number) => {
+                        if(nAdded < 1)
+                            return;
+
+                        monitors.disconnect(id);
+                        windowList.forEach(name => this.open(name as T));
+                    });
+
+                    return;
                 }
-            );
 
-            createScopedConnection(
-                AstalHyprland.get_default(), "monitor-removed",
-                (m) => {
-                    const monitors = AstalHyprland.get_default().get_monitors();
-                    const focused = monitors.find(m => m.focused);
+                this.reopen();
+                return;
+            }
 
-                    console.log("Monitor removed!", m);
-                    console.log(monitors.map(m => m.id));
-
-                    if(monitors.length < 1 || !focused) {
-                        this.closeAll();
-                        return;
-                    }
-
-                    this.reopen();
-                }
-            );
+            if(nAdded > 0)
+                this.reopen();
         });
+
     }
 
-    private disconnectWindow(name: T) {
-        if(!variableToBoolean(this.#windows[name]?.instance) || !this.#windows[name]) {
-            console.error(`Windows: couldn't disconnect window's connections: either the window \`${name
-                }\` doesn't exist in the windows list or it has no valid instance to disconnect signals from(not open)`);
-            return;
+    /** disconnect multiple `connections`(a list of connection ids from `instance`) of a GObject instance */
+    private _disconnectObject(instance: GObject.Object, connections: Array<number>): void {
+        for(const id of connections) {
+            if(GObject.signal_handler_is_connected(instance, id))
+                instance.disconnect(id);
         }
-
-        const window = this.#windows[name].instance!;
-
-        if(Array.isArray(window)) {
-            window.forEach(win => {
-                this._disconnectAllFromInstance(win.instance!, win.connections!)
-                win.connections.splice(0, win.connections.length);
-            });
-
-            return;
-        }
-
-        this._disconnectAllFromInstance(window.instance!, window.connections!);
-        window.connections.splice(0, window.connections.length);
     }
 
-    private _disconnectAllFromInstance(instance: GObject.Object, connections: Array<number>): void {
-        connections.forEach(id => 
-            GObject.signal_handler_is_connected(instance, id) &&
-                instance.disconnect(id));
-    }
-
-    private hasConnections(name: T): boolean {
+    private hasConnections(name: T): boolean;
+    private hasConnections(name: string): boolean;
+    private hasConnections(name: T|string): boolean {
         if(!this.openWindows.includes(name))
             return false;
 
-        const window = this.#windows[name].instance;
-        if(!window) return false;
+        const window = this.#windows[name as T].data;
+        if(!window)
+            return false;
 
         if(Array.isArray(window)) {
             for(const win of window) {
@@ -121,43 +106,50 @@ export class Windows<T extends string = string> extends GObject.Object {
         return window.connections?.length > 0;
     }
 
-    private connectWindow(name: T) {
-        if(this.hasConnections(name)) {
-            console.log(`Windows: skipped connecting window: \`${name}\`. Already connected`);
+    private disconnectWindow(name: T|string): void {
+        const data = this.windows[name as T]?.data;
+
+        if(!data)
+            return;
+
+        if(Array.isArray(data)) {
+            for(const window of data)
+                this._disconnectObject(window.instance, window.connections);
+
             return;
         }
 
-        if(!this.openWindows.includes(name)) {
-            console.log(`Windows: \`${name}\` is not open, will not connect`);
-            return;
-        }
+        this._disconnectObject(data.instance, data.connections);
+    }
 
-        const window = this.#windows[name as keyof typeof this.windows];
-        if(!window || !window.instance) {
-            console.error(`Windows: Either \`${name}\` does not exist in the window list or it doesn't have a valid instance. Please add the window before trying to manage it here`);
+    private connectWindow(name: T|string) {
+        const window = this.#windows[name as T];
+        if(this.hasConnections(name) || !window?.data)
             return;
-        }
 
-        if(Array.isArray(window.instance)) {
-            window.instance.forEach(inst => inst.connections = [
-                inst.instance!.connect("close-request", () => {
-                    this.disconnectWindow(name);
-                    delete window.instance;
-                    window.status = Windows.Status.CLOSED;
-                    this.notify("open-windows");
-                })
+        const onCloseRequest = (name: string, window: Windows.Window, data: Windows.Data): void => {
+            this.disconnectWindow(name);
+            // @ts-ignore
+            delete data.instance;
+            window.status = Windows.Status.CLOSED;
+            this.notify("open-windows");
+        };
+
+        const data = window.data;
+        if(Array.isArray(data)) {
+            data.forEach(data => data.connections = [
+                data.instance.connect("close-request", () => 
+                    onCloseRequest(name, window, data)
+                )
             ]);
 
             return;
         }
 
-        window.instance.connections = [
-            window.instance.instance!.connect("close-request", () => {
-                this.disconnectWindow(name);
-                delete window.instance;
-                window.status = Windows.Status.CLOSED;
-                this.notify("open-windows");
-            })
+        data.connections = [
+            data.instance.connect("close-request", () =>
+                onCloseRequest(name, window, data)
+            )
         ];
     }
 
@@ -188,11 +180,14 @@ export class Windows<T extends string = string> extends GObject.Object {
                 return createRoot((dispose) => {
                     const scope = getScope();
                     const instance = create(mon.id, scope) as Astal.Window;
-                    const id = instance.connect("destroy", () => dispose());
+                    const app = Adw.Application.get_default();
+                    const id = instance.connect("close-request", () => dispose());
 
-                    scope.onCleanup(() =>
-                        GObject.signal_handler_is_connected(instance, id) &&
-                            instance.disconnect(id)
+                    instance.set_monitor(mon.get_id());
+                    instance.set_application(app as Adw.Application);
+
+                    scope.onCleanup(() => GObject.signal_handler_is_connected(instance, id) &&
+                        instance.disconnect(id)
                     );
 
                     return instance;
@@ -219,11 +214,14 @@ export class Windows<T extends string = string> extends GObject.Object {
             return createRoot((dispose) => {
                 const scope = getScope();
                 const instance = create(focusedMonitor, scope) as Astal.Window;
-                const id = instance.connect("destroy", () => dispose());
+                const app = Adw.Application.get_default();
+                const id = instance.connect("close-request", () => dispose());
 
-                scope.onCleanup(() =>
-                    GObject.signal_handler_is_connected(instance, id) &&
-                        instance.disconnect(id)
+                instance.set_monitor(focusedMonitor);
+                instance.set_application(app as Adw.Application);
+
+                scope.onCleanup(() => GObject.signal_handler_is_connected(instance, id) &&
+                    instance.disconnect(id)
                 );
 
                 return instance;
@@ -231,6 +229,13 @@ export class Windows<T extends string = string> extends GObject.Object {
         }
     }
 
+    /** add a window with `name` to the window/widget management system
+      * 
+      * @param name the window name 
+      * @param create the window generator method(that creates the window(s) instance(s))
+      * @param autoOpen whether to open the window right after adding it to the list(default: `false`) 
+      *
+      * @returns `true` if the process succeded, with types for the updated window list, if needed */
     public addWindow<T1 extends string>(name: T1, create: () => Astal.Window|Array<Astal.Window>, autoOpen: boolean = false): this is Windows<T|T1> {
         this.#windows[name] = { create, status: Windows.Status.CLOSED };
         if(autoOpen)
@@ -245,7 +250,7 @@ export class Windows<T extends string = string> extends GObject.Object {
         return Boolean(this.windows?.[name as keyof typeof this.windows]);
     }
 
-    public getWindows(): Array<(() => (Astal.Window | Array<Astal.Window>))> {
+    public getWindows(): Array<Windows.Window> {
         return Object.values(this.windows);
     }
     
@@ -254,37 +259,36 @@ export class Windows<T extends string = string> extends GObject.Object {
       * `null` if no monitors were found 
       *
       * @returns the monitor id. if none are found, `null` */
-    public static getFocusedMonitorId(): (number|null) {
+    public static getFocusedMonitorId(): number|null {
         const monitors = AstalHyprland.get_default().get_monitors();
         return monitors.find(mon => mon.focused)?.id ?? monitors[0]?.id ?? null;
     }
 
     public isOpen(name: T): boolean {
-        return this.openWindows.includes(name);
+        return Boolean(this.#windows[name]?.status === Windows.Status.OPEN);
     }
 
     public open(name: T, ignoreOpenStatus: boolean = false): void {
-        if(this.isOpen(name) && !ignoreOpenStatus) return;
-
         const window = this.#windows[name];
-        if(!window) {
-            console.error(`Windows: cannot open a window (\`${name}\`) that is not registered/doesn't exist.`);
+        if(!window)
+            throw new Error(`Cannot open a window (\`${name}\`) that is not registered/doesn't exist`);
+
+        if(this.isOpen(name) && !ignoreOpenStatus)
             return;
+
+        const instance = window.create();
+
+        if(Array.isArray(instance)) {
+            window.data! = instance.map(win => {
+                win.show();
+                return { instance: win, connections: [] };
+            });
+        } else {
+            window.data = { instance: instance, connections: [] };
+            instance.show();
         }
 
         this.#windows[name].status = Windows.Status.OPEN;
-        const windowInstance = window.create();
-
-        if(Array.isArray(windowInstance)) {
-            window.instance = windowInstance.map(wi => {
-                wi.show();
-                return { instance: wi, connections: [] };
-            });
-        } else {
-            window.instance = { instance: windowInstance, connections: [] };
-            windowInstance.show();
-        }
-
         this.connectWindow(name);
 
         this.emit("window-open", name);
@@ -292,15 +296,20 @@ export class Windows<T extends string = string> extends GObject.Object {
     }
 
     public close(name: T): void {
-        if(!this.isOpen(name)) return;
-
-        this.disconnectWindow(name);
         const window = this.#windows[name];
+        const data = window?.data;
+        if(!window)
+            throw new Error(`Cannot close a window (\`${name}\`) that is not registered/doesn't exist`);
 
-        if(Array.isArray(window.instance)) 
-            window.instance.map(inst => inst.instance!.close());
-        else 
-            window.instance!.instance!.close();
+        if(!this.isOpen(name))
+            return;
+
+        // disconnect before closing windows to prevent malfunctioning
+        this.disconnectWindow(name);
+
+        Array.isArray(data) ?
+            data.map(inst => inst.instance!.close())
+        : data?.instance.close();
 
         this.#windows[name].status = Windows.Status.CLOSED;
 
@@ -314,10 +323,11 @@ export class Windows<T extends string = string> extends GObject.Object {
 
     public closeAll(): void {
         this.openWindows.forEach(name => this.close(name as T));
+        this.notify("open-windows");
     }
-
+    
     public reopen(): void {
-        const openWins = [ ...this.openWindows ];
+        const openWins = [...this.openWindows];
         this.closeAll();
         openWins.forEach(name => this.open(name as T));
     }
@@ -329,12 +339,19 @@ export namespace Windows {
         OPEN = 1
     }
 
-    export type Data = { instance?: Astal.Window, connections: Array<number> };
+    export type Data = Window.Data;
     export type Window = {
         create: () => (Astal.Window | Array<Astal.Window>);
-        instance?: Data | Array<Data>;
+        data?: Window.Data | Array<Window.Data>;
         status: Status;
     };
+    
+    export namespace Window {
+        export type Data = {
+            instance: Astal.Window;
+            connections: Array<number>;
+        };
+    }
 
     export interface SignalSignatures extends GObject.Object.SignalSignatures {
         "window-open": (name: string) => void;

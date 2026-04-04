@@ -1,3 +1,4 @@
+import { createScopedConnection } from "gnim-utils";
 import { Windows } from "./window";
 import { AppsWindow } from "./window/apps-window";
 import { Bar } from "./window/bar";
@@ -6,6 +7,7 @@ import { ControlCenter } from "./window/control-center";
 import { FloatingNotifications } from "./window/floating-notifications";
 import { LogoutMenu } from "./window/logout-menu";
 import { OSD } from "./window/osd";
+import { Notifications } from "./modules/notifications";
 
 
 // add new windows here!
@@ -32,4 +34,8 @@ export function initWindows(): void {
 
     if(!Windows.getDefault().isOpen("bar"))
         Windows.getDefault().open("bar");
+
+    createScopedConnection(Notifications.getDefault(), "notification-added", () => {
+        Windows.getDefault().open("floating-notifications");
+    });
 }

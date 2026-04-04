@@ -1,7 +1,5 @@
 import "ags/overrides"; // thanks Aylur!!
 import "./config";
-import { Windows } from "./window";
-import { Notifications } from "./modules/notifications";
 import { Wallpaper } from "./modules/wallpaper";
 import { Stylesheet } from "./modules/stylesheet";
 import { Clipboard } from "./modules/clipboard";
@@ -224,10 +222,6 @@ export class Shell extends Adw.Application {
         NightLight.getDefault();
         Idle.getDefault();
         OSD.init();
-
-        createScopedConnection(Notifications.getDefault(), "notification-added", () => {
-            Windows.getDefault().open("floating-notifications");
-        });
     }
 
     quit(): void {

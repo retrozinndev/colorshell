@@ -16,6 +16,7 @@ export {
 
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
+import { Notifications } from "./notifications";
 
 Gio._promisify(Gio.DBus, "get", "get_finish");
 Gio._promisify(Gio.DBusProxy, "new", "new_finish");
@@ -225,6 +226,56 @@ export function playSystemBell(): void {
     execAsync("canberra-gtk-play -i bell").catch((e: Error) => {
         console.error(`Couldn't play system bell. Stderr: ${e.message}\n${e.stack}`);
     });
+}
+
+/** run the specified `method` inside a try-catch block, then
+  * report errors inside a notification in the shell if any.
+  *
+  * (laziest method in this whole project btw)
+  *
+  * @param method the function to be called
+  * @param args `method`'s parameters */
+export function tryNotify<
+    RT = any,
+    T extends ((...a: Array<any>) => RT) = ((...args: Array<any>) => any)
+>(method: T, ...args: Parameters<T>): RT {
+    let v!: RT;
+
+    try {
+        v = method(args);
+    } catch(e) {
+        const type = typeof e;
+
+        switch(type) {
+            case "object":
+                Notifications.getDefault().sendNotification({
+                    appName: "colorshell",
+                    summary: "Error",
+                    body: `Exception while calling the method "${method.name}": ${(e as any)["message"]! ?? 
+                        `Unknown error while calling method "${method.name}"`
+                    }`
+                });
+            break;
+
+            case "string":
+                Notifications.getDefault().sendNotification({
+                    appName: "colorshell",
+                    summary: "Error",
+                    body: `An exception occurred while calling the method "${method.name}": ${e as string}`
+                });
+            break;
+
+            default:
+                Notifications.getDefault().sendNotification({
+                    appName: "colorshell",
+                    summary: "Error",
+                    body: `An unknown exception occurred while executing the method: "${method.name}"`
+                });
+            break;
+        }
+    }
+
+    return v;
 }
 
 export function isInstalled(commandName: string): boolean {
