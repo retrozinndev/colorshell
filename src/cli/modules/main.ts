@@ -68,7 +68,7 @@ Others:
   -v, --version: display current colorshell version.
   -h, --help: shows this help message.
 
-2026 (c) colorshell, licensed under the BSD 3-Clause License.
+2026 (c) retrozinndev, licensed under the BSD 3-Clause License.
 https://github.com/retrozinndev/colorshell
 `.trimEnd(),
 

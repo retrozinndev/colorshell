@@ -20,9 +20,10 @@ export class CmdCli extends GObject.Object implements CliInterface {
         super();
         this.#gapp = app;
         
-        if(app.get_flags() !& Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
+        /*if(app.get_flags() !& Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
             console.warn("CliInterface: CmdCli: The provided GApplication does not handle command line. \
 Please add the HANDLES_COMMAND_LINE flag to the GApplication");
+        */
 
         this.#connection = this.#gapp.connect("command-line", (_, cmd: Gio.ApplicationCommandLine) => {
             const remote = new CmdCli.Remote(cmd);
