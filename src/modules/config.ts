@@ -176,6 +176,7 @@ export class Config<K extends string, V = any> extends GObject.Object {
     }
 
     /** recursively update object properties that have been changed */
+<<<<<<< HEAD
     private async syncEntries<T1 extends object, T2 extends object>(
         newObject: T1,
         targetObject: T2,
@@ -210,6 +211,26 @@ export class Config<K extends string, V = any> extends GObject.Object {
             this.emit("property-changed", `${
                 lastPath !== undefined ? `${lastPath}.` : ""
             }${key}`);
+=======
+    private async syncEntries<T1 extends object, T2 extends object>(newObject: T1, targetObject: T2): Promise<void> {
+        console.debug("Syncing entries for objects:\n", "new:", newObject, "\ntarget:", targetObject);
+        for(const key of Object.keys(targetObject)) {
+            if(newObject[key as keyof T1] === undefined) // leave unchanged if unset in user config
+                continue;
+
+            if(typeof targetObject[key as keyof T2] === "object") {
+                this.syncEntries(newObject[key as keyof T1] as object, targetObject[key as keyof T2] as object);
+                continue;
+            }
+            const newVal = newObject[key as keyof T1] as JSONValues,
+                curVal = targetObject[key as keyof T2] as JSONValues;
+
+            // check if the value changed
+            if(newVal === curVal)
+                continue;
+
+            targetObject[key as keyof T2] = newObject[key as keyof T1] as never;
+>>>>>>> feat/config-app
         }
     }
 
@@ -295,9 +316,12 @@ export class Config<K extends string, V = any> extends GObject.Object {
 export namespace Config {
     export interface SignalSignatures extends GObject.Object.SignalSignatures {
         "notify::entries": () => void;
+<<<<<<< HEAD
         /** a property has been updated
           * @param path the property path (e.g.: `"wallpaper.splash"`) */
         "property-changed": (path: string) => void;
+=======
+>>>>>>> feat/config-app
     }
    
     export enum PropertyType {
