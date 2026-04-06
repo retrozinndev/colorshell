@@ -231,6 +231,51 @@ export function playSystemBell(): void {
 /** run the specified `method` inside a try-catch block, then
   * report errors inside a notification in the shell if any.
   *
+  *
+  * @param options optional object with settings for the notification 
+  * @param method the function to be called
+  * @param args `method`'s parameters */
+export function tryNotifyOptions<
+    RT = any,
+    T extends ((...a: Array<any>) => RT) = ((...args: Array<any>) => any)
+>(
+    options: {
+        /** the notification summary/title string */
+        summary?: string;
+        /** a prefix to the error message in the notification body(only works with errors that are throwed with messages on them) */
+        messagePrefix?: string;
+    }|undefined, 
+    method: T,
+    ...args: Parameters<T>
+): RT {
+    let v!: RT;
+
+    try {
+        v = method(args);
+    } catch(e) {
+        const message = typeof e === "object" && "message" in e! ?
+            (e as Error).message
+        : String(e);
+        let body = `${options?.messagePrefix ?? 
+                `An exception occurred while executing method "${method.name}":`
+        } ${(message == null || message == undefined ?
+                `Unknown error/unknown error message`
+        : message)}`;
+
+        
+        Notifications.getDefault().sendNotification({
+            appName: "colorshell",
+            summary: options?.summary ?? "Error",
+            body
+        });
+    }
+
+    return v;
+}
+
+/** run the specified `method` inside a try-catch block, then
+  * report errors inside a notification in the shell if any.
+  *
   * (laziest method in this whole project btw)
   *
   * @param method the function to be called
@@ -238,44 +283,11 @@ export function playSystemBell(): void {
 export function tryNotify<
     RT = any,
     T extends ((...a: Array<any>) => RT) = ((...args: Array<any>) => any)
->(method: T, ...args: Parameters<T>): RT {
-    let v!: RT;
-
-    try {
-        v = method(args);
-    } catch(e) {
-        const type = typeof e;
-
-        switch(type) {
-            case "object":
-                Notifications.getDefault().sendNotification({
-                    appName: "colorshell",
-                    summary: "Error",
-                    body: `Exception while calling the method "${method.name}": ${(e as any)["message"]! ?? 
-                        `Unknown error while calling method "${method.name}"`
-                    }`
-                });
-            break;
-
-            case "string":
-                Notifications.getDefault().sendNotification({
-                    appName: "colorshell",
-                    summary: "Error",
-                    body: `An exception occurred while calling the method "${method.name}": ${e as string}`
-                });
-            break;
-
-            default:
-                Notifications.getDefault().sendNotification({
-                    appName: "colorshell",
-                    summary: "Error",
-                    body: `An unknown exception occurred while executing the method: "${method.name}"`
-                });
-            break;
-        }
-    }
-
-    return v;
+>(
+    method: T,
+    ...args: Parameters<T>
+): RT {
+    return tryNotifyOptions(undefined, method, ...args);
 }
 
 export function isInstalled(commandName: string): boolean {
