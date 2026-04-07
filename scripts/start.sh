@@ -5,7 +5,7 @@ file="${1:-./build/colorshell}"
 function start() {
     if Is_running; then
         echo "[info] killing previous instance"
-        colorshell quit || killall gjs
+        colorshell quit || kill -s 9 `cat $XDG_RUNTIME_DIR/colorshell/.pid`
     fi
     echo "[info] starting"
     exec "$file"
