@@ -86,7 +86,7 @@ mkdir -p \"\$runtime_dir\"
 echo -n '`cat $output/clsh.js | base64`' | base64 --decode > \"\$file\"
 chmod +x "\$file"
 
-LD_PRELOAD=\"/usr/lib/libgtk4-layer-shell.so\" \$file $@
+LD_PRELOAD=\"/usr/lib/libgtk4-layer-shell.so\" \$file \$@
 LD_PRELOAD=
 " > $output/colorshell
 chmod +x $output/colorshell

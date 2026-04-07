@@ -8,7 +8,7 @@ function start() {
         colorshell quit || kill -s 9 `cat $XDG_RUNTIME_DIR/colorshell/.pid`
     fi
     echo "[info] starting"
-    exec "$file"
+    $file
 }
 
 if [[ -f $file ]]; then
