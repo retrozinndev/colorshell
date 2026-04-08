@@ -1,4 +1,4 @@
-import "ags/overrides"; // thanks Aylur!!
+import "./overrides"; // thanks Aylur!!
 import "./config";
 import { Wallpaper } from "./modules/wallpaper";
 import { Stylesheet } from "./modules/stylesheet";
