@@ -26,7 +26,8 @@ if [[ "$is_standalone" ]]; then
     url="https://raw.githubusercontent.com/\
 retrozinndev/colorshell/refs/heads/$branch/install.sh"
 
-    if ! curl -s $url > $temp_dir/install.sh; then
+    mkdir -p $temp_dir
+    if ! (curl -s $url > $temp_dir/install.sh); then
         echo "[error] Failed to fetch installation script from the web. \
 Please check your internet connection and try again ;)" > /dev/stderr
 
