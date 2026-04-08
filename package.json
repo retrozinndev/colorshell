@@ -14,7 +14,8 @@
     },
     "devDependencies": {
         "ags": "file:/usr/share/ags/js",
-        "gnim-utils": "github:retrozinndev/gnim-utils",
-        "fuse.js": "^7.1.0"
+        "esbuild": "^0.28.0",
+        "fuse.js": "^7.1.0",
+        "gnim-utils": "github:retrozinndev/gnim-utils"
     }
 }

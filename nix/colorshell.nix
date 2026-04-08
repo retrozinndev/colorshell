@@ -104,7 +104,7 @@ buildNpmPackage (finalAttrs: {
     nativeBuildInputs = [ pnpm_10 ];
 
     fetcherVersion = 2;
-    hash = "sha256-Z5JP7hPEjLY9wGnWe6kM6T1qk3UUSlJnoxdDqS/ksnw=";
+    hash = "sha256-e1yRxIEaznjhtAPOMogkgjzvkIFTkmUgIlLWAkDwjpE=";
 
     # fetcher version 2 fails if there are no *-exec files in the output
     preFixup = ''
