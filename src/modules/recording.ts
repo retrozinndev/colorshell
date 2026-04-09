@@ -1,8 +1,7 @@
 import { execAsync } from "ags/process";
 import { getter, register, signal } from "ags/gobject";
 import { Gdk } from "ags/gtk4";
-import { createRoot, getScope, Scope } from "ags";
-import { createSubscription, makeDirectory } from "./utils";
+import { getPID, killProc, makeDirectory, tryNotifyOptions } from "./utils";
 import { Notifications } from "./notifications";
 import { time } from "./utils";
 
@@ -12,6 +11,8 @@ import Gio from "gi://Gio?version=2.0";
 import { generalConfig } from "../config";
 
 
+// TODO: support monitoring an already-running instance of wf-recorder on startup
+/** screen-recording module for colorshell */
 @register({ GTypeName: "Recording" })
 export class Recording extends GObject.Object {
     private static instance: Recording;
@@ -19,9 +20,10 @@ export class Recording extends GObject.Object {
     @signal() started() {};
     @signal() stopped() {};
 
+    /** set at startup, if a wf-recorder instance was already running before launching colorshell */
+    #pid: number|null = null;
     #recording: boolean = false;
     #path: string = "~/Recordings";
-    #recordingScope?: Scope;
 
     /** Default extension: mp4(h264) */
     #extension: string = "mp4";
@@ -86,6 +88,37 @@ export class Recording extends GObject.Object {
     constructor() {
         super();
         this.#path = `${GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_VIDEOS)}/Recordings`;
+
+        // restore screen recording monitor
+        const pid = getPID("wf-recorder");
+        if(pid !== undefined) {
+            this.#pid = pid;
+            this.#startedAt = time.get().to_unix();
+            this.notify("started-at");
+            this.#recording = true;
+            this.notify("recording");
+            
+            const disposeTimeSub = time.subscribe(() => this.notify("recording-time"));
+            // couldn't get anywhere with giowatch :broken_heart:
+            const procDir = Gio.File.new_for_path(`/proc/${this.#pid}/status`);
+            const monitor = procDir.monitor_file(Gio.FileMonitorFlags.NONE, null);
+            const id = monitor.connect("changed", (_, __, ___, e) => {
+                console.log(e);
+                if(e !== Gio.FileMonitorEvent.DELETED || e !& Gio.FileMonitorEvent.DELETED)
+                    return;
+
+                monitor.disconnect(id);
+                monitor.cancel();
+
+                console.log("stopped recording :D");
+                this.#recording = false;
+                disposeTimeSub();
+                this.emit("stopped");
+                this.notify("recording");
+                this.#startedAt = -1;
+                this.notify("started-at");
+            });
+        }
     }
 
     public static getDefault() {
@@ -99,46 +132,66 @@ export class Recording extends GObject.Object {
         if(this.#recording) 
             throw new Error("Screen Recording is already running!");
 
-        createRoot(() => {
-            this.#recordingScope = getScope();
+        this.#output = `${time.get().format("%Y-%m-%d-%H%M%S")}_rec.${this.extension || "mp4"}`;
+        makeDirectory(this.path);
 
-            this.#output = `${time.get().format("%Y-%m-%d-%H%M%S")}_rec.${this.extension || "mp4"}`;
-            this.#recording = true;
-            this.notify("recording");
-            this.emit("started");
-            makeDirectory(this.path);
+        const areaString = `${area?.x ?? 0},${area?.y ?? 0} ${area?.width ?? 1}x${area?.height ?? 1}`;
 
-            const areaString = `${area?.x ?? 0},${area?.y ?? 0} ${area?.width ?? 1}x${area?.height ?? 1}`;
+        this.#process = Gio.Subprocess.new([
+            "wf-recorder", 
+            ...(area ? [ `-g`, areaString ] : []),
+            ...(generalConfig.getProperty("screen_recording.include_audio") ? ["-a"] : []),
+            "-f",
+            `${this.path}/${this.output!}`
+        ], Gio.SubprocessFlags.STDERR_PIPE);
 
-            this.#process = Gio.Subprocess.new([
-                "wf-recorder", 
-                ...(area ? [ `-g`, areaString ] : []),
-                ...(generalConfig.getProperty("screen_recording.include_audio") ? ["-a"] : []),
-                "-f",
-                `${this.path}/${this.output!}`
-            ], Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE);
+        let stderr: string|null = null;
+        this.#process.communicate_utf8_async(null, null, (_, res) => {
+            const [, , err] = this.#process!.communicate_utf8_finish(res);
 
-            this.#process.wait_async(null, () => {
-                this.stopRecording();
-            });
-
-            this.#startedAt = time.get().to_unix();
-            this.notify("started-at");
-
-            createSubscription(time, () => this.notify("recording-time"));
+            if(err !== undefined && err !== null)
+                stderr = err;
         });
+
+        const disposeTimeSub = time.subscribe(() => 
+            this.notify("recording-time")
+        );
+
+        this.#process.wait_check_async(null, (_, res) => {
+            disposeTimeSub();
+            if(!this.#process) { // just if, for some reason
+                this.stopRecording();
+                return;
+            }
+
+            tryNotifyOptions({
+                summary: "Screen Recording Error",
+                messagePrefix: `The screen recorder exited unexpectedly: ${
+                    stderr !== null ? `${stderr}.` : ""
+                }`
+            }, this.#process!.wait_check_finish, res);
+            this.stopRecording();
+        });
+
+        this.#startedAt = time.get().to_unix();
+        this.#recording = true;
+        this.notify("started-at");
+        this.notify("recording");
+        this.emit("started");
+
     }
 
     public stopRecording() {
-        if(!this.#process || !this.#recording) return;
+        if(this.#pid !== null) {
+            killProc(this.#pid);
+        } else {
+            if(!this.#process || !this.#recording)
+                return;
 
-        !this.#process.get_if_exited() && execAsync([
-            "kill", "-s", "SIGTERM", this.#process.get_identifier()!
-        ]);
+            !this.#process.get_if_exited() &&
+                killProc(Number.parseInt(this.#process.get_identifier()!));
+        }
 
-        this.#recordingScope?.dispose();
-
-        const path = this.#path;
         const output = this.#output;
 
         this.#process = null;
@@ -149,22 +202,25 @@ export class Recording extends GObject.Object {
         this.emit("stopped");
 
         Notifications.getDefault().sendNotification({
-            actions: [
+            actions: output != null ? [
                 {
                     text: "View", // will be hidden(can be triggered by clicking in the notification)
                     id: "view",
                     onAction: () => {
-                        execAsync(["xdg-open", `${path}/${output}`]);
+                        execAsync(["xdg-open", `${this.#path}/${output}`]);
                     }
                 }, {
                     text: "Open file directory",
                     id: "view-directory",
-                    onAction: () => execAsync(`xdg-open '${path}'`)
+                    onAction: () => execAsync(`xdg-open '${this.#path}'`)
                 }
-            ],
+            ] : undefined,
             appName: "colorshell",
             summary: "Screen Recording",
-            body: `Saved recording as "${path}/${output}"`
+            body: output != null ?
+                `Saved recording as "${this.#path}/${output}"`
+            : "Saved under an unknown path. Either colorshell was started after \
+starting a screen recording, or the shell was closed while screen-recording"
         });
     }
 };

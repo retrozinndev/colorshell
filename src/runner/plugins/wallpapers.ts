@@ -19,7 +19,7 @@ class _PluginWallpapers implements Runner.Plugin {
     prioritize = true;
     #fuse!: Fuse<string>;
     #files!: Array<Gio.FileInfo>;
-    #dir: string = Wallpaper.getDefault().wallpapersPath;
+    #dir: string = Wallpaper.getDefault().wallpapersDir.peek_path()!;
     #subdir: string|undefined = undefined;
     readonly #options = {
         useExtendedSearch: false,
@@ -97,7 +97,7 @@ class _PluginWallpapers implements Runner.Plugin {
     }
 
     private getWallpaperPath(fileInfo: Gio.FileInfo): string {
-        return `${Wallpaper.getDefault().wallpapersPath}/${
+        return `${Wallpaper.getDefault().wallpapersDir.peek_path()!}/${
             this.#subdir ? `${this.#subdir}/` : ""
         }${fileInfo.get_name()}`;
     }

@@ -8,8 +8,7 @@ import { createRoot, getScope, Scope } from "ags";
 import { OSD } from "./window/osd";
 import { programArgs, programInvocationName } from "system";
 import { setConsoleLogDomain } from "console";
-import { createScopedConnection, encoder, getDBusNamePID } from "./modules/utils";
-import { exec } from "ags/process";
+import { cacheDir, createScopedConnection, dataDir, encoder, getDBusNamePID, globalScope, runtimeConfigDir, runtimeDir } from "./modules/utils";
 import { NightLight } from "./modules/nightlight";
 import { initCompositor } from "./compositors";
 import { Input } from "./modules/input";
@@ -25,18 +24,10 @@ import { Cli } from "./cli";
 import { CmdCli } from "./cli/interface/cmd";
 
 
+
 @register({ GTypeName: "Shell" })
 export class Shell extends Adw.Application {
     private static instance: Shell;
-
-    public static runtimeDir: Gio.File = Gio.File.new_for_path(`${
-        GLib.get_user_runtime_dir() ?? `/run/user/${exec("id -u").trim()}`}/colorshell`);
-    public static dataDir: Gio.File = Gio.File.new_for_path(`${
-        GLib.get_user_data_dir() ?? `${GLib.get_home_dir()}/.local/share`}/colorshell`);
-    public static cacheDir: Gio.File = Gio.File.new_for_path(`${
-        GLib.get_user_cache_dir() ?? `${GLib.get_home_dir()}/.cache`}/colorshell`);
-    /** where runtime-generated config files are stored */
-    public static runtimeConfigDir: Gio.File = Gio.File.new_for_path(`${this.runtimeDir.peek_path()}/config`);
 
     #scope!: Scope;
     #providers: Array<Gtk.CssProvider> = [];
@@ -49,11 +40,12 @@ export class Shell extends Adw.Application {
         super({
             applicationId: "io.github.retrozinndev.colorshell",
             flags: Gio.ApplicationFlags.HANDLES_COMMAND_LINE,
-            version: COLORSHELL_VERSION ?? "0.0.0-unknown",
+            version: COLORSHELL_VERSION ?? "0.0.0",
         });
 
         setConsoleLogDomain("Colorshell");
         GLib.set_application_name("colorshell");
+        GLib.set_prgname("colorshell");
     }
 
     public static getDefault(): Shell {
@@ -72,11 +64,9 @@ export class Shell extends Adw.Application {
         );
     }
 
-    public removeProvider(provider: Gtk.CssProvider): void {
-        if(!this.#providers.includes(provider)) {
-            console.warn("Colorshell: Couldn't find the provided GtkCssProvider to remove. Was it added before?");
-            return;
-        }
+    public removeProvider(provider: Gtk.CssProvider): boolean {
+        if(!this.#providers.includes(provider))
+            return false;
 
         for(let i = 0; i < this.#providers.length; i++) {
             const prov = this.#providers[i];
@@ -86,9 +76,12 @@ export class Shell extends Adw.Application {
                     Gdk.Display.get_default()!,
                     provider
                 );
+
                 break;
             }
         }
+
+        return true;
     }
 
     public applyStyle(stylesheet: string): void {
@@ -120,7 +113,10 @@ export class Shell extends Adw.Application {
         this.hold();
 
         createRoot((dispose) => {
-            createScopedConnection(this as Adw.Application, "shutdown", dispose);
+            createScopedConnection(this as Adw.Application, "shutdown", () => {
+                globalScope.dispose()
+                dispose();
+            });
 
             this.#scope = getScope();
             this.main();
@@ -132,10 +128,10 @@ export class Shell extends Adw.Application {
 
         // create shell directories
         [
-            Shell.runtimeDir,
-            Shell.cacheDir,
-            Shell.dataDir,
-            Shell.runtimeConfigDir
+            runtimeDir,
+            cacheDir,
+            dataDir,
+            runtimeConfigDir
         ].forEach(dir => {
             if(dir.query_exists(null))
                 return;
@@ -143,7 +139,7 @@ export class Shell extends Adw.Application {
             dir.make_directory_with_parents(null);
         });
 
-        const pidFile = Gio.File.new_for_path(`${Shell.runtimeDir.peek_path()!}/.pid`);
+        const pidFile = Gio.File.new_for_path(`${runtimeDir.peek_path()!}/.pid`);
         getDBusNamePID(
             "io.github.retrozinndev.colorshell",
             "/io/github/retrozinndev/colorshell",
@@ -194,15 +190,24 @@ export class Shell extends Adw.Application {
             if(!/\..*$/.test(name))
                 return;
 
-            const data = Gio.resources_lookup_data(`/io/github/retrozinndev/colorshell/config/${name}`, null),
-                file = Gio.File.new_for_path(`${Shell.runtimeDir.peek_path()!}/config/${name}`);
-
-            file.replace_contents_bytes_async(data, null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null, null);
+            const file = Gio.File.new_for_path(`${runtimeConfigDir.peek_path()!}/${name}`);
+            
+            if(file.query_exists(null))
+                return;
+            
+            file.replace_contents_bytes_async(
+                Gio.resources_lookup_data(`/io/github/retrozinndev/colorshell/config/${name}`, null),
+                null,
+                false,
+                Gio.FileCreateFlags.REPLACE_DESTINATION,
+                null,
+                null
+            );
         });
 
         Cli.init([
             new CmdCli(this),
-            new SocketCli(Gio.UnixSocketAddress.new(`${Shell.runtimeDir.peek_path()!}/.sock`))
+            new SocketCli(Gio.UnixSocketAddress.new(`${runtimeDir.peek_path()!}/.sock`))
         ]);
     }
 
@@ -211,9 +216,9 @@ export class Shell extends Adw.Application {
 
         console.log("Colorshell: Initializing modules");
         initCompositor();
+        Media.getDefault();
         Wallpaper.getDefault();
         Stylesheet.getDefault();
-        Media.getDefault();
 
         initWindows();
 

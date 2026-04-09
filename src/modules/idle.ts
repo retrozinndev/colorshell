@@ -1,8 +1,7 @@
 import { register } from "ags/gobject";
 import Gio from "gi://Gio?version=2.0";
 import GObject from "gi://GObject?version=2.0";
-import { createSubscription, encoder, getPID, isInstalled, killProc } from "./utils";
-import { Shell } from "../app";
+import { createSubscription, encoder, getPID, isInstalled, killProc, runtimeConfigDir } from "./utils";
 import { generalConfig } from "../config";
 import { Notifications } from "./notifications";
 
@@ -13,7 +12,7 @@ export class Idle extends GObject.Object {
     private static instance: Idle;
 
     #daemon: Gio.Subprocess|null = null;
-    #file: Gio.File = Gio.File.new_for_path(`${Shell.runtimeConfigDir.peek_path()}/hypridle.conf`);
+    #file: Gio.File = Gio.File.new_for_path(`${runtimeConfigDir.peek_path()}/hypridle.conf`);
     #generalKeys: Array<keyof Idle.GeneralConfig> = [
         "lock_cmd",
         "unlock_cmd",

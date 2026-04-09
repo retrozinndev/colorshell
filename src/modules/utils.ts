@@ -17,6 +17,7 @@ export {
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import { Notifications } from "./notifications";
+import { createRoot, getScope, Scope } from "ags";
 
 Gio._promisify(Gio.DBus, "get", "get_finish");
 Gio._promisify(Gio.DBusProxy, "new", "new_finish");
@@ -26,6 +27,18 @@ export const decoder = new TextDecoder("utf-8"),
     encoder = new TextEncoder();
 export const time = createPoll(GLib.DateTime.new_now_local(), 500, () => 
     GLib.DateTime.new_now_local());
+
+export const globalScope: Scope = createRoot(() => getScope());
+
+export const runtimeDir: Gio.File = Gio.File.new_for_path(`${
+    GLib.get_user_runtime_dir() ?? `/run/user/${exec("id -u").trim()}`}/colorshell`);
+export const dataDir: Gio.File = Gio.File.new_for_path(`${
+    GLib.get_user_data_dir() ?? `${GLib.get_home_dir()}/.local/share`}/colorshell`);
+export const cacheDir: Gio.File = Gio.File.new_for_path(`${
+    GLib.get_user_cache_dir() ?? `${GLib.get_home_dir()}/.cache`}/colorshell`);
+/** where runtime-generated config files are stored */
+export const runtimeConfigDir: Gio.File = Gio.File.new_for_path(`${runtimeDir.peek_path()}/config`);
+
 
 export function getHyprlandInstanceSig(): (string|null) {
     return GLib.getenv("HYPRLAND_INSTANCE_SIGNATURE");

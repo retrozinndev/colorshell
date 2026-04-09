@@ -31,6 +31,7 @@
     <!-- Configuration files -->
     <gresource prefix="/io/github/retrozinndev/colorshell/config">
         <file alias="hyprlock.conf">config/hyprlock.conf</file>
+        <file alias="hyprpaper.conf">config/hyprpaper.conf</file>
     </gresource>
 
     <!-- Compositor-specific configuration -->

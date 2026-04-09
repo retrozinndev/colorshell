@@ -1,7 +1,6 @@
 import { Config } from "./modules/config";
 import { Idle } from "./modules/idle";
 import { NightLight } from "./modules/nightlight";
-import { WallpaperPositioning, WalMode } from "./modules/wallpaper";
 
 import GLib from "gi://GLib?version=2.0";
 
@@ -60,10 +59,10 @@ const generalConfigDefaults = {
 
     wallpaper: {
         /** wallpaper positioning mode (hyprpaper) */
-        positioning: "cover" satisfies WallpaperPositioning,
+        positioning: "cover",
         /** color generation mode. 
           * darken: picks darker colors; lighten: picks brighter colors */
-        color_mode: "darken" satisfies WalMode,
+        color_mode: "darken",
         /** whether to enable Hyprland's random splash text pn the wallpaper.
          * only takes effect after a hyprpaper restart. (`systemctl restart --user hyprpaper`) */
         splash: true
@@ -105,11 +104,11 @@ const generalConfigDefaults = {
 
 const userDataDefaults = {
     /** last default adapter */
-    bluetooth_default_adapter: undefined as unknown as string,
+    bluetooth_default_adapter: undefined,
 
     control_center: {
         /** last default backlight */
-        default_backlight: undefined as unknown as string
+        default_backlight: undefined
     },
 
     night_light: {

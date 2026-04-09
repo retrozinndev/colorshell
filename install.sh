@@ -26,7 +26,7 @@ retrozinndev/colorshell/refs/heads/$target_branch/scripts/utils.sh"
         if curl -s "$url" > $temp_dir/utils.sh; then
             utils_path=$temp_dir/utils.sh
         else
-            echo "[error] Failed to fetch utils script! Check your internet connection and try again ;)"
+            echo "[error] Failed to fetch utils script! Check your internet connection and try again ;)" > /dev/stderr
             rm -f $temp_dir/utils.sh
             exit 1
         fi
@@ -48,22 +48,13 @@ function Post_install() {
         cp -f "/usr/share/hypr/hyprland.conf" "$XDG_CONFIG_HOME/hypr/hyprland.conf"
         Send_log "Adding exec for colorshell in Hyprland config..."
         echo -ne "\nexec-once = ~/.local/bin/colorshell" >> "$XDG_CONFIG_HOME/hypr/hyprland.conf"
+
     else
         Ask "Do you want to autostart colorshell with Hyprland?"
         if [ "$answer" == "y" ]; then
             Send_log "Adding exec-once for colorshell to Hyprland..."
             echo -ne "\nexec-once = ~/.local/bin/colorshell" >> "$XDG_CONFIG_HOME/hypr/hyprland.conf"
         fi
-    fi
-
-    # Check for wallpaper configuration
-    if [[ ! -f "$XDG_CONFIG_HOME/hypr/hyprpaper.conf" ]]; then
-        Send_log "No hyprpaper config found, using colorshell's default..."
-        mkdir -p $HOME/wallpapers
-        cp -f $repo_directory/resources/wallpaper_default.jpg "$HOME/wallpapers/Default Hypr-chan.jpg"
-        cat $repo_directory/resources/config/hyprpaper.conf \
-            | sed -e 's/\$WALL_PATH/~\/wallpapers\/Default Hypr-chan.jpg/g' \
-            > "$XDG_CONFIG_HOME/hypr/hyprpaper.conf"
     fi
 }
 

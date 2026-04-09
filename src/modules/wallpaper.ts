@@ -4,46 +4,10 @@ import GObject, { register, getter, gtype, property, setter, signal } from "ags/
 
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
-import { createSubscription, encoder, getPID, killProc } from "./utils";
+import { createSubscription, encoder, getPID, globalScope, killProc, runtimeConfigDir } from "./utils";
 import { Notifications } from "./notifications";
 import { generalConfig } from "../config";
-import { createRoot, getScope, Scope } from "ags";
 
-
-type WalData = {
-    checksum: string;
-    wallpaper: string;
-    alpha: number;
-    special: {
-        background: string;
-        foreground: string;
-        cursor: string;
-    };
-    colors: {
-        color0: string;
-        color1: string;
-        color2: string;
-        color3: string;
-        color4: string;
-        color5: string;
-        color6: string;
-        color7: string;
-        color8: string;
-        color9: string;
-        color10: string;
-        color11: string;
-        color12: string;
-        color13: string;
-        color14: string;
-        color15: string;
-    };
-};
-
-
-export type WalMode = "darken"|"lighten";
-
-/** wallpaper tiling mode */
-export type WallpaperPositioning = "contain"|"tile"|"cover"|"fill";
 
 // TODO: support different wallpapers for each monitor
 @register({ GTypeName: "Wallpaper" })
@@ -52,60 +16,81 @@ export class Wallpaper extends GObject.Object {
 
     declare $signals: Wallpaper.SignalSignatures;
 
-    #wallpaper: (string|undefined);
-    #scope!: Scope;
-    #splash: boolean = true;
+    #wallpaper: Gio.File|null = null;
+    #userHyprpaperFile: Gio.File;
+    #defaultHyprpaperFile: Gio.File;
     #hyprpaperFile: Gio.File;
-    #wallpapersPath: string;
+    #wallpapersDir: Gio.File;
     /** pywal-generated colors file */
     #walFile: Gio.File = Gio.File.new_for_path(`${GLib.get_user_cache_dir()}/wal/colors`);
     #proc: Gio.Subprocess|null = null;
 
+    /** get the default hyprpaper config file `GFile`.
+      * also writes the file from gresource if it doesn't exist already */
+    private get defaultHyprpaperFile(): Gio.File {
+        if(!this.#defaultHyprpaperFile.query_exists(null)) {
+            const data = Gio.resources_lookup_data(
+                "/io/github/retrozinndev/colorshell/config/hyprpaper.conf",
+                null
+            );
+
+            if(!data) 
+                throw new Error("Wallpaper: Couldn't get resource for default configuration file. \
+Please repair the installation");
+
+            this.#defaultHyprpaperFile.replace_contents(
+                data.toArray(), null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null
+            );
+        }
+
+        return this.#defaultHyprpaperFile;
+    }
+
     @signal()
     colorsReloaded() {}
 
-    @signal(String)
-    wallpaperChanged(_: string) {}
+    @signal(Gio.File)
+    wallpaperChanged(_: Gio.File) {}
+
+    @property(Boolean)
+    splash: boolean = true;
 
 
-    @getter(Boolean)
-    public get splash() { return this.#splash; }
-    public set splash(showSplash: boolean) {
-        this.#splash = showSplash;
-        this.notify("splash");
-    }
+    /** current wallpaper's `GFile`. can be null if unset by the user */
+    @getter(gtype<Gio.File|null>(Gio.File))
+    get wallpaper() { return this.#wallpaper; }
 
-    /** current wallpaper's complete path. can be an empty string if undefined */
-    @getter(String)
-    get wallpaper() { return this.#wallpaper ?? ""; }
+    @setter(gtype<Gio.File|null>(Gio.File))
+    set wallpaper(newValue: Gio.File|null) { this.setWallpaper(newValue); }
 
-    @setter(String)
-    set wallpaper(newValue: string) { this.setWallpaper(newValue); }
+    get wallpapersDir() { return this.#wallpapersDir; }
 
-    get wallpapersPath() { return this.#wallpapersPath; }
+    @property(gtype<Wallpaper.Positioning>(String))
+    positioning: Wallpaper.Positioning = "cover";
 
-    @property(gtype<WallpaperPositioning>(String))
-    positioning: WallpaperPositioning = "cover";
-
-    @property(gtype<WalMode>(String))
-    colorMode: WalMode = "darken";
+    @property(gtype<Wallpaper.WalColorMode>(String))
+    colorMode: Wallpaper.WalColorMode = "darken";
 
     constructor() {
         super();
 
-        this.#wallpapersPath = GLib.getenv("WALLPAPERS") ?? 
-            `${GLib.get_home_dir()}/wallpapers`;
+        this.#wallpapersDir = Gio.File.new_for_path(
+            GLib.getenv("WALLPAPERS") ?? `${GLib.get_home_dir()}/wallpapers`
+        );
 
-        this.#hyprpaperFile = Gio.File.new_for_path(`${
-            GLib.get_user_config_dir()}/hypr/hyprpaper.conf`);
+        this.#userHyprpaperFile = Gio.File.new_for_path(
+            `${GLib.get_user_config_dir()}/hypr/hyprpaper.conf`
+        );
+        this.#defaultHyprpaperFile = Gio.File.new_for_path(
+            `${runtimeConfigDir.peek_path()!}/hyprpaper.conf`
+        );
+        this.#hyprpaperFile = this.#userHyprpaperFile;
 
-        if(!this.#hyprpaperFile.query_exists(null)) {
-            throw new Error("Wallpaper: Couldn't find hyprpaper config file! \
-Please provide the configuration file for colorshell to be able to generate colors!!"); // TODO: integrate a default wallpaper in gresource
-        }
+        if(!this.#hyprpaperFile.query_exists(null))
+            this.#hyprpaperFile = this.defaultHyprpaperFile; // also writes the file if it doesn't exist
 
         try {
-            this.#wallpaper = this.getWallpaper();
+            this.#wallpaper = this.readWallpaper();
         } catch(_) {
             throw new Error("Wallpaper: Couldn't get wallpaper from hyprpaper file! You \
 may check the syntax of your hyprpaper.conf for errors");
@@ -123,16 +108,11 @@ may check the syntax of your hyprpaper.conf for errors");
             console.error(`Wallpaper: Couldn't restart hyprpaper daemon. Stderr: ${e.message}`);
         });
 
-        createRoot(() => {
-            this.#scope = getScope();
-
+        globalScope.run(() => {
             createSubscription(
                 generalConfig.bindProperty("wallpaper.color_mode", "string"),
                 () => {
                     const mode = generalConfig.getProperty("wallpaper.color_mode", "string");
-
-                    if(this.colorMode === mode)
-                        return;
 
                     if(!mode || (mode !== "darken" && mode !== "lighten")) {
                         Notifications.getDefault().sendNotification({
@@ -143,7 +123,7 @@ may check the syntax of your hyprpaper.conf for errors");
                         return;
                     };
 
-                    this.colorMode = mode as WalMode;
+                    this.colorMode = mode as Wallpaper.WalColorMode;
                     this.reloadColorsAsync().catch(console.error);
                 }
             );
@@ -152,10 +132,7 @@ may check the syntax of your hyprpaper.conf for errors");
                 generalConfig.bindProperty("wallpaper.positioning", "string"),
                 () => {
                     const positioning = generalConfig
-                        .getProperty("wallpaper.positioning", "string") as WallpaperPositioning;
-
-                    if(this.positioning === positioning)
-                        return;
+                        .getProperty("wallpaper.positioning", "string") as Wallpaper.Positioning;
 
                     if(!positioning || (positioning !== "contain" && 
                                         positioning !== "cover" && 
@@ -186,12 +163,7 @@ may check the syntax of your hyprpaper.conf for errors");
                 () => {
                     const splash = generalConfig.getProperty("wallpaper.splash", "boolean");
 
-                    if(this.#splash === splash)
-                        return;
-
-                    this.#splash = splash;
-                    this.notify("splash");
-
+                    this.splash = splash;
                     this.writeChanges();
 
                     Notifications.getDefault().sendNotification({
@@ -215,10 +187,6 @@ may check the syntax of your hyprpaper.conf for errors");
                 }
             );
         });
-    }
-
-    vfunc_dispose(): void {
-        this.#scope?.dispose();
     }
 
     public static getDefault(): Wallpaper {
@@ -257,18 +225,26 @@ may check the syntax of your hyprpaper.conf for errors");
         if(this.#proc)
             await this.quitDaemon();
 
-        this.#proc = Gio.Subprocess.new(["hyprpaper"], Gio.SubprocessFlags.STDOUT_SILENCE);
+        this.#proc = Gio.Subprocess.new(["hyprpaper", "--config", this.#hyprpaperFile.peek_path()!], Gio.SubprocessFlags.STDOUT_SILENCE);
     }
 
     private writeChanges(): void {
+        // check if current config is default, so we write to the right path.
+        if(this.#hyprpaperFile.equal(this.#defaultHyprpaperFile))
+            this.#hyprpaperFile = this.#userHyprpaperFile;
+
+        const dir = this.#hyprpaperFile.get_parent();
+        if(dir && !dir.query_exists(null))
+            dir.make_directory_with_parents(null);
+
         this.#hyprpaperFile.replace_contents_async(encoder.encode(
 `# This file was automatically generated by colorshell
 
-splash = ${this.#splash}
+splash = ${this.splash}
 
 wallpaper {
     monitor = 
-    path = ${this.#wallpaper?.replaceAll(',', "\\,")}
+    path = ${this.#wallpaper?.peek_path()?.replaceAll(',', "\\,")}
     fit_mode = ${this.positioning}
 }`
             ), null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null,
@@ -282,77 +258,84 @@ wallpaper {
         );
     }
 
-    public getData(): WalData {
-        const content = readFile(`${GLib.getenv("XDG_CACHE_HOME")}/wal/colors.json`);
-        return JSON.parse(content) as WalData;
+    public getData(): Wallpaper.WalColors {
+        const content = readFile(`${GLib.get_user_cache_dir()}/wal/colors.json`);
+        return JSON.parse(content) as Wallpaper.WalColors;
     }
 
     
-    public getWallpaper(): string|undefined {
+    public readWallpaper(): Gio.File|null {
         const content = readFile(this.#hyprpaperFile);
         const loaded = content.split('\n').find(line => 
-            /^( *)?path( *)?\=( *)?.*/.test(line.trimStart())
+            /^[ ]*?path[ ]*?\=[ *]?.*/.test(line.trimStart())
         )?.split('=')[1]?.trim().replace(/\\(.)/g, "$1"); // fix escaped characters
 
         if(!loaded) 
-            return undefined;
+            return null;
 
-        return loaded;
+        return Gio.File.new_for_path(loaded);
     }
 
-    public async getWallpaperAsync(): Promise<string|undefined> {
-        return await readFileAsync(this.#hyprpaperFile).then(stdout => {
-            const loaded = stdout.split('\n').find(line => 
-                /^path( )?\=/.test(line.trimStart())
-            )?.split('=')[1]?.trim();
+    public async readWallpaperAsync(): Promise<Gio.File|null> {
+        const content = await readFileAsync(this.#hyprpaperFile);
+        const loaded = content.split('\n').find(line => 
+            /^[ ]*?path[ ]*?\=[ *]?.*/.test(line.trimStart())
+        )?.split('=')[1]?.trim().replace(/\\(.)/g, "$1");
 
-            if(!loaded) 
-                console.warn(`Wallpaper: Couldn't get wallpaper. There is(are) no loaded wallpaper(s)`);
+        if(!loaded) 
+            return null;
 
-            return loaded;
-        }).catch((e: Error) => {
-            console.error(`Wallpaper: Couldn't get wallpaper. Stderr: \n${e.message}`);
-            return undefined;
-        });
+        return Gio.File.new_for_path(loaded);
     }
 
     public reloadColors(): void {
+        if(!this.#wallpaper)
+            return;
+
         try {
-            exec(`wal -t --cols16 "${this.colorMode}" -i "${this.#wallpaper}"`);
+            exec(`wal -t --cols16 "${this.colorMode}" -i "${this.#wallpaper?.peek_path()!}"`);
             this.emit("colors-reloaded");
         } catch(e) {
-            throw new Error(`Wallpaper: Couldn't update shell colors. Stderr: ${(e as Error).message}`);
+            throw new Error(`Wallpaper: An error occurred while trying to generate colors: ${(e as Error).message}`);
         }
     }
 
     public async reloadColorsAsync(): Promise<void> {
+        if(!this.#wallpaper)
+            return;
+
         try {
-            await execAsync(`wal -t --cols16 "${this.colorMode}" -i "${this.#wallpaper}"`);
+            await execAsync(`wal -t --cols16 "${this.colorMode}" -i "${this.#wallpaper.peek_path()!}"`);
             this.emit("colors-reloaded");
         } catch(e) {
-            throw new Error(`Wallpaper: Couldn't update shell colors. Stderr: ${(e as Error).message}`);
+            throw new Error(`Wallpaper: An error occurred while trying to generate colors: ${(e as Error).message}`);
         }
     }
 
     public async reloadWallpaper(write: boolean = true): Promise<void> {
-        if(this.#wallpaper?.trim() === "")
+        if(this.#wallpaper?.peek_path()?.trim() === "")
             return;
 
-        exec(`hyprctl hyprpaper wallpaper ", ${this.#wallpaper?.replaceAll(',', "\\,")}, ${this.positioning}"`);
+        exec(`hyprctl hyprpaper wallpaper ", ${this.#wallpaper?.peek_path()?.replaceAll(',', "\\,")}, ${this.positioning}"`);
 
         write && this.writeChanges();
     }
 
-    public setWallpaper(path: string|Gio.File, write: boolean = true): void {
-        path = typeof path === "string" ? path : path.peek_path()!;
+    public setWallpaper(file: string|Gio.File|null, write: boolean = true): void {
+        file = typeof file === "string" ? Gio.File.new_for_path(file) : file;
 
-        if(!GLib.file_test(path, GLib.FileTest.EXISTS)) {
-            console.error("Wallpaper: file does not exist, skipped");
+        if(file === undefined || file === null) {
+            this.#hyprpaperFile = this.defaultHyprpaperFile; // fallback to default if unset
+            this.restartDaemon();
             return;
         }
 
-        const reloadColors = this.#wallpaper !== path; // only reload colors if wallpaper is different
-        this.#wallpaper = path;
+        if(!file.query_exists(null))
+            throw new Error("Wallpaper: Couldn't set wallpaper to a file that does not exist");
+
+        const reloadColors = !this.#wallpaper?.equal(file); // only reload colors if wallpaper is different
+
+        this.#wallpaper = file;
         this.notify("wallpaper");
         this.reloadWallpaper(write).then(() => {
             this.emit("wallpaper-changed", this.#wallpaper!);
@@ -361,7 +344,7 @@ wallpaper {
 
             this.reloadColorsAsync().catch(console.error);
         }).catch((e: Error) => {
-            console.error(`Wallpaper: Couldn't set wallpaper. Stderr: ${e.message}`);
+            console.error("Wallpaper: Couldn't set wallpaper:", e);
         });
     }
 
@@ -394,8 +377,42 @@ wallpaper {
 }
 
 export namespace Wallpaper {
+    /** wallpaper positioning strategy */
+    export type Positioning = "contain"|"tile"|"cover"|"fill";
+    export type WalColorMode = "darken"|"lighten";
+    export type WalColors = {
+        checksum: string;
+        wallpaper: string;
+        alpha: number;
+        special: {
+            background: string;
+            foreground: string;
+            cursor: string;
+        };
+        colors: {
+            color0: string;
+            color1: string;
+            color2: string;
+            color3: string;
+            color4: string;
+            color5: string;
+            color6: string;
+            color7: string;
+            color8: string;
+            color9: string;
+            color10: string;
+            color11: string;
+            color12: string;
+            color13: string;
+            color14: string;
+            color15: string;
+        };
+    };
+
     export interface SignalSignatures extends GObject.Object.SignalSignatures {
+        /** emitted when the shell colors are regenerated */
         "colors-reloaded": () => void;
-        "wallpaper-changed": (path: string) => void;
+        /** emitted when the wallpaper is changed in hyprpaper(not the :wallpaper property directly) */
+        "wallpaper-changed": (file: Gio.File) => void;
     }
 }

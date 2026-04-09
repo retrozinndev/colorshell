@@ -7,6 +7,7 @@ import System from "system";
 import { Runner } from "../../runner";
 import { execApp } from "../../modules/apps";
 import { generalConfig } from "../../config";
+import { runtimeDir } from "../../modules/utils";
 
 
 let window: string|undefined;
@@ -204,7 +205,7 @@ https://github.com/retrozinndev/colorshell
             onCalled: (remote) => {
                 remote.println("Locking session...");
                 execApp(
-                    `hyprlock --config ${Shell.runtimeDir.peek_path()!}/config/hyprlock.conf`
+                    `hyprlock --config ${runtimeDir.peek_path()!}/config/hyprlock.conf`
                 );
                 remote.exit(0);
             }

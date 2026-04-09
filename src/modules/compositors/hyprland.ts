@@ -6,8 +6,7 @@ import GLib from "gi://GLib?version=2.0";
 import { Socket } from "../socket";
 import { exec, execAsync } from "ags/process";
 import Gio from "gi://Gio?version=2.0";
-import { createScopedConnection, decoder, playSystemBell } from "../utils";
-import { Shell } from "../../app";
+import { createScopedConnection, decoder, playSystemBell, runtimeDir } from "../utils";
 import { Wallpaper } from "../wallpaper";
 
 
@@ -15,7 +14,7 @@ import { Wallpaper } from "../wallpaper";
 export class CompositorHyprland extends Compositor {
     #eventSock: Socket;
     #cmdSock: Socket;
-    #configDir: Gio.File = Gio.File.new_for_path(`${Shell.runtimeDir.peek_path()!}/config/hyprland`);
+    #configDir: Gio.File = Gio.File.new_for_path(`${runtimeDir.peek_path()!}/config/hyprland`);
     #ignoreConfigReload: boolean = false;
     hyprland: AstalHyprland.Hyprland = AstalHyprland.get_default();
 
