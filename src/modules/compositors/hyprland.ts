@@ -85,12 +85,15 @@ export class CompositorHyprland extends Compositor {
                     matchBorderColorId = Wallpaper.getDefault().connect(
                         "colors-reloaded", () => this.reload()
                     );
+                    this.reload();
 
                     return;
                 }
 
                 matchBorderColorId !== null && 
                     Wallpaper.getDefault().disconnect(matchBorderColorId);
+
+                this.reload();
             }
         );
     }
@@ -146,10 +149,7 @@ export class CompositorHyprland extends Compositor {
             return;
 
         try {
-            const out = exec(
-                `hyprctl keyword source "${path}"`
-            );
-
+            const out = exec(`hyprctl keyword source "${path}"`);
             !/^ok.*$/.test(out) &&
                 console.error(out);
         } catch(e) {
@@ -164,7 +164,13 @@ export class CompositorHyprland extends Compositor {
         ).filter(name => !name.includes("bindings"));
 
         exec("hyprctl reload");
-        names.forEach(name => this.source(`${this.#configDir.peek_path()!}/${name}`));
+        const loadHyprDecorations = generalConfig.getProperty("misc.match_window_border_color", "boolean");
+        names.forEach(name => {
+            if(name.includes("decorations") && !loadHyprDecorations)
+                return;
+
+            this.source(`${this.#configDir.peek_path()!}/${name}`)
+        });
         this.loadBinds();
     }
 
