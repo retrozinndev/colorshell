@@ -98,7 +98,9 @@ const generalConfigDefaults = {
     misc: {
         /** plays a system-bell sound effect using canberra-gtk-play on volume change 
           * @default true */
-        play_bell_on_volume_change: true
+        play_bell_on_volume_change: true,
+        /** disable/enable the window border color match feature for hyprland. @default `true`*/
+        match_window_border_color: true
     }
 };
 

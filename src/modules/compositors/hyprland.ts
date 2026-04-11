@@ -6,15 +6,16 @@ import GLib from "gi://GLib?version=2.0";
 import { Socket } from "../socket";
 import { exec, execAsync } from "ags/process";
 import Gio from "gi://Gio?version=2.0";
-import { createScopedConnection, decoder, playSystemBell, runtimeDir } from "../utils";
+import { createSubscription, decoder, playSystemBell, runtimeConfigDir } from "../utils";
 import { Wallpaper } from "../wallpaper";
+import { generalConfig } from "../../config";
 
 
 @register({ GTypeName: "ClshCompositorHyprland" })
 export class CompositorHyprland extends Compositor {
     #eventSock: Socket;
     #cmdSock: Socket;
-    #configDir: Gio.File = Gio.File.new_for_path(`${runtimeDir.peek_path()!}/config/hyprland`);
+    #configDir: Gio.File = Gio.File.new_for_path(`${runtimeConfigDir.peek_path()!}/hyprland`);
     #ignoreConfigReload: boolean = false;
     hyprland: AstalHyprland.Hyprland = AstalHyprland.get_default();
 
@@ -71,7 +72,27 @@ export class CompositorHyprland extends Compositor {
             this.handleEvents(event, data);
         });
 
-        createScopedConnection(Wallpaper.getDefault(), "colors-reloaded", () => this.reload());
+        let matchBorderColorId: number|null = null;
+        createSubscription(
+            generalConfig.bindProperty("misc.match_window_border_color", "boolean"),
+            () => {
+                const matchBorderColor = generalConfig.getProperty("misc.match_window_border_color", "boolean");
+
+                if(matchBorderColorId !== null)
+                    Wallpaper.getDefault().disconnect(matchBorderColorId);
+
+                if(matchBorderColor) {
+                    matchBorderColorId = Wallpaper.getDefault().connect(
+                        "colors-reloaded", () => this.reload()
+                    );
+
+                    return;
+                }
+
+                matchBorderColorId !== null && 
+                    Wallpaper.getDefault().disconnect(matchBorderColorId);
+            }
+        );
     }
 
     private handleEvents(event: CompositorHyprland.Event, data: string): void {
