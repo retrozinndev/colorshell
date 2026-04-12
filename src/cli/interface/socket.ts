@@ -8,7 +8,7 @@ import GLib from "gi://GLib?version=2.0";
 
 /** a cli interface implementation for a socket server that receives remote calls */
 @register({ GTypeName: "ClshSocketCli" })
-export class SocketCli extends GObject.Object implements CliInterface {
+class SocketCli extends GObject.Object implements CliInterface {
     #address: Gio.UnixSocketAddress;
     #sockFile: Gio.File;
     #service: Gio.SocketService;
@@ -94,7 +94,7 @@ export class SocketCli extends GObject.Object implements CliInterface {
     }
 }
 
-export namespace SocketCli {
+namespace SocketCli {
     export class Remote implements CliInterface.Remote {
         #exited: boolean = false;
         #conn: Gio.SocketConnection;
@@ -135,3 +135,5 @@ export namespace SocketCli {
         }
     }
 }
+
+export default SocketCli;

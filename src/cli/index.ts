@@ -5,7 +5,7 @@ import devel from "./modules/devel";
 import media from "./modules/media";
 import screenshot from "./modules/screenshot";
 import Adw from "gi://Adw?version=1";
-import { CmdCli } from "./interface/cmd";
+import GCmdCli from "./interface/gcmd";
 
 
 const cliModules = [
@@ -36,7 +36,7 @@ abstract class Cli {
 
         if(!ifaces || ifaces.length < 1) {
             ifaces ??= [];
-            ifaces.push(new CmdCli(Adw.Application.get_default()));
+            ifaces.push(new GCmdCli(Adw.Application.get_default()));
         }
 
         modules && modules.length > 0 &&

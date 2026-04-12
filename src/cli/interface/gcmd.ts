@@ -4,8 +4,8 @@ import CliInterface from ".";
 import Gio from "gi://Gio?version=2.0";
 
 
-@register({ GTypeName: "ClshCmdCli" })
-export class CmdCli extends GObject.Object implements CliInterface {
+@register({ GTypeName: "ClshGCmdCli" })
+class GCmdCli extends GObject.Object implements CliInterface {
     #gapp: Gio.Application;
     #connection: number|null = null;
 
@@ -33,12 +33,12 @@ export class CmdCli extends GObject.Object implements CliInterface {
         this.#gapp = app;
         
         if(!(app.get_flags() & Gio.ApplicationFlags.HANDLES_COMMAND_LINE))
-            console.warn("CliInterface: CmdCli: The provided GApplication does not handle command line. \
+            console.warn("CliInterface: GCmd: The provided GApplication does not handle command line. \
 Please add the HANDLES_COMMAND_LINE flag to the GApplication");
         
 
         this.#connection = this.#gapp.connect("command-line", (_, cmd: Gio.ApplicationCommandLine) => {
-            const remote = new CmdCli.Remote(cmd);
+            const remote = new GCmdCli.Remote(cmd);
             this.emit("connected", remote);
             this.emit("received", cmd.get_arguments().toSpliced(0, 1), remote);
         });
@@ -67,7 +67,7 @@ Please add the HANDLES_COMMAND_LINE flag to the GApplication");
     }
 }
 
-export namespace CmdCli {
+namespace GCmdCli {
     export class Remote implements CliInterface.Remote {
         #exited: boolean = false;
         #cmd: Gio.ApplicationCommandLine;
@@ -98,3 +98,5 @@ export namespace CmdCli {
         }
     }
 }
+
+export default GCmdCli;

@@ -15,7 +15,7 @@ import { Input } from "./modules/input";
 import { Idle } from "./modules/idle";
 import { register } from "ags/gobject";
 import { initWindows } from "./windows";
-import { SocketCli } from "./cli/interface/socket";
+import SocketCli from "./cli/interface/socket";
 import Media from "./modules/media";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
