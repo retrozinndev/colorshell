@@ -353,11 +353,6 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
     ): void {
         super.emit(signal, ...args);
     }
-
-    vfunc_dispose(): void {
-        this.scope.dispose();
-        this.server?.stop();
-    }
 }
 
 export namespace Socket {

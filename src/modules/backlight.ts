@@ -175,11 +175,6 @@ export namespace Backlights {
             return false;
         }
 
-        vfunc_dispose(): void {
-            this.#monitor.cancel();
-            Backlights.getDefault().disconnect(this.#conn);
-        }
-
         public emit<Signal extends keyof typeof this.$signals>(
             signal: Signal,
             ...args: Parameters<(typeof this.$signals)[Signal]>

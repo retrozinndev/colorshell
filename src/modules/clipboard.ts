@@ -67,11 +67,6 @@ export class Clipboard extends GObject.Object {
         console.log("Clipboard: cliphist database not found. Try copying something first!");
     }
 
-    vfunc_dispose(): void {
-        this.#dbMonitor.cancel();
-        this.#dbMonitor.unref();
-    }
-
     private init() {
         console.log("Clipboard: Starting to read cliphist history...");
 

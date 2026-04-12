@@ -62,10 +62,6 @@ export class NightLight extends GObject.Object {
         }, 500);
     }
 
-    vfunc_dispose(): void {
-        this.#watchInterval?.destroy();
-    }
-
     public static getDefault(): NightLight {
         if(!this.instance)
             this.instance = new NightLight();

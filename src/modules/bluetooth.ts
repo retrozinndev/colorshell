@@ -149,10 +149,6 @@ export class Bluetooth extends GObject.Object {
         return this.instance;
     }
 
-    vfunc_dispose(): void {
-        this.#scope.dispose();
-    }
-
     private getLastConnectedDevice(): AstalBluetooth.Device|null {
         const devices = AstalBluetooth.get_default().devices
             .filter(d => d.paired && d.trusted && d.connected);

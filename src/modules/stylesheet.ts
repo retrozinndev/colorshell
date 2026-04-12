@@ -42,7 +42,7 @@ export class Stylesheet {
                 e.message}\n${e.stack}`);
         });
         await execAsync(
-            `bash -c "sass ${this.stylePath}/sass.scss ${this.stylePath}/style.css"`
+            `sass ${this.stylePath}/sass.scss ${this.stylePath}/style.css`
         ).catch(_e => {
             const e = _e as Error;
             console.error(`Stylesheet: An error occurred on compile-time! Stderr: ${
@@ -141,6 +141,7 @@ export class Stylesheet {
                     "/io/github/retrozinndev/colorshell/styles/colors"
                 ))
             }`;
+
             this.compileApply();
         });
     }
