@@ -10,7 +10,19 @@ export class CmdCli extends GObject.Object implements CliInterface {
     #connection: number|null = null;
 
     @signal(Array<string>, Object)
-    protected received(_: Array<string>, __: CliInterface.Remote) {}
+    protected received(args: Array<string>, remote: CliInterface.Remote) {
+        if(args.length > 0)
+            return;
+
+        // handle activating app if no arguments are provided
+        if(this.#gapp.isRemote) {
+            remote.println("Error: No commands/arguments were provided");
+            remote.exit(1);
+            return;
+        }
+
+        this.#gapp.activate();
+    }
 
     @signal(Object)
     protected connected(_: CliInterface.Remote) {}
@@ -20,10 +32,10 @@ export class CmdCli extends GObject.Object implements CliInterface {
         super();
         this.#gapp = app;
         
-        /*if(app.get_flags() !& Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
+        if(!(app.get_flags() & Gio.ApplicationFlags.HANDLES_COMMAND_LINE))
             console.warn("CliInterface: CmdCli: The provided GApplication does not handle command line. \
 Please add the HANDLES_COMMAND_LINE flag to the GApplication");
-        */
+        
 
         this.#connection = this.#gapp.connect("command-line", (_, cmd: Gio.ApplicationCommandLine) => {
             const remote = new CmdCli.Remote(cmd);
@@ -76,7 +88,7 @@ export namespace CmdCli {
         }
 
         println(msg: string, err: boolean = false): void {
-            this.print(msg, err);
+            this.print(`${msg}\n`, err);
         }
 
         exit(code: number): void {

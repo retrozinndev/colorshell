@@ -14,7 +14,13 @@ export class SocketCli extends GObject.Object implements CliInterface {
     #service: Gio.SocketService;
 
     @signal(Array<string>, Object)
-    protected received(_: Array<string>, __: CliInterface.Remote) {}
+    protected received(args: Array<string>, remote: CliInterface.Remote) {
+        if(args.length > 0)
+            return;
+
+        remote.println("Error: No commands/arguments were provided");
+        remote.exit(1);
+    }
 
     @signal(Object)
     protected connected(_: CliInterface.Remote) {}

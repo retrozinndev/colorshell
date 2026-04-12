@@ -33,7 +33,7 @@ export default class OSDMode extends GObject.Object {
         this.#subs = construct(this, props);
     }
 
-    vfunc_dispose(): void {
-        this.#subs.forEach(s => s());
+    destroy(): void {
+        this.#subs.forEach(disconn => disconn());
     }
 }

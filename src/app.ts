@@ -15,14 +15,12 @@ import { Input } from "./modules/input";
 import { Idle } from "./modules/idle";
 import { register } from "ags/gobject";
 import { initWindows } from "./windows";
+import { SocketCli } from "./cli/interface/socket";
 import Media from "./modules/media";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import Adw from "gi://Adw?version=1";
-import { SocketCli } from "./cli/interface/socket";
-import { Cli } from "./cli";
-import { CmdCli } from "./cli/interface/cmd";
-
+import Cli from "./cli";
 
 
 @register({ GTypeName: "Shell" })
@@ -40,12 +38,13 @@ export class Shell extends Adw.Application {
         super({
             applicationId: "io.github.retrozinndev.colorshell",
             flags: Gio.ApplicationFlags.HANDLES_COMMAND_LINE,
-            version: COLORSHELL_VERSION ?? "0.0.0",
+            version: COLORSHELL_VERSION,
         });
 
         setConsoleLogDomain("Colorshell");
         GLib.set_application_name("colorshell");
         GLib.set_prgname("colorshell");
+        Cli.init();
     }
 
     public static getDefault(): Shell {
@@ -101,14 +100,6 @@ export class Shell extends Adw.Application {
         }
     }
 
-    vfunc_command_line(cmd: Gio.ApplicationCommandLine): number {
-        if(cmd.isRemote)
-            return 0;
-
-        this.activate();
-        return 0;
-    }
-
     vfunc_activate(): void {
         this.hold();
 
@@ -117,6 +108,11 @@ export class Shell extends Adw.Application {
                 globalScope.dispose()
                 dispose();
             });
+
+            // only init socket interface if this is the primary instance
+            Cli.addIface(
+                new SocketCli(Gio.UnixSocketAddress.new(`${runtimeDir.peek_path()!}/.sock`))
+            );
 
             this.#scope = getScope();
             this.main();
@@ -204,11 +200,6 @@ export class Shell extends Adw.Application {
                 null
             );
         });
-
-        Cli.init([
-            new CmdCli(this),
-            new SocketCli(Gio.UnixSocketAddress.new(`${runtimeDir.peek_path()!}/.sock`))
-        ]);
     }
 
     private main(): void {
