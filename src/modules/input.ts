@@ -1,12 +1,11 @@
 import { exec } from "ags/process";
 import Gio from "gi://Gio?version=2.0";
 import { Notifications } from "./notifications";
-import { getPID, killProc } from "./utils";
+import { getPID, isInstalled, killProc } from "./utils";
 
 
 export class Input {
     private static instance: Input;
-
     #proc: Gio.Subprocess|null = null;
 
     /** how many times the IME has crashed */
@@ -16,6 +15,9 @@ export class Input {
 
 
     constructor() {
+        if(!isInstalled("fcitx5"))
+            return;
+
         const pid = getPID("fcitx5");
         if(pid != null)
             killProc(pid);
