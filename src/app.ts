@@ -1,14 +1,13 @@
 import "./overrides"; // thanks Aylur!!
 import "./config";
-import { Wallpaper } from "./modules/wallpaper";
-import { Stylesheet } from "./modules/stylesheet";
-import { Clipboard } from "./modules/clipboard";
 import { Gdk, Gtk } from "ags/gtk4";
 import { createRoot, getScope, Scope } from "ags";
-import { OSD } from "./window/osd";
 import { programArgs, programInvocationName } from "system";
 import { setConsoleLogDomain } from "console";
 import { cacheDir, createScopedConnection, dataDir, encoder, getDBusNamePID, globalScope, runtimeConfigDir, runtimeDir } from "./modules/utils";
+import { Stylesheet } from "./modules/stylesheet";
+import { Clipboard } from "./modules/clipboard";
+import { OSD } from "./window/osd";
 import { NightLight } from "./modules/nightlight";
 import { initCompositor } from "./compositors";
 import { Input } from "./modules/input";
@@ -208,7 +207,6 @@ export class Shell extends Adw.Application {
         console.log("Colorshell: Initializing modules");
         initCompositor();
         Media.getDefault();
-        Wallpaper.getDefault();
         Stylesheet.getDefault();
 
         initWindows();

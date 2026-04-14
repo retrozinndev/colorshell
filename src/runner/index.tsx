@@ -32,6 +32,7 @@ export type RunnerProps = {
 
 export type Result = CCProps<ResultWidget, ResultWidgetProps>;
 
+export type PluginConstructor = new () => Runner.Plugin;
 export interface Plugin {
     /** prefix to call the plugin. if undefined, will be triggered like applications plugin */
     readonly prefix?: string;
@@ -56,7 +57,7 @@ export interface Plugin {
 export let instance: (Astal.Window|null) = null;
 
 let gtkEntry: (Gtk.Entry|null) = null;
-const plugins = new Set<Runner.Plugin>([
+const plugins = new Set<Runner.PluginConstructor>([
     PluginApps,
     PluginClipboard, 
     PluginMedia, 
@@ -65,6 +66,7 @@ const plugins = new Set<Runner.Plugin>([
     PluginWebSearch,
     PluginKill
 ]);
+const pluginInstances: Array<Runner.Plugin> = [];
 const ignoredKeys = [
     Gdk.KEY_space,
     Gdk.KEY_Shift_L,
@@ -102,22 +104,21 @@ export function regExMatch(search: string, item: (string|number)): boolean {
 }
 
 
-export function addPlugin(plugin: Runner.Plugin, force?: boolean) {
-    if(!force && plugin.prefix && plugins.has(plugin)) 
-        throw new Error(`Runner plugin with prefix ${plugin.prefix} already exists`);
+export function addPlugin(plugin: Runner.PluginConstructor) {
+    if(plugins.has(plugin))
+        return;
 
-    plugins.delete(plugin);
     plugins.add(plugin);
 }
 
-export function getPlugins(): Array<Runner.Plugin> {
+export function getPlugins(): Array<Runner.PluginConstructor> {
     return [...plugins.values()];
 }
 
 /** Removes a plugin from the runner plugins list
  * @returns true if plugin was removed or false if plugin wasn't found
   */
-export function removePlugin(plugin: Plugin): boolean {
+export function removePlugin(plugin: Runner.PluginConstructor): boolean {
     return plugins.delete(plugin);
 }
 
@@ -182,7 +183,7 @@ export function openDefault(initialText?: string) {
 }
 
 async function getPluginResults(input: string, limit?: number): Promise<Array<Result>> {
-    let calledPlugins: Array<Plugin> = getPlugins().filter((plugin) => 
+    let calledPlugins: Array<Plugin> = pluginInstances.filter((plugin) => 
         plugin.prefix ? (input.startsWith(plugin.prefix) ? true : false) : true
     ).sort((plugin) => plugin.prefix != null ? 0 : 1);
 
@@ -312,14 +313,17 @@ export function openRunner(props: RunnerProps, placeholders?: Array<Result>): As
     let clickTimeout: GLib.Source|undefined;
 
     if(!instance)
-        instance = Windows.forFocusedMonitor((mon, root) => 
+        instance = Windows.forFocusedMonitor((mon) => 
             <PopupWindow namespace={"runner"} monitor={mon} widthRequest={props.width} 
               heightRequest={props.height} exclusivity={Astal.Exclusivity.IGNORE} halign={Gtk.Align.CENTER}
               marginTop={(AstalHyprland.get_default().get_monitor(mon)?.height / 2) - (props.height! / 2)}
               valign={Gtk.Align.START} hexpand orientation={Gtk.Orientation.VERTICAL}
               $={() => {
-                  plugins.forEach(plugin => 
-                      plugin.init?.());
+                  plugins.forEach(construct => {
+                      const plugin = new construct();
+                      pluginInstances.push(plugin);
+                      plugin.init?.();
+                  });
 
                   props.initialText && 
                       Runner.setEntryText(props.initialText);
@@ -355,8 +359,8 @@ export function openRunner(props: RunnerProps, placeholders?: Array<Result>): As
                         listbox.grab_focus();
                     }
               }} actionClosed={() => {
-                  [...plugins.values()].forEach(plugin => plugin?.onClose?.());
-                  root.dispose();
+                  pluginInstances.splice(0, pluginInstances.length)
+                    .forEach(plugin => plugin?.onClose?.());
 
                   instance = null;
                   gtkEntry = null;

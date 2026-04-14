@@ -5,7 +5,6 @@ import { createRoot, jsx } from "ags";
 import { createScopedConnection } from "gnim-utils";
 import { ResultWidget } from "../widgets/ResultWidget";
 import Fuse, { IFuseOptions } from "fuse.js";
-
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
 import Gly from "gi://Gly?version=2";
@@ -14,7 +13,7 @@ import GlyGtk4 from "gi://GlyGtk4?version=2";
 import { Cache } from "../../modules/cache";
 
 
-class _PluginWallpapers implements Runner.Plugin {
+export class PluginWallpapers implements Runner.Plugin {
     prefix = "#";
     prioritize = true;
     #fuse!: Fuse<string>;
@@ -264,5 +263,3 @@ class _PluginWallpapers implements Runner.Plugin {
         return results;
     }
 }
-
-export const PluginWallpapers = new _PluginWallpapers();

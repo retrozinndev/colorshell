@@ -2,11 +2,10 @@ import { Gtk } from "ags/gtk4";
 import { Clipboard } from "../../modules/clipboard";
 import { Runner } from "..";
 import { jsx } from "ags/gtk4/jsx-runtime";
-
 import Fuse from "fuse.js";
 
 
-class _PluginClipboard implements Runner.Plugin {
+export class PluginClipboard implements Runner.Plugin {
     #fuse!: Fuse<unknown>;
     prefix = '>';
     prioritize = true;
@@ -58,5 +57,3 @@ class _PluginClipboard implements Runner.Plugin {
         }).map(result => this.clipboardResult(result.item as Clipboard.Item))
     }
 }
-
-export const PluginClipboard = new _PluginClipboard();

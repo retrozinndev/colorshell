@@ -17,34 +17,13 @@ export class Wallpaper extends GObject.Object {
     declare $signals: Wallpaper.SignalSignatures;
 
     #wallpaper: Gio.File|null = null;
-    #userHyprpaperFile: Gio.File;
-    #defaultHyprpaperFile: Gio.File;
-    #hyprpaperFile: Gio.File;
-    #wallpapersDir: Gio.File;
+    #userHyprpaperFile!: Gio.File;
+    #defaultHyprpaperFile!: Gio.File;
+    #hyprpaperFile!: Gio.File;
+    #wallpapersDir!: Gio.File;
     /** pywal-generated colors file */
     #walFile: Gio.File = Gio.File.new_for_path(`${GLib.get_user_cache_dir()}/wal/colors`);
     #proc: Gio.Subprocess|null = null;
-
-    /** get the default hyprpaper config file `GFile`.
-      * also writes the file from gresource if it doesn't exist already */
-    private get defaultHyprpaperFile(): Gio.File {
-        if(!this.#defaultHyprpaperFile.query_exists(null)) {
-            const data = Gio.resources_lookup_data(
-                "/io/github/retrozinndev/colorshell/config/hyprpaper.conf",
-                null
-            );
-
-            if(!data) 
-                throw new Error("Wallpaper: Couldn't get resource for default configuration file. \
-Please repair the installation");
-
-            this.#defaultHyprpaperFile.replace_contents(
-                data.toArray(), null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null
-            );
-        }
-
-        return this.#defaultHyprpaperFile;
-    }
 
     @signal()
     colorsReloaded() {}
@@ -87,7 +66,7 @@ Please repair the installation");
         this.#hyprpaperFile = this.#userHyprpaperFile;
 
         if(!this.#hyprpaperFile.query_exists(null))
-            this.#hyprpaperFile = this.defaultHyprpaperFile; // also writes the file if it doesn't exist
+            this.#hyprpaperFile = this.#defaultHyprpaperFile;
 
         try {
             this.#wallpaper = this.readWallpaper();
@@ -325,7 +304,7 @@ wallpaper {
         file = typeof file === "string" ? Gio.File.new_for_path(file) : file;
 
         if(file === undefined || file === null) {
-            this.#hyprpaperFile = this.defaultHyprpaperFile; // fallback to default if unset
+            this.#hyprpaperFile = this.#defaultHyprpaperFile; // fallback to default if unset
             this.restartDaemon();
             return;
         }
