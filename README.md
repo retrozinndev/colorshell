@@ -3,6 +3,9 @@
 > [!note]
 > My personal dotfiles are now on [retrozinndev/Hyprland-Dots](https://github.com/retrozinndev/Hyprland-Dots)
 
+> [!warning]
+> The project is under Maintenance Mode. See [#56](https://github.com/retrozinndev/colorshell/issues/56)
+
 This is the repository for the colorshell desktop shell, made for Hyprland with [TypeScript], [GTK4], [AGS], [Gnim], and some of the [Astal] libraries.
 
 It really took me a lot of time to make this, so please star the repo if you like it! :star:
