@@ -1,5 +1,5 @@
 import AstalMpris from "gi://AstalMpris?version=0.1";
-import { Cli } from "..";
+import Cli from "..";
 import Media from "../../modules/media";
 
 

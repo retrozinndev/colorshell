@@ -1,9 +1,9 @@
 import GLib from "gi://GLib?version=2.0";
-import { Cli } from "..";
+import Cli from "..";
 import { showWorkspaceNumber } from "../../window/bar/widgets/Workspaces";
 import { Windows } from "../../window";
 import { Shell } from "../../app";
-import System from "system";
+import System, { programPath } from "system";
 import { Runner } from "../../runner";
 import { execApp } from "../../modules/apps";
 import { generalConfig } from "../../config";
@@ -192,8 +192,8 @@ https://github.com/retrozinndev/colorshell
                 const text = args.find(a => a.name === "text")?.value;
                 remote.println(`Opening runner${text ? ` with "${text}"` : ""}...`);
 
-                !Runner.instance ?
-                    Runner.openDefault(text)
+                !Runner.isOpen ?
+                    Runner.open(text)
                 : Runner.close();
 
                 remote.exit(0);
@@ -308,10 +308,26 @@ Format: https://wiki.hypr.land/Configuring/Dispatchers/#executing-with-rules`,
             }
         },
         {
+            name: "reload",
+            help: "Quits the currently-open instance and starts another one",
+            onCalled: (remote) => {
+                if(System.programPath === null)
+                    remote.println("Error: argv[0](program path) is unset, reloading might not work correctly");
+
+                const path = System.programPath ?? `${GLib.get_user_runtime_dir()}/colorshell/colorshell`;
+
+                Shell.getDefault().quit();
+                GLib.spawn_async(null, [path], null, GLib.SpawnFlags.SEARCH_PATH, null);
+                System.exit(0);
+            }
+        },
+        {
             name: "quit",
             help: "exits the current instance of colorshell",
-            onCalled: () => {
+            onCalled: (remote) => {
                 Shell.getDefault().quit();
+                remote.println("Quitting...");
+                remote.exit(0);
                 System.exit(0);
             }
         }

@@ -1,5 +1,5 @@
 import { Gtk } from "ags/gtk4";
-import { Cli } from "..";
+import Cli from "..";
 
 
 export default {

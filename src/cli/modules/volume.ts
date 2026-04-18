@@ -1,4 +1,4 @@
-import { Cli } from "..";
+import Cli from "..";
 import { Wireplumber } from "../../modules/volume";
 
 
