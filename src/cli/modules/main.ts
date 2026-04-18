@@ -3,7 +3,7 @@ import Cli from "..";
 import { showWorkspaceNumber } from "../../window/bar/widgets/Workspaces";
 import { Windows } from "../../window";
 import { Shell } from "../../app";
-import System, { programPath } from "system";
+import System from "system";
 import { Runner } from "../../runner";
 import { execApp } from "../../modules/apps";
 import { generalConfig } from "../../config";
