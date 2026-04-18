@@ -26,9 +26,16 @@ retrozinndev/colorshell/refs/heads/$target_branch/scripts/utils.sh"
         if curl -s "$url" > $temp_dir/utils.sh; then
             utils_path=$temp_dir/utils.sh
         else
-            echo "[error] Failed to fetch utils script! Check your internet connection and try again ;)" > /dev/stderr
-            rm -f $temp_dir/utils.sh
-            exit 1
+            if ! [ -f $temp_dir/utils.sh ]; then
+                echo "[error] Failed to fetch utils script! Check your internet connection and try again ;)" > /dev/stderr
+                rm -f $temp_dir/utils.sh
+                exit 1
+            fi
+
+            echo "[warn] The fetch of the utils.sh script failed, but you already have the script locally"
+            echo "[info] The script will use the local version. Be aware that errors may occur if the script is outdated!"
+
+            utils_path=$temp_dir/utils.sh
         fi
 
     fi

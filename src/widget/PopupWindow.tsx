@@ -1,48 +1,117 @@
 import { Astal, Gdk, Gtk } from "ags/gtk4";
 import { BackgroundWindow } from "./BackgroundWindow";
-import { Accessor, CCProps, createComputed, createRoot, getScope, Node } from "ags";
+import { Accessor, createBinding, createComputed, createRoot, getScope } from "ags";
 import { omitObjectKeys } from "../modules/utils";
-
-import GObject from "ags/gobject";
-
-
-type PopupWindowSpecificProps = {
-    $?: (self: Astal.Window) => void;
-    children?: Node;
-    /** Stylesheet for the background of the popup-window */
-    cssBackgroundWindow?: string;
-    class?: string | Accessor<string>;
-    actionClosed?: (self: Astal.Window) => void|boolean;
-    orientation?: Gtk.Orientation | Accessor<Gtk.Orientation>;
-    actionClickedOutside?: (self: Astal.Window) => void;
-    actionKeyPressed?: (self: Astal.Window, keyval: number, keycode: number) => void;
-};
-
-export type PopupWindowProps = Pick<Partial<CCProps<Astal.Window, Astal.Window.ConstructorProps>>, 
-    "monitor"
-    | "layer"
-    | "exclusivity"
-    | "marginLeft"
-    | "marginTop"
-    | "marginRight"
-    | "marginBottom"
-    | "cursor"
-    | "canFocus"
-    | "hasFocus"
-    | "tooltipMarkup"
-    | "tooltipText"
-    | "namespace"
-    | "visible"
-    | "widthRequest"
-    | "heightRequest"
-    | "halign"
-    | "valign"
-    | "anchor"
-    | "vexpand"
-    | "hexpand"> & PopupWindowSpecificProps;
+import GObject, { gtype, property, register, signal } from "ags/gobject";
 
 
-const { TOP, LEFT, RIGHT, BOTTOM } = Astal.WindowAnchor;
+@register({ GTypeName: "ClshPopupWindow" })
+export class PopupWindow extends Astal.Window {
+    declare $signals: PopupWindow.SignalSignatures;
+
+    #bg: Astal.Window;
+
+    @signal()
+    closed() {}
+
+    @signal()
+    clickedOutside() {
+        if(!this.closeOnClickOutside)
+            return;
+
+        this.close();
+    }
+
+    @signal()
+    keyPressed(_: number, __: number) {}
+
+    @property(Boolean)
+    closeOnClickOutside: boolean = true;
+
+    @property(gtype<string|null>(String))
+    backgroundCss: string|null = null;
+
+    constructor(props: Partial<PopupWindow.ConstructorProps>) {
+        super({
+            cssName: "popupwindow",
+            layer: Astal.Layer.OVERLAY,
+            exclusivity: Astal.Exclusivity.NORMAL,
+            ...omitObjectKeys(props, [
+                "backgroundCss",
+                "closeOnClickOutside"
+            ])
+        });
+
+        if(props.backgroundCss !== undefined)
+            this.backgroundCss = props.backgroundCss;
+
+        if(props.closeOnClickOutside !== undefined)
+            this.closeOnClickOutside = props.closeOnClickOutside;
+
+        this.#bg = BackgroundWindow({
+            css: createBinding(this, "backgroundCss")(css => css ?? ""),
+            monitor: createBinding(this, "monitor"),
+            layer: createBinding(this, "layer"),
+            keymode: Astal.Keymode.NONE,
+            attach: this,
+            
+        });
+        this.#bg.hide();
+
+        this.conns.set(gestureClick, gestureClick.connect("released", () => {
+            if(clickedInside) {
+                clickedInside = false;
+                return;
+            }
+
+            props.actionClickedOutside!(self);
+        }));
+
+        this.conns.set(keyController, keyController.connect("key-pressed", (_, keyval, keycode) => {
+            if(keyval === Gdk.KEY_Escape) {
+
+                this.emit("clicked-outside");
+                return;
+            }
+
+            this.emit("key-pressed", keyval, keycode);
+        }));
+    }
+
+    hide(): void {
+        this.#bg.hide();
+        super.hide();
+    }
+
+    show(): void {
+        if(this.#bg.is_visible())
+            this.#bg.hide();
+
+        this.#bg.show();
+        super.show();
+    }
+
+    close(): void {
+        super.close();
+        this.emit("closed");
+    }
+}
+
+export namespace PopupWindow {
+    export interface ConstructorProps extends Omit<
+        Astal.Window.ConstructorProps,
+        "anchor"
+    > {
+        backgroundCss: string;
+        closeOnClickOutside: boolean;
+    };
+
+    export interface SignalSignatures extends Astal.Window.SignalSignatures {
+        "closed": () => void;
+        "clicked-outside": () => void;
+        "key-pressed": (keyval: number, keycode: number) => void;
+    }
+}
 
 export function PopupWindow(props: PopupWindowProps): GObject.Object {
     props.visible ??= true;

@@ -132,135 +132,130 @@ export class Notification extends Gtk.Box {
 
         this.append(
             <Gtk.Box class={"content"}>
-                <Adw.Clamp orientation={Gtk.Orientation.VERTICAL} maximumSize={78} valign={Gtk.Align.START}>
-                    <Gtk.Stack class={"image-stack"} visible={createBinding(this, "image")
-                        .as(img => img !== null)
-                      } transitionType={Gtk.StackTransitionType.CROSSFADE}
-                      transitionDuration={360}
-                      $={(self) => {
-                          self.add_named(new Adw.Spinner(), "spinner");
-                          !this.isValidString(this.image) &&
-                              self.hide();
+                <Gtk.Stack class={"image-stack"} visible={createBinding(this, "image").as(Boolean)}
+                  transitionType={Gtk.StackTransitionType.CROSSFADE} transitionDuration={360}
+                  $={(self) => {
+                      self.add_named(new Adw.Spinner(), "spinner");
+                      !this.isValidString(this.image) &&
+                          self.hide();
 
-                          // [path, texture]
-                          type NotifImageCache = [string, Gdk.Texture];
+                      // [path, texture]
+                      type NotifImageCache = [string, Gdk.Texture];
 
-                          function buildPicture(texture: Gdk.Texture): void {
-                              self.show();
-                              const picture = self.get_child_by_name("picture") as Gtk.Picture|null;
+                      function buildImage(texture: Gdk.Texture): void {
+                          self.show();
+                          const image = self.get_child_by_name("image") as Gtk.Image|null;
 
-                              if(picture) {
-                                  picture.set_paintable(texture);
-                                  self.set_visible_child_name("picture");
-                                  return;
-                              }
-
-                              self.add_named(
-                                  <Gtk.Picture paintable={texture} canShrink
-                                    contentFit={Gtk.ContentFit.COVER} hexpand={false}
-                                    vexpand={false}
-                                  /> as Gtk.Picture,
-                                  "picture"
-                              );
-                              self.set_visible_child_name("picture");
+                          if(image) {
+                              image.set_from_paintable(texture);
+                              self.set_visible_child_name("image");
+                              return;
                           }
 
-                          function panic() { // this is so funny lol
-                              self.hide();
-                              const pic = self.get_child_by_name("picture");
-                              pic && self.remove(pic);
-                          }
-
-                          const loadImage = () => {
-                              if(!this.isValidString(this.image))
-                                  return;
-
-                              self.set_visible_child_name("spinner");
-
-                              // check if it's an icon (for example, Valent(kde-connect reimplementation using gobject) sends icon names as images)
-                              if(!this.image.includes('/')) {
-                                  if(!lookupIcon(this.image)) {
-                                      console.error(`"Failed to get icon from image for notification: icon not found with icon name \"${
-                                          this.image}\"`
-                                      );
-                                      return;
-                                  }
-
-                                  const picture = self.get_child_by_name("picture") as Gtk.Picture|null ?? 
-                                      <Gtk.Picture canShrink contentFit={Gtk.ContentFit.COVER} /> as Gtk.Picture;
-
-                                  const paintable = Gtk.IconTheme.get_for_display(Gdk.Display.get_default()!)
-                                      .lookup_icon(
-                                          this.image, null, 64, self.scaleFactor, Gtk.TextDirection.LTR, Gtk.IconLookupFlags.NONE
-                                      );
-
-                                  paintable && picture.set_paintable(paintable);
-                                  return;
-                              }
-
-                              const cached = Cache.getDefault().getItem<NotifImageCache>("notifications", this.id.toString());
-
-                              if(cached && cached[0] === this.image) {
-                                  buildPicture(cached[1]);
-                                  return;
-                              }
-
-                              const loader = Gly.Loader.new(Gio.File.new_for_uri(pathToURI(this.image!)));
-
-                              loader.load_async(null, (_, res) => {
-                                  let image!: Gly.Image;
-                                  try {
-                                      image = loader.load_finish(res);
-                                  } catch(e) {
-                                      console.error(`Notifications: Failed to load notification image (path: "${this.image}")`);
-                                      panic();
-                                      loader.run_dispose();
-                                      return;
-                                  }
-
-                                  loader.run_dispose();
-
-                                  image.next_frame_async(null, (_, res) => {
-                                      try {
-                                          const texture = GlyGtk4.frame_get_texture(image.next_frame_finish(res));
-                                          Cache.getDefault().addItem(
-                                              "notifications", [this.image!, texture] satisfies NotifImageCache, this.id.toString()
-                                          );
-                                          // clear cache of this notification when it gets removed from the history
-                                          // (there's nothing more to do with this cache, so we just remove it
-                                          const connId = Notifications.getDefault().connect("history-removed", (notifs, id) => {
-                                              if(id !== this.id)
-                                                  return;
-
-                                              notifs.disconnect(connId);
-                                              Cache.getDefault().removeItem("notifications", id.toString());
-                                          });
-                                          buildPicture(texture);
-                                      } catch(e) {
-                                          console.error(`Notifications: Failed to load frame for notification image (path: "${this.image}")`);
-                                          panic();
-                                      }
-
-                                      image.run_dispose();
-                                  });
-                              });
-                          };
-
-                          loadImage();
-                          createScopedConnection(
-                              this, "notify::image", () => {
-                                  if(!this.isValidString(this.image) && self.get_visible_child_name() === "picture") {
-                                      self.hide();
-                                      return;
-                                  }
-
-                                  loadImage();
-                              }
+                          self.add_named(
+                              <Gtk.Image paintable={texture} hexpand={false} vexpand={false} 
+                                valign={Gtk.Align.START} overflow={Gtk.Overflow.HIDDEN}
+                                class={"notif-image"}
+                              /> as Gtk.Image,
+                              "image"
                           );
-                      }}
-                      widthRequest={68} heightRequest={64}
-                    />
-                </Adw.Clamp>
+                          self.set_visible_child_name("image");
+                      }
+
+                      function panic() {
+                          self.hide();
+                          const img = self.get_child_by_name("image");
+                          img && self.remove(img);
+                      }
+
+                      const loadImage = () => {
+                          if(!this.isValidString(this.image))
+                              return;
+
+                          self.set_visible_child_name("spinner");
+
+                          // check if it's an icon (for example, Valent(kde-connect reimplementation using gobject) sends icon names as images)
+                          if(!this.image.includes('/')) {
+                              if(!lookupIcon(this.image)) {
+                                  console.error(`"Failed to get icon from image for notification: icon not found with icon name \"${
+                                      this.image}\"`
+                                  );
+                                  return;
+                              }
+
+                              const image = self.get_child_by_name("image") as Gtk.Image;
+
+                              const paintable = Gtk.IconTheme.get_for_display(Gdk.Display.get_default()!)
+                                  .lookup_icon(
+                                      this.image, null, 64, self.scaleFactor, Gtk.TextDirection.LTR, Gtk.IconLookupFlags.NONE
+                                  );
+
+                              paintable && image.set_from_paintable(paintable);
+                              return;
+                          }
+
+                          const cached = Cache.getDefault().getItem<NotifImageCache>("notifications", this.id.toString());
+
+                          if(cached && cached[0] === this.image) {
+                              buildImage(cached[1]);
+                              return;
+                          }
+
+                          const loader = Gly.Loader.new(Gio.File.new_for_uri(pathToURI(this.image!)));
+
+                          loader.load_async(null, (_, res) => {
+                              let image!: Gly.Image;
+                              try {
+                                  image = loader.load_finish(res);
+                              } catch(e) {
+                                  console.error(`Notifications: Failed to load notification image (path: "${this.image}")`);
+                                  panic();
+                                  loader.run_dispose();
+                                  return;
+                              }
+
+                              loader.run_dispose();
+
+                              image.next_frame_async(null, (_, res) => {
+                                  try {
+                                      const texture = GlyGtk4.frame_get_texture(image.next_frame_finish(res));
+                                      Cache.getDefault().addItem(
+                                          "notifications", [this.image!, texture] satisfies NotifImageCache, this.id.toString()
+                                      );
+                                      // clear cache of this notification when it gets removed from the history
+                                      // (there's nothing more to do with this cache, so we just remove it
+                                      const connId = Notifications.getDefault().connect("history-removed", (notifs, id) => {
+                                          if(id !== this.id)
+                                              return;
+
+                                          notifs.disconnect(connId);
+                                          Cache.getDefault().removeItem("notifications", id.toString());
+                                      });
+                                      buildImage(texture);
+                                  } catch(e) {
+                                      console.error(`Notifications: Failed to load frame for notification image (path: "${this.image}")`);
+                                      panic();
+                                  }
+
+                                  image.run_dispose();
+                              });
+                          });
+                      };
+
+                      loadImage();
+                      createScopedConnection(
+                          this, "notify::image", () => {
+                              if(!this.isValidString(this.image) && self.get_visible_child_name() === "picture") {
+                                  self.hide();
+                                  return;
+                              }
+
+                              loadImage();
+                          }
+                      );
+                  }}
+                  widthRequest={68} heightRequest={64}
+                />
                 <Gtk.Box class={"text"} orientation={Gtk.Orientation.VERTICAL} vexpand>
                     <Gtk.Label xalign={0} class={"summary"} hexpand vexpand={false}
                       ellipsize={Pango.EllipsizeMode.END} label={createBinding(this, "summary")}

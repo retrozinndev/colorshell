@@ -1,6 +1,11 @@
 set -e
 
 socket_support=true
+outdir="./build/release"
+bin_target="\$HOME/.local/bin/colorshell"
+
+# send literal variable name, so it's interpreted at runtime
+gresource_file="\$XDG_DATA_HOME/colorshell/.gresource"
 
 while getopts o:r:e:hn args; do
     case "$args" in 
@@ -26,29 +31,32 @@ help:
   'default': argument's default value, they're used if none are provided.
 
 options:
-  -r \$file: gresource's target path (literal; kept in \$output; default: \$XDG_DATA_HOME/colorshell/resources.gresource)
+  -r \$file: gresource's target path (literal; kept in \$output; default: \`$gresource_file\`)
   -n: disable socket communication support(use the slower remote instance communication)
-  -o \$path: build output path (default: \`./build/release\`)
-  -e: set desktop entry's executable target (literal; default: \$HOME/.local/bin/colorshell)
+  -o \$path: build output path (default: \`$outdir\`)
+  -e: set desktop entry's executable target (literal; default: \`$bin_target\`)
   -h: show this help message"
             exit 0
             ;;
     esac
 done
 
-# send literal variable name, so it's interpreted at runtime
-sh ./scripts/build.sh -o "${outdir:-./build/release}" -b -r "${gresource_file:-\$XDG_DATA_HOME/colorshell/resources.gresource}"
+sh ./scripts/build.sh -o "$outdir" -b -r "$gresource_file"
 
 # add socket-communication support on executable
-if [[ $socket_support ]]; then
-    echo "[info] adding socket communication support"
-    script="\
-`cat ./scripts/socket.sh`
-`cat "${outdir:-./build/release}/colorshell" | sed -e 's/^#!.*//'`" # remove shebang
+script="\
+#!/usr/bin/bash
 
-    echo -en "$script" > "${outdir:-./build/release}/colorshell"
-    chmod +x "${outdir:-./build/release}/colorshell"
-fi
+XDG_CACHE_HOME=\${XDG_CACHE_HOME:-\"\$HOME/.cache\"}
+XDG_DATA_HOME=\${XDG_DATA_HOME:-\"\$HOME/.local/share\"}
+XDG_CONFIG_HOME=\${XDG_CONFIG_HOME:-\"\$HOME/.config\"}
+XDG_RUNTIME_DIR=\${XDG_RUNTIME_DIR:-\"/run/user/\`id -u\`\"}
+`[[ $socket_support ]] && (cat ./scripts/socket.sh | sed -e 's/^#!.*//')`
+`cat "$outdir/colorshell" | sed -E 's/^#!.*$//'`" # remove shebang
+
+
+echo -en "$script" > "${outdir:-./build/release}/colorshell"
+chmod +x "${outdir:-./build/release}/colorshell"
 
 echo "[info] making desktop entry"
 entry=`cat ./resources/colorshell.desktop`

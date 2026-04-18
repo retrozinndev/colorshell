@@ -16,295 +16,334 @@ import {
 
 import AstalHyprland from "gi://AstalHyprland";
 import GLib from "gi://GLib?version=2.0";
+import { omitObjectKeys } from "../modules/utils";
+import { gtype, property } from "ags/gobject";
+import GObject from "gi://GObject?version=2.0";
 
 
-export namespace Runner {
-export type RunnerProps = {
-    halign?: Gtk.Align;
-    valign?: Gtk.Align;
-    width?: number;
-    height?: number;
-    entryPlaceHolder?: string;
-    initialText?: string;
-    resultsLimit?: number;
-    showResultsPlaceHolderOnStartup?: boolean;
-};
+// TODO: rewrite ts
+export class Runner extends Astal.Window {
+    private static instance: Runner|null = null;
+    private static plugins: Array<Runner.PluginConstructor> = [
+        PluginApps,
+        PluginClipboard, 
+        PluginMedia, 
+        PluginShell, 
+        PluginWallpapers, 
+        PluginWebSearch,
+        PluginKill
+    ];
 
-export type Result = CCProps<ResultWidget, ResultWidgetProps>;
+    protected static ignoredKeys = [
+        Gdk.KEY_space,
+        Gdk.KEY_Shift_L,
+        Gdk.KEY_Shift_R,
+        Gdk.KEY_Shift_Lock,
+        Gdk.KEY_Return,
+        Gdk.KEY_Tab,
+        Gdk.KEY_Control_L,
+        Gdk.KEY_Control_R,
+        Gdk.KEY_Alt_L,
+        Gdk.KEY_Alt_R,
+        Gdk.KEY_Option,
+        Gdk.KEY_Super_L,
+        Gdk.KEY_Super_R,,
+        Gdk.KEY_F5,
+        Gdk.KEY_Up,
+        Gdk.KEY_Down,
+        Gdk.KEY_Left,
+        Gdk.KEY_Right
+    ];
 
-export type PluginConstructor = new () => Runner.Plugin;
-export interface Plugin {
-    /** prefix to call the plugin. if undefined, will be triggered like applications plugin */
-    readonly prefix?: string;
-    /** name of the plugin. e.g.: websearch, shell */
-    readonly name?: string;
-    /** runs when runner opens */
-    readonly init?: () => void;
-    /** handle the user input to return results (does not include plugin's prefix) */
-    readonly handle: (inputText: string, limit?: number) => Promise<Result|Array<Result>|null|undefined>|Result|Array<Result>|null|undefined;
-    /** runs when runner closes */
-    readonly onClose?: () => void;
-    /** prioritize this plugin's results over other results.
-    * (hides other results that aren't from this plugin on list) */
-    prioritize?: boolean;
-    /** show a specific icon when the plugin is prioritized/only 
-    * has results from this plugin 
-    * @todo actually implement the plugin icon feature
-    * @default "system-search-symbolic" */
-    iconName?: string;
-}
+    #timeout: GLib.Source|null = null;
+    #entry: Gtk.Entry;
+    #listbox: Gtk.ListBox;
+    #plugins: Array<Runner.Plugin> = [];
 
-export let instance: (Astal.Window|null) = null;
+    @property(gtype<string|null>(String))
+    searchPlaceholder: string|null = null
 
-let gtkEntry: (Gtk.Entry|null) = null;
-const plugins = new Set<Runner.PluginConstructor>([
-    PluginApps,
-    PluginClipboard, 
-    PluginMedia, 
-    PluginShell, 
-    PluginWallpapers, 
-    PluginWebSearch,
-    PluginKill
-]);
-const pluginInstances: Array<Runner.Plugin> = [];
-const ignoredKeys = [
-    Gdk.KEY_space,
-    Gdk.KEY_Shift_L,
-    Gdk.KEY_Shift_R,
-    Gdk.KEY_Shift_Lock,
-    Gdk.KEY_Return,
-    Gdk.KEY_Tab,
-    Gdk.KEY_Control_L,
-    Gdk.KEY_Control_R,
-    Gdk.KEY_Alt_L,
-    Gdk.KEY_Alt_R,
-    Gdk.KEY_Option,
-    Gdk.KEY_Super_L,
-    Gdk.KEY_Super_R,,
-    Gdk.KEY_F5,
-    Gdk.KEY_Up,
-    Gdk.KEY_Down,
-    Gdk.KEY_Left,
-    Gdk.KEY_Right
-];
+    @property(Boolean)
+    showResultPlaceholders: boolean = false;
+
+    @property(Number)
+    maxResults: number = 24;
+    
+    @property(String)
+    search: string = "";
+
+    @property(Array<Runner.Result>)
+    placeholders: Array<Runner.Result> = [];
 
 
-export function close() { instance?.close(); }
-export function regExMatch(search: string, item: (string|number)): boolean {
-    search = search.replace(/[\\^$.*?()[\]{}|]/g, "\\$&");
+    constructor(props: Partial<Runner.ConstructorProps> = {}) {
+        super({
+            cssName: "runner",
+            widthRequest: 780,
+            heightRequest: 420,
+            anchor: Astal.WindowAnchor.TOP | Astal.WindowAnchor.BOTTOM,
+            ...omitObjectKeys(props, [
+                "searchPlaceholder",
+                "search",
+                "maxResults",
+                "showResultPlaceholders",
+                "placeholders"
+            ])
+        });
 
-    if(typeof item === "number")
-        return new RegExp(`${search.split('').map(c => 
-            `[${c}]`).join('')}`,
-        "g").test(item.toString());
+        if(props.searchPlaceholder !== undefined)
+            this.searchPlaceholder = props.searchPlaceholder;
 
-    return new RegExp(`${search.split('').map(c => 
-        `${c}`).join('')}`,
-    "gi").test(item);
-}
+        if(props.search !== undefined)
+            this.search = props.search;
+
+        if(props.maxResults !== undefined)
+            this.maxResults = props.maxResults;
+
+        if(props.showResultPlaceholders !== undefined)
+            this.showResultPlaceholders = props.showResultPlaceholders;
+
+        if(props.placeholders !== undefined && props.placeholders.length > 0)
+            props.placeholders.forEach(p => this.placeholders.push(p));
+
+        this.#entry = Gtk.Entry.new();
+        this.#entry.set_text(this.search);
+
+        const connections: Map<GObject.Object, number> = new Map();
+        const bind: GObject.Binding = this.bind_property(
+            "search", this.#entry, "text", GObject.BindingFlags.BIDIRECTIONAL
+        );
+
+        this.#listbox = Gtk.ListBox.new();
 
 
-export function addPlugin(plugin: Runner.PluginConstructor) {
-    if(plugins.has(plugin))
-        return;
-
-    plugins.add(plugin);
-}
-
-export function getPlugins(): Array<Runner.PluginConstructor> {
-    return [...plugins.values()];
-}
-
-/** Removes a plugin from the runner plugins list
- * @returns true if plugin was removed or false if plugin wasn't found
-  */
-export function removePlugin(plugin: Runner.PluginConstructor): boolean {
-    return plugins.delete(plugin);
-}
-
-export function setEntryText(text: string): void {
-    if(!gtkEntry) return;
-
-    gtkEntry.set_text(text);
-    gtkEntry.set_position(gtkEntry.text.length);
-    gtkEntry.grab_focus_without_selecting();
-}
-
-export function openDefault(initialText?: string) {
-    return Runner.openRunner({
-        entryPlaceHolder: "Start typing...",
-        initialText,
-        showResultsPlaceHolderOnStartup: false,
-        resultsLimit: 24
-    } as Runner.RunnerProps, [
-        {
-            icon: "application-x-executable-symbolic",
-            title: "Use your applications",
-            description: "Search for any app installed in your computer",
-            closeOnClick: false,
-            actionClick: () => gtkEntry?.grab_focus()
-        },
-        {
-            icon: "edit-paste-symbolic",
-            title: "See your clipboard history",
-            description: "Start your search with '>' to go through your clipboard history",
-            closeOnClick: false,
-            actionClick: () => setEntryText('>')
-        },
-        {
-            icon: "image-x-generic-symbolic",
-            title: "Change your wallpaper",
-            description: "Add '#' at the start to search through the wallpapers folder!",
-            closeOnClick: false,
-            actionClick: () => setEntryText('#'),
-        },
-        {
-            icon: "utilities-terminal-symbolic",
-            title: "Run shell commands",
-            description: "Add '!' before your command to run it (tip: add another '!' to notify command output)",
-            closeOnClick: false,
-            actionClick: () => setEntryText('!')
-        },
-        {
-            icon: "media-playback-start-symbolic",
-            title: "Control media",
-            description: "Type ':' to control playing media",
-            closeOnClick: false,
-            actionClick: () => setEntryText(':')
-        },
-        {
-            icon: "applications-internet-symbolic",
-            title: "Search the Web",
-            description: "Start typing with '?' prefix to search the web",
-            closeOnClick: false,
-            actionClick: () => setEntryText('?')
+        for(const construct of Runner.plugins) {
+            this.#plugins.push(new construct());
         }
-    ]);
-}
 
-async function getPluginResults(input: string, limit?: number): Promise<Array<Result>> {
-    let calledPlugins: Array<Plugin> = pluginInstances.filter((plugin) => 
-        plugin.prefix ? (input.startsWith(plugin.prefix) ? true : false) : true
-    ).sort((plugin) => plugin.prefix != null ? 0 : 1);
+        connections.set(this, this.connect("destroy", () => {
+            connections.forEach((id, gobj) => gobj.disconnect(id));
+            bind.unbind();
+        }));
 
-    for(const plugin of calledPlugins) {
-        if(plugin.prioritize) {
-            calledPlugins = [ plugin ];
-            plugin.iconName !== undefined &&
-                gtkEntry
-            break;
-        }
+
     }
 
-    let results: Array<Result> = [];
-    function push(result: Result|null|undefined|void|Array<Result|null|undefined|void>) {
-        if(Array.isArray(result)) {
-            results.push(...result.filter(r => r != null));
+    /** grab focus to the search entry */
+    public searchGrabFocus(): void {
+        this.#entry.grab_focus_without_selecting();
+    }
+    
+    /** set search string for runner instance if open */
+    public static setSearch(search: string): void {
+        if(!this.instance)
             return;
+
+        this.instance.search = search;
+    }
+    
+    public static addPlugin(plugin: Runner.PluginConstructor) {
+        if(this.plugins.includes(plugin)) 
+            return;
+
+        this.plugins.push(plugin);
+    }
+
+    public static getPlugins(): Array<Runner.PluginConstructor> {
+        return [...this.plugins];
+    }
+
+    public static regExMatch(search: string, item: (string|number)): boolean {
+        search = search.replace(/[\\^$.*?()[\]{}|]/g, "\\$&");
+
+        if(typeof item === "number")
+            return new RegExp(`${search.split('').map(c => 
+                `[${c}]`).join('')}`,
+            "g").test(item.toString());
+
+        return new RegExp(`${search.split('').map(c => 
+            `${c}`).join('')}`,
+        "gi").test(item);
+    }
+    
+    public static open(search?: string) {
+        return new Runner({
+            searchPlaceholder: "Start typing...",
+            search,
+            showResultPlaceholders: false,
+            maxResults: 24,
+            placeholders: [
+                {
+                    icon: "application-x-executable-symbolic",
+                    title: "Use your applications",
+                    description: "Search for any app installed in your computer",
+                    closeOnClick: false,
+                    actionClick: () => this.instance?.searchGrabFocus()
+                },
+                {
+                    icon: "edit-paste-symbolic",
+                    title: "See your clipboard history",
+                    description: "Start your search with '>' to go through your clipboard history",
+                    closeOnClick: false,
+                    actionClick: () => this.setSearch('>')
+                },
+                {
+                    icon: "image-x-generic-symbolic",
+                    title: "Change your wallpaper",
+                    description: "Add '#' at the start to search through the wallpapers folder!",
+                    closeOnClick: false,
+                    actionClick: () => this.setSearch('#'),
+                },
+                {
+                    icon: "utilities-terminal-symbolic",
+                    title: "Run shell commands",
+                    description: "Add '!' before your command to run it (tip: add another '!' to notify command output)",
+                    closeOnClick: false,
+                    actionClick: () => this.setSearch('!')
+                },
+                {
+                    icon: "media-playback-start-symbolic",
+                    title: "Control media",
+                    description: "Type ':' to control playing media",
+                    closeOnClick: false,
+                    actionClick: () => this.setSearch(':')
+                },
+                {
+                    icon: "applications-internet-symbolic",
+                    title: "Search the Web",
+                    description: "Start typing with '?' prefix to search the web",
+                    closeOnClick: false,
+                    actionClick: () => this.setSearch('?')
+                }
+            ]
+        });
+    }
+
+    protected async generateResults(input: string, limit?: number): Promise<Array<Runner.Result>> {
+        let calledPlugins: Array<Runner.Plugin> = this.#plugins.filter((plugin) => 
+            plugin.prefix ? (input.startsWith(plugin.prefix) ? true : false) : true
+        ).sort((plugin) => plugin.prefix != null ? 0 : 1);
+
+        let iconSet: boolean = false;
+        for(const plugin of calledPlugins) {
+            if(plugin.prioritize) {
+                calledPlugins = [ plugin ];
+                if(plugin.iconName !== undefined) {
+                    this.#entry.primaryIconName = plugin.iconName;
+                    iconSet = true;
+                }
+
+                break;
+            }
         }
 
-        result && results.push(result);
+        if(!iconSet)
+            this.#entry.primaryIconName = "system-search-symbolic";
+
+
+        let results: Array<Runner.Result> = [];
+        function push(result: Runner.Result|null|undefined|void|Array<Runner.Result|null|undefined|void>) {
+            if(Array.isArray(result)) {
+                results.push(...result.filter(r => r != null));
+                return;
+            }
+
+            result && results.push(result);
+        }
+
+        for(const plugin of calledPlugins) {
+            const res = plugin.handle(plugin.prefix ? 
+                input.replace(plugin.prefix, "")
+            : input, limit);
+
+            res instanceof Promise ?
+                await res.then(push)
+            : push(res);
+        }
+
+        return limit !== undefined && limit > 0 && limit !== Infinity ? 
+            results.splice(0, limit)
+        : results;
     }
 
-    for(const plugin of calledPlugins) {
-        const res = plugin.handle(plugin.prefix ? 
-            input.replace(plugin.prefix, "")
-        : input, limit);
-
-        res instanceof Promise ?
-            await res.then(push)
-        : push(res);
-    }
-
-    return limit !== undefined && limit > 0 && limit !== Infinity ? 
-        results.splice(0, limit)
-    : results;
-}
-
-async function updateResultsList(listbox: Gtk.ListBox, input: string, limit?: number, placeholders?: Array<Result>) {
-    const newResults: Array<Result> = [],
-        scrolledWindow = listbox.parent.parent as Gtk.ScrolledWindow;
-
-    const results = await getPluginResults(input, limit).catch((e: Error) => {
-        console.error(`Couldn't get results because of an error: ${e.message}\n${e.stack}`);
-
-        listbox.insert(
-            <ResultWidget title={`Error: ${e.message}`} description={"Try changing your search a little..."}
-              icon={"window-close-symbolic"}
-              actionClick={() => gtkEntry?.select_region(0, gtkEntry?.text.length - 1)}
-            /> as ResultWidget,
-        -1);
-
-        return [] satisfies Array<Result>;
-    });
-
-    listbox.remove_all();
-
-    results.forEach((result) => {
-        listbox.insert(createRoot(dispose => 
+    protected resultToWidget(result: Runner.Result): ResultWidget {
+        return createRoot(dispose =>
             <ResultWidget {...result} onDestroy={(self) => {
                 result.onDestroy?.(self);
                 dispose();
-            }}
-            /> as ResultWidget
-        ), -1);
-        newResults.push(result);
-    });
+            }} /> as ResultWidget
+        );
+    }
 
-    // Insert placeholder if there are no results
-    if(placeholders && newResults.length < 1) 
-        placeholders.forEach(phdlr => listbox.insert(
-          <ResultWidget {...phdlr} /> as ResultWidget, -1
-        ));
+    public async update(input: string, limit?: number) {
+        this.#listbox.remove_all();
 
+        let results: Array<Runner.Result>;
+        try {
+            results = await this.generateResults(input, limit);
+        } catch(e) {
+            console.error(`Couldn't get results because of an error: ${(e as Error).message}\n${(e as Error).stack}`);
 
-    newResults.length > 0 ?
-        (!scrolledWindow.visible && scrolledWindow.show())
-    : scrolledWindow.hide();
+            this.#listbox.prepend(
+                new ResultWidget({
+                    title: `Error: ${(e as Error).message}`,
+                    description: "Try changing your search a little...",
+                    icon: "window-close-symbolic"
+                })
+            );
+
+            return;
+        }
+
+        // Insert placeholder if there are no results
+        if(results.length < 1) {
+            for(const ph of this.placeholders) {
+                this.#listbox.append(this.resultToWidget(ph));
+            }
+
+            return;
+        }
+
+        for(const result of results) {
+            const widget = this.resultToWidget(result);
+            this.#listbox.append(widget);
+        }
+    }
 }
 
-function selectPreviousItem(listbox: Gtk.ListBox) {
-    const selectedRow = listbox.get_selected_row();
-    const prevRow = selectedRow?.get_prev_sibling();
+export namespace Runner {
+    export interface ConstructorProps extends Astal.Window.ConstructorProps {
+        searchPlaceholder: string;
+        search: string;
+        maxResults: number;
+        showResultPlaceholders: boolean;
+        placeholders: Array<Runner.Result>;
+    };
 
-    if(!prevRow || selectedRow === listbox.get_first_child()) 
-        return;
+    export type Result = CCProps<ResultWidget, ResultWidgetProps>;
+    export type PluginConstructor = new () => Runner.Plugin;
 
-    const viewport = listbox.parent as Gtk.Viewport;
-    const vadjustment = (viewport.parent as Gtk.ScrolledWindow).get_vadjustment();
-    const [, , prevRowY] = prevRow.translate_coordinates(viewport, 
-        prevRow.get_allocation().x, prevRow.get_allocation().y);
+    export interface Plugin {
+        /** prefix to call the plugin. if undefined, will be triggered like applications plugin */
+        readonly prefix?: string;
+        /** name of the plugin. e.g.: websearch, shell */
+        readonly name: string;
+        /** runs when runner opens */
+        readonly init?: () => void;
+        /** handle the user input to return results (does not include plugin's prefix) */
+        readonly handle: (inputText: string, limit?: number) => Promise<Result|Array<Result>|null|undefined>|Result|Array<Result>|null|undefined;
+        /** runs when runner closes */
+        readonly onClose?: () => void;
+        /** prioritize this plugin's results over other results.
+        * (hides other results that aren't from this plugin on list) */
+        prioritize?: boolean;
+        /** show a specific icon when the plugin is prioritized/only 
+        * has results from this plugin 
+        * @todo actually implement the plugin icon feature
+        * @default "system-search-symbolic" */
+        iconName?: string;
+    }
 
-    listbox.select_row(prevRow as Gtk.ListBoxRow);
-    
-    // emit ResultWidget ::selected / ::unselected
-    (selectedRow?.get_child() as ResultWidget).emit("unselected");
-    ((prevRow as Gtk.ListBoxRow|null)?.get_child() as ResultWidget).emit("selected");
-
-    if(prevRowY < vadjustment.get_value()) 
-        vadjustment.set_value(prevRowY);
-}
-
-function selectNextItem(listbox: Gtk.ListBox) {
-    const selectedRow = listbox.get_selected_row();
-    const nextRow = selectedRow?.get_next_sibling();
-
-    if(!nextRow || selectedRow === listbox.get_last_child()) 
-        return;
-
-    const viewport = listbox.parent as Gtk.Viewport;
-    const vadjustment = (viewport.parent as Gtk.ScrolledWindow).get_vadjustment();
-    const nextRowVAllocation = (nextRow.get_allocation().y + nextRow.get_allocation().height);
-
-    listbox.select_row(nextRow as Gtk.ListBoxRow);
-
-    // emit ResultWidget ::selected / ::unselected
-    (selectedRow?.get_child() as ResultWidget).emit("unselected");
-    ((nextRow as Gtk.ListBoxRow|null)?.get_child() as ResultWidget).emit("selected");
-
-    if(nextRowVAllocation > viewport.get_allocation().height) 
-        vadjustment.set_value(nextRow.get_allocation().y - viewport.get_allocation().height + nextRow.get_allocation().height);
-}
 
 export function openRunner(props: RunnerProps, placeholders?: Array<Result>): Astal.Window {
     props.width ??= 780;

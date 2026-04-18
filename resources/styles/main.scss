@@ -122,11 +122,11 @@ notification {
     padding-top: 0;
 
     & stack {
-      $size: 78px;
-      min-width: $size;
-      min-height: $size;
       margin: 6px;
-      border-radius: 8px;
+
+      & image.notif-image {
+        border-radius: 12px;
+      }
     }
 
     & .summary {
