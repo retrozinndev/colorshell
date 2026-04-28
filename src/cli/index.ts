@@ -72,6 +72,16 @@ abstract class Cli {
             }
 
             if(this.isArgument(argName)) {
+                if(/^(-h|-[?]|--help)$/.test(argName)) {
+                    const help = cmd === undefined ?
+                        (mod.help ?? this.genHelp(mod))
+                    : this.genHelp(cmd);
+
+                    remote.println(help);
+                    remote.exit(0);
+                    return; // ignore handling if it's asking for help
+                }
+
                 const [arg, skipNext] = this.handleArgument(cmd ?? mod, args, i, remote);
                 skip = skipNext;
 
@@ -115,16 +125,6 @@ abstract class Cli {
         const arg = this.isArgumentAlias(flag) ?
             this.findShortArgument(cmd, argName)
         : this.findFullArgument(cmd, argName);
-
-        if(/^-h|-[?]|--help$/.test(flag)) {
-            const help = this.isModule(cmd) && !this.isCommand(cmd) ?
-                (cmd.help ?? this.genHelp(cmd))
-            : this.genHelp(cmd);
-
-            remote.println(help);
-            remote.exit(0);
-            return [null, false];
-        }
 
         // handle argument not found
         if(!cmd.arguments || cmd.arguments.length < 1 || !arg) {
