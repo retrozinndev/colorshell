@@ -314,6 +314,70 @@ export function isInstalled(commandName: string): boolean {
     return false;
 }
 
+/** watch `stream` for output and call `callback` with the latest data.
+  * this method is non-blocking, you can use it anywhere. the monitoring is stopped when
+  * `stream` is closed or when `callback` returns `true`.
+  *
+  * @param stream the `GInputStream` to watch for data
+  * @param callback the function to call when there's new data (return `true` to remove the watch)
+  * @param cancellable a `GCancellable` that stops the monitor when ::cancelled */
+export async function watchInputStream(stream: Gio.InputStream, callback: (data: string) => boolean|void, cancellable?: Gio.Cancellable): Promise<void> {
+    let stop: boolean = false;
+    let pending: boolean = false;
+
+    type UnixInputStream = Gio.InputStream&{
+        /** get file descriptor for `GInputStream` */
+        get_fd(): number;
+    };
+
+    if(typeof (stream as UnixInputStream).get_fd !== "function")
+        throw new Error(`Stream is not a UnixInputStream`);
+
+    const id = cancellable?.connect(() => {
+        cancellable.disconnect(id!);
+        stop = true;
+        channeru.close();
+        GLib.source_remove(watch);
+    });
+    const channeru = GLib.IOChannel.unix_new((stream as UnixInputStream).get_fd());
+    const watch = GLib.io_add_watch(
+        channeru,
+        GLib.PRIORITY_LOW,
+        GLib.IOCondition.IN|GLib.IOCondition.HUP,
+        () => {
+            if(stream.is_closed() || stop) {
+                channeru.close();
+                return false;
+            }
+
+            if(pending)
+                return true;
+
+            pending = true;
+            try {
+                stream.read_bytes_async(2048, GLib.PRIORITY_DEFAULT, null, (_, res) => {
+                    let data!: GLib.Bytes;
+                    try {
+                        data = stream.read_bytes_finish(res);
+                    } catch(e) {
+                        pending = false;
+                        console.error(e);
+                        return;
+                    }
+
+                    pending = false;
+                    stop = callback(decoder.decode(data.toArray())) ?? false;
+                });
+            } catch(e) {
+                console.error("Failed to read message bytes");
+                return true;
+            }
+
+            return true;
+        }
+    );
+}
+
 export function addSliderMarksFromMinMax(slider: Astal.Slider, amountOfMarks: number = 2, markup?: (string | null)) {
     if(markup && !markup.includes("{}")) 
         markup = `${markup}{}`

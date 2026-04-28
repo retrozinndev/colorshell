@@ -3,7 +3,7 @@ import { register, signal } from "ags/gobject";
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
 import GObject from "gi://GObject?version=2.0";
-import { createScopedConnection } from "gnim-utils";
+import { encoder, createScopedConnection, watchInputStream } from "./utils";
 
 
 /** colorshell's simplified unix socket communication class.
@@ -28,8 +28,6 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
     protected server: Gio.SocketService|null = null;
     protected address: Gio.UnixSocketAddress|null = null;
     protected scope: Scope = createRoot(() => getScope());
-    protected readonly encoder = new TextEncoder();
-    protected readonly decoder = new TextDecoder("utf-8");
 
     @signal(String)
     protected received(_: string) {}
@@ -41,7 +39,7 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
     protected panic(_: Error) {}
 
     /** @param listen whether to listen to the socket as soon as the class is instantiated 
-      * @param contentSeparator server response separator, by default it's a line-break */
+      * @param outputSeparator server response separator, by default it's a line-break */
     constructor(type: Socket.Type.CLIENT, path: string|Gio.File, listen?: boolean, outputSeparator?: string)
 
     /** @param type defines the behavior of the instance, to send/receive to data(CLIENT) or receive/send from/to client(SERVER)
@@ -85,6 +83,7 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
                     }
                 );
             });
+
             return;
         }
 
@@ -92,7 +91,9 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
             throw new Error("Socket file couldn't be found, please check if the program has permissions or if the file actually exists");
 
         this.address = Gio.UnixSocketAddress.new(path.peek_path()!);
-        if(!listen) return;
+
+        if(!listen) 
+            return;
 
         const client = Gio.SocketClient.new();
         client.set_timeout(0);
@@ -120,14 +121,14 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
     /** watch a socket for new messages using `GIOWatch`.
       * @param socket the socket or connection to watch
       * @param callback called when the watch triggers one of the `conditions` 
-      * @param conditions `GIOConditions` to watch the socket IO for. default: `IN`|`PRI`|`HUP`
+      * @param conditions `GIOConditions` to watch the socket IO for. default: `IN`|`HUP`
       * (when `HUP`, the watch is internally removed, so you just need to disconnect from the socket) 
       *
       * @returns a `GCancellable`, which can be used to stop the `GIOWatch` of the method */
     protected watchSocket(
         socket: Gio.Socket|Gio.SocketConnection,
         callback?: (condition: GLib.IOCondition) => void,
-        conditions: GLib.IOCondition = GLib.IOCondition.IN|GLib.IOCondition.PRI|GLib.IOCondition.HUP
+        conditions: GLib.IOCondition = GLib.IOCondition.IN|GLib.IOCondition.HUP
     ): Gio.Cancellable {
         socket = socket instanceof Gio.SocketConnection ?
             socket.get_socket()
@@ -161,7 +162,8 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
     }
 
     /** watch a socket connection for output
-      * when `timeout` is reached, the `GIOWatch` will be destroyed and `GCancellable::cancelled` eimtted.
+      * when `timeout` is reached, the `GIOChannel` will be closed and `GCancellable::cancelled` emitted.
+      * if `callback` returns `true`, the watch will be removed
       *
       * @param conn the `GSocketConnection` to watch for output 
       * @param callback called when the connection receives data
@@ -170,53 +172,16 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
       * @returns a `GCancellable`, which can be used to cancel the `GIOWatch` */
     protected watchOutput(
         conn: Gio.SocketConnection,
-        callback?: (data: string) => void,
+        callback: (data: string) => boolean|void,
         timeout: number = -1,
         onTimeout?: () => void
     ): Gio.Cancellable {
-        let pending: boolean = false;
-        const cancellable = this.watchSocket(conn, (cond) => {
-            if(cond === GLib.IOCondition.HUP) {
-                conn.close(null);
-                console.log("Socket: IO and Socket Connection were closed");
-                cancellable.cancel();
-                return false;
-            }
+        const cancellable = Gio.Cancellable.new();
 
-            if(conn.is_closed()) {
-                console.warn("Socket: The Socket connection is closed");
-                cancellable.cancel();
-                return false;
-            }
+        if(conn.inputStream.is_closed())
+            throw new Error("GInputStream is closed. Can't read from a closed stream");
 
-            if(conn.inputStream.is_closed() || conn.outputStream.is_closed()) {
-                console.warn("Socket: One of the streams got closed, the IO watch will be removed");
-                cancellable.cancel();
-                return false;
-            }
-
-            if(pending) {
-                console.debug("Socket: Stream: There already is a read on its way, this call was ignored");
-                cancellable.cancel();
-                return true;
-            }
-
-            pending = true;
-            conn.inputStream.read_bytes_async(2048, GLib.PRIORITY_DEFAULT, null, (_, res) => {
-                let str!: string;
-                pending = false;
-
-                try {
-                    str = this.decoder.decode(conn.inputStream.read_bytes_finish(res).toArray());
-                } catch(e) {
-                    console.error("Socket: An error occurred while reading the input stream bytes:", e);
-                    return;
-                }
-
-                callback?.(str);
-            });
-            return true;
-        });
+        watchInputStream(conn.inputStream, callback, cancellable); // genious
 
         if(timeout >= 0)
             setTimeout(() => {
@@ -242,72 +207,54 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
 
     /** client-only method.
       * sends a message to the socket using a GSocketConnection.
+      * `cancellable` is useful only when `wait` is `true`.
       * 
       * @param message contents to send to the socket
       * @param wait whether to wait for the socket to send a response
+      * @param cancellable optional `GCancellable` to cancel `wait`
       *
       * @returns a `string` promise, that returns the socket's response to the message, can be null. */
-    async simpleSend(message: string, wait: boolean = false): Promise<string|null> {
+    async simpleSend(message: string, wait: boolean = false, cancellable?: Gio.Cancellable): Promise<string|null> {
+
+        const conn = await this.send(message);
+        const stream = conn.inputStream;
+        if(!wait || !stream)
+            return null;
+
         return new Promise((resolve, reject) => {
-            const client = Gio.SocketClient.new();
+            cancellable ??= Gio.Cancellable.new();
+            const timeout = setTimeout(() => {
+                const err = new Error("Socket: 10 seconds timeout reached while waiting for response");
 
-            client.set_family(Gio.SocketFamily.UNIX);
-            client.set_socket_type(Gio.SocketType.STREAM);
-            client.connect_async(this.address!, null, (_, res) => {
-                let conn!: Gio.SocketConnection;
-                try {
-                    conn = client.connect_finish(res);
-                } catch(e) {
-                    reject(`Failed to estabilish socket connection: ${(e as Gio.IOErrorEnum).message}`);
-                    return;
-                }
+                cancellable?.cancel();
+                reject(err);
+                this.emit("panic", err);
+            }, 10000);
 
-                conn.outputStream.write_bytes_async(
-                    this.encoder.encode(message),
-                    GLib.PRIORITY_LOW,
-                    null,
-                    (_, res) => {
-                        try {
-                            conn.outputStream.write_bytes_finish(res);
-                            conn.outputStream.close(null); // close output stream for this process
+            watchInputStream(stream, data => {
+                resolve(data);
+                timeout.destroy();
 
-                            if(conn.get_input_stream().is_closed()) { // return nothing if the input stream got closed instantly
-                                resolve(null);
-                                return;
-                            }
-
-                            if(!wait) {
-                                resolve(null);
-                                return;
-                            }
-
-                            this.watchOutput(conn, (data) => {
-                                resolve(data);
-                                conn.close();
-                            }, 10000, () => {
-                                const err = new Error("Socket: 10 Seconds timeout reached");
-                                reject(err);
-                                this.emit("panic", err);
-                            });
-                        } catch(e) {
-                        }
-                    }
-                );
-            });
+                return true;
+            }, cancellable);
         });
     }
 
     /** client-only method.
       * sends a message to the socket using a GSocketConnection.
+      * WARNING: the caller is responsible for closing the connection and 
+      * reading/writing data.
       * 
       * @param message contents to send to the socket
       *
-      * @returns a GInputStream promise, that contains the socket's response to the message, can be null. */
-    async send(message: string): Promise<Gio.InputStream|null> {
+      * @returns the GSocketConnection used to send the message */
+    async send(message: string): Promise<Gio.SocketConnection> {
         return new Promise((resolve, reject) => {
             const client = Gio.SocketClient.new();
             client.set_family(Gio.SocketFamily.UNIX);
             client.set_socket_type(Gio.SocketType.STREAM);
+            client.set_protocol(Gio.SocketProtocol.DEFAULT);
+
             client.connect_async(this.address!, null, (_, res) => {
                 let conn!: Gio.SocketConnection;
                 try {
@@ -318,21 +265,15 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
                 }
 
                 conn.outputStream.write_bytes_async(
-                    this.encoder.encode(message),
-                    GLib.PRIORITY_DEFAULT,
+                    encoder.encode(message),
+                    GLib.PRIORITY_LOW,
                     null,
                     (_, res) => {
                         try {
                             conn.outputStream.write_bytes_finish(res);
-                            conn.outputStream.close(null); // close output stream for this process
-
-                            if(conn.get_input_stream().is_closed()) { // return nothing if the input stream got closed instantly
-                                resolve(null);
-                                return;
-                            }
-
-                            resolve(conn.inputStream);
+                            resolve(conn);
                         } catch(e) {
+                            reject(e);
                             this.emit("panic", e as Error);
                         }
                     }

@@ -1,10 +1,9 @@
-import { execAsync, exec } from "ags/process";
+import { execAsync } from "ags/process";
 import { userData } from "../config";
+import { getPID, killProc, watchInputStream } from "./utils";
 import GObject, { getter, register, setter } from "ags/gobject";
-
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
-import { getPID, killProc } from "./utils";
 
 
 @register({ GTypeName: "ClshNightLight" })
@@ -15,22 +14,31 @@ export class NightLight extends GObject.Object {
     public static readonly minTemperature = 1000;
     public static readonly identityTemperature = 6000;
     public static readonly maxGamma = 100;
+    public static readonly gammaOverflow = 200;
 
-    #watchInterval?: GLib.Source;
     #temperature: number = NightLight.identityTemperature;
     #gamma: number = NightLight.maxGamma;
-    #identity: boolean = false;
+    #identity: boolean = true;
     #proc: Gio.Subprocess|null = null;
 
     @getter(Number)
     public get temperature() { return this.#temperature; }
     @setter(Number)
-    public set temperature(newValue: number) { this.setTemperature(newValue); }
+    public set temperature(newValue: number) {
+        if(newValue === this.#temperature)
+            return;
+
+        this.setTemperature(newValue);
+    }
 
     @getter(Number)
     public get gamma() { return this.#gamma; }
     @setter(Number)
-    public set gamma(newValue: number) { this.setGamma(newValue); }
+    public set gamma(newValue: number) {
+        if(newValue === this.#gamma)
+            return;
+        this.setGamma(newValue);
+    }
 
     @getter(Boolean)
     public get identity() { return this.#identity; }
@@ -51,15 +59,19 @@ export class NightLight extends GObject.Object {
         if(pid != null)
             killProc(pid);
 
-        // we wait, because the process can take some time to quit
-        setTimeout(() => {
-            this.restartDaemon().then(() => {
-                this.loadData();
-                this.#watchInterval = setInterval(() => this.syncData(), 10000);
-            }).catch(e => {
-                console.error("Night Light: Failed to initialize daemon(is it installed?):", e);
-            });
-        }, 500);
+        // this is problematic, since we don't want to only support hyprland...
+        const instanceSig = GLib.getenv("HYPRLAND_INSTANCE_SIGNATURE");
+        if(instanceSig === null || instanceSig.trim() === "") {
+            console.error("Night Light: Failed to initialize socket: HYPRLAND_INSTANCE_SIGNATURE \
+isn't set(are you running on Hyprland?)");
+            return;
+        }
+
+        this.restartDaemon().then(() => setTimeout(() => {
+            this.loadData();
+        }, 800)).catch(e => {
+            console.error("Night Light: Failed to initialize hyprsunset(is it installed?):", e);
+        });
     }
 
     public static getDefault(): NightLight {
@@ -94,35 +106,39 @@ export class NightLight extends GObject.Object {
         if(this.#proc)
             await this.quitDaemon();
 
-        this.#proc = Gio.Subprocess.new(["hyprsunset"], Gio.SubprocessFlags.STDOUT_SILENCE);
-    }
+        this.#proc = Gio.Subprocess.new(
+            [
+                "hyprsunset",
+                "-t",
+                this.#temperature.toString(),
+                "-g",
+                this.#gamma.toString(),
+                "--gamma_max",
+                "200",
+                `${this.#identity ? "-i" : ""}`
+            ].filter(s => s.trim() !== ""),
+            Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
+        );
 
-    private syncData(): void {
-        execAsync("hyprctl hyprsunset temperature").then(t => {
-            if(t.trim() !== "" && t.trim().length <= 5) {
-                const val = Number.parseInt(t.trim());
+        const stream = this.#proc.get_stdout_pipe()!;
+        setTimeout(() => { // delay because hyprsunset socket takes some time to show up
+            watchInputStream(stream, (data) => { // will stop watching when input stream gets closed
+                const temperatureExpr = /([0-9]*)K/;
+                if(data.includes("temperature") && temperatureExpr.test(data)) {
+                    const [, temp] = temperatureExpr.exec(data)!;
+                    if(temp == null)
+                        return;
 
-                if(this.#temperature !== val) {
-                    this.identity = val === NightLight.identityTemperature;
-                    this.#temperature = val;
+                    this.#temperature = Number.parseInt(temp);
                     this.notify("temperature");
                 }
-            }
-        }).catch((r: Error) => console.error(`Night Light: Couldn't sync temperature. Stderr: ${
-            r.message}\n${r.stack}`));
 
-        execAsync("hyprctl hyprsunset gamma").then(g => {
-            if(g.trim() !== "" && g.trim().length <= 5) {
-                const val = Number.parseInt(g.trim());
-
-                if(this.#gamma !== val) {
-                    this.identity = val === NightLight.maxGamma;
-                    this.#gamma = val;
+                this.dispatchAsync("gamma").then((out) => {
+                    this.#gamma = Number.parseInt(out);
                     this.notify("gamma");
-                }
-            }
-        }).catch((r: Error) => console.error(`Night Light: Couldn't sync. Stderr: ${
-            r.message}\n${r.stack}`));
+                }).catch(console.error);
+            });
+        }, 500);
     }
 
     private setTemperature(value: number): void {
@@ -164,7 +180,7 @@ export class NightLight extends GObject.Object {
     }
 
     public applyIdentity(): void {
-        this.dispatch("identity");
+        this.dispatchAsync("identity").catch(console.error);
 
         if(!this.#identity) {
             this.#identity = true;
@@ -172,18 +188,9 @@ export class NightLight extends GObject.Object {
         }
     }
 
-    private dispatch(call: "temperature", val: number): string;
-    private dispatch(call: "gamma", val: number): string;
-    private dispatch(call: "identity"): string;
-
-    private dispatch(call: "temperature"|"gamma"|"identity", val?: number): string {
-        return exec(`hyprctl hyprsunset ${call}${val != null ? ` ${val}` : ""}`);
-    }
-
-    private async dispatchAsync(call: "temperature", val: number): Promise<string>;
-    private async dispatchAsync(call: "gamma", val: number): Promise<string>;
+    private async dispatchAsync(call: "temperature", val?: number): Promise<string>;
+    private async dispatchAsync(call: "gamma", val?: number): Promise<string>;
     private async dispatchAsync(call: "identity"): Promise<string>;
-
     private async dispatchAsync(call: "temperature"|"gamma"|"identity", val?: number): Promise<string> {
         return await execAsync(`hyprctl hyprsunset ${call}${val != null ? ` ${val}` : ""}`);
     }
