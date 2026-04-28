@@ -12,11 +12,10 @@ export class PluginApps implements Runner.Plugin {
 
     handle(text: string) {
         return getAstalApps().fuzzy_query(text).map(app => ({
-                title: app.get_name(),
-                description: app.get_description(),
-                icon: (app.iconName && lookupIcon(app.iconName)) ? app.iconName : "application-x-executable-symbolic",
-                actionClick: () => execApp(app)
-            })
-        );
+            title: app.get_name(),
+            description: app.get_description(),
+            icon: (app.iconName && lookupIcon(app.iconName)) ? app.iconName : "application-x-executable-symbolic",
+            onClicked: () => execApp(app)
+        } satisfies Runner.Result));
     }
 }

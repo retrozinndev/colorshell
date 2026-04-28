@@ -1,4 +1,4 @@
-import { Compositor } from "../../../modules/compositors";
+import Compositor from "../../../modules/compositors";
 import { Gtk } from "ags/gtk4";
 import { createBinding, With } from "ags";
 import { variableToBoolean } from "../../../modules/utils";

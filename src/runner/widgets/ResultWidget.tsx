@@ -1,126 +1,113 @@
-import { getter, gtype, property, register, setter, signal } from "ags/gobject";
-import { Gtk } from "ags/gtk4";
-import { variableToBoolean } from "../../modules/utils";
-
+import { gtype, property, register, signal } from "ags/gobject";
+import { Gdk, Gtk } from "ags/gtk4";
+import { createScopedConnection, omitObjectKeys, variableToBoolean } from "../../modules/utils";
+import { createBinding, With } from "ags";
+import { Runner } from "..";
 import Pango from "gi://Pango?version=1.0";
-import GdkPixbuf from "gi://GdkPixbuf?version=2.0";
+import Adw from "gi://Adw?version=1";
+import GLib from "gi://GLib?version=2.0";
 
-
-export type ResultWidgetProps = {
-    icon?: string | GdkPixbuf.Pixbuf | Gtk.Widget | JSX.Element;
-    title: string;
-    description?: string;
-    closeOnClick?: boolean;
-    setup?: () => void;
-    actionClick?: () => void;
-    visible?: boolean;
-};
 
 @register({ GTypeName: "ResultWidget" })
-export class ResultWidget extends Gtk.Box {
-
+export class ResultWidget extends Gtk.ListBoxRow {
     declare $signals: ResultWidget.SignalSignatures;
-    #icon: string|Gtk.Widget|GdkPixbuf.Pixbuf|null = null;
-
-    public readonly actionClick: () => void;
-    public readonly setup?: () => void;
+    #timeout: GLib.Source|null = null;
 
     @signal()
-    selected() {}
+    protected clicked() {
+        if(!this.closeOnClick)
+            return;
 
+        Runner.close();
+    }
     @signal()
-    unselected() {}
+    protected hovered() {}
+    @signal()
+    protected unhovered() {}
+    @signal()
+    protected selected() {}
+    @signal()
+    protected unselected() {}
+
 
     @property(Boolean)
     closeOnClick: boolean = true;
 
-    @getter(gtype<string|Gtk.Widget|GdkPixbuf.Pixbuf|null>(Object))
-    get icon() { return this.#icon; }
+    @property(String)
+    title: string = "";
 
-    @setter(gtype<string|Gtk.Widget|GdkPixbuf.Pixbuf|null>(Object))
-    set icon(newIcon: string|Gtk.Widget|GdkPixbuf.Pixbuf|null) {
-        this.set_icon(newIcon);
-    }
+    @property(gtype<string|null>(String))
+    description: string|null = null;
 
-    constructor(props: ResultWidgetProps & Partial<Gtk.Box.ConstructorProps>) {
-        super();
+    @property(gtype<string|Gtk.Widget|Gdk.Texture|null>(Object))
+    icon: string|Gtk.Widget|Gdk.Texture|null = null;
 
-        this.add_css_class("result");
+    @property(Number)
+    clickTimeout: number = 300;
+
+
+    constructor(props: ResultWidget.ConstructorProps) {
+        super({
+            cssName: "resultwidget",
+            ...omitObjectKeys(props, [
+                "icon",
+                "title",
+                "description",
+                "closeOnClick"
+            ])
+        });
+
+        if(props.icon !== undefined && props.icon !== null)
+            this.icon = props.icon;
+
+        if(props.title !== undefined)
+            this.title = props.title;
+
+        if(props.description !== undefined && props.description !== null)
+            this.description = props.description;
 
         this.visible = props.visible ?? true;
         this.hexpand = true;
-        this.setup = props.setup;
         this.closeOnClick = props.closeOnClick ?? true;
-        this.actionClick = () => props.actionClick?.();
 
-        this.append(<Gtk.Box orientation={Gtk.Orientation.VERTICAL} valign={Gtk.Align.CENTER}>
-            <Gtk.Label class={"title"} xalign={0} ellipsize={Pango.EllipsizeMode.END}
-              label={props.title} />
+        const gesture = Gtk.GestureClick.new();
+        this.add_controller(gesture);
 
-            <Gtk.Label class={"description"} visible={variableToBoolean(props.description)}
-              ellipsize={Pango.EllipsizeMode.END} xalign={0} label={props.description ?? ""} />
-        </Gtk.Box> as Gtk.Box);
-
-        
-        if(props.icon !== undefined) 
-            this.set_icon(props.icon as Gtk.Widget|string|GdkPixbuf.Pixbuf);
-    }
-
-    /** it is recommended to not change the custom widget's name. */
-    set_icon(icon: string|Gtk.Widget|GdkPixbuf.Pixbuf|null): void {
-        const firstChild = this.get_first_child();
-
-        if(icon === null && firstChild?.name !== undefined &&
-           /^(custom\-)?icon\-widget$/.test(firstChild?.name)) {
-
-            this.remove(firstChild);
-            return;
-        }
-
-        if(firstChild && firstChild.name === "icon-widget" && 
-           firstChild instanceof Gtk.Image) {
-
-            if(typeof icon === "string") {
-                firstChild.set_from_icon_name(icon);
-                this.#icon = icon;
-                this.notify("icon");
-                return;
-            }
-
-            if(icon instanceof GdkPixbuf.Pixbuf) {
-                firstChild.set_from_pixbuf(icon);
-                this.#icon = icon;
-                this.notify("icon");
-                return;
-            }
-
-            // remove if we're not going to use it
-            this.remove(firstChild);
-        }
-
-        if(icon instanceof Gtk.Widget) {
-            if(firstChild?.name === "custom-icon-widget")
-                this.remove(firstChild);
-
-            this.prepend(icon);
-            this.#icon = this.get_first_child();
-            this.notify("icon");
-            return;
-        }
-
-        this.prepend(
-            <Gtk.Image name={"icon-widget"} $={(self) => {
-                if(typeof icon === "string") {
-                    self.set_from_icon_name(icon);
-                    this.#icon = icon;
-                    this.notify("icon");
+        createScopedConnection(
+            gesture, "released", () => {
+                if(this.#timeout || gesture.get_button() !== Gdk.BUTTON_PRIMARY)
                     return;
-                }
 
-                self.set_from_pixbuf(icon);
-                this.#icon = icon;
-                this.notify("icon");
-            }} /> as Gtk.Image
+                this.#timeout = setTimeout(() => this.#timeout = null, this.clickTimeout);
+                this.emit("clicked");
+            }
+        );
+
+        this.set_child(
+            <Gtk.Box>
+                <Adw.Bin>
+                    <With value={createBinding(this, "icon")}>
+                        {(icon: string|Gtk.Widget|Gdk.Texture|null) =>
+                            typeof icon === "string" ?
+                                <Gtk.Image iconName={icon} />
+                            : icon == null ?
+                                null
+                            : icon instanceof Gtk.Widget ?
+                                icon
+                            : icon instanceof Gdk.Texture ?
+                                <Gtk.Image paintable={icon} />
+                            : null
+                        }
+                    </With>
+                </Adw.Bin>
+                <Gtk.Box orientation={Gtk.Orientation.VERTICAL} valign={Gtk.Align.CENTER} hexpand>
+                    <Gtk.Label class={"title"} xalign={0} ellipsize={Pango.EllipsizeMode.END}
+                      label={props.title} />
+
+                    <Gtk.Label class={"description"} visible={variableToBoolean(props.description)}
+                      ellipsize={Pango.EllipsizeMode.END} xalign={0} label={props.description ?? ""} />
+                </Gtk.Box>
+            </Gtk.Box> as Gtk.Box
         );
     }
 
@@ -140,8 +127,18 @@ export class ResultWidget extends Gtk.Box {
 }
 
 export namespace ResultWidget {
-    export interface SignalSignatures extends Gtk.Box.SignalSignatures {
+    export interface ConstructorProps extends Partial<Gtk.ListBoxRow> {
+        icon?: string|Gdk.Texture|Gtk.Widget;
+        title: string;
+        description?: string;
+        closeOnClick?: boolean;
+    };
+
+    export interface SignalSignatures extends Gtk.ListBoxRow.SignalSignatures {
+        "clicked": () => void;
         "selected": () => void;
         "unselected": () => void;
+        "hovered": () => void;
+        "unhovered": () => void;
     }
 }

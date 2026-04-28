@@ -1,62 +1,25 @@
 import { Astal, Gdk, Gtk } from "ags/gtk4";
 import { CCProps, createRoot } from "ags";
-import { getPopupWindowContainer, PopupWindow } from "../widget/PopupWindow";
+import { PopupWindow } from "../widget/PopupWindow";
 import { updateApps } from "../modules/apps";
-import { ResultWidget, ResultWidgetProps } from "./widgets/ResultWidget";
-import { Windows } from "../window";
-import { 
-    PluginApps, 
-    PluginClipboard, 
-    PluginMedia, 
-    PluginShell, 
-    PluginWallpapers, 
-    PluginWebSearch,
-    PluginKill
-} from "./plugins";
-
-import AstalHyprland from "gi://AstalHyprland";
-import GLib from "gi://GLib?version=2.0";
+import { ResultWidget } from "./widgets/ResultWidget";
 import { omitObjectKeys } from "../modules/utils";
-import { gtype, property } from "ags/gobject";
+import { getter, gtype, property, register } from "ags/gobject";
 import GObject from "gi://GObject?version=2.0";
+import AstalHyprland from "gi://AstalHyprland";
+import Adw from "gi://Adw?version=1";
 
 
-// TODO: rewrite ts
-export class Runner extends Astal.Window {
+@register({ GTypeName: "ClshRunner" })
+export class Runner extends PopupWindow {
     private static instance: Runner|null = null;
-    private static plugins: Array<Runner.PluginConstructor> = [
-        PluginApps,
-        PluginClipboard, 
-        PluginMedia, 
-        PluginShell, 
-        PluginWallpapers, 
-        PluginWebSearch,
-        PluginKill
-    ];
+    private static plugins: Array<Runner.PluginConstructor> = [];
+    public static get isOpen() { return this.instance !== null; }
 
-    protected static ignoredKeys = [
-        Gdk.KEY_space,
-        Gdk.KEY_Shift_L,
-        Gdk.KEY_Shift_R,
-        Gdk.KEY_Shift_Lock,
-        Gdk.KEY_Return,
-        Gdk.KEY_Tab,
-        Gdk.KEY_Control_L,
-        Gdk.KEY_Control_R,
-        Gdk.KEY_Alt_L,
-        Gdk.KEY_Alt_R,
-        Gdk.KEY_Option,
-        Gdk.KEY_Super_L,
-        Gdk.KEY_Super_R,,
-        Gdk.KEY_F5,
-        Gdk.KEY_Up,
-        Gdk.KEY_Down,
-        Gdk.KEY_Left,
-        Gdk.KEY_Right
-    ];
-
-    #timeout: GLib.Source|null = null;
+    #results: Array<Runner.Result> = [];
+    #container: Gtk.Box;
     #entry: Gtk.Entry;
+    #scroll: Gtk.ScrolledWindow;
     #listbox: Gtk.ListBox;
     #plugins: Array<Runner.Plugin> = [];
 
@@ -72,16 +35,17 @@ export class Runner extends Astal.Window {
     @property(String)
     search: string = "";
 
-    @property(Array<Runner.Result>)
+    @property(Array)
     placeholders: Array<Runner.Result> = [];
 
+    @getter(Array<Runner.Result>)
+    get results() { return [...this.#results]; }
 
     constructor(props: Partial<Runner.ConstructorProps> = {}) {
         super({
+            namespace: "runner",
             cssName: "runner",
-            widthRequest: 780,
-            heightRequest: 420,
-            anchor: Astal.WindowAnchor.TOP | Astal.WindowAnchor.BOTTOM,
+            marginTop: ((AstalHyprland.get_default().get_focused_monitor()?.height ?? 640) / 2) - (420 / 2),
             ...omitObjectKeys(props, [
                 "searchPlaceholder",
                 "search",
@@ -106,27 +70,102 @@ export class Runner extends Astal.Window {
         if(props.placeholders !== undefined && props.placeholders.length > 0)
             props.placeholders.forEach(p => this.placeholders.push(p));
 
-        this.#entry = Gtk.Entry.new();
-        this.#entry.set_text(this.search);
+        const connections: Map<GObject.Object, number|Array<number>> = new Map();
+        this.#container = new Gtk.Box({
+            hexpand: true,
+            orientation: Gtk.Orientation.VERTICAL
+        });
+        this.#container.add_css_class("container");
 
-        const connections: Map<GObject.Object, number> = new Map();
-        const bind: GObject.Binding = this.bind_property(
-            "search", this.#entry, "text", GObject.BindingFlags.BIDIRECTIONAL
-        );
+        this.#entry = new Gtk.Entry({
+            text: this.search,
+            primaryIconName: "system-search-symbolic",
+            primaryIconTooltipText: "Search in the Multifunctional Command Runner",
+            secondaryIconName: "edit-clear-symbolic",
+            secondaryIconTooltipText: "Clear"
+        });
+        connections.set(this.#entry, [
+            this.#entry.connect("icon-release", (self, pos) => {
+                if(pos === Gtk.EntryIconPosition.PRIMARY) {
+                    self.notify("text"); // emit notify::text, so it will force-search again
+                    return;
+                }
+              
+                self.set_text("");
+            }),
+            this.#entry.connect("activate", (self) => {
+                const row = this.#listbox.get_selected_row() as ResultWidget|null;
+                if(!row) {
+                    self.grab_focus();
+                    return;
+                }
+
+                row.emit("clicked");
+            })
+        ]);
+
+        this.bind_property("search", this.#entry, "text", GObject.BindingFlags.BIDIRECTIONAL);
 
         this.#listbox = Gtk.ListBox.new();
+        this.#listbox.set_selection_mode(Gtk.SelectionMode.SINGLE);
+        this.#listbox.set_activate_on_single_click(true);
 
+        this.#scroll = new Gtk.ScrolledWindow({
+            propagateNaturalHeight: false,
+            hscrollbarPolicy: Gtk.PolicyType.NEVER,
+            vscrollbarPolicy: Gtk.PolicyType.AUTOMATIC,
+            hexpand: true,
+            vexpand: true
+        });
 
+        connections.set(this, [
+            this.connect("key-pressed", (_, key) => {
+                switch(key) {
+                    case Gdk.KEY_F5:
+                        updateApps();
+                        return;
+                }
+            }),
+            this.connect("destroy", () => {
+                connections.forEach((id, gobj) => Array.isArray(id) ?
+                    id.forEach(num => gobj.disconnect(num))
+                : gobj.disconnect(id));
+            }),
+            this.connect("notify::search", () => {
+                this.update(this.search, this.maxResults).then(() => {
+                    if(this.#results.length < 1)
+                        return;
+
+                    this.#listbox.select_row(this.#listbox.get_row_at_index(0));
+                }).catch(console.error);
+            })
+        ]);
+
+        // add widgets
+        const bin = new Adw.Bin({
+            widthRequest: props.widthRequest ?? 780,
+            heightRequest: props.heightRequest ?? 420,
+            halign: Gtk.Align.CENTER,
+            valign: Gtk.Align.START,
+            vexpand: false,
+            hexpand: true
+        });
+        this.set_child(bin);
+        bin.set_child(this.#container);
+        this.#container.append(this.#scroll);
+        this.#container.prepend(this.#entry);
+        this.#scroll.set_child(this.#listbox);
+
+        // init plugins
         for(const construct of Runner.plugins) {
             this.#plugins.push(new construct());
         }
+    }
 
-        connections.set(this, this.connect("destroy", () => {
-            connections.forEach((id, gobj) => gobj.disconnect(id));
-            bind.unbind();
-        }));
-
-
+    vfunc_close_request(): boolean {
+        this.#plugins.forEach(p => p.onClose?.());
+        Runner.instance = null;
+        return false;
     }
 
     /** grab focus to the search entry */
@@ -140,6 +179,16 @@ export class Runner extends Astal.Window {
             return;
 
         this.instance.search = search;
+        this.instance.searchGrabFocus();
+        this.instance.#entry.select_region(search.length, search.length);
+    }
+
+    /** close the existing runner instance, if there is one */
+    public static close(): void {
+        if(!this.isOpen)
+            return;
+
+        this.instance!.close();
     }
     
     public static addPlugin(plugin: Runner.PluginConstructor) {
@@ -166,57 +215,63 @@ export class Runner extends Astal.Window {
         "gi").test(item);
     }
     
-    public static open(search?: string) {
-        return new Runner({
-            searchPlaceholder: "Start typing...",
-            search,
-            showResultPlaceholders: false,
-            maxResults: 24,
-            placeholders: [
-                {
-                    icon: "application-x-executable-symbolic",
-                    title: "Use your applications",
-                    description: "Search for any app installed in your computer",
-                    closeOnClick: false,
-                    actionClick: () => this.instance?.searchGrabFocus()
-                },
-                {
-                    icon: "edit-paste-symbolic",
-                    title: "See your clipboard history",
-                    description: "Start your search with '>' to go through your clipboard history",
-                    closeOnClick: false,
-                    actionClick: () => this.setSearch('>')
-                },
-                {
-                    icon: "image-x-generic-symbolic",
-                    title: "Change your wallpaper",
-                    description: "Add '#' at the start to search through the wallpapers folder!",
-                    closeOnClick: false,
-                    actionClick: () => this.setSearch('#'),
-                },
-                {
-                    icon: "utilities-terminal-symbolic",
-                    title: "Run shell commands",
-                    description: "Add '!' before your command to run it (tip: add another '!' to notify command output)",
-                    closeOnClick: false,
-                    actionClick: () => this.setSearch('!')
-                },
-                {
-                    icon: "media-playback-start-symbolic",
-                    title: "Control media",
-                    description: "Type ':' to control playing media",
-                    closeOnClick: false,
-                    actionClick: () => this.setSearch(':')
-                },
-                {
-                    icon: "applications-internet-symbolic",
-                    title: "Search the Web",
-                    description: "Start typing with '?' prefix to search the web",
-                    closeOnClick: false,
-                    actionClick: () => this.setSearch('?')
-                }
-            ]
-        });
+    public static open(search?: string): Runner {
+        if(this.instance)
+            return this.instance;
+
+        this.instance = createRoot((dispose) => 
+            <Runner searchPlaceholder="Start typing..." search={search}
+              showResultPlaceholders={false} maxResults={24}
+              onClosed={() => dispose()}
+              placeholders={[
+                  {
+                      icon: "application-x-executable-symbolic",
+                      title: "Use your applications",
+                      description: "Search for any app installed in your computer",
+                      closeOnClick: false,
+                      onClicked: () => this.instance?.searchGrabFocus()
+                  },
+                  {
+                      icon: "edit-paste-symbolic",
+                      title: "See your clipboard history",
+                      description: "Start your search with '>' to go through your clipboard history",
+                      closeOnClick: false,
+                      onClicked: () => this.setSearch('>')
+                  },
+                  {
+                      icon: "image-x-generic-symbolic",
+                      title: "Change your wallpaper",
+                      description: "Add '#' at the start to search through the wallpapers folder!",
+                      closeOnClick: false,
+                      onClicked: () => this.setSearch('#'),
+                  },
+                  {
+                      icon: "utilities-terminal-symbolic",
+                      title: "Run shell commands",
+                      description: "Add '!' before your command to run it (tip: add another '!' to notify command output)",
+                      closeOnClick: false,
+                      onClicked: () => this.setSearch('!')
+                  },
+                  {
+                      icon: "media-playback-start-symbolic",
+                      title: "Control media",
+                      description: "Type ':' to control playing media",
+                      closeOnClick: false,
+                      onClicked: () => this.setSearch(':')
+                  },
+                  {
+                      icon: "applications-internet-symbolic",
+                      title: "Search the Web",
+                      description: "Start typing with '?' prefix to search the web",
+                      closeOnClick: false,
+                      onClicked: () => this.setSearch('?')
+                  }
+              ]}
+            /> as Runner
+        );
+        this.instance.show();
+
+        return this.instance;
     }
 
     protected async generateResults(input: string, limit?: number): Promise<Array<Runner.Result>> {
@@ -225,16 +280,10 @@ export class Runner extends Astal.Window {
         ).sort((plugin) => plugin.prefix != null ? 0 : 1);
 
         let iconSet: boolean = false;
-        for(const plugin of calledPlugins) {
-            if(plugin.prioritize) {
-                calledPlugins = [ plugin ];
-                if(plugin.iconName !== undefined) {
-                    this.#entry.primaryIconName = plugin.iconName;
-                    iconSet = true;
-                }
-
-                break;
-            }
+        const importantPlugin = calledPlugins.find(p => p.prioritize);
+        if(importantPlugin && importantPlugin.iconName !== undefined) {
+            this.#entry.primaryIconName = importantPlugin.iconName;
+            iconSet = true;
         }
 
         if(!iconSet)
@@ -277,10 +326,11 @@ export class Runner extends Astal.Window {
 
     public async update(input: string, limit?: number) {
         this.#listbox.remove_all();
+        this.#results.splice(0, this.#results.length);
 
-        let results: Array<Runner.Result>;
         try {
-            results = await this.generateResults(input, limit);
+            this.#results = await this.generateResults(input, limit);
+            this.notify("results");
         } catch(e) {
             console.error(`Couldn't get results because of an error: ${(e as Error).message}\n${(e as Error).stack}`);
 
@@ -296,7 +346,7 @@ export class Runner extends Astal.Window {
         }
 
         // Insert placeholder if there are no results
-        if(results.length < 1) {
+        if(this.#results.length < 1) {
             for(const ph of this.placeholders) {
                 this.#listbox.append(this.resultToWidget(ph));
             }
@@ -304,14 +354,29 @@ export class Runner extends Astal.Window {
             return;
         }
 
-        for(const result of results) {
+        for(const result of this.#results) {
             const widget = this.resultToWidget(result);
             this.#listbox.append(widget);
         }
     }
+
+    connect<S extends keyof Runner.SignalSignatures>(
+        signal: S,
+        callback: (self: Runner, ...params: Parameters<Runner.SignalSignatures[S]>) => ReturnType<Runner.SignalSignatures[S]>
+    ): number {
+        return GObject.Object.prototype.connect.call(this, signal, callback);
+    }
 }
 
 export namespace Runner {
+    export interface SignalSignatures extends PopupWindow.SignalSignatures {
+        "notify::search": () => void;
+        "notify::search-placeholder": () => void;
+        "notify::show-result-placeholders": () => void;
+        "notify::max-results": () => void;
+        "notify::placeholders": () => void;
+    }
+
     export interface ConstructorProps extends Astal.Window.ConstructorProps {
         searchPlaceholder: string;
         search: string;
@@ -320,9 +385,7 @@ export namespace Runner {
         placeholders: Array<Runner.Result>;
     };
 
-    export type Result = CCProps<ResultWidget, ResultWidgetProps>;
-    export type PluginConstructor = new () => Runner.Plugin;
-
+    export type Result = CCProps<ResultWidget, ResultWidget.ConstructorProps>;
     export interface Plugin {
         /** prefix to call the plugin. if undefined, will be triggered like applications plugin */
         readonly prefix?: string;
@@ -339,130 +402,9 @@ export namespace Runner {
         prioritize?: boolean;
         /** show a specific icon when the plugin is prioritized/only 
         * has results from this plugin 
-        * @todo actually implement the plugin icon feature
         * @default "system-search-symbolic" */
         iconName?: string;
     }
 
-
-export function openRunner(props: RunnerProps, placeholders?: Array<Result>): Astal.Window {
-    props.width ??= 780;
-    props.height ??= 420;
-
-    let clickTimeout: GLib.Source|undefined;
-
-    if(!instance)
-        instance = Windows.forFocusedMonitor((mon) => 
-            <PopupWindow namespace={"runner"} monitor={mon} widthRequest={props.width} 
-              heightRequest={props.height} exclusivity={Astal.Exclusivity.IGNORE} halign={Gtk.Align.CENTER}
-              marginTop={(AstalHyprland.get_default().get_monitor(mon)?.height / 2) - (props.height! / 2)}
-              valign={Gtk.Align.START} hexpand orientation={Gtk.Orientation.VERTICAL}
-              $={() => {
-                  plugins.forEach(construct => {
-                      const plugin = new construct();
-                      pluginInstances.push(plugin);
-                      plugin.init?.();
-                  });
-
-                  props.initialText && 
-                      Runner.setEntryText(props.initialText);
-              }} actionKeyPressed={(self, keyval) => {
-                    const listbox = ((getPopupWindowContainer(self).get_last_child() as Gtk.ScrolledWindow)
-                      .get_child() as Gtk.Viewport).get_child() as Gtk.ListBox;
-
-                    switch(keyval) {
-                        case Gdk.KEY_F5:
-                            updateApps();
-                            return;
-
-                        case Gdk.KEY_Left:
-                        case Gdk.KEY_Up:
-                            selectPreviousItem(listbox);
-                            gtkEntry?.grab_focus();
-                            return;
-
-                        case Gdk.KEY_Right:
-                        case Gdk.KEY_Down:
-                            selectNextItem(listbox);
-                            gtkEntry?.grab_focus();
-                            return;
-                    }
-
-                    for(const key of ignoredKeys) {
-                        if(keyval === key)
-                            return;
-                    }
-
-                    if(!gtkEntry?.hasFocus) {
-                        gtkEntry?.grab_focus();
-                        listbox.grab_focus();
-                    }
-              }} actionClosed={() => {
-                  pluginInstances.splice(0, pluginInstances.length)
-                    .forEach(plugin => plugin?.onClose?.());
-
-                  instance = null;
-                  gtkEntry = null;
-              }}>
-                <Gtk.Entry class={"search"} placeholderText={props.entryPlaceHolder ?? ""}
-                  $={(self) => gtkEntry = self} onNotifyText={(self) => {
-                      const listbox = ((self.get_next_sibling()! as Gtk.ScrolledWindow)
-                        .get_child() as Gtk.Viewport).get_child() as Gtk.ListBox;
-                      updateResultsList(listbox, self.text, props.resultsLimit, placeholders).then(() => {
-                          const firstResult = listbox.get_row_at_index(0);
-                          if(firstResult) {
-                              listbox.select_row(firstResult);
-                              (firstResult.get_child() as ResultWidget).emit("selected");
-                          };
-                      });
-                  }} primaryIconName={"system-search-symbolic"}
-                  primaryIconTooltipText={"Search"}
-                  secondaryIconName={"edit-clear-symbolic"}
-                  secondaryIconTooltipText={"Clear search"}
-                  onIconRelease={(self, iconPos) => {
-                      if(iconPos === Gtk.EntryIconPosition.PRIMARY) {
-                          self.notify("text"); // emit notify::text, so it will force-search again
-                          return;
-                      }
-                        
-                      self.set_text("");
-                  }} onActivate={(self) => {
-                      const listbox = ((self.get_next_sibling() as Gtk.ScrolledWindow)
-                        .get_child() as Gtk.Viewport).get_child() as Gtk.ListBox;
-                      const resultWidget = listbox.get_selected_row()?.get_child();
-
-                      if(resultWidget instanceof ResultWidget && !clickTimeout) {
-                          clickTimeout = setTimeout(() => clickTimeout = undefined, 250);
-                          resultWidget.actionClick();
-                          resultWidget.closeOnClick && Runner.close();
-                      }
-
-                  }}
-                />
-                <Gtk.ScrolledWindow class={"results-scrollable"} vscrollbarPolicy={Gtk.PolicyType.AUTOMATIC}
-                  hscrollbarPolicy={Gtk.PolicyType.NEVER} hexpand vexpand propagateNaturalHeight visible={false}
-                  maxContentHeight={props.height} focusable={false}>
-
-                    <Gtk.ListBox hexpand activateOnSingleClick selectionMode={Gtk.SelectionMode.SINGLE} 
-                      onRowSelected={(_, row) => {
-                          if(row instanceof ResultWidget) {
-                              row.grab_focus();
-                              gtkEntry?.grab_focus_without_selecting();
-                          }
-                      }} onRowActivated={(_, row) => {
-                          const child = row.get_child()!;
-
-                          if(child instanceof ResultWidget && !clickTimeout) {
-                              clickTimeout = setTimeout(() => clickTimeout = undefined, 250);
-                              child.actionClick?.();
-                              child.closeOnClick && Runner.close();
-                          }
-                      }}
-                    />
-                </Gtk.ScrolledWindow>
-            </PopupWindow> as Astal.Window
-        )();
-
-    return instance!;
-}
+    export type PluginConstructor = new () => Runner.Plugin;
 }

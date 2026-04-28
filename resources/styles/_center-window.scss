@@ -4,7 +4,7 @@
 @use "./mixins";
 
 
-.popup-window.center-window .center-window-container {
+popupwindow.center-window .container {
   background: colors.$bg-translucent;
   border-radius: 24px;
   padding: 12px;

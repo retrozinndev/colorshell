@@ -180,7 +180,7 @@ if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
 
     # install gresource
     mkdir -p $XDG_DATA_HOME/colorshell
-    cp -f $repo_directory/build/release/resources.gresource $XDG_DATA_HOME/colorshell
+    cp -f $repo_directory/build/release/resources.gresource $XDG_DATA_HOME/colorshell/.gresource
 
     # install desktop entry
     mkdir -p $APPS_HOME

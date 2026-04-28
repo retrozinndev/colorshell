@@ -1,5 +1,5 @@
-import AstalHyprland from "gi://AstalHyprland";
 import { Runner } from "..";
+import { execApp } from "../../modules/apps";
 
 
 export class PluginWebSearch implements Runner.Plugin {
@@ -21,10 +21,7 @@ export class PluginWebSearch implements Runner.Plugin {
             icon: "system-search-symbolic",
             title: search || "Type your search...",
             description: `Search the Web`,
-            actionClick: () => AstalHyprland.get_default().dispatch(
-                "exec", 
-                `xdg-open \"${this.#engine + search}\"`
-            )
-        };
+            onClicked: () => execApp(`xdg-open \"${this.#engine + search}\"`)
+        } satisfies Runner.Result;
     }
 }

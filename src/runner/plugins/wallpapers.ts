@@ -15,6 +15,7 @@ import { Cache } from "../../modules/cache";
 
 export class PluginWallpapers implements Runner.Plugin {
     prefix = "#";
+    name = "Wallpapers";
     prioritize = true;
     #fuse!: Fuse<string>;
     #files!: Array<Gio.FileInfo>;
@@ -133,7 +134,6 @@ export class PluginWallpapers implements Runner.Plugin {
                 if(isDir || !GLib.file_test(path, GLib.FileTest.EXISTS))
                     return;
 
-                const eventMotion = Gtk.EventControllerMotion.new();
                 const revealer = new Gtk.Revealer({
                     transitionType: Gtk.RevealerTransitionType.SWING_UP,
                     transitionDuration: 400,
@@ -154,26 +154,26 @@ export class PluginWallpapers implements Runner.Plugin {
 
                 stack.add_named(new Adw.Spinner(), "spinner");
                 stack.add_named(picture, "picture");
-                
-                self.set_orientation(Gtk.Orientation.VERTICAL);
-                self.prepend(revealer);
 
-                self.add_controller(eventMotion);
+                const box = self.get_child() as Gtk.Box;
+                
+                box.set_orientation(Gtk.Orientation.VERTICAL);
+                box.prepend(revealer);
 
                 createRoot((dispose) => {
                     if(!GLib.file_test(path, GLib.FileTest.EXISTS))
                         return;
 
                     createScopedConnection(self, "destroy", () => dispose());
-                    createScopedConnection(eventMotion, "enter", () => onSelected(self));
-                    createScopedConnection(eventMotion, "leave", () => onUnselected(self));
+                    createScopedConnection(self, "hovered", () => onSelected(self));
+                    createScopedConnection(self, "unhovered", () => onUnselected(self));
                 });
             },
             onSelected: (self) => onSelected(self),
             onUnselected: (self) => onUnselected(self),
-            actionClick: () => {
+            onClicked: () => {
                 if(isDir) {
-                    Runner.setEntryText(
+                    Runner.setSearch(
                         this.#subdir !== undefined ?
                             `${this.prefix}${this.#subdir.startsWith('/') ? 
                                 this.#subdir

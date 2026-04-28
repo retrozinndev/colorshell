@@ -7,6 +7,7 @@ import AstalMpris from "gi://AstalMpris";
 
 
 export class PluginMedia implements Runner.Plugin {
+    name = "Media";
     prefix = ":";
     prioritize = false;
 
@@ -45,7 +46,7 @@ export class PluginMedia implements Runner.Plugin {
                 ], (title, artist, status) => `${status === AstalMpris.PlaybackStatus.PLAYING ?
                     "Pause" : "Play"
                 } ${title} | ${artist}`),
-                actionClick: () => Media.getDefault().player?.play_pause()
+                onClicked: () => Media.getDefault().player?.play_pause()
             },
             {
                 icon: "media-skip-backward-symbolic",
@@ -69,7 +70,7 @@ export class PluginMedia implements Runner.Plugin {
                 ], (title, artist, identity) =>
                     `Go Previous ${title ? title : identity}${artist ? ` | ${artist}` : ""}`
                 ),
-                actionClick: () => Media.getDefault().player?.canGoPrevious && 
+                onClicked: () => Media.getDefault().player?.canGoPrevious && 
                     Media.getDefault().player?.previous()
             },
             {
@@ -94,9 +95,9 @@ export class PluginMedia implements Runner.Plugin {
                 ], (title, artist, identity) =>
                     `Go Next ${title ? title : identity}${artist ? ` | ${artist}` : ""}`
                 ),
-                actionClick: () => Media.getDefault().player?.canGoNext && 
+                onClicked: () => Media.getDefault().player?.canGoNext && 
                     Media.getDefault().player?.next()
             }
-        ]
+        ] satisfies Array<Runner.Result>
     }
 }

@@ -1,6 +1,6 @@
 import { Astal, Gdk, Gtk } from "ags/gtk4";
 import { BackgroundWindow } from "./BackgroundWindow";
-import { Accessor, createBinding, createComputed, createRoot, getScope } from "ags";
+import { createBinding } from "ags";
 import { omitObjectKeys } from "../modules/utils";
 import GObject, { gtype, property, register, signal } from "ags/gobject";
 
@@ -9,6 +9,7 @@ import GObject, { gtype, property, register, signal } from "ags/gobject";
 export class PopupWindow extends Astal.Window {
     declare $signals: PopupWindow.SignalSignatures;
 
+    #conns: Map<GObject.Object, number> = new Map();
     #bg: Astal.Window;
 
     @signal()
@@ -22,7 +23,7 @@ export class PopupWindow extends Astal.Window {
         this.close();
     }
 
-    @signal()
+    @signal(Number, Number)
     keyPressed(_: number, __: number) {}
 
     @property(Boolean)
@@ -31,16 +32,30 @@ export class PopupWindow extends Astal.Window {
     @property(gtype<string|null>(String))
     backgroundCss: string|null = null;
 
+    /** whether to continue propagating the event to children after handling in ::key-pressed.
+      * @default false */
+    @property(Boolean)
+    propagateKeyEvent: boolean = false;
+
+
     constructor(props: Partial<PopupWindow.ConstructorProps>) {
         super({
+            namespace: "clsh-popup-window",
             cssName: "popupwindow",
             layer: Astal.Layer.OVERLAY,
+            keymode: Astal.Keymode.EXCLUSIVE,
             exclusivity: Astal.Exclusivity.NORMAL,
             ...omitObjectKeys(props, [
+                "propagateKeyEvent",
                 "backgroundCss",
                 "closeOnClickOutside"
-            ])
+            ]),
+            anchor: Astal.WindowAnchor.TOP | Astal.WindowAnchor.BOTTOM 
+                | Astal.WindowAnchor.LEFT | Astal.WindowAnchor.RIGHT,
         });
+
+        if(props.propagateKeyEvent !== undefined)
+            this.propagateKeyEvent = props.propagateKeyEvent;
 
         if(props.backgroundCss !== undefined)
             this.backgroundCss = props.backgroundCss;
@@ -54,28 +69,42 @@ export class PopupWindow extends Astal.Window {
             layer: createBinding(this, "layer"),
             keymode: Astal.Keymode.NONE,
             attach: this,
-            
+            exclusivity: Astal.Exclusivity.IGNORE
         });
         this.#bg.hide();
 
-        this.conns.set(gestureClick, gestureClick.connect("released", () => {
-            if(clickedInside) {
-                clickedInside = false;
-                return;
-            }
-
-            props.actionClickedOutside!(self);
-        }));
-
-        this.conns.set(keyController, keyController.connect("key-pressed", (_, keyval, keycode) => {
-            if(keyval === Gdk.KEY_Escape) {
-
+        const gestureClick = Gtk.GestureClick.new();
+        const keyController = Gtk.EventControllerKey.new();
+        
+        this.#conns.set(gestureClick, gestureClick.connect("released", (_, __, gx, gy) => {
+            const child = this.get_child();
+            if(!child) {
                 this.emit("clicked-outside");
                 return;
             }
 
-            this.emit("key-pressed", keyval, keycode);
+            const { x, y, width, height } = child.get_allocation();
+
+            if((gx < x || gx > (x + width)) || (gy > (y + height) || gy < y))
+                this.emit("clicked-outside");
         }));
+
+        this.#conns.set(keyController, keyController.connect("key-pressed", (_, keyval, keycode) => {
+            if(keyval === Gdk.KEY_Escape) {
+                this.emit("clicked-outside");
+                return true;
+            }
+
+            this.emit("key-pressed", keyval, keycode);
+            return !this.propagateKeyEvent;
+        }));
+
+        this.#conns.set(this, this.connect("close-request", () => {
+            this.#conns.forEach((id, obj) => obj.disconnect(id));
+        }));
+
+        this.add_controller(gestureClick);
+        this.add_controller(keyController);
     }
 
     hide(): void {
@@ -95,14 +124,34 @@ export class PopupWindow extends Astal.Window {
         super.close();
         this.emit("closed");
     }
+
+    connect<S extends keyof PopupWindow.SignalSignatures>(
+        signal: S,
+        callback: (self: PopupWindow, ...params: Parameters<PopupWindow.SignalSignatures[S]>) => ReturnType<PopupWindow.SignalSignatures[S]>
+    ): number {
+        return super.connect(signal, callback);
+    }
+
+    emit<S extends keyof PopupWindow.SignalSignatures>(
+        signal: S, 
+        ...args: Parameters<PopupWindow.SignalSignatures[S]>
+    ): void {
+        super.emit(signal, ...args);
+    }
 }
 
 export namespace PopupWindow {
     export interface ConstructorProps extends Omit<
-        Astal.Window.ConstructorProps,
-        "anchor"
+        Astal.Window.ConstructorProps, 
+        | "child"
+        | "anchor"
+        | "margin_top"
+        | "margin_bottom"
+        | "margin_left"
+        | "margin_right"
     > {
         backgroundCss: string;
+        propagateKeyEvent: boolean;
         closeOnClickOutside: boolean;
     };
 
@@ -111,122 +160,4 @@ export namespace PopupWindow {
         "clicked-outside": () => void;
         "key-pressed": (keyval: number, keycode: number) => void;
     }
-}
-
-export function PopupWindow(props: PopupWindowProps): GObject.Object {
-    props.visible ??= true;
-    props.layer ??= Astal.Layer.OVERLAY;
-    props.actionClickedOutside ??= (self: Astal.Window) => self.close();
-
-    let clickedInside: boolean = false;
-
-    return <Astal.Window {...omitObjectKeys(props, [
-          "actionKeyPressed",
-          "actionClickedOutside",
-          "cssBackgroundWindow",
-          "anchor",
-          "halign",
-          "valign",
-          "namespace",
-          "marginTop",
-          "widthRequest",
-          "heightRequest",
-          "visible",
-          "marginLeft",
-          "marginRight",
-          "marginBottom",
-          "hexpand",
-          "vexpand",
-          "orientation",
-          "actionClosed",
-          "$"
-      ])} namespace={props.namespace ?? "popup-window"} class={
-          (props.class instanceof Accessor) ? 
-              ((props.namespace instanceof Accessor) ?
-                   createComputed([props.class, props.namespace], (clss, namespace) =>
-                      `popup-window ${clss} ${namespace}`)
-               : props.class.as(clss => `popup-window ${clss} ${props.namespace ?? ""}`))
-          : `popup-window ${props.class ?? ""} ${props.namespace ?? ""}`
-      } keymode={Astal.Keymode.EXCLUSIVE} exclusivity={props.exclusivity ?? Astal.Exclusivity.NORMAL}
-      anchor={TOP | LEFT | BOTTOM | RIGHT} visible={false} 
-      onCloseRequest={(self) => props.actionClosed?.(self)}
-      $={(self) => {
-          const scope = getScope();
-          const conns: Map<GObject.Object, number> = new Map();
-          const gestureClick = Gtk.GestureClick.new();
-          const keyController = Gtk.EventControllerKey.new();
-          
-          self.add_controller(gestureClick);
-          self.add_controller(keyController);
-
-          props.cssBackgroundWindow && createRoot((dispose) => 
-              <BackgroundWindow monitor={props.monitor ?? 0}
-                layer={props.layer} css={props.cssBackgroundWindow} 
-                keymode={Astal.Keymode.NONE} attach={self}
-                onCloseRequest={() => dispose()}
-              />
-          );
-
-          props.visible && self.show();
-
-          conns.set(gestureClick, gestureClick.connect("released", () => {
-              if(clickedInside) {
-                  clickedInside = false;
-                  return;
-              }
-
-              props.actionClickedOutside!(self);
-          }));
-
-          conns.set(keyController, keyController.connect("key-pressed", (_, keyval, keycode) => {
-              if(keyval === Gdk.KEY_Escape) {
-                  conns.forEach((id, obj) => {
-                      obj.disconnect(id);
-                  });
-
-                  props.actionClickedOutside!(self);
-                  return;
-              }
-
-              props.actionKeyPressed?.(self, keyval, keycode);
-          }));
-
-          scope.onCleanup(() => conns.forEach((id, obj) => 
-                GObject.signal_handler_is_connected(obj, id) && obj.disconnect(id)
-          ));
-
-          props.$?.(self);
-      }}>
-          <Gtk.Box hexpand={false} vexpand={false}>
-              <Gtk.Box class={"popup-window-container"} halign={props.halign} 
-                valign={props.valign} widthRequest={props.widthRequest} 
-                hexpand={props.hexpand} vexpand={props.vexpand}
-                orientation={props.orientation}
-                heightRequest={props.heightRequest} css={`
-                    margin-left: ${props.marginLeft ?? 0}px;
-                    margin-right: ${props.marginRight ?? 0}px;
-                    margin-top: ${props.marginTop ?? 0}px;
-                    margin-bottom: ${props.marginBottom ?? 0}px;
-                `} $={(self) => {
-                    const conns = new Map<GObject.Object, number>(), 
-                        gestureClick = Gtk.GestureClick.new();
-
-                    gestureClick.set_button(0);
-
-                    self.add_controller(gestureClick);
-                    conns.set(gestureClick, gestureClick.connect("released", () => 
-                        clickedInside = true
-                    ));
-
-                    conns.set(self, self.connect("destroy", () => conns.forEach((id, obj) =>
-                        obj.disconnect(id))));
-                }}>
-                  {props.children}
-              </Gtk.Box>
-          </Gtk.Box>
-    </Astal.Window> as Astal.Window;
-}
-
-export function getPopupWindowContainer(popupWindow: Astal.Window): Gtk.Box {
-    return popupWindow.get_child()!.get_first_child() as Gtk.Box;
 }

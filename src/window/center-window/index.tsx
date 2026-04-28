@@ -4,22 +4,21 @@ import { PopupWindow } from "../../widget/PopupWindow";
 import { BigMedia } from "./widgets/BigMedia";
 import { time, variableToBoolean } from "../../modules/utils";
 import { createBinding } from "ags";
-
-import Media from "../../modules/media";
-import AstalMpris from "gi://AstalMpris";
 import { generalConfig } from "../../config";
 import { Windows } from "..";
+import Media from "../../modules/media";
+import AstalMpris from "gi://AstalMpris";
 
 
 export const CenterWindow = Windows.forFocusedMonitor((mon) => {
     const notifPopupHPos = generalConfig.getProperty("notifications.position_h", "string");
 
     return <PopupWindow namespace={"center-window"} marginTop={10} monitor={mon}
-      halign={Gtk.Align.CENTER} valign={Gtk.Align.START}
-      actionKeyPressed={(_, keyval) => {
+      class={"center-window"}
+      onKeyPressed={(_, keyval) => {
           if(keyval === Gdk.KEY_space) {
-              Media.getDefault().player.available && 
-                  Media.getDefault().player.play_pause();
+              Media.getDefault().player?.available && 
+                  Media.getDefault().player!.play_pause();
               return true;
           }
       }} $={() => {
@@ -27,7 +26,7 @@ export const CenterWindow = Windows.forFocusedMonitor((mon) => {
               return;
 
           generalConfig.setProperty("notifications.position_h", "left", false);
-      }} actionClosed={() => {
+      }} onClosed={() => {
           const currentNotifPopupHPos = generalConfig.getProperty("notifications.position_h", "string");
           if(currentNotifPopupHPos === notifPopupHPos)
               return;
@@ -35,7 +34,8 @@ export const CenterWindow = Windows.forFocusedMonitor((mon) => {
           generalConfig.setProperty("notifications.position_h", notifPopupHPos, false);
       }}>
       
-        <Gtk.Box class={"center-window-container"} spacing={6}>
+        <Gtk.Box class={"container"} spacing={6} valign={Gtk.Align.START} halign={Gtk.Align.CENTER}>
+
             <Gtk.Box class={"left"} orientation={Gtk.Orientation.VERTICAL}>
                 <Gtk.Box class={"datetime"} orientation={Gtk.Orientation.VERTICAL}
                   halign={Gtk.Align.CENTER} valign={Gtk.Align.CENTER} vexpand>

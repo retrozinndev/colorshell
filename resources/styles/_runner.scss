@@ -1,8 +1,6 @@
 @use "./colors";
 
-.runner .popup-window-container {
-  all: unset;
-
+runner widget .container {
   $radius: 24px;
 
   background: rgba($color: colors.$bg-primary, $alpha: .8);
@@ -34,7 +32,7 @@
   }
 
   & list {
-    & .result {
+    & resultwidget {
       padding: 10px;
       background: colors.$bg-primary;
       margin: 2px 0;
@@ -54,15 +52,15 @@
         font-size: 12px;
         color: colors.$fg-disabled;
       }
+
+      &:selected,
+      &:active,
+      &:hover {
+        background: colors.$bg-secondary;
+      }
     }
 
-    & > *:selected .result,
-    & > *:active .result,
-    & > *:hover .result {
-      background: colors.$bg-secondary;
-    }
-
-    & > *:first-child {
+    &:first-child {
       margin-top: 12px;
     }
 

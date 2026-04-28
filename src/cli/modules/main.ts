@@ -4,10 +4,10 @@ import { showWorkspaceNumber } from "../../window/bar/widgets/Workspaces";
 import { Windows } from "../../window";
 import { Shell } from "../../app";
 import System from "system";
-import { Runner } from "../../runner";
 import { execApp } from "../../modules/apps";
 import { generalConfig } from "../../config";
 import { runtimeDir } from "../../modules/utils";
+import { toggleRunner } from "../../runner/init";
 
 
 let window: string|undefined;
@@ -190,12 +190,9 @@ https://github.com/retrozinndev/colorshell
             }],
             onCalled: (remote, args) => {
                 const text = args.find(a => a.name === "text")?.value;
-                remote.println(`Opening runner${text ? ` with "${text}"` : ""}...`);
+                remote.println(`Toggling runner${text ? ` with "${text}"` : ""}...`);
 
-                !Runner.isOpen ?
-                    Runner.open(text)
-                : Runner.close();
-
+                toggleRunner(text);
                 remote.exit(0);
             }
         },

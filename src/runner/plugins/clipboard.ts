@@ -7,6 +7,7 @@ import Fuse from "fuse.js";
 
 export class PluginClipboard implements Runner.Plugin {
     #fuse!: Fuse<unknown>;
+    name = "Clipboard";
     prefix = '>';
     prioritize = true;
     
@@ -31,7 +32,7 @@ export class PluginClipboard implements Runner.Plugin {
                 css: "font-size: 16px; margin-right: 8px; font-weight: 600;"
             }),
             title: item.preview,
-            actionClick: () => Clipboard.getDefault().selectItem(item).catch((err: Error) => {
+            onClicked: () => Clipboard.getDefault().selectItem(item).catch((err: Error) => {
                 console.error(`Runner(Plugin/Clipboard): An error occurred while selecting clipboard item. Stderr:\n${
                     err.message ? `${err.message}\n` : ""}Stack: ${err.stack}`
                 );

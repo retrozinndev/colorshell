@@ -10,6 +10,7 @@ export class PluginShell implements Runner.Plugin {
         Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
     );
 
+    name = "Shell";
     prefix = '!';
     prioritize = true;
 
@@ -30,7 +31,7 @@ export class PluginShell implements Runner.Plugin {
             shellName = shellSplit[shellSplit.length-1];
 
         return {
-            actionClick: () => {
+            onClicked: () => {
                 if(!command?.[0] || !command[1]) return;
 
                 const proc = this.#procLauncher.spawnv([ this.#shell, "-c", `${input}` ]);
@@ -61,6 +62,6 @@ export class PluginShell implements Runner.Plugin {
                 showOutputNotif ? "(showing output on notification)" : "" }`
             : "",
             icon: "utilities-terminal-symbolic"
-        };
+        } satisfies Runner.Result;
     }
 }
