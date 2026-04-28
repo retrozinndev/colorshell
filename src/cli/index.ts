@@ -29,6 +29,17 @@ abstract class Cli {
         ifaces.forEach(iface => this.addIface(iface));
     }
 
+    /** stop listening on all of the interfaces and drop modules */
+    public static deinit(): void {
+        this.modules.splice(0, this.modules.length);
+        this.ifaces.forEach(([iface, id]) => {
+            iface.disconnect(id);
+            iface.stop();
+        });
+
+        this.initialized = false;
+    }
+
     /** add an interface implementation for cli communication */
     public static addIface(iface: Cli.Interface): void {
         if(this.ifaces.find(([i]) => i === iface))

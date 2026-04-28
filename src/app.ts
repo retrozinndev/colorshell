@@ -221,6 +221,7 @@ export class Shell extends Adw.Application {
 
     quit(): void {
         this.release();
+        Cli.deinit();
         super.quit();
     }
 }
