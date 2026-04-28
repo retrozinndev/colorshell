@@ -36,6 +36,7 @@ abstract class Cli {
             iface.disconnect(id);
             iface.stop();
         });
+        this.ifaces.splice(0, this.ifaces.length);
 
         this.initialized = false;
     }
