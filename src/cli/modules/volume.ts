@@ -7,7 +7,6 @@ let device: DeviceType|undefined;
 
 export default {
     prefix: "volume",
-    onCalled: () => device = undefined,
     help: `\
 Control speaker and microphone volume levels.
 
@@ -30,8 +29,8 @@ Commands:
             help: "Specify the device to control. Can be \"sink\" or \"source\"",
             hasValue: true,
             onCalled: (remote, value) => {
-                if(!value || !/sink|source/.test(value)) {
-                    remote.println(`Device ${value} does not exist/isn't defined`, true);
+                if(value === undefined || !/^sink|source$/.test(value)) {
+                    remote.println(`Device "${value}" does not exist/isn't defined`, true);
                     return;
                 }
 
@@ -106,7 +105,11 @@ Commands:
         name: "mute",
         help: "toggle-mute a sink/source's audio",
         onCalled: (remote) => {
-            if(!device) return;
+            if(device === undefined) {
+                remote.println("Error: No device was specified");
+                remote.exit(1);
+                return;
+            }
 
             remote.println(`Toggling mute for ${device}`);
             if(device === "sink") {

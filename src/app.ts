@@ -14,15 +14,16 @@ import { Input } from "./modules/input";
 import { Idle } from "./modules/idle";
 import { register } from "ags/gobject";
 import { initWindows } from "./windows";
+import { initCli } from "./cli/init";
+import Cli from "./cli";
 import SocketCli from "./cli/interface/socket";
 import Media from "./modules/media";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import Adw from "gi://Adw?version=1";
-import Cli from "./cli";
 
 
-@register({ GTypeName: "Shell" })
+@register({ GTypeName: "Colorshell" })
 export class Shell extends Adw.Application {
     private static instance: Shell;
 
@@ -43,7 +44,7 @@ export class Shell extends Adw.Application {
         setConsoleLogDomain("Colorshell");
         GLib.set_application_name("colorshell");
         GLib.set_prgname("colorshell");
-        Cli.init();
+        initCli();
     }
 
     public static getDefault(): Shell {

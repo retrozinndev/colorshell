@@ -1,12 +1,11 @@
 import GObject, { getter, gtype, property, register, signal } from "ags/gobject";
 
-
 /** WIP modular implementation of a system that supports implementing
 * a variety of Wayland Compositors 
 * @todo implement more general compositor properties + a lot of stuff
 * */
-@register({ GTypeName: "Compositor" })
-export class Compositor extends GObject.Object {
+@register({ GTypeName: "ClshCompositor" })
+class Compositor extends GObject.Object {
     declare $signals: Compositor.SignalSignatures;
     public static instance: Compositor;
 
@@ -61,7 +60,8 @@ export class Compositor extends GObject.Object {
     }
 };
 
-export namespace Compositor {
+namespace Compositor {
+    export interface ConstructorProps extends GObject.Object.ConstructorProps {}
     export interface SignalSignatures extends GObject.Object.SignalSignatures {
         "client-added": (client: Compositor.Client) => void;
         "client-removed": (client: Compositor.Client) => void;
@@ -184,3 +184,5 @@ export namespace Compositor {
         }
     }
 }
+
+export default Compositor;

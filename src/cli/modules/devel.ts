@@ -2,9 +2,9 @@ import { Gtk } from "ags/gtk4";
 import Cli from "..";
 
 
-export default {
+const devel = {
     prefix: "dev",
-    help: "development tools to help debugging colorshell",
+    help: "Development tools to help debugging colorshell",
     arguments: [],
     commands: [{
         name: "inspector",
@@ -16,3 +16,7 @@ export default {
         }
     }]
 } satisfies Cli.Module;
+
+devel.help = Cli.genHelp(devel);
+
+export default devel;

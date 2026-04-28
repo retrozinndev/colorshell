@@ -1,14 +1,14 @@
-import { Compositor } from ".";
+import Compositor from "..";
 import { register } from "ags/gobject";
 
 import AstalHyprland from "gi://AstalHyprland";
 import GLib from "gi://GLib?version=2.0";
-import { Socket } from "../socket";
+import { Socket } from "../../socket";
 import { exec, execAsync } from "ags/process";
 import Gio from "gi://Gio?version=2.0";
-import { createSubscription, decoder, playSystemBell, runtimeConfigDir } from "../utils";
-import { Wallpaper } from "../wallpaper";
-import { generalConfig } from "../../config";
+import { createSubscription, decoder, playSystemBell, runtimeConfigDir } from "../../utils";
+import { Wallpaper } from "../../wallpaper";
+import { generalConfig } from "../../../config";
 
 
 @register({ GTypeName: "ClshCompositorHyprland" })
@@ -341,7 +341,7 @@ export class CompositorHyprland extends Compositor {
     }
 }
 
-export namespace CompositorHyprland {
+namespace CompositorHyprland {
     export type Event = keyof Events;
     export type Bind = {
         params: string;

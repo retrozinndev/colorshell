@@ -3,27 +3,9 @@ import Cli from "..";
 import Media from "../../modules/media";
 
 
-export default {
+const media = {
     prefix: "media",
-    help: `\
-Manage colorshell's active player
-
-Arguments:
-  --select, -s [bus_name]: set new active player by its bus name.
-
-Commands: 
-  play: resume/start active player's media.
-  pause: pause the active player.
-  play-pause: toggle play/pause on active player.
-  stop: stop the active player's media.
-  previous: go back to previous media if player supports it.
-  next: jump to next media if player supports it.
-  bus-name: get active player's mpris bus name.
-  list: show available players with their bus name.
-  select bus_name: change the active player, where bus_name is 
-    the desired player's mpris bus name(with the mediaplayer2 prefix).
-`,
-
+    help: `Change and manage active media via MPRIS.`,
     arguments: [{
         name: "select",
         alias: "s",
@@ -52,35 +34,35 @@ Commands:
             name: "play",
             help: "resume/start active player's media",
             onCalled: (remote) => {
-                if(!Media.getDefault().player.available ||
-                   !Media.getDefault().player.canPlay)
+                if(!Media.getDefault().player?.available ||
+                   !Media.getDefault().player?.canPlay)
                     return;
 
-                Media.getDefault().player.play();
+                Media.getDefault().player?.play();
                 remote.println("Now playing");
             }
         }, {
             name: "pause",
             help: "pause the active player",
             onCalled: (remote) => {
-                if(!Media.getDefault().player.available ||
-                   !Media.getDefault().player.canPause)
+                if(!Media.getDefault().player?.available ||
+                   !Media.getDefault().player?.canPause)
                     return;
 
-                Media.getDefault().player.pause();
+                Media.getDefault().player?.pause();
                 remote.println("Paused");
             }
         }, {
             name: "play-pause",
             help: "toggle pause/resume the active player",
             onCalled: (remote) => {
-                if(!Media.getDefault().player.available ||
-                   !Media.getDefault().player.canControl)
+                if(!Media.getDefault().player?.available ||
+                   !Media.getDefault().player?.canControl)
                     return;
 
-                Media.getDefault().player.play_pause();
+                Media.getDefault().player?.play_pause();
                 remote.println(Media.getDefault().player
-                    .playbackStatus === AstalMpris.PlaybackStatus.PAUSED ?
+                    ?.playbackStatus === AstalMpris.PlaybackStatus.PAUSED ?
                         "Toggle pause"
                     : "Toggle play"
                 );
@@ -89,43 +71,43 @@ Commands:
             name: "stop",
             help: "stop the active player (if compatible)",
             onCalled: (remote) => {
-                if(!Media.getDefault().player.available ||
-                   !Media.getDefault().player.canControl)
+                if(!Media.getDefault().player?.available ||
+                   !Media.getDefault().player?.canControl)
                     return;
 
-                Media.getDefault().player.stop();
+                Media.getDefault().player?.stop();
                 remote.println("Stopped");
             }
         }, {
             name: "previous",
             help: "go back to previous media in the active player",
             onCalled: (remote) => {
-                if(!Media.getDefault().player.available ||
-                   !Media.getDefault().player.canGoPrevious)
+                if(!Media.getDefault().player?.available ||
+                   !Media.getDefault().player?.canGoPrevious)
                     return;
 
-                Media.getDefault().player.previous();
+                Media.getDefault().player?.previous();
                 remote.println("Back to previous");
             }
         }, {
             name: "next",
             help: "jump to the next media in active player",
             onCalled: (remote) => {
-                if(!Media.getDefault().player.available ||
-                   !Media.getDefault().player.canGoNext)
+                if(!Media.getDefault().player?.available ||
+                   !Media.getDefault().player?.canGoNext)
                     return;
 
-                Media.getDefault().player.next();
+                Media.getDefault().player?.next();
                 remote.println("Jump to next");
             }
         }, {
             name: "bus-name",
             help: "retrieve the active player's mpris bus name",
             onCalled: (remote) => {
-                if(!Media.getDefault().player.available)
+                if(!Media.getDefault().player?.available)
                     return;
 
-                remote.println(Media.getDefault().player.busName);
+                remote.println(Media.getDefault().player!.busName);
             }
         }, {
             name: "list",
@@ -154,3 +136,7 @@ Commands:
         }
     ]
 } satisfies Cli.Module;
+
+media.help = Cli.genHelp(media);
+
+export default media;

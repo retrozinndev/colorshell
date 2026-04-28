@@ -1,22 +1,7 @@
 import CliInterface from "./interface";
-import main from "./modules/main";
-import volume from "./modules/volume";
-import devel from "./modules/devel";
-import media from "./modules/media";
-import screenshot from "./modules/screenshot";
 import Adw from "gi://Adw?version=1";
 import GCmdCli from "./interface/gcmd";
 
-
-const cliModules = [
-    main,
-    volume,
-    media,
-    screenshot
-] satisfies Array<Cli.Module>;
-
-// add development module when in dev mode
-DEVEL && cliModules.push(devel);
 
 /** totally not-overthinked cli implementation for colorshell */
 abstract class Cli {
@@ -28,7 +13,7 @@ abstract class Cli {
     /** initializes the cli.
       * @param ifaces list of `Cli.Interface` to add support cli calls 
       * @param modules list of `Cli.Module` to be added to the cli */
-    public static init(ifaces?: Array<Cli.Interface>, modules: Array<Cli.Module> = cliModules): void {
+    public static init(ifaces?: Array<Cli.Interface>, modules?: Array<Cli.Module>): void {
         if(this.initialized)
             return;
 
@@ -71,7 +56,7 @@ abstract class Cli {
         const mod: Cli.Module = this.modules.find(m => m.prefix === args[0]) ?? this.modules[0];
         let cmd: Cli.Command|undefined;
 
-        // no args provided should be handled by the inteface implementation instead, so we return
+        // when no args are provided, leave handling to CliInterface
         if(args.length < 1)
             return;
 
@@ -207,18 +192,30 @@ abstract class Cli {
     /** generates a help message, joining the `help` property of all 
       * of the arguments and commands of `cmd` in a structured way */
     public static genHelp(cmd: Cli.Command|Cli.Module): string {
-        return `${cmd.help !== "" ? `${cmd.help}\n` : ""}${
-            this.isModule(cmd) && cmd.commands && cmd.commands.length < 1 ?
-                `Commands:\n${cmd.commands.map(cmd =>
-                    `  ${cmd.name}${cmd.help !== undefined ? `: ${cmd.help}` : ""}`
-                ).join('\n')}`
+        /** add formatted `help` string to `prefix` */
+        function addHelp(prefix: string, help?: string): string {
+            return `${prefix}${help !== undefined ? `: ${
+                help.split('\n').map((str, i) => {
+                    if(i === 0)
+                        return str;
+
+                    return `${' '.repeat(prefix.length+2)}${str}`;
+                }).join('\n')
+            }` : ""}`;
+        }
+
+        return `${cmd.help !== undefined ? `${cmd.help}\n` : ""
+        }${
+            this.isModule(cmd) && cmd.commands && cmd.commands.length > 0 ?
+                `\nCommands:\n${cmd.commands.map(cmd =>
+                    `${addHelp(`  ${cmd.name}`, cmd.help)}\n`
+                ).join('')}`
             : ""
         }${
-            cmd.arguments && cmd.arguments.length < 1 ?
-                `Arguments:\n${cmd.arguments.map(arg =>
-                    `  ${arg.alias !== undefined ? `-${arg.alias}, ` : ""}--${arg.name}${
-                        arg.help !== undefined ? `: ${arg.help}` : ""}`
-                ).join('\n')}`
+            cmd.arguments && cmd.arguments.length > 0 ?
+                `\nArguments:\n${cmd.arguments.map(arg =>
+                    `${addHelp(`  ${arg.alias !== undefined ? `-${arg.alias}, ` : ""}--${arg.name}`, arg.help)}\n`
+                ).join('')}`
             : ""
         }`
     }
