@@ -14,7 +14,6 @@ import { generalConfig } from "../../../config";
 @register({ GTypeName: "ClshCompositorHyprland" })
 export class CompositorHyprland extends Compositor {
     #eventSock: Socket;
-    #cmdSock: Socket;
     #configDir: Gio.File = Gio.File.new_for_path(`${runtimeConfigDir.peek_path()!}/hyprland`);
     #ignoreConfigReload: boolean = false;
     hyprland: AstalHyprland.Hyprland = AstalHyprland.get_default();
@@ -30,12 +29,6 @@ export class CompositorHyprland extends Compositor {
             Socket.Type.CLIENT,
             `${GLib.get_user_runtime_dir()}/hypr/${instSignature}/.socket2.sock`,
             true
-        );
-        this.#cmdSock = new Socket(
-            Socket.Type.CLIENT,
-            `${GLib.get_user_runtime_dir()}/hypr/${instSignature}/.socket.sock`,
-            false,
-            "\x00"
         );
 
         this.initConfig();
@@ -311,33 +304,11 @@ export class CompositorHyprland extends Compositor {
     }
 
     protected hyprctl(command: string, args?: string): string {
-        const promise = this.#cmdSock.simpleSend(
-            `json/${command}${args !== undefined ? ` ${args}` : ""}`,
-            true
-        );
-
-        let fulfilled: boolean = false,
-            result: string|null = null,
-            error: any;
-
-        promise.then((r) => result = r).catch(e => error = e)
-            .finally(() => fulfilled = true);
-
-        while(!fulfilled) {}
-
-        if(error)
-            throw (error instanceof Error ?
-                error
-            : new Error(error));
-
-        return result ?? "";
+        return exec(`hyprctl ${command}${args !== undefined ? ` ${args}` : ""}`);
     }
 
     protected async hyprctlAsync(command: string, args?: string): Promise<string> {
-        return (await this.#cmdSock.simpleSend(
-            `json/${command}${args !== undefined ? ` ${args}` : ""}`,
-            true
-        )) ?? "";
+        return await execAsync(`hyprctl ${command}${args !== undefined ? ` ${args}` : ""}`);
     }
 }
 
