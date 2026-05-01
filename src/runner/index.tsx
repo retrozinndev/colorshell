@@ -2,16 +2,17 @@ import { Astal, Gdk, Gtk } from "ags/gtk4";
 import { CCProps, createRoot } from "ags";
 import { PopupWindow } from "../widget/PopupWindow";
 import { updateApps } from "../modules/apps";
-import { ResultWidget } from "./widgets/ResultWidget";
+import ResultItem from "./widgets/ResultItem";
 import { omitObjectKeys } from "../modules/utils";
 import { getter, gtype, property, register } from "ags/gobject";
 import GObject from "gi://GObject?version=2.0";
 import AstalHyprland from "gi://AstalHyprland";
-import Adw from "gi://Adw?version=1";
+import { Windows } from "../window";
+import ResultsList from "./widgets/ResultsList";
 
 
 @register({ GTypeName: "ClshRunner" })
-export class Runner extends PopupWindow {
+class Runner extends PopupWindow {
     private static instance: Runner|null = null;
     private static plugins: Array<Runner.PluginConstructor> = [];
     public static get isOpen() { return this.instance !== null; }
@@ -19,8 +20,7 @@ export class Runner extends PopupWindow {
     #results: Array<Runner.Result> = [];
     #container: Gtk.Box;
     #entry: Gtk.Entry;
-    #scroll: Gtk.ScrolledWindow;
-    #listbox: Gtk.ListBox;
+    #list: ResultsList;
     #plugins: Array<Runner.Plugin> = [];
 
     @property(gtype<string|null>(String))
@@ -45,7 +45,6 @@ export class Runner extends PopupWindow {
         super({
             namespace: "runner",
             cssName: "runner",
-            marginTop: ((AstalHyprland.get_default().get_focused_monitor()?.height ?? 640) / 2) - (420 / 2),
             ...omitObjectKeys(props, [
                 "searchPlaceholder",
                 "search",
@@ -70,9 +69,11 @@ export class Runner extends PopupWindow {
         if(props.placeholders !== undefined && props.placeholders.length > 0)
             props.placeholders.forEach(p => this.placeholders.push(p));
 
+
         const connections: Map<GObject.Object, number|Array<number>> = new Map();
         this.#container = new Gtk.Box({
             hexpand: true,
+            valign: Gtk.Align.START,
             orientation: Gtk.Orientation.VERTICAL
         });
         this.#container.add_css_class("container");
@@ -94,7 +95,7 @@ export class Runner extends PopupWindow {
                 self.set_text("");
             }),
             this.#entry.connect("activate", (self) => {
-                const row = this.#listbox.get_selected_row() as ResultWidget|null;
+                const row = this.#list.getSelected();
                 if(!row) {
                     self.grab_focus();
                     return;
@@ -106,16 +107,8 @@ export class Runner extends PopupWindow {
 
         this.bind_property("search", this.#entry, "text", GObject.BindingFlags.BIDIRECTIONAL);
 
-        this.#listbox = Gtk.ListBox.new();
-        this.#listbox.set_selection_mode(Gtk.SelectionMode.SINGLE);
-        this.#listbox.set_activate_on_single_click(true);
-
-        this.#scroll = new Gtk.ScrolledWindow({
-            propagateNaturalHeight: false,
-            hscrollbarPolicy: Gtk.PolicyType.NEVER,
-            vscrollbarPolicy: Gtk.PolicyType.AUTOMATIC,
-            hexpand: true,
-            vexpand: true
+        this.#list = new ResultsList({
+            maxContentSize: props.heightRequest ?? 420
         });
 
         connections.set(this, [
@@ -123,6 +116,14 @@ export class Runner extends PopupWindow {
                 switch(key) {
                     case Gdk.KEY_F5:
                         updateApps();
+                        return;
+
+                    case Gdk.KEY_Up:
+                        this.#list.selectPrevious();
+                        return;
+
+                    case Gdk.KEY_Down:
+                        this.#list.selectNext();
                         return;
                 }
             }),
@@ -136,29 +137,32 @@ export class Runner extends PopupWindow {
                     if(this.#results.length < 1)
                         return;
 
-                    this.#listbox.select_row(this.#listbox.get_row_at_index(0));
+                    this.#list.select(0);
                 }).catch(console.error);
             })
         ]);
 
         // add widgets
-        const bin = new Adw.Bin({
-            widthRequest: props.widthRequest ?? 780,
-            heightRequest: props.heightRequest ?? 420,
-            halign: Gtk.Align.CENTER,
-            valign: Gtk.Align.START,
-            vexpand: false,
-            hexpand: true
-        });
-        this.set_child(bin);
-        bin.set_child(this.#container);
-        this.#container.append(this.#scroll);
+        const box = <Gtk.Box widthRequest={props.widthRequest ?? 780} vexpand={false}
+          heightRequest={props.heightRequest ?? 420} halign={Gtk.Align.CENTER}
+          valign={Gtk.Align.START} hexpand css={`
+              margin-top: ${((AstalHyprland.get_default().get_focused_monitor()?.height ?? 640) / 2) - ((props.heightRequest ?? 420) / 2)}px;
+          `}
+        /> as Gtk.Box;
+
+        this.set_child(box);
+        box.append(this.#container);
+        this.#container.append(this.#list);
         this.#container.prepend(this.#entry);
-        this.#scroll.set_child(this.#listbox);
 
         // init plugins
         for(const construct of Runner.plugins) {
-            this.#plugins.push(new construct());
+            const plugin = new construct();
+            this.#plugins.push(plugin);
+
+            const result = plugin.init?.();
+            if(typeof result === "object" && (result as object) instanceof Promise)
+                (result as Promise<any>).catch(console.error);
         }
     }
 
@@ -183,43 +187,12 @@ export class Runner extends PopupWindow {
         this.instance.#entry.select_region(search.length, search.length);
     }
 
-    /** close the existing runner instance, if there is one */
-    public static close(): void {
-        if(!this.isOpen)
-            return;
-
-        this.instance!.close();
-    }
-    
-    public static addPlugin(plugin: Runner.PluginConstructor) {
-        if(this.plugins.includes(plugin)) 
-            return;
-
-        this.plugins.push(plugin);
-    }
-
-    public static getPlugins(): Array<Runner.PluginConstructor> {
-        return [...this.plugins];
-    }
-
-    public static regExMatch(search: string, item: (string|number)): boolean {
-        search = search.replace(/[\\^$.*?()[\]{}|]/g, "\\$&");
-
-        if(typeof item === "number")
-            return new RegExp(`${search.split('').map(c => 
-                `[${c}]`).join('')}`,
-            "g").test(item.toString());
-
-        return new RegExp(`${search.split('').map(c => 
-            `${c}`).join('')}`,
-        "gi").test(item);
-    }
-    
+    /** open a default instance of the app runner */
     public static open(search?: string): Runner {
         if(this.instance)
             return this.instance;
 
-        this.instance = createRoot((dispose) => 
+        this.instance = createRoot((dispose) => Windows.forFocusedMonitor(() =>
             <Runner searchPlaceholder="Start typing..." search={search}
               showResultPlaceholders={false} maxResults={24}
               onClosed={() => dispose()}
@@ -268,10 +241,42 @@ export class Runner extends PopupWindow {
                   }
               ]}
             /> as Runner
-        );
+        )()) as Runner;
         this.instance.show();
 
         return this.instance;
+    }
+
+    /** close the existing runner instance, if there is one */
+    public static close(): void {
+        if(!this.isOpen)
+            return;
+
+        this.instance!.close();
+    }
+    
+    public static addPlugin(plugin: Runner.PluginConstructor) {
+        if(this.plugins.includes(plugin)) 
+            return;
+
+        this.plugins.push(plugin);
+    }
+
+    public static getPlugins(): Array<Runner.PluginConstructor> {
+        return [...this.plugins];
+    }
+
+    public static regExMatch(search: string, item: (string|number)): boolean {
+        search = search.replace(/[\\^$.*?()[\]{}|]/g, "\\$&");
+
+        if(typeof item === "number")
+            return new RegExp(`${search.split('').map(c => 
+                `[${c}]`).join('')}`,
+            "g").test(item.toString());
+
+        return new RegExp(`${search.split('').map(c => 
+            `${c}`).join('')}`,
+        "gi").test(item);
     }
 
     protected async generateResults(input: string, limit?: number): Promise<Array<Runner.Result>> {
@@ -315,17 +320,17 @@ export class Runner extends PopupWindow {
         : results;
     }
 
-    protected resultToWidget(result: Runner.Result): ResultWidget {
+    protected resultToWidget(result: Runner.Result): ResultItem {
         return createRoot(dispose =>
-            <ResultWidget {...result} onDestroy={(self) => {
+            <ResultItem {...result} onDestroy={(self) => {
                 result.onDestroy?.(self);
                 dispose();
-            }} /> as ResultWidget
+            }} /> as ResultItem
         );
     }
 
     public async update(input: string, limit?: number) {
-        this.#listbox.remove_all();
+        this.#list.clear();
         this.#results.splice(0, this.#results.length);
 
         try {
@@ -334,8 +339,8 @@ export class Runner extends PopupWindow {
         } catch(e) {
             console.error(`Couldn't get results because of an error: ${(e as Error).message}\n${(e as Error).stack}`);
 
-            this.#listbox.prepend(
-                new ResultWidget({
+            this.#list.prepend(
+                new ResultItem({
                     title: `Error: ${(e as Error).message}`,
                     description: "Try changing your search a little...",
                     icon: "window-close-symbolic"
@@ -348,7 +353,7 @@ export class Runner extends PopupWindow {
         // Insert placeholder if there are no results
         if(this.#results.length < 1) {
             for(const ph of this.placeholders) {
-                this.#listbox.append(this.resultToWidget(ph));
+                this.#list.append(this.resultToWidget(ph));
             }
 
             return;
@@ -356,7 +361,7 @@ export class Runner extends PopupWindow {
 
         for(const result of this.#results) {
             const widget = this.resultToWidget(result);
-            this.#listbox.append(widget);
+            this.#list.append(widget);
         }
     }
 
@@ -368,7 +373,7 @@ export class Runner extends PopupWindow {
     }
 }
 
-export namespace Runner {
+namespace Runner {
     export interface SignalSignatures extends PopupWindow.SignalSignatures {
         "notify::search": () => void;
         "notify::search-placeholder": () => void;
@@ -385,7 +390,7 @@ export namespace Runner {
         placeholders: Array<Runner.Result>;
     };
 
-    export type Result = CCProps<ResultWidget, ResultWidget.ConstructorProps>;
+    export type Result = CCProps<ResultItem, ResultItem.ConstructorProps>;
     export interface Plugin {
         /** prefix to call the plugin. if undefined, will be triggered like applications plugin */
         readonly prefix?: string;
@@ -408,3 +413,5 @@ export namespace Runner {
 
     export type PluginConstructor = new () => Runner.Plugin;
 }
+
+export default Runner;

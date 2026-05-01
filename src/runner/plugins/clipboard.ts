@@ -1,6 +1,6 @@
 import { Gtk } from "ags/gtk4";
 import { Clipboard } from "../../modules/clipboard";
-import { Runner } from "..";
+import Runner from "..";
 import { jsx } from "ags/gtk4/jsx-runtime";
 import Fuse from "fuse.js";
 

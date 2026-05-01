@@ -1,6 +1,6 @@
 @use "./colors";
 
-runner widget .container {
+runner .container {
   $radius: 24px;
 
   background: rgba($color: colors.$bg-primary, $alpha: .8);
@@ -29,6 +29,8 @@ runner widget .container {
 
   & scrolledwindow {
     margin: 6px;
+    margin-top: 0;
+    margin-bottom: 0;
   }
 
   & list {
@@ -65,7 +67,7 @@ runner widget .container {
     }
 
     &:last-child {
-      margin-bottom: 0;
+      margin-bottom: 4px;
     }
   }
 }

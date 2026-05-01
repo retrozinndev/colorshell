@@ -1,5 +1,5 @@
 import { execAsync } from "ags/process";
-import { Runner } from "..";
+import Runner from "..";
 import { Notifications } from "../../modules/notifications";
 
 

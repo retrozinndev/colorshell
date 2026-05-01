@@ -2,15 +2,15 @@ import { gtype, property, register, signal } from "ags/gobject";
 import { Gdk, Gtk } from "ags/gtk4";
 import { createScopedConnection, omitObjectKeys, variableToBoolean } from "../../modules/utils";
 import { createBinding, With } from "ags";
-import { Runner } from "..";
+import Runner from "..";
 import Pango from "gi://Pango?version=1.0";
 import Adw from "gi://Adw?version=1";
 import GLib from "gi://GLib?version=2.0";
 
 
 @register({ GTypeName: "ResultWidget" })
-export class ResultWidget extends Gtk.ListBoxRow {
-    declare $signals: ResultWidget.SignalSignatures;
+class ResultItem extends Gtk.ListBoxRow {
+    declare $signals: ResultItem.SignalSignatures;
     #timeout: GLib.Source|null = null;
 
     @signal()
@@ -46,7 +46,7 @@ export class ResultWidget extends Gtk.ListBoxRow {
     clickTimeout: number = 300;
 
 
-    constructor(props: ResultWidget.ConstructorProps) {
+    constructor(props: ResultItem.ConstructorProps) {
         super({
             cssName: "resultwidget",
             ...omitObjectKeys(props, [
@@ -111,22 +111,22 @@ export class ResultWidget extends Gtk.ListBoxRow {
         );
     }
 
-    connect<S extends keyof ResultWidget.SignalSignatures>(
+    connect<S extends keyof ResultItem.SignalSignatures>(
         signal: S,
-        callback: (self: ResultWidget, ...params: Parameters<ResultWidget.SignalSignatures[S]>) => ReturnType<ResultWidget.SignalSignatures[S]>
+        callback: (self: ResultItem, ...params: Parameters<ResultItem.SignalSignatures[S]>) => ReturnType<ResultItem.SignalSignatures[S]>
     ): number {
         return super.connect(signal, callback);
     }
 
-    emit<S extends keyof ResultWidget.SignalSignatures>(
+    emit<S extends keyof ResultItem.SignalSignatures>(
         signal: S, 
-        ...args: Parameters<ResultWidget.SignalSignatures[S]>
+        ...args: Parameters<ResultItem.SignalSignatures[S]>
     ): void {
         super.emit(signal, ...args);
     }
 }
 
-export namespace ResultWidget {
+namespace ResultItem {
     export interface ConstructorProps extends Partial<Gtk.ListBoxRow> {
         icon?: string|Gdk.Texture|Gtk.Widget;
         title: string;
@@ -142,3 +142,5 @@ export namespace ResultWidget {
         "unhovered": () => void;
     }
 }
+
+export default ResultItem;

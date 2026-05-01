@@ -1,9 +1,9 @@
 import { Gdk, Gtk } from "ags/gtk4";
 import { Wallpaper } from "../../modules/wallpaper";
-import { Runner } from "..";
+import Runner from "..";
 import { createRoot, jsx } from "ags";
 import { createScopedConnection } from "gnim-utils";
-import { ResultWidget } from "../widgets/ResultWidget";
+import ResultItem from "../widgets/ResultItem";
 import Fuse, { IFuseOptions } from "fuse.js";
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
@@ -52,7 +52,7 @@ export class PluginWallpapers implements Runner.Plugin {
         Cache.getDefault().removeSection("wallpapers"); // unrefs all the cached GdkTextures
     }
 
-    private async loadPreview(path: string, self: ResultWidget): Promise<Gdk.Texture> {
+    private async loadPreview(path: string, self: ResultItem): Promise<Gdk.Texture> {
         const revealer = self.get_first_child() as Gtk.Revealer;
         const stack = revealer.get_child() as Gtk.Stack;
         const picture = stack.get_child_by_name("picture") as Gtk.Picture;
@@ -106,7 +106,7 @@ export class PluginWallpapers implements Runner.Plugin {
         const isDir: boolean = info.get_file_type() === Gio.FileType.DIRECTORY;
         const path: string = this.getWallpaperPath(info);
 
-        const onSelected = (widget: ResultWidget) => {
+        const onSelected = (widget: ResultItem) => {
             if(info.get_file_type() === Gio.FileType.DIRECTORY)
                 return;
 
@@ -114,7 +114,7 @@ export class PluginWallpapers implements Runner.Plugin {
             (widget.get_first_child() as Gtk.Revealer).set_reveal_child(true);
         };
 
-        const onUnselected = (widget: ResultWidget) => {
+        const onUnselected = (widget: ResultItem) => {
             if(info.get_file_type() === Gio.FileType.DIRECTORY)
                 return;
 

@@ -1,4 +1,4 @@
-import { Runner } from "..";
+import Runner from "..";
 import { execApp } from "../../modules/apps";
 
 

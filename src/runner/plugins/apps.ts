@@ -1,5 +1,5 @@
 import { execApp, getAstalApps, lookupIcon, updateApps } from "../../modules/apps";
-import { Runner } from "..";
+import Runner from "..";
 
 export class PluginApps implements Runner.Plugin {
     // Do not provide prefix, so it always runs.
