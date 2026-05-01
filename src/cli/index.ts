@@ -1,6 +1,4 @@
 import CliInterface from "./interface";
-import Adw from "gi://Adw?version=1";
-import GCmdCli from "./interface/gcmd";
 
 
 /** totally not-overthinked cli implementation for colorshell */
@@ -19,14 +17,8 @@ abstract class Cli {
 
         this.initialized = true;
 
-        if(!ifaces || ifaces.length < 1) {
-            ifaces ??= [];
-            ifaces.push(new GCmdCli(Adw.Application.get_default()!));
-        }
-
-        modules && modules.length > 0 &&
-            modules.forEach(mod => this.addModule(mod));
-        ifaces.forEach(iface => this.addIface(iface));
+        modules?.forEach(mod => this.addModule(mod));
+        ifaces?.forEach(iface => this.addIface(iface));
     }
 
     /** stop listening on all of the interfaces and drop modules */
