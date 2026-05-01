@@ -10,8 +10,7 @@ import GObject from "gi://GObject?version=2.0";
   * search entry + result list layout.
   * this widget only works with `ResultItem` instances. please use integrated
   * methods instead of adding children directly to it with default methods 
-  * like `set_child()` or `child.set_parent()`. 
-  * `:height-request` is bound to the internal `GtkScrolledWindow:max-content-height`
+  * like `set_child()` or `child.set_parent()`
   * */
 @register({ GTypeName: "ClshResultsList" })
 class ResultsList extends Gtk.Widget {
@@ -58,7 +57,6 @@ class ResultsList extends Gtk.Widget {
 
                 const [, matrix] = row.compute_transform(this.#list);
                 const target = matrix.get_y_translation() - row.get_allocated_height();
-                console.log(target);
                 this.animateScroll(target);
             })
         ];
