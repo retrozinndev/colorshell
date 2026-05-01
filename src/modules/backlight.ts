@@ -1,7 +1,8 @@
 import { monitorFile, readFile } from "ags/file";
 import { exec } from "ags/process";
-import GObject, { getter, ParamSpec, register, setter, signal } from "ags/gobject";
+import GObject, { getter, gtype, ParamSpec, register, setter, signal } from "ags/gobject";
 import Gio from "gi://Gio?version=2.0";
+import { omitObjectKeys } from "./utils";
 
 
 @register({ GTypeName: "ClshBacklights" })
@@ -16,7 +17,7 @@ export class Backlights extends GObject.Object {
     @getter(Array as unknown as ParamSpec<Array<Backlights.Backlight>>)
     get backlights() { return this.#backlights; }
 
-    @getter(GObject.Object)
+    @getter(gtype<Backlights.Backlight>(GObject.Object))
     get default() { return this.#default!; }
 
     /** true if there are any backlights available */
@@ -33,7 +34,9 @@ export class Backlights extends GObject.Object {
             fileEnum = dir.enumerate_children("standard::*", Gio.FileQueryInfoFlags.NONE, null);
             for(const backlight of fileEnum) {
                 try {
-                    backlights.push(new Backlights.Backlight(backlight.get_name()));
+                    backlights.push(new Backlights.Backlight({
+                        name: backlight.get_name()
+                    }));
                 } catch(_) {}
             }
         } catch(_) {
@@ -90,7 +93,6 @@ export class Backlights extends GObject.Object {
 export namespace Backlights {
     @register({ GTypeName: "Backlight" })
     export class Backlight extends GObject.Object {
-
         declare $signals: Backlight.SignalSignatures;
 
         readonly #name: string;
@@ -127,8 +129,13 @@ export namespace Backlights {
 
 
         // intel_backlight is mostly the default on laptops
-        constructor(name: string = "intel_backlight") {
-            super();
+        constructor({
+            name = "intel_backlight",
+            ...props
+        }: Partial<Backlight.ConstructorProps> = {}) {
+            super(omitObjectKeys((props as Backlight.ConstructorProps), [
+                "name"
+            ]));
 
             // check if backlight exists
             if(!Gio.File.new_for_path(`/sys/class/backlight/${name}/brightness`).query_exists(null)) 
@@ -174,23 +181,12 @@ export namespace Backlights {
 
             return false;
         }
-
-        public emit<Signal extends keyof typeof this.$signals>(
-            signal: Signal,
-            ...args: Parameters<(typeof this.$signals)[Signal]>
-        ): void {
-            super.emit(signal, ...args);
-        }
-
-        public connect<Signal extends keyof typeof this.$signals>(
-            signal: Signal,
-            callback: (self: typeof this, ...args: Parameters<(typeof this.$signals)[Signal]>) => ReturnType<(typeof this.$signals)[Signal]>
-        ): number {
-            return super.connect(signal, callback);
-        }
     }
 
     export namespace Backlight {
+        export interface ConstructorProps extends GObject.Object.ConstructorProps {
+            name: string;
+        }
         export interface SignalSignatures extends GObject.Object.SignalSignatures {
             "brightness-changed": (value: number) => void;
         }

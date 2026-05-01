@@ -1,9 +1,7 @@
-import { timeout } from "ags/time";
 import { monitorFile, readFile } from "ags/file"; 
 import { execAsync } from "ags/process";
 import GObject, { getter, register, signal } from "ags/gobject";
 
-import AstalIO from "gi://AstalIO";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 
@@ -18,7 +16,7 @@ export class Clipboard extends GObject.Object {
     #dbMonitor: Gio.FileMonitor;
     #updateDone: boolean = false;
     #history = new Array<Clipboard.Item>;
-    #changesTimeout: (AstalIO.Time|undefined);
+    #changesTimeout?: GLib.Source;
     #ignoreChanges: boolean = false;
     #procs: Array<Gio.Subprocess> = [];
 
@@ -49,7 +47,7 @@ export class Clipboard extends GObject.Object {
             if(this.#ignoreChanges || this.#changesTimeout) 
                 return;
 
-            this.#changesTimeout = timeout(300, () => this.#changesTimeout = undefined);
+            this.#changesTimeout = setTimeout(() => this.#changesTimeout = undefined, 300);
             
             if(this.#updateDone) {
                 this.updateDatabase();
@@ -87,7 +85,7 @@ export class Clipboard extends GObject.Object {
 
         if(!proc.wait_check(null)) {
             try {
-                const [err, ] = stderr.read_upto('\x00', -1);
+                const [err, ] = stderr.read_upto('\x00', -1, null);
                 console.error(`Clipboard: An error occurred while copying text. Stderr: ${err}`);
             } catch(_) {
                 console.error(`Clipboard: An error occurred while copying text and shell couldn't read \

@@ -281,19 +281,6 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
             });
         });
     }
-
-    connect<S extends keyof Socket.SignalSignatures>(
-        signal: S,
-        callback: (self: Socket<T>, ...params: Parameters<Socket.SignalSignatures[S]>) => ReturnType<Socket.SignalSignatures[S]>
-    ): number {
-        return super.connect(signal, callback);
-    }
-
-    emit<S extends keyof Socket.SignalSignatures>(
-        signal: S, ...args: Parameters<Socket.SignalSignatures[S]>
-    ): void {
-        super.emit(signal, ...args);
-    }
 }
 
 export namespace Socket {

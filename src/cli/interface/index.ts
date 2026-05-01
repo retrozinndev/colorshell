@@ -1,18 +1,10 @@
 import GObject from "gi://GObject?version=2.0";
 
 export interface CliInterface extends GObject.Object {
+    $signals: CliInterface.SignalSignatures;
+
     /** stop receiving remote calls */
     stop(): void;
-
-    connect<S extends keyof CliInterface.SignalSignatures>(
-        signal: S,
-        callback: (source: CliInterface, ...params: Parameters<CliInterface.SignalSignatures[S]>) => ReturnType<CliInterface.SignalSignatures[S]>
-    ): number;
-
-    emit<S extends keyof CliInterface.SignalSignatures>(
-        signal: S,
-        ...args: Parameters<CliInterface.SignalSignatures[S]>
-    ): void;
 }
 
 export namespace CliInterface {

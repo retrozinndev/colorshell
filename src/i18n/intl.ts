@@ -17,6 +17,7 @@ const i18nKeys = {
 
 @register({ GTypeName: "ClshI18n" })
 export class I18n extends GObject.Object {
+    declare $signals: I18n.SignalSignatures;
     private static instance: I18n;
     private systemLang: string|null = null;
 
@@ -136,6 +137,13 @@ Consider contributing with a translation if you can ;D`);
 
 export namespace I18n {
     export type Language = keyof typeof i18nKeys;
+
+    export interface ConstructorProps extends GObject.Object.ConstructorProps {}
+    export interface SignalSignatures extends GObject.Object.SignalSignatures {
+        "notify::fallback": () => void;
+        "notify::languages": () => void;
+        "notify::language": () => void;
+    }
 }
 
 export const tr = (string: string) => 

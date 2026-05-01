@@ -10,13 +10,7 @@ import AstalBluetooth from "gi://AstalBluetooth";
 /** AstalBluetooth helper (implements the default adapter feature) */
 @register({ GTypeName: "Bluetooth" })
 export class Bluetooth extends GObject.Object {
-    declare $signals: {
-        "notify": () => void;
-        "notify::adapter": (adapter: AstalBluetooth.Adapter|null) => void;
-        "notify::is-available": (available: boolean) => void;
-        "notify::save-default-adapter": (save: boolean) => void;
-        "notify::last-device": (device: AstalBluetooth.Device|null) => void;
-    };
+    declare $signals: Bluetooth.SignalSignatures;
 
     private static instance: Bluetooth;
     private astalBl: AstalBluetooth.Bluetooth;
@@ -25,6 +19,7 @@ export class Bluetooth extends GObject.Object {
     #scope!: Scope;
     #isAvailable: boolean = false;
     #lastDevice: AstalBluetooth.Device|null = null;
+
 
     @property(Boolean) 
     saveDefaultAdapter: boolean = true;
@@ -157,10 +152,14 @@ export class Bluetooth extends GObject.Object {
 
         return lastDevice ?? null;
     }
+}
 
-    connect<Signal extends keyof (typeof this)["$signals"]>(
-        signal: Signal, callback: (typeof this["$signals"])[Signal]
-    ): number {
-        return super.connect(signal as string, callback as () => void);
+export namespace Bluetooth {
+    export interface SignalSignatures extends GObject.Object.SignalSignatures {
+        "notify": () => void;
+        "notify::adapter": () => void;
+        "notify::is-available": () => void;
+        "notify::save-default-adapter": () => void;
+        "notify::last-device": () => void;
     }
 }

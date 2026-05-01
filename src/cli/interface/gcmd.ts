@@ -6,6 +6,7 @@ import Gio from "gi://Gio?version=2.0";
 
 @register({ GTypeName: "ClshGCmdCli" })
 class GCmdCli extends GObject.Object implements CliInterface {
+    declare $signals: CliInterface.SignalSignatures;
     #gapp: Gio.Application;
     #connection: number|null = null;
 
@@ -50,20 +51,6 @@ Please add the HANDLES_COMMAND_LINE flag to the GApplication");
             this.#gapp.disconnect(this.#connection);
 
         this.#connection &&= null;
-    }
-
-    connect<S extends keyof CliInterface.SignalSignatures>(
-        signal: S,
-        callback: (source: CliInterface, ...params: Parameters<CliInterface.SignalSignatures[S]>) => ReturnType<CliInterface.SignalSignatures[S]>
-    ): number {
-        return super.connect(signal, callback);
-    }
-
-    emit<S extends keyof CliInterface.SignalSignatures>(
-        signal: S,
-        ...args: Parameters<CliInterface.SignalSignatures[S]>
-    ): void {
-        super.emit(signal, ...args);
     }
 }
 

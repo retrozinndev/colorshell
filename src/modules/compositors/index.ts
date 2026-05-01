@@ -51,14 +51,7 @@ class Compositor extends GObject.Object {
     public static getDefault(): Compositor {
         return this.instance;
     }
-
-    connect<S extends keyof Compositor.SignalSignatures>(
-        signal: S,
-        callback: (self: Compositor, ...params: Parameters<Compositor.SignalSignatures[S]>) => ReturnType<Compositor.SignalSignatures[S]>
-    ): number {
-        return super.connect(signal, callback);
-    }
-};
+}
 
 namespace Compositor {
     export interface ConstructorProps extends GObject.Object.ConstructorProps {}

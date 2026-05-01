@@ -71,20 +71,6 @@ export class NotifyMap<K extends string|symbol|number = string, V = any> extends
 
         return transform !== undefined ? accessor(transform) : accessor;
     }
-
-    connect<S extends keyof NotifyMap.SignalSignatures<K, V>>(
-        signal: S,
-        callback: (self: NotifyMap<K, V>, ...params: Parameters<NotifyMap.SignalSignatures<K, V>[S]>) => ReturnType<NotifyMap.SignalSignatures<K, V>[S]>
-    ): number {
-        return super.connect(signal, callback);
-    }
-
-    emit<S extends keyof NotifyMap.SignalSignatures<K, V>>(
-        signal: S,
-        ...args: Parameters<NotifyMap.SignalSignatures<K, V>[S]>
-    ): void {
-        super.emit(signal, ...args);
-    }
 }
 
 export namespace NotifyMap {

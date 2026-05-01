@@ -21,7 +21,7 @@ abstract class Cli {
 
         if(!ifaces || ifaces.length < 1) {
             ifaces ??= [];
-            ifaces.push(new GCmdCli(Adw.Application.get_default()));
+            ifaces.push(new GCmdCli(Adw.Application.get_default()!));
         }
 
         modules && modules.length > 0 &&

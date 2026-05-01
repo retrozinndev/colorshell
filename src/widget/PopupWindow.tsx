@@ -124,20 +124,6 @@ export class PopupWindow extends Astal.Window {
         super.close();
         this.emit("closed");
     }
-
-    connect<S extends keyof PopupWindow.SignalSignatures>(
-        signal: S,
-        callback: (self: PopupWindow, ...params: Parameters<PopupWindow.SignalSignatures[S]>) => ReturnType<PopupWindow.SignalSignatures[S]>
-    ): number {
-        return super.connect(signal, callback);
-    }
-
-    emit<S extends keyof PopupWindow.SignalSignatures>(
-        signal: S, 
-        ...args: Parameters<PopupWindow.SignalSignatures[S]>
-    ): void {
-        super.emit(signal, ...args);
-    }
 }
 
 export namespace PopupWindow {

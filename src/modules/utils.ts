@@ -1,10 +1,7 @@
-import { createPoll } from "ags/time";
-import { exec, execAsync } from "ags/process";
-import { Astal, Gtk } from "ags/gtk4";
-import { getSymbolicIcon } from "./apps";
 export {
     toBoolean as variableToBoolean, 
     construct, 
+    filter,
     transform,
     transformWidget,
     createSubscription,
@@ -13,15 +10,15 @@ export {
     createSecureBinding as secureBinding,
     createSecureAccessorBinding as secureBaseBinding,
 } from "gnim-utils";
-
+import { createPoll } from "ags/time";
+import { exec, execAsync } from "ags/process";
+import { Astal, Gtk } from "ags/gtk4";
+import { getSymbolicIcon } from "./apps";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import { Notifications } from "./notifications";
 import { createRoot, getScope, Scope } from "ags";
 
-Gio._promisify(Gio.DBus, "get", "get_finish");
-Gio._promisify(Gio.DBusProxy, "new", "new_finish");
-Gio._promisify(Gio.DBusConnection.prototype, "call", "call_finish");
 
 export const decoder = new TextDecoder("utf-8"),
     encoder = new TextEncoder();
@@ -126,40 +123,53 @@ export function getPID(search: string): number|undefined {
   *
   * @returns a `number` indicating the process ID, or a broken promise if an error occurred */
 export async function getDBusNamePID(name: string, objectPath: string, iface: string): Promise<number> {
-    const session = await (Gio.DBus.get(Gio.BusType.SESSION, null) as unknown as Promise<Gio.DBusConnection>);
-    const proxy = await (Gio.DBusProxy.new(
-        session,
-        Gio.DBusProxyFlags.NONE,
-        null,
-        name,
-        objectPath,
-        iface,
-        null
-    ) as unknown as Promise<Gio.DBusProxy>);
+    return new Promise((resolve, reject) => {
+        Gio.DBus.get(Gio.BusType.SESSION, null, (_, res) => {
+            let bus: Gio.DBusConnection|undefined;
+            try {
+                bus = Gio.DBus.get_finish(res);
+            } catch(e) {
+                reject(e);
+                return;
+            }
 
-    const owner = proxy.get_name_owner();
+            Gio.DBusProxy.new(
+                bus, Gio.DBusProxyFlags.NONE, null, name, objectPath, iface, null,
+                (_, res) => {
+                    let proxy: Gio.DBusProxy|undefined;
+                    try {
+                        proxy = Gio.DBusProxy.new_finish(res);
+                    } catch(e) {
+                        reject(e);
+                        return;
+                    }
 
-    if(!owner)
-        throw new Error("DBus: Couldn't get name owner to retrieve PID");
-
-    const params = GLib.Variant.new("(s)", [owner]);
-
-    const pidVariant: GLib.Variant<"(u)"> = await session.call(
-        "org.freedesktop.DBus",
-        "/org/freedesktop/DBus",
-        "org.freedesktop.DBus",
-        "GetConnectionUnixProcessID",
-        params,
-        GLib.VariantType.new("(u)"),
-        Gio.DBusCallFlags.NONE,
-        300,
-        null
-    );
-
-    if(!pidVariant)
-        throw new Error("DBus: call to org.freedesktop.DBus.GetConnectionUnixProcessID returned a nullish value");
-
-    return pidVariant.get_child_value(0).get_uint32();
+                    const params = GLib.Variant.new("(s)", [proxy.get_name_owner()!]);
+                    bus.call(
+                        "org.freedesktop.DBus",
+                        "/org/freedesktop/DBus",
+                        "org.freedesktop.DBus",
+                        "GetConnectionUnixProcessID",
+                        params,
+                        GLib.VariantType.new("(u)"),
+                        Gio.DBusCallFlags.NONE,
+                        300,
+                        null,
+                        (_, res) => {
+                            let pid: GLib.Variant<"(u)">|undefined;
+                            try {
+                                pid = bus.call_finish(res);
+                                resolve(pid.get_child_value(0).get_uint32());
+                            } catch(e) {
+                                reject(e);
+                                return;
+                            }
+                        }
+                    );
+                }
+            );
+        });
+    });
 }
 
 /** forces a process to quit with the desired signal. 

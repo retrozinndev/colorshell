@@ -1,4 +1,4 @@
-import { createScopedConnection } from "gnim-utils";
+import { createScopedConnection } from "./modules/utils";
 import { Windows } from "./window";
 import { AppsWindow } from "./window/apps-window";
 import { Bar } from "./window/bar";

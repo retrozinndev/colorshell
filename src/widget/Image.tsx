@@ -273,20 +273,6 @@ class Image extends Adw.Bin {
     get_layout_manager(): Gtk.BinLayout {
         return super.get_layout_manager()!;
     }
-
-    connect<S extends keyof Image.SignalSignatures>(
-        signal: S,
-        callback: (self: Image, ...params: Parameters<Image.SignalSignatures[S]>) => ReturnType<Image.SignalSignatures[S]>
-    ): number {
-        return super.connect(signal, callback);
-    }
-
-    emit<S extends keyof Image.SignalSignatures>(
-        signal: S,
-        ...args: Parameters<Image.SignalSignatures[S]>
-    ): void {
-        super.emit(signal, ...args);
-    }
 }
 
 namespace Image {

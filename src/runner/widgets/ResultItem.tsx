@@ -110,20 +110,6 @@ class ResultItem extends Gtk.ListBoxRow {
             </Gtk.Box> as Gtk.Box
         );
     }
-
-    connect<S extends keyof ResultItem.SignalSignatures>(
-        signal: S,
-        callback: (self: ResultItem, ...params: Parameters<ResultItem.SignalSignatures[S]>) => ReturnType<ResultItem.SignalSignatures[S]>
-    ): number {
-        return super.connect(signal, callback);
-    }
-
-    emit<S extends keyof ResultItem.SignalSignatures>(
-        signal: S, 
-        ...args: Parameters<ResultItem.SignalSignatures[S]>
-    ): void {
-        super.emit(signal, ...args);
-    }
 }
 
 namespace ResultItem {

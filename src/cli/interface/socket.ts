@@ -9,6 +9,8 @@ import GLib from "gi://GLib?version=2.0";
 /** a cli interface implementation for a socket server that receives remote calls */
 @register({ GTypeName: "ClshSocketCli" })
 class SocketCli extends GObject.Object implements CliInterface {
+    declare $signals: CliInterface.SignalSignatures;
+
     #address: Gio.UnixSocketAddress;
     #sockFile: Gio.File;
     #service: Gio.SocketService;
@@ -77,20 +79,6 @@ class SocketCli extends GObject.Object implements CliInterface {
 
         if(this.#sockFile.query_exists(null))
             this.#sockFile.delete_async(GLib.PRIORITY_LOW, null, null);
-    }
-
-    connect<S extends keyof CliInterface.SignalSignatures>(
-        signal: S,
-        callback: (source: CliInterface, ...params: Parameters<CliInterface.SignalSignatures[S]>) => ReturnType<CliInterface.SignalSignatures[S]>
-    ): number {
-        return super.connect(signal, callback);
-    }
-
-    emit<S extends keyof CliInterface.SignalSignatures>(
-        signal: S,
-        ...args: Parameters<CliInterface.SignalSignatures[S]>
-    ): void {
-        super.emit(signal, ...args);
     }
 }
 

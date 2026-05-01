@@ -4,11 +4,11 @@ import { Gdk } from "ags/gtk4";
 import { getPID, killProc, makeDirectory, tryNotifyOptions } from "./utils";
 import { Notifications } from "./notifications";
 import { time } from "./utils";
+import { generalConfig } from "../config";
 
 import GObject from "ags/gobject";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
-import { generalConfig } from "../config";
 
 
 // TODO: support monitoring an already-running instance of wf-recorder on startup

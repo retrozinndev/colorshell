@@ -50,8 +50,8 @@ export class Wallpaper extends GObject.Object {
     @property(gtype<Wallpaper.WalColorMode>(String))
     colorMode: Wallpaper.WalColorMode = "darken";
 
-    constructor() {
-        super();
+    constructor(props?: Wallpaper.ConstructorProps) {
+        super(props);
 
         this.#wallpapersDir = Gio.File.new_for_path(
             GLib.getenv("WALLPAPERS") ?? `${GLib.get_home_dir()}/wallpapers`
@@ -337,22 +337,7 @@ wallpaper {
             console.error(`Wallpaper: Couldn't pick wallpaper, is \`zenity\` installed? Stderr: ${e.message}`);
             return undefined;
         }));
-    }
-
-    
-    connect<S extends keyof Wallpaper.SignalSignatures>(
-        signal: S,
-        callback: (self: Wallpaper, ...params: Parameters<Wallpaper.SignalSignatures[S]>) => ReturnType<Wallpaper.SignalSignatures[S]>
-    ): number {
-        return super.connect(signal, callback);
-    }
-
-    emit<S extends keyof Wallpaper.SignalSignatures>(
-        signal: S,
-        ...args: Parameters<Wallpaper.SignalSignatures[S]>
-    ): void {
-        super.emit(signal, ...args);
-    }
+    }   
 }
 
 export namespace Wallpaper {
@@ -388,6 +373,7 @@ export namespace Wallpaper {
         };
     };
 
+    export interface ConstructorProps extends GObject.Object.ConstructorProps {}
     export interface SignalSignatures extends GObject.Object.SignalSignatures {
         /** emitted when the shell colors are regenerated */
         "colors-reloaded": () => void;

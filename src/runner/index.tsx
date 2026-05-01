@@ -1,4 +1,4 @@
-import { Astal, Gdk, Gtk } from "ags/gtk4";
+import { Gdk, Gtk } from "ags/gtk4";
 import { CCProps, createRoot } from "ags";
 import { PopupWindow } from "../widget/PopupWindow";
 import { updateApps } from "../modules/apps";
@@ -240,8 +240,8 @@ class Runner extends PopupWindow {
                       onClicked: () => this.setSearch('?')
                   }
               ]}
-            /> as Runner
-        )()) as Runner;
+            />
+        )()) as unknown as Runner;
         this.instance.show();
 
         return this.instance;
@@ -364,13 +364,6 @@ class Runner extends PopupWindow {
             this.#list.append(widget);
         }
     }
-
-    connect<S extends keyof Runner.SignalSignatures>(
-        signal: S,
-        callback: (self: Runner, ...params: Parameters<Runner.SignalSignatures[S]>) => ReturnType<Runner.SignalSignatures[S]>
-    ): number {
-        return GObject.Object.prototype.connect.call(this, signal, callback);
-    }
 }
 
 namespace Runner {
@@ -382,7 +375,7 @@ namespace Runner {
         "notify::placeholders": () => void;
     }
 
-    export interface ConstructorProps extends Astal.Window.ConstructorProps {
+    export interface ConstructorProps extends PopupWindow.ConstructorProps {
         searchPlaceholder: string;
         search: string;
         maxResults: number;

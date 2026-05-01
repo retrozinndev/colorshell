@@ -1,83 +1,19 @@
 import { execAsync } from "ags/process";
 import { generalConfig } from "../config";
 import { onCleanup } from "ags";
+import { pathToURI } from "./utils";
 import GObject, { getter, ParamSpec, property, register, signal } from "ags/gobject";
 
 import AstalNotifd from "gi://AstalNotifd";
 import GLib from "gi://GLib?version=2.0";
-import { pathToURI } from "./utils";
 
-
-export type HistoryNotification = {
-    id: number;
-    appName: string;
-    body: string;
-    summary: string;
-    urgency: AstalNotifd.Urgency;
-    appIcon?: string;
-    time: number;
-    image?: string;
-}
-
-export class NotificationTimeout {
-    #source?: GLib.Source;
-    #args?: Array<any>;
-    #millis: number;
-    #lastRemained: number = 0;
-
-    readonly callback: () => void;
-    get millis(): number { return this.#millis; }
-    get remaining(): number { return this.source!.get_time() }
-    get lastRemained(): number { return this.#lastRemained; }
-    get running(): boolean { return Boolean(this.source?.is_destroyed()); }
-    get source(): GLib.Source|undefined { return this.#source; }
-
-    constructor(millis: number, callback: () => void, start: boolean = true, ...args: Array<any>) {
-        this.#millis = millis;
-        this.callback = callback;
-        this.#args = args;
-
-        if(!start) return;
-        this.start();
-    }
-
-    cancel(): void {
-        // use lastRemained to calculate on what time the user hold the notification, so it
-        // can be released by the remaining time (works like a timeout "pause")
-        if(!this.#source) 
-            return;
-
-        this.#lastRemained = Math.floor(Math.max(this.#source.get_ready_time() - GLib.get_monotonic_time()) / 1000);
-        this.#source.destroy();
-        this.#source.unref();
-        this.#source = undefined;
-    }
-
-    start(newMillis?: number): GLib.Source {
-        if(this.running || this.#source)
-            throw new Error("Notifications: Can't start a new counter if it's already running!");
-
-        if(newMillis !== undefined)
-            this.#millis = newMillis;
-
-        this.#source = setTimeout(
-            this.callback,
-            this.#millis,
-            this.#args
-        );
-
-        this.#lastRemained = Math.floor(Math.max(this.#source.get_ready_time() - GLib.get_monotonic_time()) / 1000);
-
-        return this.#source;
-    }
-};
 
 @register({ GTypeName: "Notifications" })
 export class Notifications extends GObject.Object {
     private static instance: (Notifications|null) = null;
 
     declare $signals: GObject.Object.SignalSignatures & {
-        "history-added": (notification: HistoryNotification) => void;
+        "history-added": (notification: Notifications.HistoryNotification) => void;
         "history-removed": (notificationId: number) => void;
         "history-cleared": () => void;
         "notification-added": (notification: AstalNotifd.Notification) => void;
@@ -85,8 +21,8 @@ export class Notifications extends GObject.Object {
         "notification-replaced": (notificationId: number) => void;
     };
 
-    #notifications = new Map<number, [AstalNotifd.Notification, NotificationTimeout]>();
-    #history: Array<HistoryNotification> = [];
+    #notifications = new Map<number, [AstalNotifd.Notification, Notifications.Timeout]>();
+    #history: Array<Notifications.HistoryNotification> = [];
     #connections: Array<number> = [];
 
     @getter(Array<AstalNotifd.Notification>)
@@ -94,7 +30,7 @@ export class Notifications extends GObject.Object {
         return [...this.#notifications.values()].map(([n]) => n);
     };
 
-    @getter(Array<HistoryNotification>)
+    @getter(Array<Notifications.HistoryNotification>)
     public get history() { return this.#history };
 
     @getter(Array<AstalNotifd.Notification>)
@@ -114,7 +50,7 @@ export class Notifications extends GObject.Object {
 
     @signal(AstalNotifd.Notification) notificationAdded(_notification: AstalNotifd.Notification) {};
     @signal(Number) notificationRemoved(_id: number) {};
-    @signal(Object as unknown as ParamSpec<HistoryNotification>) historyAdded(_notification: Object) {};
+    @signal(Object as unknown as ParamSpec<Notifications.HistoryNotification>) historyAdded(_notification: Object) {};
     @signal() historyCleared() {};
     @signal(Number) historyRemoved(_id: number) {};
     @signal(Number) notificationReplaced(_id: number) {};
@@ -124,7 +60,7 @@ export class Notifications extends GObject.Object {
 
         this.#connections.push(
             AstalNotifd.get_default().connect("notified", (notifd, id) => {
-                const notification = notifd.get_notification(id);
+                const notification = notifd.get_notification(id)!;
                 
                 if(this.getNotifd().dontDisturb || this.ignoreNotifications) {
                     this.addHistory(notification, () => notification.dismiss());
@@ -133,10 +69,9 @@ export class Notifications extends GObject.Object {
 
                 this.addNotification(notification, this.getNotificationTimeout(notification) > 0);
             }),
-
             AstalNotifd.get_default().connect("resolved", (notifd, id, _reason) => {
                 this.removeNotification(id);
-                this.addHistory(notifd.get_notification(id));
+                this.addHistory(notifd.get_notification(id)!);
             })
         );
 
@@ -236,7 +171,7 @@ export class Notifications extends GObject.Object {
             appIcon: notif.app_icon,
             time: notif.time,
             image: notif.image ? notif.image : undefined
-        } as HistoryNotification);
+        } as Notifications.HistoryNotification);
 
         this.notify("history");
         this.emit("history-added", this.#history[0]);
@@ -253,9 +188,9 @@ export class Notifications extends GObject.Object {
         this.notify("history");
     }
 
-    public removeHistory(notif: (HistoryNotification|number)): void {
+    public removeHistory(notif: (Notifications.HistoryNotification|number)): void {
         const notifId = (typeof notif === "number") ? notif : notif.id;
-        this.#history = this.#history.filter((item: HistoryNotification) => 
+        this.#history = this.#history.filter((item: Notifications.HistoryNotification) => 
             item.id !== notifId);
 
         this.notify("history");
@@ -278,13 +213,13 @@ export class Notifications extends GObject.Object {
         // destroy timer of replaced notification(if there's any)
         if(replaced) {
             const data = this.#notifications.get(notif.id)!;
-            (data?.[1] instanceof NotificationTimeout) && 
+            (data?.[1] instanceof Notifications.Timeout) && 
                 data[1].cancel();
         }
         
         this.#notifications.set(notif.id, [
             notif, 
-            new NotificationTimeout(notifTimeout, onEnd, notifTimeout > 0)
+            new Notifications.Timeout(notifTimeout, onEnd, notifTimeout > 0)
         ]);
 
         replaced && this.emit("notification-replaced", notif.id);
@@ -340,7 +275,7 @@ export class Notifications extends GObject.Object {
         this.notify("notifications-on-hold");
     }
 
-    public getNotificationImage(notif: AstalNotifd.Notification|HistoryNotification): string|undefined {
+    public getNotificationImage(notif: AstalNotifd.Notification|Notifications.HistoryNotification): string|undefined {
         const img = notif.image || notif.appIcon;
 
         if(!img || !img.includes('/')) 
@@ -373,18 +308,70 @@ export class Notifications extends GObject.Object {
     }
 
     public getNotifd(): AstalNotifd.Notifd { return AstalNotifd.get_default(); }
+}
 
-    public emit<Signal extends keyof typeof this.$signals>(
-        signal: Signal, ...args: Parameters<(typeof this.$signals)[Signal]>
-    ): void {
-        super.emit(signal, ...args);
-    }
+export namespace Notifications {
+    export type HistoryNotification = {
+        id: number;
+        appName: string;
+        body: string;
+        summary: string;
+        urgency: AstalNotifd.Urgency;
+        appIcon?: string;
+        time: number;
+        image?: string;
+    };
 
-    public connect<Signal extends keyof typeof this.$signals>(
-        signal: Signal, 
-        callback: (self: typeof this, ...params: Parameters<(typeof this.$signals)[Signal]>) => 
-            ReturnType<(typeof this.$signals)[Signal]>
-    ): number {
-        return super.connect(signal, callback);
+    export class Timeout {
+        #source?: GLib.Source;
+        #args?: Array<any>;
+        #millis: number;
+        #lastRemained: number = 0;
+
+        readonly callback: () => void;
+        get millis(): number { return this.#millis; }
+        get remaining(): number { return this.source!.get_time() }
+        get lastRemained(): number { return this.#lastRemained; }
+        get running(): boolean { return Boolean(this.source?.is_destroyed()); }
+        get source(): GLib.Source|undefined { return this.#source; }
+
+        constructor(millis: number, callback: () => void, start: boolean = true, ...args: Array<any>) {
+            this.#millis = millis;
+            this.callback = callback;
+            this.#args = args;
+
+            if(!start) return;
+            this.start();
+        }
+
+        cancel(): void {
+            // use lastRemained to calculate on what time the user hold the notification, so it
+            // can be released by the remaining time (works like a timeout "pause")
+            if(!this.#source) 
+                return;
+
+            this.#lastRemained = Math.floor(Math.max(this.#source.get_ready_time() - GLib.get_monotonic_time()) / 1000);
+            this.#source.destroy();
+            this.#source.unref();
+            this.#source = undefined;
+        }
+
+        start(newMillis?: number): GLib.Source {
+            if(this.running || this.#source)
+                throw new Error("Notifications: Can't start a new counter if it's already running!");
+
+            if(newMillis !== undefined)
+                this.#millis = newMillis;
+
+            this.#source = setTimeout(
+                this.callback,
+                this.#millis,
+                this.#args
+            );
+
+            this.#lastRemained = Math.floor(Math.max(this.#source.get_ready_time() - GLib.get_monotonic_time()) / 1000);
+
+            return this.#source;
+        }
     }
 }
