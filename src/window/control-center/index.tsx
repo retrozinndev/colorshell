@@ -18,7 +18,7 @@ export const ControlCenter = Windows.forFocusedMonitor((mon) => {
               return;
 
           generalConfig.setProperty("notifications.position_h", "left", false);
-      }} onClosed={() => {
+      }} onCloseRequest={() => {
           const currentNotifPopupHPos = generalConfig.getProperty("notifications.position_h", "string");
 
           if(notifPopupHPos === currentNotifPopupHPos) 
