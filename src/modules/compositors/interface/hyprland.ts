@@ -6,9 +6,10 @@ import GLib from "gi://GLib?version=2.0";
 import { Socket } from "../../socket";
 import { exec, execAsync } from "ags/process";
 import Gio from "gi://Gio?version=2.0";
-import { createSubscription, decoder, playSystemBell, runtimeConfigDir } from "../../utils";
+import { createSubscription, decoder, encoder, playSystemBell, runtimeConfigDir } from "../../utils";
 import { Wallpaper } from "../../wallpaper";
 import { generalConfig } from "../../../config";
+import { readFile } from "ags/file";
 
 
 @register({ GTypeName: "ClshCompositorHyprland" })
@@ -153,7 +154,7 @@ export class CompositorHyprland extends Compositor {
     private reload(): void {
         const names = Gio.resources_enumerate_children(
             "/io/github/retrozinndev/colorshell/config/hyprland",
-            null
+            Gio.ResourceLookupFlags.NONE
         ).filter(name => !name.includes("bindings"));
 
         exec("hyprctl reload");
@@ -175,7 +176,7 @@ export class CompositorHyprland extends Compositor {
         const binds: Array<CompositorHyprland.Bind> = [];
         const bindingsConf = decoder.decode(Gio.resources_lookup_data(
             "/io/github/retrozinndev/colorshell/config/hyprland/bindings.conf",
-            null
+            Gio.ResourceLookupFlags.NONE
         )?.toArray());
 
         for(const line of bindingsConf.split('\n')) {
@@ -225,34 +226,35 @@ export class CompositorHyprland extends Compositor {
 
     /** load necessary hyprland configs from gresource */
     private initConfig(): void {
-        const userLastUpdatedFile = Gio.File.new_for_path(`${this.#configDir.peek_path()!}/.last-updated`);
         const names = Gio.resources_enumerate_children(
             "/io/github/retrozinndev/colorshell/config/hyprland",
-            null
+            Gio.ResourceLookupFlags.NONE
         ).filter(name => !name.includes("bindings"));
 
         if(!this.#configDir.query_exists(null))
             this.#configDir.make_directory_with_parents(null);
 
-        if(userLastUpdatedFile.query_exists(null)) {
-            const userLastUpdated = decoder.decode(userLastUpdatedFile.read(null).read_bytes(32, null).toArray());
-            const configlastUpdated = decoder.decode(Gio.resources_lookup_data(
-                "/io/github/retrozinndev/colorshell/config/hyprland/.last-updated", null
-            ).toArray());
-
-            // check if data is different
-            if(configlastUpdated === userLastUpdated) {
-                this.reload();
-                return; // no need to update, since it's unchanged/same
-            }
-        }
-
         names.forEach(name => {
             const file = Gio.File.new_for_path(`${this.#configDir.peek_path()!}/${name}`);
             const data = Gio.resources_lookup_data(
                 `/io/github/retrozinndev/colorshell/config/hyprland/${name}`,
-                null
+                Gio.ResourceLookupFlags.NONE
             );
+
+            try {
+                if(file.query_exists(null)) {
+                    // check hashes
+                    const original = GLib.compute_checksum_for_bytes(GLib.ChecksumType.SHA256, data);
+                    const local = GLib.compute_checksum_for_data(GLib.ChecksumType.SHA256, encoder.encode(
+                        readFile(file.peek_path()!)
+                    ));
+
+                    if(original === local)
+                        return;
+                }
+            } catch(e) {
+                console.error("Failed to read local hyprland runtime config.", e);
+            }
 
             try {
                 file.replace_contents(data.toArray(), null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null);

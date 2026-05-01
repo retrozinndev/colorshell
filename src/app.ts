@@ -191,14 +191,9 @@ export class Shell extends Adw.Application {
             if(file.query_exists(null))
                 return;
             
-            file.replace_contents_bytes_async(
-                Gio.resources_lookup_data(`/io/github/retrozinndev/colorshell/config/${name}`, null),
-                null,
-                false,
-                Gio.FileCreateFlags.REPLACE_DESTINATION,
-                null,
-                null
-            );
+            file.replace_contents_bytes_async(Gio.resources_lookup_data(
+                `/io/github/retrozinndev/colorshell/config/${name}`, Gio.ResourceLookupFlags.NONE
+            ), null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null, null);
         });
     }
 

@@ -8,6 +8,7 @@ import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
 
 
+// TODO: rewrite
 /** handles stylesheet compiling and reloading */
 export class Stylesheet {
     private static instance: Stylesheet;
@@ -93,7 +94,7 @@ export class Stylesheet {
     }
 
     private getStyleData(path: string): string {
-        return decoder.decode(Gio.resources_lookup_data(path, null).get_data()!);
+        return decoder.decode(Gio.resources_lookup_data(path, Gio.ResourceLookupFlags.NONE).get_data()!);
     }
 
     constructor() {
@@ -101,7 +102,7 @@ export class Stylesheet {
             this.#outputPath.make_directory_with_parents(null);
 
         this.#stylesPaths = Gio.resources_enumerate_children(
-            "/io/github/retrozinndev/colorshell/styles", null
+            "/io/github/retrozinndev/colorshell/styles", Gio.ResourceLookupFlags.NONE
         ).map(name => 
             `/io/github/retrozinndev/colorshell/styles/${name}`
         );
