@@ -10,7 +10,7 @@ import GLib from "gi://GLib?version=2.0";
 import Gly from "gi://Gly?version=2";
 import Adw from "gi://Adw?version=1";
 import GlyGtk4 from "gi://GlyGtk4?version=2";
-import { Cache } from "../../modules/cache";
+import Cache from "../../modules/cache";
 
 
 export class PluginWallpapers implements Runner.Plugin {

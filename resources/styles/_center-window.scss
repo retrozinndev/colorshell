@@ -11,9 +11,7 @@ popupwindow.center-window .container {
 
   & .big-media {
     margin-top: 9px;
-    & .image {
-      background-size: cover;
-      background-position: center center;
+    & clshimage picture {
       border-radius: 10px;
     }
 

@@ -3,7 +3,7 @@ import GObject from "gi://GObject?version=2.0";
 
 
 @register({ GTypeName: "ClshCache" })
-export class Cache extends GObject.Object {
+class Cache extends GObject.Object {
     private static instance: Cache;
     
     #sections: Map<string, Map<string, unknown>> = new Map();
@@ -47,7 +47,7 @@ export class Cache extends GObject.Object {
       * @param sectionName the section to add the item to
       * @param item the item object to be added to the specified section 
       * @param itemKey the access key for this item. leave `undefined` to generate a unique one for it */
-    addItem(sectionName: string, item: unknown, itemKey?: string): void {
+    addItem<T extends unknown = unknown>(sectionName: string, item: T, itemKey?: string): void {
         if(!this.#sections.has(sectionName)) 
             this.#sections.set(sectionName, new Map());
 
@@ -124,3 +124,5 @@ export class Cache extends GObject.Object {
         return this.instance;
     }
 }
+
+export default Cache;

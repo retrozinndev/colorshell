@@ -175,6 +175,12 @@ export function killProc(pid: number, signal: number = 2): boolean {
     return true;
 }
 
+/** watch when an object is recycled by the GC */
+export function watchRecycle(value: any, onRecycle: () => void): void {
+    const registry = new FinalizationRegistry(() => onRecycle());
+    registry.register(value, Symbol(value));
+}
+
 export function omitObjectKeys<ObjT = object>(obj: ObjT, keys: keyof ObjT|Array<keyof ObjT>): object {
     const finalObject = { ...obj };
 
