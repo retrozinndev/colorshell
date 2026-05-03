@@ -1,6 +1,5 @@
 import { Gdk, Gtk } from "ags/gtk4";
 import { execAsync } from "ags/process";
-
 import AstalApps from "gi://AstalApps";
 import AstalHyprland from "gi://AstalHyprland";
 

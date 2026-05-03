@@ -1,17 +1,8 @@
-import { register } from "ags/gobject";
-import GObject from "gi://GObject?version=2.0";
-
-
-@register({ GTypeName: "ClshCache" })
-class Cache extends GObject.Object {
+export default class Cache {
     private static instance: Cache;
     
     #sections: Map<string, Map<string, unknown>> = new Map();
     #lastId: number = -1;
-
-    constructor() {
-        super();
-    }
 
 
     /** creates new cache section, with optional items in it.
@@ -124,5 +115,3 @@ class Cache extends GObject.Object {
         return this.instance;
     }
 }
-
-export default Cache;

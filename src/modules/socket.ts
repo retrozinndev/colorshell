@@ -181,7 +181,8 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
         if(conn.inputStream.is_closed())
             throw new Error("GInputStream is closed. Can't read from a closed stream");
 
-        watchInputStream(conn.inputStream, callback, cancellable); // genious
+        watchInputStream(conn.inputStream, callback, cancellable)
+            .catch(console.error);
 
         if(timeout >= 0)
             setTimeout(() => {

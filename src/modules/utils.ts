@@ -14,10 +14,11 @@ import { createPoll } from "ags/time";
 import { exec, execAsync } from "ags/process";
 import { Astal, Gtk } from "ags/gtk4";
 import { getSymbolicIcon } from "./apps";
-import GLib from "gi://GLib?version=2.0";
-import Gio from "gi://Gio?version=2.0";
 import { Notifications } from "./notifications";
 import { createRoot, getScope, Scope } from "ags";
+import GLib from "gi://GLib?version=2.0";
+import Gio from "gi://Gio?version=2.0";
+import GioUnix from "gi://GioUnix?version=2.0";
 
 
 export const decoder = new TextDecoder("utf-8"),
@@ -337,61 +338,25 @@ export function isInstalled(commandName: string): boolean {
   * @param stream the `GInputStream` to watch for data
   * @param callback the function to call when there's new data (return `true` to remove the watch)
   * @param cancellable a `GCancellable` that stops the monitor when ::cancelled */
-export async function watchInputStream(stream: Gio.InputStream, callback: (data: string) => boolean|void, cancellable?: Gio.Cancellable): Promise<void> {
+export async function watchInputStream(
+    stream: Gio.InputStream|Gio.DataInputStream,
+    callback: (data: string) => boolean|void,
+    cancellable?: Gio.Cancellable
+): Promise<void> {
     let stop: boolean = false;
-    let pending: boolean = false;
 
-    type UnixInputStream = Gio.InputStream&{
-        /** get file descriptor for `GInputStream` */
-        get_fd(): number;
-    };
-
-    if(typeof (stream as UnixInputStream).get_fd !== "function")
+    if(typeof (stream as GioUnix.InputStream).get_fd !== "function")
         throw new Error(`Stream is not a UnixInputStream`);
 
     const id = cancellable?.connect(() => {
         cancellable.disconnect(id!);
         stop = true;
-        channeru.close();
-        GLib.source_remove(watch);
     });
-    const channeru = GLib.IOChannel.unix_new((stream as UnixInputStream).get_fd());
-    const watch = GLib.io_add_watch(
-        channeru,
-        GLib.PRIORITY_LOW,
-        GLib.IOCondition.IN|GLib.IOCondition.HUP,
-        () => {
-            if(stream.is_closed() || stop) {
-                channeru.close();
-                return false;
-            }
 
-            if(pending)
-                return true;
-
-            pending = true;
-            try {
-                stream.read_bytes_async(2048, GLib.PRIORITY_DEFAULT, null, (_, res) => {
-                    let data!: GLib.Bytes;
-                    try {
-                        data = stream.read_bytes_finish(res);
-                    } catch(e) {
-                        pending = false;
-                        console.error(e);
-                        return;
-                    }
-
-                    pending = false;
-                    stop = callback(decoder.decode(data.toArray())) ?? false;
-                });
-            } catch(e) {
-                console.error("Failed to read message bytes");
-                return true;
-            }
-
-            return true;
-        }
-    );
+    while(!stop)
+        callback(decoder.decode(
+            (await stream.read_bytes_async(1024, GLib.PRIORITY_DEFAULT, null)).toArray()
+        ));
 }
 
 export function addSliderMarksFromMinMax(slider: Astal.Slider, amountOfMarks: number = 2, markup?: (string | null)) {
