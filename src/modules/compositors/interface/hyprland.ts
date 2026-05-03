@@ -223,8 +223,8 @@ export class CompositorHyprland extends Compositor {
                 return;
 
             // unbind just in case
-            this.hyprctl(`keyword unbind "${bind.params.split(',').toSpliced(0, 2)}"`);
-            this.hyprctl(`keyword bind${bind.flags ?? ""} "${bind.params}"`);
+            this.hyprctl(`keyword unbind ${bind.params.split(',').toSpliced(0, 2)}`);
+            this.hyprctl(`keyword bind${bind.flags ?? ""} ${bind.params}`);
         });
     }
 
