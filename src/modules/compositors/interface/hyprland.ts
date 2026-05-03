@@ -4,9 +4,8 @@ import { register } from "ags/gobject";
 import AstalHyprland from "gi://AstalHyprland";
 import GLib from "gi://GLib?version=2.0";
 import { Socket } from "../../socket";
-import { exec, execAsync } from "ags/process";
 import Gio from "gi://Gio?version=2.0";
-import { createSubscription, decoder, encoder, playSystemBell, runtimeConfigDir } from "../../utils";
+import { createScopedConnection, createSubscription, decoder, encoder, playSystemBell, runtimeConfigDir } from "../../utils";
 import { Wallpaper } from "../../wallpaper";
 import { generalConfig } from "../../../config";
 import { readFile } from "ags/file";
@@ -14,6 +13,7 @@ import { readFile } from "ags/file";
 
 @register({ GTypeName: "ClshCompositorHyprland" })
 export class CompositorHyprland extends Compositor {
+    #sock: Socket;
     #eventSock: Socket;
     #configDir: Gio.File = Gio.File.new_for_path(`${runtimeConfigDir.peek_path()!}/hyprland`);
     #ignoreConfigReload: boolean = false;
@@ -30,6 +30,11 @@ export class CompositorHyprland extends Compositor {
             Socket.Type.CLIENT,
             `${GLib.get_user_runtime_dir()}/hypr/${instSignature}/.socket2.sock`,
             true
+        );
+
+        this.#sock = new Socket(
+            Socket.Type.CLIENT,
+            `${GLib.get_user_runtime_dir()}/hypr/${instSignature}/.socket.sock`
         );
 
         this.initConfig();
@@ -54,7 +59,7 @@ export class CompositorHyprland extends Compositor {
         }
 
         // handle events from socket and others
-        this.#eventSock.scopeConnect("received", (data: string) => {
+        createScopedConnection(this.#eventSock, "received", (data: string) => {
             let [event, info] = data.split(">>") as [CompositorHyprland.Event, string|undefined];
 
             if(/^.*>>$/.test(event)) { // check if there are no extra data to the event
@@ -134,17 +139,18 @@ export class CompositorHyprland extends Compositor {
     }
 
     private getClients(): Array<CompositorHyprland.Client> {
-        return (JSON.parse(exec("hyprctl clients -j")) as Array<CompositorHyprland.Client>);
+        return JSON.parse(
+            this.hyprctl("clients", "json", true) ?? "[]"
+        ) as Array<CompositorHyprland.Client>;
     }
-
     
     private source(path: string): void {
         if(!path.endsWith(".conf"))
             return;
 
         try {
-            const out = exec(`hyprctl keyword source "${path}"`);
-            !/^ok.*$/.test(out) &&
+            const out = this.hyprctl(`keyword source ${path}`, undefined, true);
+            out !== null && !/^ok.*$/.test(out) &&
                 console.error(out);
         } catch(e) {
             console.error(e);
@@ -157,7 +163,7 @@ export class CompositorHyprland extends Compositor {
             Gio.ResourceLookupFlags.NONE
         ).filter(name => !name.includes("bindings"));
 
-        exec("hyprctl reload");
+        this.hyprctl("reload");
         const loadHyprDecorations = generalConfig.getProperty("misc.match_window_border_color", "boolean");
         names.forEach(name => {
             if(name.includes("decorations") && !loadHyprDecorations)
@@ -217,10 +223,8 @@ export class CompositorHyprland extends Compositor {
                 return;
 
             // unbind just in case
-            execAsync(`hyprctl keyword unbind "${bind.params.split(',').toSpliced(0, 2)}"`)
-                .catch(console.error);
-            execAsync(`hyprctl keyword bind${bind.flags ?? ""} "${bind.params}"`)
-                .catch(console.error);
+            this.hyprctl(`keyword unbind "${bind.params.split(',').toSpliced(0, 2)}"`);
+            this.hyprctl(`keyword bind${bind.flags ?? ""} "${bind.params}"`);
         });
     }
 
@@ -259,8 +263,7 @@ export class CompositorHyprland extends Compositor {
             try {
                 file.replace_contents(data.toArray(), null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null);
             } catch(e) {
-                console.error(`Compositor: Hyprland: Failed to write config file "${name}": ${(e as Error).message}`);
-                console.debug(e);
+                console.error(`Compositor: Hyprland: Failed to write config file "${name}":`, e);
             }
         });
 
@@ -268,7 +271,9 @@ export class CompositorHyprland extends Compositor {
     }
 
     private getActiveClient(): CompositorHyprland.Client|null {
-        const client = JSON.parse(exec("hyprctl -j activewindow")) as CompositorHyprland.Client|{};
+        const client = JSON.parse(
+            this.hyprctl("activewindow", "json", true) ?? "{}"
+        ) as CompositorHyprland.Client;
 
         if(Object.keys(client).length === 0)
             return null;
@@ -305,12 +310,26 @@ export class CompositorHyprland extends Compositor {
         return mask ?? 0;
     }
 
-    protected hyprctl(command: string, args?: string): string {
-        return exec(`hyprctl ${command}${args !== undefined ? ` ${args}` : ""}`);
+    /** send a hyprctl `command` with optional `args`
+     * @param wait whether to wait for a response from hyprctl(socket) */
+    protected hyprctl(command: string, args?: string, wait: boolean = false): string|null {
+        if(wait)
+            return this.#sock.simpleSendSync(`${args ?? ""}/${command}`);
+
+        this.#sock.sendSync(`${args ?? ""}/${command}`).close(null);
+        return null;
     }
 
-    protected async hyprctlAsync(command: string, args?: string): Promise<string> {
-        return await execAsync(`hyprctl ${command}${args !== undefined ? ` ${args}` : ""}`);
+    /** asynchronous version of `CompositorHyprland.hyprctl()`
+      * WARNING: this is currently not behaving correctly
+      * send a hyprctl `command` with optional `args`.
+      * @param wait whether to wait for a response from hyprctl(socket) */
+    protected async hyprctlAsync(command: string, args?: string, wait: boolean = false): Promise<string|null> {
+        if(wait)
+            return await this.#sock.simpleSend(`${args ?? ""}/${command}`);
+
+        (await this.#sock.send(`${args ?? ""}/${command}`)).close(null);
+        return null;
     }
 }
 

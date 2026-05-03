@@ -18,8 +18,8 @@ import { Notifications } from "./notifications";
 import { createRoot, getScope, Scope } from "ags";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
-import GioUnix from "gi://GioUnix?version=2.0";
 
+Gio._promisify(Gio.InputStream.prototype, "read_bytes_async", "read_bytes_finish");
 
 export const decoder = new TextDecoder("utf-8"),
     encoder = new TextEncoder();
@@ -337,16 +337,15 @@ export function isInstalled(commandName: string): boolean {
   *
   * @param stream the `GInputStream` to watch for data
   * @param callback the function to call when there's new data (return `true` to remove the watch)
-  * @param cancellable a `GCancellable` that stops the monitor when ::cancelled */
+  * @param cancellable a `GCancellable` that stops the monitor when ::cancelled 
+  * @param size the number of bytes to read from `stream`. default: `4096` */
 export async function watchInputStream(
     stream: Gio.InputStream|Gio.DataInputStream,
     callback: (data: string) => boolean|void,
-    cancellable?: Gio.Cancellable
+    cancellable?: Gio.Cancellable|null,
+    size: number|bigint = 4096
 ): Promise<void> {
     let stop: boolean = false;
-
-    if(typeof (stream as GioUnix.InputStream).get_fd !== "function")
-        throw new Error(`Stream is not a UnixInputStream`);
 
     const id = cancellable?.connect(() => {
         cancellable.disconnect(id!);
@@ -354,9 +353,9 @@ export async function watchInputStream(
     });
 
     while(!stop)
-        callback(decoder.decode(
-            (await stream.read_bytes_async(1024, GLib.PRIORITY_DEFAULT, null)).toArray()
-        ));
+        stop = callback(decoder.decode(
+            (await stream.read_bytes_async(size, GLib.PRIORITY_DEFAULT, null)).toArray()
+        )) ?? false;
 }
 
 export function addSliderMarksFromMinMax(slider: Astal.Slider, amountOfMarks: number = 2, markup?: (string | null)) {

@@ -1,4 +1,3 @@
-import Gio from "gi://Gio?version=2.0";
 const Package = imports.package;
 
 
@@ -25,6 +24,3 @@ Package.require({
     "AstalTray": "0.1",
     "AstalWp": "0.1",
 });
-
-/** promisify */
-Gio._promisify(Gio.InputStream.prototype, "read_bytes_async", "read_bytes_finish");
