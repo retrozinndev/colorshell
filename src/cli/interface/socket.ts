@@ -35,8 +35,12 @@ class SocketCli extends GObject.Object implements CliInterface {
         this.#address = sockAddress;
         this.#sockFile = Gio.File.new_for_path(this.#address.get_path());
 
+        const dir = this.#sockFile.get_parent();
+        if(dir && !dir.query_exists(null))
+            dir.make_directory_with_parents(null);
+
         if(this.#sockFile.query_exists(null))
-            this.#sockFile.delete_async(GLib.PRIORITY_DEFAULT, null, null);
+            this.#sockFile.delete(null);
     
         this.#service.add_address(
             sockAddress,
@@ -71,7 +75,7 @@ class SocketCli extends GObject.Object implements CliInterface {
         });
     }
 
-    /** @param keepFile whether to keep the .sock file **/
+    /** @param keepFile whether to keep the .sock file (default: `false`) **/
     stop(keepFile: boolean = false): void {
         this.#service.stop();
         if(keepFile)

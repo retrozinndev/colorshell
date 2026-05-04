@@ -5,7 +5,7 @@ pidfile="$runtime_dir/.pid"
 sock="$runtime_dir/.sock"
 
 
-if [ -f $pidfile ] && ps -p `cat "$pidfile"` > /dev/null 2>&1; then
+if [ -f "$pidfile" ] && ps -p `cat "$pidfile"` > /dev/null 2>&1; then
 
     if command -v socat > /dev/null 2>&1; then
         echo "$@" | socat - "$sock"

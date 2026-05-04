@@ -68,7 +68,8 @@ function Ask() {
 # Returns code 0 if running, 1 if not
 # -------------
 function Is_running() {
-    if ps -p `cat "$XDG_RUNTIME_DIR/colorshell/.pid"` > /dev/null; then
+    local pidfile=$XDG_RUNTIME_DIR/colorshell/.pid
+    if [ -f "$pidfile" ] && ps -p `cat "$pidfile"` > /dev/null; then
         return 0
     fi
 

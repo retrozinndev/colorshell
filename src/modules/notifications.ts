@@ -105,39 +105,40 @@ export class Notifications extends GObject.Object {
         text: string;
         onAction?: () => void
     }|null|void> {
+        let stdout: string|undefined;
 
-        return await execAsync([
-            "notify-send", 
-                     ...(props.urgency ? [
-                "-u", this.getUrgencyString(props.urgency)
-            ] : []), ...(props.appName ? [
-                "-a", props.appName
-            ] : []), ...(props.image ? [
-                "-i", props.image
-            ] : []), ...(props.actions ? props.actions.map((action) =>
-                [ "-A", action.text ]
-            ).flat(2) : []), ...(props.replaceId ? [
-                "-r", props.replaceId.toString()
-            ] : []), props.summary, props.body ? props.body : ""
-        ]).then((stdout) => {
-            stdout = stdout.trim();
-            if(!stdout) {
-                if(props.actions && props.actions.length > 0)
-                    return null;
+        try {
+            stdout = (await execAsync([
+                "notify-send", 
+                         ...(props.urgency ? [
+                    "-u", this.getUrgencyString(props.urgency)
+                ] : []), ...(props.appName ? [
+                    "-a", props.appName
+                ] : []), ...(props.image ? [
+                    "-i", props.image
+                ] : []), ...(props.actions ? props.actions.map((action) =>
+                    [ "-A", action.text ]
+                ).flat(2) : []), ...(props.replaceId ? [
+                    "-r", props.replaceId.toString()
+                ] : []), props.summary, props.body ? props.body : ""
+            ])).trim();
+        } catch(err) {
+            console.error("Notifications: Couldn't send notification! Is the daemon running?", err);
+        }
 
-                return;
-            }
+        if(!stdout) {
+            if(props.actions && props.actions.length > 0)
+                return null;
 
-            if(props.actions && props.actions.length > 0) {
-                const action = props.actions[Number.parseInt(stdout)];
-                action?.onAction?.();
+            return;
+        }
 
-                return action ?? undefined;
-            }
-        }).catch((err: Error) => {
-            console.error(`Notifications: Couldn't send notification! Is the daemon running? Stderr:\n${
-                err.message ? `${err.message}\n` : ""}Stack: ${err.stack}`);
-        });
+        if(props.actions && props.actions.length > 0) {
+            const action = props.actions[Number.parseInt(stdout)];
+            action?.onAction?.();
+
+            return action ?? undefined;
+        }
     }
 
     public getUrgencyString(urgency: AstalNotifd.Notification|AstalNotifd.Urgency) {
