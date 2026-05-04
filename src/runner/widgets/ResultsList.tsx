@@ -48,17 +48,9 @@ class ResultsList extends Gtk.Widget {
 
         this.bind_property("max-content-size", this.#scroll, "max-content-height", GObject.BindingFlags.BIDIRECTIONAL);
 
-        const listConns: Array<number> = [
-            this.#list.connect("row-selected", (_, row) => {
-                if(!row) {
-                    this.#scroll.get_vadjustment().set_value(0);
-                    return;
-                }
 
-                const [, matrix] = row.compute_transform(this.#list);
-                const target = matrix.get_y_translation() - row.get_allocated_height();
-                this.animateScroll(target);
-            })
+        const listConns: Array<number> = [
+            this.#list.connect("row-selected", () => this.requestScroll())
         ];
 
         const id = this.connect("destroy", () => {
@@ -83,7 +75,21 @@ class ResultsList extends Gtk.Widget {
 
     /** unselect the currently-selected result (if any) */
     unselect(): void {
+        this.getSelected()?.emit("unselected");
         this.#list.unselect_all();
+    }
+
+    /** request a scroll animation to the currently-selected `ResultItem` (if any) */
+    public requestScroll(): void {
+        const selected = this.getSelected();
+        if(!selected) {
+            this.animateScroll(0);
+            return;
+        }
+
+        const [, matrix] = selected.compute_transform(this.#list);
+        const y = matrix.get_y_translation();
+        this.animateScroll(y);
     }
 
     /** animate scroll to `targetY` */
@@ -125,7 +131,9 @@ class ResultsList extends Gtk.Widget {
             const item = [...this.#items.values()][i];
 
             if(item) {
+                this.getSelected()?.emit("unselected");
                 this.#list.select_row(item);
+                item.emit("selected");
                 return item;
             }
 
@@ -133,7 +141,9 @@ class ResultsList extends Gtk.Widget {
         }
 
         if(this.#items.has(i)) {
+            this.getSelected()?.emit("unselected");
             this.#list.select_row(i);
+            i.emit("selected");
             return i;
         }
 
@@ -148,7 +158,7 @@ class ResultsList extends Gtk.Widget {
         if(!selected || !previous)
             return;
 
-        this.#list.select_row(previous);
+        this.select(previous);
     }
     
     /** select the previous `ResultItem` to currently-selected one (if any) */
@@ -159,7 +169,7 @@ class ResultsList extends Gtk.Widget {
         if(!selected || !next)
             return;
 
-        this.#list.select_row(next);
+        this.select(next);
     }
 
     /** prepend a `ResultItem` to the list */

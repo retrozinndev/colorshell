@@ -1,5 +1,6 @@
-import { execApp, getAstalApps, lookupIcon, updateApps } from "../../modules/apps";
+import { execApp, getAstalApps, updateApps } from "../../modules/apps";
 import Runner from "..";
+import AppIcon from "../../widget/AppIcon";
 
 export class PluginApps implements Runner.Plugin {
     // Do not provide prefix, so it always runs.
@@ -11,11 +12,17 @@ export class PluginApps implements Runner.Plugin {
     }
 
     handle(text: string) {
-        return getAstalApps().fuzzy_query(text).map(app => ({
-            title: app.get_name(),
-            description: app.get_description(),
-            icon: (app.iconName && lookupIcon(app.iconName)) ? app.iconName : "application-x-executable-symbolic",
-            onClicked: () => execApp(app)
-        } satisfies Runner.Result));
+        return getAstalApps().fuzzy_query(text).map(app => {
+            let icon: AppIcon = new AppIcon({
+                icon: app.iconName
+            });
+
+            return {
+                title: app.get_name(),
+                description: app.get_description(),
+                onClicked: () => execApp(app),
+                icon
+            } satisfies Runner.Result;
+        });
     }
 }

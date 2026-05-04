@@ -134,8 +134,10 @@ class Runner extends PopupWindow {
             }),
             this.connect("notify::search", () => {
                 this.update(this.search, this.maxResults).then(() => {
-                    if(this.#results.length < 1)
+                    if(this.#results.length < 1) {
+                        this.#list.unselect();
                         return;
+                    }
 
                     this.#list.select(0);
                 }).catch(console.error);
@@ -170,6 +172,11 @@ class Runner extends PopupWindow {
         this.#plugins.forEach(p => p.onClose?.());
         Runner.instance = null;
         return false;
+    }
+
+    /** request a scroll animation to the currently-selected result (if any) */
+    public requestScroll(): void {
+        this.#list.requestScroll();
     }
 
     /** grab focus to the search entry */

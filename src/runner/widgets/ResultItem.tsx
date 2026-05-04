@@ -109,6 +109,12 @@ class ResultItem extends Gtk.ListBoxRow {
                 </Gtk.Box>
             </Gtk.Box> as Gtk.Box
         );
+
+        this.add_controller(
+            <Gtk.EventControllerMotion onEnter={() => this.emit("hovered")}
+              onLeave={() => this.emit("unhovered")}
+            /> as Gtk.EventControllerMotion
+        );
     }
 }
 

@@ -7,6 +7,7 @@ import Pango from "gi://Pango?version=1.0";
 import { createRoot, createState } from "ags";
 import { escapeUnintendedMarkup } from "../../modules/utils";
 import { Windows } from "..";
+import AppIcon from "../../widget/AppIcon";
 
 
 const ignoredKeys = [
@@ -90,10 +91,12 @@ function AppWidget(app: AstalApps.Application): Gtk.Widget {
             <Gtk.Box orientation={Gtk.Orientation.VERTICAL} valign={Gtk.Align.CENTER}
               hexpand={false} vexpand={false}>
 
-                <Gtk.Image iconName={getAppIcon(app) ?? "application-x-executable"} 
-                  iconSize={Gtk.IconSize.LARGE} vexpand={false} class={"app-icon"} />
+                <AppIcon icon={app.iconName} iconSize={Gtk.IconSize.LARGE} vexpand={false}
+                  class={"app-icon"}
+                />
                 <Gtk.Label ellipsize={Pango.EllipsizeMode.END} label={app.name}
-                  valign={Gtk.Align.END} maxWidthChars={30} class={"app-name"} />
+                  valign={Gtk.Align.END} maxWidthChars={30} class={"app-name"}
+                />
             </Gtk.Box>
         </Gtk.Button> as Gtk.Button
     );
