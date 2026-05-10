@@ -3,6 +3,7 @@ set -e
 socket_support=true
 outdir="./build/release"
 bin_target="\$HOME/.local/bin/colorshell"
+appid="io.github.retrozinndev.Colorshell"
 
 # send literal variable name, so it's interpreted at runtime
 gresource_file="\$XDG_DATA_HOME/colorshell/.gresource"
@@ -59,6 +60,6 @@ echo -en "$script" > "${outdir:-./build/release}/colorshell"
 chmod +x "${outdir:-./build/release}/colorshell"
 
 echo "[info] making desktop entry"
-entry=`cat ./resources/colorshell.desktop`
+entry=`cat ./data/$appid.desktop`
 bin_target=${bin_target:-'$HOME/.local/bin/colorshell'}
-echo -n "${entry/'$COLORSHELL_BINARY'/${bin_target/'$'/'\\\$'}}" > ${outdir:-./build/release}/colorshell.desktop
+echo -n "${entry/'$COLORSHELL_BINARY'/${bin_target/'$'/'\\\$'}}" > ${outdir:-./build/release}/$appid.desktop
