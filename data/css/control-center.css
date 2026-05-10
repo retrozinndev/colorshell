@@ -43,6 +43,7 @@
 }
 .control-center-container .quickactions .uptime {
   color: var(--fg-disabled);
+  font-size: 10.1px;
 }
 .control-center-container .quickactions .button-row button {
   padding: 7px;
