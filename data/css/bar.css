@@ -1,0 +1,169 @@
+:root {
+  --radius: 18px;
+  --padding: 4px;
+  --color-hover: var(--bg-primary);
+
+  /* .media */
+  --spacing: 5px;
+  --hover-color: oklch(from var(--bg-primary) calc(l + 15%) c h);
+}
+
+.bar-container {
+  padding: 6px;
+  padding-bottom: 0px;
+}
+.bar-container label {
+  font-size: 12px;
+  font-weight: 600;
+}
+.bar-container .bar-centerbox > * {
+  background: oklch(from var(--bg-translucent-primary) l c h / .6);
+  border-radius: var(--radius);
+  padding: 0 var(--padding);
+}
+.bar-container .bar-centerbox > * > box:not(.transparent),
+.bar-container .bar-centerbox > * > button {
+  border-radius: calc(var(--radius) - var(--padding));
+  margin: var(--padding) 0;
+  padding: 0 8px;
+}
+.bar-container .bar-centerbox > * > box:not(.transparent):hover,
+.bar-container .bar-centerbox > * > button:hover {
+  background: var(--color-hover);
+}
+.bar-container .bar-centerbox > * > box:not(.transparent):active,
+.bar-container .bar-centerbox > * > button:active {
+  box-shadow: 0 0 0 2px var(--color-hover);
+}
+
+.bar-container .workspaces-row {
+  padding: 4px;
+}
+.bar-container .workspaces-row .workspace {
+  transition: 80ms linear;
+  margin: 3px 0;
+  border-radius: 16px;
+  min-width: 14px;
+  padding: 0 6px;
+  background: var(--bg-tertiary);
+}
+.bar-container .workspaces-row .workspace:active {
+  border-radius: 10px;
+}
+.bar-container .workspaces-row .workspace label.id {
+  font-weight: 600;
+  margin-right: 4px;
+  opacity: 0;
+}
+.bar-container .workspaces-row .workspace.focus {
+  background: var(--fg-primary);
+  min-width: 32px;
+}
+.bar-container .workspaces-row .workspace.focus label.id {
+  opacity: 0;
+  color: var(--fg-light);
+  margin-right: 0;
+}
+.bar-container .workspaces-row .workspace icon {
+  font-size: 16px;
+}
+.bar-container .workspaces-row .workspace.show label.id {
+  opacity: 1;
+}
+.bar-container .workspaces-row .workspace:hover:not(.last-client-icon):not(.focus) {
+  background: oklch(from var(--bg-tertiary) calc(l + 10%) c h / alpha);
+}
+
+.bar-container .focused-client {
+  margin: 3px 0;
+  padding: 0 6px;
+  border-radius: 16px;
+}
+.bar-container .focused-client image {
+  margin-right: 6px;
+  -gtk-icon-size: 18px;
+}
+.bar-container .focused-client .text-content .class {
+  font-size: 9px;
+  font-family: monospace;
+  font-weight: 600;
+  color: var(--fg-disabled);
+  margin-top: 0px;
+}
+.bar-container .focused-client .text-content .title {
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: -2px;
+}
+.bar-container .focused-client:hover {
+  background: oklch(from var(--fg-primary) l c h / .3);
+}
+
+.bar-container .clock.open {
+  background: var(--bg-primary);
+}
+
+.bar-container .media {
+  background: var(--bg-primary);
+  border-radius: calc(var(--radius) - var(--padding));
+  margin: var(--padding) 0;
+  padding: 0 calc(var(--padding) + 3px);
+}
+.bar-container .media image.player-icon {
+  -gtk-icon-size: 14px;
+  margin-right: var(--spacing);
+}
+.bar-container .media .buttons {
+  margin-left: var(--spacing);
+}
+.bar-container .media .button-row {
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+  padding: 4px 0;
+}
+.bar-container .media .button-row > button image {
+  margin: 0;
+  -gtk-icon-size: 10px;
+}
+.bar-container .media:hover {
+  background: var(--hover-color);
+}
+.bar-container .media:active {
+  box-shadow: 0 0 0 2px var(--hover-color);
+}
+
+.bar-container .tray {
+  padding: 0 6px;
+}
+
+.bar-container .status.open {
+  background: var(--bg-primary);
+}
+.bar-container .status image {
+  -gtk-icon-size: 14px;
+}
+.bar-container .status revealer > box {
+  background: oklch(from var(--bg-tertiary) l c h / .7);
+  border-radius: 12px;
+  margin: 4px 0;
+  margin-left: 5px;
+  padding: 2px 6px;
+}
+.bar-container .status .status-icons {
+  padding-left: 4px;
+}
+.bar-container .status .status-icons image.notification-count {
+  -gtk-icon-size: 6px;
+  margin-top: -14px;
+}
+
+.bar-container .apps {
+  min-width: 18px;
+}
+.bar-container .apps image {
+  transition: 120ms linear;
+  -gtk-icon-size: 14px;
+}
+.bar-container .apps.open {
+  background: var(--bg-primary);
+}

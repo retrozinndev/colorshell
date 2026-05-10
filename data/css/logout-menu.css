@@ -1,0 +1,40 @@
+.logout-menu-container {
+  background: oklch(from var(--bg-translucent-primary) l c h / .4);
+}
+.logout-menu-container .top .time {
+  font-size: 128px;
+  font-weight: 900;
+  color: var(--fg-primary);
+  text-shadow: 1px 1px 2px var(--bg-translucent-primary);
+}
+.logout-menu-container .top .date {
+  font-size: 24px;
+  font-weight: 500;
+  text-shadow: 1px 1px 2px var(--bg-translucent-primary);
+}
+.logout-menu-container .button-row {
+  --radius: 32px;
+  all: unset;
+  margin: 0 150px;
+}
+.logout-menu-container .button-row > button image {
+  -gtk-icon-size: 128px;
+}
+.logout-menu-container .button-row > button:focus-visible {
+  box-shadow: inset 0 0 0 5px var(--fg-primary);
+}
+.logout-menu-container .button-row > button:active {
+  border-radius: calc(var(--radius) - 6px);
+}
+.logout-menu-container .button-row > button {
+  margin: 0 4px;
+  border-radius: 6px;
+}
+.logout-menu-container .button-row > button:first-child:not(:active) {
+  border-top-left-radius: var(--radius);
+  border-bottom-left-radius: var(--radius);
+}
+.logout-menu-container .button-row > button:last-child:not(:active) {
+  border-top-right-radius: var(--radius);
+  border-bottom-right-radius: var(--radius);
+}

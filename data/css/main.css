@@ -1,0 +1,272 @@
+/* GTK4 doesn't support nested rules in the big 2026 :sob: */
+* {
+  all: unset;
+  transition: 120ms linear;
+  font-family: "Adwaita Sans", "Cantarell", "Noto Sans", 
+    "Noto Sans CJK JP", "Noto Sans CJK KR", "Noto Sans CJK HK",
+    "Noto Sans CJK SC", "Noto Sans CJK TC", sans-serif,
+    "Symbols Nerd Font Mono";
+
+  color: var(--fg-primary);
+}
+
+entry {
+  background: var(--bg-primary);
+  padding: 10px 9px;
+  border-radius: 12px;
+}
+entry:focus {
+  box-shadow: inset 0 0 0 2px var(--bg-secondary);
+}
+entry image.left {
+  margin-right: 6px;
+}
+
+.reactive {
+  background: var(--bg-primary);
+  border-radius: 14px;
+  padding: 6px;
+}
+.reactive:hover {
+  background: var(--bg-secondary);
+}
+.reactive:active {
+  border-radius: 10px;
+}
+
+.reactive-secondary {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 6px;
+}
+.reactive-secondary:hover {
+  background: var(--bg-tertiary);
+}
+.reactive-secondary:active {
+  border-radius: 9px;
+}
+
+customdialog .container {
+  background: var(--bg-translucent-primary);
+  padding: 18px;
+  border-radius: 24px;
+}
+customdialog .container .title {
+  font-size: 21px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+customdialog .container .text {
+  font-size: 16px;
+  font-weight: 400;
+}
+customdialog .container .options button {
+  background: var(--bg-primary);
+  border-radius: 12px;
+  padding: 9px 6px;
+  margin-left: 4px;
+  margin-right: 4px;
+}
+customdialog .container .options button label {
+  font-size: 16px;
+  font-weight: 600;
+}
+customdialog .container.entry-popup-box entry {
+  margin-bottom: 10px;
+}
+customdialog .container.entry-popup-box entry.password {
+  font-size: 14px;
+  font-family: "Adwaita Mono", "Cantarell Mono", "Noto Sans Mono", monospace;
+  font-weight: 400;
+}
+
+notification {
+  background: var(--bg-translucent-secondary);
+  border-radius: 16px;
+}
+notification > .top {
+  padding: 8px;
+  padding-bottom: 0;
+}
+notification > .top .app-icon {
+  margin-right: 6px;
+}
+notification > .top .app-name {
+  font-size: 12px;
+}
+notification > .top label.time {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--fg-disabled);
+  margin-right: 6px;
+}
+notification > .top button.close {
+  padding: 2px;
+  border-radius: 8px;
+}
+notification > .top button.close:hover {
+  background: var(--bg-secondary);
+}
+notification > .top icon.close {
+  font-size: 16px;
+}
+notification .content {
+  padding: 6px;
+  padding-top: 0;
+}
+notification .content stack {
+  margin: 6px;
+}
+notification .content stack image.notif-image {
+  border-radius: 12px;
+}
+notification .content .summary {
+  font-size: 17.3px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+notification .content .body {
+  font-size: 14.5px;
+  font-weight: 400;
+}
+notification .actions {
+  padding: 6px;
+}
+notification .actions row:first-child button {
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  margin-top: 0;
+}
+notification .actions row:last-child button {
+  border-bottom-right-radius: 12px;
+  border-bottom-left-radius: 12px;
+  margin-bottom: 0;
+}
+notification .actions button.action {
+  border-radius: 4px;
+  background: var(--bg-secondary);
+  padding: 6px;
+  margin-top: 1px;
+  margin-bottom: 1px;
+}
+notification .actions button.action label {
+  font-size: 14px;
+  font-weight: 600;
+}
+notification .actions button.action:hover {
+  background: var(--bg-tertiary);
+}
+
+tooltip > box {
+  padding: 7px 8px;
+  margin: 12px;
+  margin-top: 0;
+  border-radius: 12px;
+  background: oklch(from var(--bg-primary) l c h / .98);
+  box-shadow: 0 5px 6px 1px var(--bg-translucent-primary);
+}
+tooltip > box label {
+  font-size: 13.1px;
+  font-weight: 500;
+  color: var(--fg-primary);
+}
+
+popover.menu contents {
+  background: var(--bg-primary);
+  border-radius: 14px;
+  padding: 4px;
+}
+popover.menu contents viewport > stack > * > * > * > separator {
+  min-height: 0.5px;
+  margin: 3px 2px;
+  background: oklch(from var(--fg-disabled) l c h / .1);
+}
+popover.menu contents viewport > stack > * > * > * > *:not(separator) > * {
+  padding: 6px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+popover.menu contents viewport > stack > * > * > * > *:not(separator) > *:hover, popover.menu contents viewport > stack > * > * > * > *:not(separator) > *:focus {
+  background: var(--bg-secondary);
+}
+
+.button-row > button {
+  --active-radius: 8px;
+  --corner-radius: calc(var(--active-radius) + 2px);
+  background: var(--bg-secondary);
+  margin: 0 1px;
+  padding: 4px 6px;
+  border-radius: 2px;
+  transition: 120ms linear;
+}
+.button-row > button:hover {
+  background: var(--bg-tertiary);
+}
+.button-row > button:active {
+  border-radius: var(--active-radius);
+}
+.button-row > button:first-child {
+  margin-left: 0;
+}
+.button-row > button:first-child:not(:active) {
+  border-top-left-radius: var(--corner-radius);
+  border-bottom-left-radius: var(--corner-radius);
+}
+.button-row > button:last-child {
+  margin-right: 0;
+}
+.button-row > button:last-child:not(:active) {
+  border-top-right-radius: var(--corner-radius);
+  border-bottom-right-radius: var(--corner-radius);
+}
+
+selection {
+  background: var(--bg-tertiary);
+}
+
+trough {
+  background: var(--bg-primary);
+  border-radius: 8px;
+  margin: 2px 0;
+}
+
+trough highlight {
+  background: var(--bg-secondary);
+  min-height: 0.9em;
+}
+
+trough slider {
+  border-radius: 50%;
+  margin: -4px 0;
+  background: var(--fg-primary);
+  min-width: 1.2em;
+  min-height: 1.2em;
+}
+
+scrollbar trough {
+  background: var(--bg-translucent-primary);
+  border-radius: 8px;
+}
+scrollbar trough slider {
+  min-width: 0.45em;
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+}
+scrollbar trough slider:hover, scrollbar trough slider:active, scrollbar trough slider:focus {
+  margin: 2px;
+}
+scrollbar trough:hover, scrollbar trough:active, scrollbar trough:focus {
+  padding: 2px;
+}
+
+scale marks mark indicator {
+  color: var(--fg-disabled);
+  min-width: 1px;
+  min-height: 6px;
+}
+scale marks mark label {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--fg-disabled);
+}

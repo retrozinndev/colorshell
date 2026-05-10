@@ -1,0 +1,26 @@
+.osd {
+  background: oklch(from var(--bg-translucent-secondary) l c h / .6);
+  padding: 14px 14px;
+  border-radius: 24px;
+  min-width: 180px;
+}
+.osd .icon {
+  margin-right: 10px;
+  -gtk-icon-size: 24px;
+}
+.osd .level {
+  margin-top: -6px;
+}
+.osd .level .text {
+  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.osd .level levelbar trough block {
+  border-radius: 4px;
+  background: var(--bg-primary);
+}
+.osd .level levelbar trough block.filled {
+  min-height: 10px;
+  background: var(--bg-secondary);
+}

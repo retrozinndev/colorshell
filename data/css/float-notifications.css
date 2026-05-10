@@ -1,0 +1,18 @@
+window.floating-notifications {
+  --radius: 18px;
+  transition: none;
+}
+window.floating-notifications .floating-notifications-container {
+  transition: none;
+}
+window.floating-notifications .floating-notifications-container:only-child notification {
+  margin-bottom: 12px;
+}
+window.floating-notifications notification {
+  padding: 4px;
+  padding-bottom: 0;
+  margin: 12px;
+  margin-bottom: 6px;
+  box-shadow: 0 0 8px 1px var(--bg-translucent-primary);
+  border-radius: var(--radius);
+}

@@ -1,22 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
-    <!-- Sass -->
-    <gresource prefix="/io/github/retrozinndev/colorshell/styles">
-        <file alias="main">styles/main.scss</file>
-        <file alias="mixins">styles/_mixins.scss</file>
-        <file alias="colors">styles/_colors.scss</file>
-        <file alias="apps-window">styles/_apps-window.scss</file>
-        <file alias="bar">styles/_bar.scss</file>
-        <file alias="center-window">styles/_center-window.scss</file>
-        <file alias="control-center">styles/_control-center.scss</file>
-        <file alias="float-notifications">styles/_float-notifications.scss</file>
-        <file alias="logout-menu">styles/_logout-menu.scss</file>
-        <file alias="osd">styles/_osd.scss</file>
-        <file alias="runner">styles/_runner.scss</file>
+    <!-- Stylesheets -->
+    <gresource prefix="/io/github/retrozinndev/Colorshell/css">
+        <file alias="colors">css/colors.css</file>
+        <file alias="main">css/main.css</file>
+        <file alias="bar">css/bar.css</file>
+        <file alias="apps-window">css/apps-window.css</file>
+        <file alias="center-window">css/center-window.css</file>
+        <file alias="control-center">css/control-center.css</file>
+        <file alias="float-notifications">css/float-notifications.css</file>
+        <file alias="logout-menu">css/logout-menu.css</file>
+        <file alias="osd">css/osd.css</file>
+        <file alias="runner">css/runner.css</file>
     </gresource>
 
     <!-- Icons -->
-    <gresource prefix="/io/github/retrozinndev/colorshell/icons/scalable/actions">
+    <gresource prefix="/io/github/retrozinndev/Colorshell/icons/scalable/actions">
         <file alias="applications-other-symbolic.svg">icons/applications-other-symbolic.svg</file>
         <file alias="arrow-circular-top-right-symbolic.svg">icons/arrow-circular-top-right-symbolic.svg</file>
         <file alias="circle-filled-symbolic.svg">icons/circle-filled-symbolic.svg</file>
@@ -29,20 +28,16 @@
     </gresource>
 
     <!-- Configuration files -->
-    <gresource prefix="/io/github/retrozinndev/colorshell/config">
+    <gresource prefix="/io/github/retrozinndev/Colorshell/config">
         <file alias="hyprlock.conf">config/hyprlock.conf</file>
         <file alias="hyprpaper.conf">config/hyprpaper.conf</file>
     </gresource>
 
     <!-- Compositor-specific configuration -->
-    <gresource prefix="/io/github/retrozinndev/colorshell/config/hyprland">
+    <gresource prefix="/io/github/retrozinndev/Colorshell/config/hyprland">
         <file alias="environment.conf">config/hyprland/environment.conf</file>
         <file alias="decorations.conf">config/hyprland/decorations.conf</file>
         <file alias="bindings.conf">config/hyprland/bindings.conf</file>
         <file alias="rules.conf">config/hyprland/rules.conf</file>
     </gresource>
-    <!--
-    <gresource prefix="/io/github/retrozinndev/colorshell/config/niri">
-    </gresource>
-    -->
 </gresources>
