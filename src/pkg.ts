@@ -2,7 +2,7 @@ const Package = imports.package;
 
 
 Package.init({
-    name: "io.github.retrozinndev.colorshell",
+    name: "io.github.retrozinndev.Colorshell",
     version: COLORSHELL_VERSION,
     prefix: "~/.local",
     datadir: "/share",

@@ -12,7 +12,7 @@ const astalTray = AstalTray.get_default();
 export const Tray = () => {
     const items = createBinding(astalTray, "items").as(items => items.filter(item => item?.gicon));
 
-    return <Gtk.Box class={"tray"} visible={variableToBoolean(items)} spacing={10}>
+    return <Gtk.Box class={"tray transparent"} visible={variableToBoolean(items)} spacing={10}>
         <For each={items}>
             {(item: AstalTray.TrayItem) => <Gtk.Box class={"item"}>
                 <With value={createComputed([

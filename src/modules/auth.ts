@@ -24,7 +24,7 @@ export class Auth extends PolkitAgent.Listener {
         this.register(
             PolkitAgent.RegisterFlags.RUN_IN_THREAD,
             Polkit.UnixSession.new(this.#user.get_uid().toString()),
-            "/io/github/retrozinndev/colorshell/AuthAgent",
+            "/io/github/retrozinndev/Colorshell/AuthAgent",
             null
         );
     }

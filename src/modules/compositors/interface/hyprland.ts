@@ -159,7 +159,7 @@ export class CompositorHyprland extends Compositor {
 
     private reload(): void {
         const names = Gio.resources_enumerate_children(
-            "/io/github/retrozinndev/colorshell/config/hyprland",
+            "/io/github/retrozinndev/Colorshell/config/hyprland",
             Gio.ResourceLookupFlags.NONE
         ).filter(name => !name.includes("bindings"));
 
@@ -181,7 +181,7 @@ export class CompositorHyprland extends Compositor {
         const bindExpr = /^bind([lrcgoenmtisdpu]*)?[ ]+=[ ]+(.*)$/;
         const binds: Array<CompositorHyprland.Bind> = [];
         const bindingsConf = decoder.decode(Gio.resources_lookup_data(
-            "/io/github/retrozinndev/colorshell/config/hyprland/bindings.conf",
+            "/io/github/retrozinndev/Colorshell/config/hyprland/bindings.conf",
             Gio.ResourceLookupFlags.NONE
         )?.toArray());
 
@@ -231,7 +231,7 @@ export class CompositorHyprland extends Compositor {
     /** load necessary hyprland configs from gresource */
     private initConfig(): void {
         const names = Gio.resources_enumerate_children(
-            "/io/github/retrozinndev/colorshell/config/hyprland",
+            "/io/github/retrozinndev/Colorshell/config/hyprland",
             Gio.ResourceLookupFlags.NONE
         ).filter(name => !name.includes("bindings"));
 
@@ -241,7 +241,7 @@ export class CompositorHyprland extends Compositor {
         names.forEach(name => {
             const file = Gio.File.new_for_path(`${this.#configDir.peek_path()!}/${name}`);
             const data = Gio.resources_lookup_data(
-                `/io/github/retrozinndev/colorshell/config/hyprland/${name}`,
+                `/io/github/retrozinndev/Colorshell/config/hyprland/${name}`,
                 Gio.ResourceLookupFlags.NONE
             );
 

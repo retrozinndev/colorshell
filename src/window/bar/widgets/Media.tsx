@@ -12,7 +12,7 @@ import Pango from "gi://Pango?version=1.0";
 
 
 export const Media = () => 
-    <Gtk.Box class={"media"} visible={createBinding(Player.getDefault(), "player")(p => Boolean(p?.available))}>
+    <Gtk.Box class={"media transparent"} visible={createBinding(Player.getDefault(), "player")(p => Boolean(p?.available))}>
         <Gtk.EventControllerScroll $={(self) => {
               self.set_flags(Gtk.EventControllerScrollFlags.VERTICAL)
           }} onScroll={(_, __, dy) => {

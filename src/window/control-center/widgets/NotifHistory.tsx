@@ -1,5 +1,5 @@
 import { Gdk, Gtk } from "ags/gtk4";
-import { HistoryNotification, Notifications } from "../../../modules/notifications";
+import { Notifications } from "../../../modules/notifications";
 import { Notification } from "../../../widget/Notification";
 import { tr } from "../../../i18n/intl";
 import { createBinding, For } from "ags";
@@ -27,7 +27,7 @@ export const NotifHistory = () =>
               spacing={4} valign={Gtk.Align.START}>
 
                 <For each={createBinding(Notifications.getDefault(), "history")}>
-                    {(notif: AstalNotifd.Notification|HistoryNotification) => 
+                    {(notif: AstalNotifd.Notification|Notifications.HistoryNotification) => 
                         <Notification summary={notif.summary} body={notif.body} time={notif.time}
                           appName={notif.appName} appIcon={notif.appIcon} image={
                               Notifications.getDefault().getNotificationImage(notif)
@@ -47,7 +47,7 @@ export const NotifHistory = () =>
         </Gtk.ScrolledWindow>
 
         <Gtk.Box class={"button-row"} hexpand>
-            <Gtk.Button class={"clear-all"} halign={Gtk.Align.END}
+            <Gtk.Button class={"clear-all reactive-secondary"} halign={Gtk.Align.END}
               onClicked={() => Notifications.getDefault().clearHistory()}>
 
                 <Gtk.Box hexpand>

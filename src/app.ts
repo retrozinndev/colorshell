@@ -5,7 +5,6 @@ import { createRoot, getScope, Scope } from "ags";
 import { programArgs, programInvocationName } from "system";
 import { setConsoleLogDomain } from "console";
 import { cacheDir, createScopedConnection, dataDir, encoder, getDBusNamePID, globalScope, runtimeConfigDir, runtimeDir } from "./modules/utils";
-import { Stylesheet } from "./modules/stylesheet";
 import { Clipboard } from "./modules/clipboard";
 import { OSD } from "./window/osd";
 import { NightLight } from "./modules/nightlight";
@@ -17,6 +16,7 @@ import { initWindows } from "./windows";
 import { initCli } from "./cli/init";
 import Cli from "./cli";
 import SocketCli from "./cli/interface/socket";
+import StyleManager from "./modules/stylemanager";
 import Media from "./modules/media";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
@@ -28,7 +28,6 @@ export class Shell extends Adw.Application {
     private static instance: Shell;
 
     #scope!: Scope;
-    #providers: Array<Gtk.CssProvider> = [];
     #pid: number|null = null;
 
     get pid() { return this.#pid; }
@@ -36,13 +35,13 @@ export class Shell extends Adw.Application {
 
     constructor() {
         super({
-            applicationId: "io.github.retrozinndev.colorshell",
+            applicationId: "io.github.retrozinndev.Colorshell",
             flags: Gio.ApplicationFlags.HANDLES_COMMAND_LINE,
             version: COLORSHELL_VERSION,
         });
 
         setConsoleLogDomain("Colorshell");
-        GLib.set_application_name("colorshell");
+        GLib.set_application_name("Colorshell");
         GLib.set_prgname("colorshell");
         initCli();
     }
@@ -52,52 +51,6 @@ export class Shell extends Adw.Application {
             this.instance = new Shell();
 
         return this.instance;
-    }
-
-    public resetStyle(): void {
-        this.#providers.forEach(provider =>
-            Gtk.StyleContext.remove_provider_for_display(
-                Gdk.Display.get_default()!,
-                provider
-            )
-        );
-    }
-
-    public removeProvider(provider: Gtk.CssProvider): boolean {
-        if(!this.#providers.includes(provider))
-            return false;
-
-        for(let i = 0; i < this.#providers.length; i++) {
-            const prov = this.#providers[i];
-            if(prov === provider) {
-                this.#providers.splice(i, 1);
-                Gtk.StyleContext.remove_provider_for_display(
-                    Gdk.Display.get_default()!,
-                    provider
-                );
-
-                break;
-            }
-        }
-
-        return true;
-    }
-
-    public applyStyle(stylesheet: string): void {
-        try {
-            const provider = Gtk.CssProvider.new();
-            provider.load_from_string(stylesheet)
-            this.#providers.push(provider);
-            
-            Gtk.StyleContext.add_provider_for_display(
-                Gdk.Display.get_default()!,
-                provider,
-                Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
-            );
-        } catch(e) {
-            console.error(`Colorshell: Couldn't apply style. Stderr: ${e}`);
-            return;
-        }
     }
 
     vfunc_activate(): void {
@@ -137,8 +90,8 @@ export class Shell extends Adw.Application {
 
         const pidFile = Gio.File.new_for_path(`${runtimeDir.peek_path()!}/.pid`);
         getDBusNamePID(
-            "io.github.retrozinndev.colorshell",
-            "/io/github/retrozinndev/colorshell",
+            "io.github.retrozinndev.Colorshell",
+            "/io/github/retrozinndev/Colorshell",
             "org.freedesktop.Application"
         ).then((pid) => {
             this.#pid = pid;
@@ -177,10 +130,10 @@ export class Shell extends Adw.Application {
 
         // add icons 
         Gtk.IconTheme.get_for_display(Gdk.Display.get_default()!)
-            .add_resource_path("/io/github/retrozinndev/colorshell/icons")
+            .add_resource_path("/io/github/retrozinndev/Colorshell/icons")
 
         Gio.resources_enumerate_children(
-            "/io/github/retrozinndev/colorshell/config",
+            "/io/github/retrozinndev/Colorshell/config",
             Gio.ResourceLookupFlags.NONE
         ).forEach(name => {
             if(!/\..*$/.test(name))
@@ -192,7 +145,7 @@ export class Shell extends Adw.Application {
                 return;
             
             file.replace_contents_bytes_async(Gio.resources_lookup_data(
-                `/io/github/retrozinndev/colorshell/config/${name}`, Gio.ResourceLookupFlags.NONE
+                `/io/github/retrozinndev/Colorshell/config/${name}`, Gio.ResourceLookupFlags.NONE
             ), null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null, null);
         });
     }
@@ -203,7 +156,7 @@ export class Shell extends Adw.Application {
         console.log("Colorshell: Initializing modules");
         initCompositor();
         Media.getDefault();
-        Stylesheet.getDefault();
+        StyleManager.init();
 
         initWindows();
 

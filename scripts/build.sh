@@ -5,6 +5,7 @@ output="./build"
 esbuild="/bin/env esbuild"
 is_devel=false
 version=`cat package.json | jq -r .version`
+appid="io.github.retrozinndev.Colorshell"
 
 while getopts r:o:e:bdh args; do
     case "$args" in
@@ -70,8 +71,8 @@ echo "[info] compiling gresource"
 gres_target=`[[ "$keep_gresource" ]] && echo -n "$output/resources.gresource" || \
     echo -n "${gresources_target:-$output/resources.gresource}"`
 mkdir -p `dirname "$gres_target"`
-glib-compile-resources resources.gresource.xml \
-    --sourcedir ./resources \
+glib-compile-resources data/$appid.gresource.xml \
+    --sourcedir ./data \
     --target "$gres_target"
 
 echo "[info] creating executable"

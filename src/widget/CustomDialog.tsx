@@ -31,7 +31,7 @@ export interface CustomDialogOption {
 function CustomDialogOption({closeOnClick = true, ...props}: CustomDialogOption & {
     dialog: Astal.Window;
 }) {
-    return <Gtk.Button class="option" hexpand label={props.text} 
+    return <Gtk.Button class="option reactive-primary" hexpand label={props.text} 
       onClicked={() => {
           props.onClick?.();
           closeOnClick && 

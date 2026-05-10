@@ -9,13 +9,14 @@
         "start": "sh ./scripts/start.sh",
         "clean": "sh ./scripts/clean.sh",
         "build": "sh ./scripts/build.sh",
-        "build:release": "sh ./scripts/release.sh",
-        "sync-config": "sh ./scripts/sync-config.sh"
+        "build:release": "sh ./scripts/release.sh"
     },
     "devDependencies": {
+        "esbuild": "^0.28.0"
+    },
+    "dependencies": {
         "ags": "file:/usr/share/ags/js",
-        "esbuild": "^0.28.0",
-        "fuse.js": "^7.1.0",
+        "fuse.js": "^7.3.0",
         "gnim-utils": "github:retrozinndev/gnim-utils"
     }
 }

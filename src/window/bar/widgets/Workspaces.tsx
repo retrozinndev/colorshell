@@ -22,7 +22,7 @@ export const Workspaces = () => {
         focusedWorkspace = createBinding(AstalHyprland.get_default(), "focusedWorkspace") as Accessor<AstalHyprland.Workspace|null>;
 
 
-    return <Gtk.Box class={"workspaces-row"} visible={createComputed([
+    return <Gtk.Box class={"workspaces-row transparent"} visible={createComputed([
           workspaces.as(wss => wss.length <= 1),
           generalConfig.bindProperty("workspaces.hide_if_single", "boolean")
       ], (hideable, enabled) => enabled && hideable ? false : true

@@ -9,7 +9,7 @@ import Pango from "gi://Pango?version=1.0";
 export const FocusedClient = () => {
     const focusedClient = createBinding(Compositor.getDefault(), "focusedClient");
 
-    return <Gtk.Box class={"focused-client"} visible={variableToBoolean(focusedClient)}>
+    return <Gtk.Box class={"focused-client transparent"} visible={variableToBoolean(focusedClient)}>
         <With value={focusedClient}>
             {(focusedClient) => focusedClient?.class && <Gtk.Box>
                 <Gtk.Image iconName={createBinding(focusedClient, "class").as((clss) => 

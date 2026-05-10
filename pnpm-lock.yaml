@@ -7,19 +7,20 @@ settings:
 importers:
 
   .:
-    devDependencies:
+    dependencies:
       ags:
         specifier: file:/usr/share/ags/js
         version: file:../../../../usr/share/ags/js(gnim@1.8.2)
-      esbuild:
-        specifier: ^0.28.0
-        version: 0.28.0
       fuse.js:
-        specifier: ^7.1.0
-        version: 7.1.0
+        specifier: ^7.3.0
+        version: 7.3.0
       gnim-utils:
         specifier: github:retrozinndev/gnim-utils
         version: https://codeload.github.com/retrozinndev/gnim-utils/tar.gz/3c3b9ac6209b47e1efb2ac219acab938e8d97426(gnim@1.8.2)
+    devDependencies:
+      esbuild:
+        specifier: ^0.28.0
+        version: 0.28.0
 
 packages:
 
@@ -184,15 +185,15 @@ packages:
     engines: {gjs: '>=1.79.0'}
     os: [linux]
     peerDependencies:
-      gnim: ^1.9.0
+      gnim: ^1.9.1
 
   esbuild@0.28.0:
     resolution: {integrity: sha512-sNR9MHpXSUV/XB4zmsFKN+QgVG82Cc7+/aaxJ8Adi8hyOac+EXptIp45QBPaVyX3N70664wRbTcLTOemCAnyqw==}
     engines: {node: '>=18'}
     hasBin: true
 
-  fuse.js@7.1.0:
-    resolution: {integrity: sha512-trLf4SzuuUxfusZADLINj+dE8clK1frKdmqiJNb1Es75fmI5oY6X2mxLVUciLLjxqw/xr72Dhy+lER6dGd02FQ==}
+  fuse.js@7.3.0:
+    resolution: {integrity: sha512-plz8RVjfcDedTGfVngWH1jmJvBvAwi1v2jecfDerbEnMcmOYUEEwKFTHbNoCiYyzaK2Ws8lABkTCcRSqCY1q4w==}
     engines: {node: '>=10'}
 
   gnim-utils@https://codeload.github.com/retrozinndev/gnim-utils/tar.gz/3c3b9ac6209b47e1efb2ac219acab938e8d97426:
@@ -318,7 +319,7 @@ snapshots:
       '@esbuild/win32-ia32': 0.28.0
       '@esbuild/win32-x64': 0.28.0
 
-  fuse.js@7.1.0: {}
+  fuse.js@7.3.0: {}
 
   gnim-utils@https://codeload.github.com/retrozinndev/gnim-utils/tar.gz/3c3b9ac6209b47e1efb2ac219acab938e8d97426(gnim@1.8.2):
     dependencies:
