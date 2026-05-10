@@ -1,4 +1,3 @@
-import { exec, execAsync } from "ags/process";
 import { readFile, readFileAsync } from "ags/file";
 import GObject, { register, getter, gtype, property, setter, signal } from "ags/gobject";
 
@@ -7,6 +6,8 @@ import GLib from "gi://GLib?version=2.0";
 import { createSubscription, encoder, getPID, globalScope, killProc, runtimeConfigDir } from "./utils";
 import { Notifications } from "./notifications";
 import { generalConfig } from "../config";
+import { Socket } from "./socket";
+import { execAsync } from "ags/process";
 
 
 // TODO: support different wallpapers for each monitor
@@ -15,6 +16,7 @@ export class Wallpaper extends GObject.Object {
     declare $signals: Wallpaper.SignalSignatures;
     private static instance: Wallpaper;
 
+    #sock: Socket;
     #wallpaper: Gio.File|null = null;
     #userHyprpaperFile!: Gio.File;
     #defaultHyprpaperFile!: Gio.File;
@@ -45,11 +47,20 @@ export class Wallpaper extends GObject.Object {
     @property(gtype<Wallpaper.WalColorMode>(String))
     colorMode: Wallpaper.WalColorMode = "darken";
 
+
     constructor(props?: Wallpaper.ConstructorProps) {
         super(props);
 
         this.#wallpapersDir = Gio.File.new_for_path(
             GLib.getenv("WALLPAPERS") ?? `${GLib.get_home_dir()}/wallpapers`
+        );
+
+        const instSignature = GLib.getenv("HYPRLAND_INSTANCE_SIGNATURE");
+        if(!instSignature)
+            throw new Error("Hyprland instance signature is invalid. Are you using Hyprland?");
+
+        this.#sock = new Socket(
+            Socket.Type.CLIENT, `${GLib.get_user_runtime_dir()}/hypr/${instSignature}/.hyprpaper.sock`
         );
 
         this.#userHyprpaperFile = Gio.File.new_for_path(
@@ -256,7 +267,8 @@ wallpaper {
         if(this.#wallpaper?.peek_path()?.trim() === "")
             return;
 
-        exec(`hyprctl hyprpaper wallpaper ", ${this.#wallpaper?.peek_path()?.replaceAll(',', "\\,")}, ${this.positioning}"`);
+        this.#sock.simpleSendSync(`wallpaper , ${this.#wallpaper?.peek_path()?.replaceAll(',', "\\,")}, ${this.positioning}`)
+        //this.restartDaemon();
 
         write && this.writeChanges();
     }
@@ -275,6 +287,7 @@ wallpaper {
 
         this.#wallpaper = file;
         this.notify("wallpaper");
+
         this.reloadWallpaper(write).then(() => {
             this.emit("wallpaper-changed", this.#wallpaper!);
         }).catch((e: Error) => {
