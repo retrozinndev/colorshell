@@ -1,6 +1,6 @@
 import { gtype, property, register, signal } from "ags/gobject";
 import { execAsync } from "ags/process";
-import Compositor from "./compositors";
+import Compositor from "../compositor";
 import { Notifications } from "./notifications";
 import GObject from "gi://GObject?version=2.0";
 import Gio from "gi://Gio?version=2.0";
