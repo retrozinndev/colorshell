@@ -1,27 +1,41 @@
-import { getter, register } from "ags/gobject";
+import { getter, gtype, register } from "ags/gobject";
 import GObject from "gi://GObject?version=2.0";
-import CompositorMonitor from "./monitor";
+import Monitor from "./monitor";
 
 
-namespace Compositor {
-    @register({ GTypeName: "CompositorWorkspace" })
-    export class Workspace extends GObject.Object {
-        #id: number;
-        #monitor: CompositorMonitor.Monitor;
+@register({ GTypeName: "CompositorWorkspace" })
+class Workspace extends GObject.Object {
+    #id: number;
+    #name: string|null = null;
+    #monitor: Monitor;
 
-        @getter(Number)
-        get id() { return this.#id; }
+    @getter(Number)
+    get id() { return this.#id; }
 
-        @getter(GObject.Object)
-        get monitor() { return this.#monitor; }
+    @getter(gtype<string|null>(String))
+    get name() { return this.#name; }
 
-        constructor(monitor: CompositorMonitor.Monitor, id: number = 0) {
-            super();
+    @getter(GObject.Object)
+    get monitor() { return this.#monitor; }
 
-            this.#monitor = monitor;
-            this.#id = id;
-        }
+    constructor(props: Workspace.ConstructorProps) {
+        super();
+
+        this.#monitor = props.monitor;
+        this.#id = props.id;
+
+        if(props.name !== undefined)
+            this.#name = props.name;
     }
 }
 
-export default Compositor;
+namespace Workspace {
+    export interface SignalSignatures extends GObject.Object.SignalSignatures {}
+    export interface ConstructorProps extends GObject.Object.ConstructorProps {
+        id: number;
+        monitor: Monitor;
+        name?: string;
+    }
+}
+
+export default Workspace;

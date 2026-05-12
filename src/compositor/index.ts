@@ -1,14 +1,29 @@
-import Client from "./client";
-import Monitor from "./monitor";
-import Workspace from "./workspace";
-import Comp from "./compositor";
+import _Client from "./client";
+import _Monitor from "./monitor";
+import _Workspace from "./workspace";
+import _Compositor from "./compositor";
 
 
-const Compositor = {
-    ...Client,
-    ...Monitor,
-    ...Workspace,
-    ...Comp
-};
+namespace Compositor {
+    export import Client = _Client;
+    export import Compositor = _Compositor;
+    export import Workspace = _Workspace;
+    export import Monitor = _Monitor;
+
+    let instance: Compositor|null = null;
+
+    /** set the `Compositor` implementation(only if not set already) */
+    export function setDefault(impl: Compositor) {
+        if(instance !== null)
+            throw new Error("Couldn't set default Compositor implementation: already set");
+
+        instance = impl;
+    }
+
+    /** get the default `Compositor` implementation */
+    export function getDefault(): Compositor {
+        return instance!;
+    }
+}
 
 export default Compositor;
