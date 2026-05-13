@@ -2,6 +2,7 @@ import { getter, property, register } from "ags/gobject";
 import GObject from "gi://GObject?version=2.0";
 
 
+/** @abstract */
 @register({ GTypeName: "CompositorMonitor" })
 class Monitor extends GObject.Object {
     #width: number;

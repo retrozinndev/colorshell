@@ -2,261 +2,194 @@ import Compositor from "../..";
 import { register } from "ags/gobject";
 import AstalHyprland from "gi://AstalHyprland";
 import GLib from "gi://GLib?version=2.0";
-import { Socket } from "../../../modules/socket";
 import Gio from "gi://Gio?version=2.0";
 import { createScopedConnection, createSubscription, encoder, playSystemBell, runtimeConfigDir } from "../../../modules/utils";
 import { Wallpaper } from "../../../modules/wallpaper";
 import { generalConfig } from "../../../config";
 import { readFile } from "ags/file";
+import { Socket } from "../../../modules/socket";
+import Client from "./client";
 
 
-namespace Hyprland {
-    @register({ GTypeName: "ClshCompositorHyprland" })
-    export class Hyprland extends Compositor.Compositor {
-        #sock: Socket;
-        #eventSock: Socket;
-        #configDir: Gio.File = Gio.File.new_for_path(`${runtimeConfigDir.peek_path()!}/hyprland`);
-        #ignoreConfigReload: boolean = false;
-        hyprland: AstalHyprland.Hyprland = AstalHyprland.get_default();
+@register({ GTypeName: "ClshCompositorHyprland" })
+class Hyprland extends Compositor.Compositor {
+    declare $signals: Compositor.Compositor.SignalSignatures;
+    #sock: Socket;
+    #inst: AstalHyprland.Hyprland;
+    #configDir: Gio.File = Gio.File.new_for_path(`${runtimeConfigDir.peek_path()!}/hyprland`);
+    #ignoreConfigReload: boolean = false;
 
-        constructor() {
-            super();
 
-            const instSignature = GLib.getenv("HYPRLAND_INSTANCE_SIGNATURE");
-            if(instSignature === null || instSignature.trim() === "")
-                throw new Error("Compositor: Hyprland: Couldn't get instance signature");
+    constructor() {
+        super();
+        this.#inst = AstalHyprland.get_default();
+        this.#sock = new Socket(
+            Socket.Type.CLIENT,
+            `${GLib.get_user_runtime_dir()}/hypr/${GLib.getenv("HYPRLAND_INSTANCE_SIGNATURE")}/.socket.sock`,
+            false
+        );
 
-            this.#eventSock = new Socket(
-                Socket.Type.CLIENT,
-                `${GLib.get_user_runtime_dir()}/hypr/${instSignature}/.socket2.sock`,
-                true
-            );
+        this.initConfig();
 
-            this.#sock = new Socket(
-                Socket.Type.CLIENT,
-                `${GLib.get_user_runtime_dir()}/hypr/${instSignature}/.socket.sock`
-            );
+        createScopedConnection(this.#inst, "event", (e, dat) => this.handleEvents(e, dat));
 
-            this.initConfig();
+        for(const c of this.#inst.get_clients()) {
+            const client = Client.new(c);
+            this._clients.push(client);
+        }
+        this._focusedClient = this._clients.find(c =>
+            c.address === this.#inst.get_focused_client().get_address()
+        ) ?? null;
 
-            const clients = this.getClients();
-            if(clients && clients.length > 0) {
-                this._clients = clients.map(c => new Compositor.Client({
-                    title: c.title,
-                    position: c.at,
-                    mapped: c.mapped,
-                    address: c.address,
-                    initialClass: c.initialClass,
-                    class: c.class
-                }));
-                this.notify("clients");
-            }
+        createScopedConnection(this.#inst, "client-added", (c) => {
+            const client = Client.new(c);
+            this._clients.push(client);
+            this.notify("clients");
+            this.emit("client-added", client);
+        });
+        createScopedConnection(this.#inst, "client-removed", (addr) => {
+            const i = this._clients.findIndex(cl => cl.address === addr);
 
-            const focusedClientAddress = this.getActiveClient()?.address;
-            if(focusedClientAddress) {
-                this._focusedClient = this.clients.find(client => client.address === focusedClientAddress)!;
-                this.notify("focused-client");
-            }
+            this.emit("client-removed", this._clients.splice(i, 1)[0]);
+            this.notify("clients");
+        });
+        // TODO support workspaces
 
-            // handle events from socket and others
-            createScopedConnection(this.#eventSock, "received", (data: string) => {
-                let [event, info] = data.split(">>", 2) as [Hyprland.Event, string|undefined];
+        let matchBorderColorId: number|null = null;
+        createSubscription(
+            generalConfig.bindProperty("misc.match_window_border_color", "boolean"),
+            () => {
+                const matchBorderColor = generalConfig.getProperty("misc.match_window_border_color", "boolean");
 
-                if(/^.*>>$/.test(event)) { // check if there are no extra data to the event
-                    event = event.replace(/^(.*)>>$/, "$1") as Hyprland.Event;
-                    info = undefined;
-                }
+                if(matchBorderColorId !== null)
+                    Wallpaper.getDefault().disconnect(matchBorderColorId);
 
-                //console.log(`${event}:`, info); // debugging
-                this.handleEvents(event, data);
-            });
-
-            let matchBorderColorId: number|null = null;
-            createSubscription(
-                generalConfig.bindProperty("misc.match_window_border_color", "boolean"),
-                () => {
-                    const matchBorderColor = generalConfig.getProperty("misc.match_window_border_color", "boolean");
-
-                    if(matchBorderColorId !== null)
-                        Wallpaper.getDefault().disconnect(matchBorderColorId);
-
-                    if(matchBorderColor) {
-                        matchBorderColorId = Wallpaper.getDefault().connect(
-                            "colors-reloaded", () => this.reload()
-                        );
-                        this.reload();
-
-                        return;
-                    }
-
-                    matchBorderColorId !== null && 
-                        Wallpaper.getDefault().disconnect(matchBorderColorId);
-
+                if(matchBorderColor) {
+                    matchBorderColorId = Wallpaper.getDefault().connect(
+                        "colors-reloaded", () => this.reload()
+                    );
                     this.reload();
+
+                    return;
                 }
-            );
-        }
 
-        private handleEvents(event: Hyprland.Event, data: string): void {
-            switch(event as Hyprland.Event) {
-                case "activewindowv2":
-                    const address = data;
-                    const focusedClient = this.getActiveClient();
+                matchBorderColorId !== null && 
+                    Wallpaper.getDefault().disconnect(matchBorderColorId);
 
-                    if(focusedClient) {
-                        this._focusedClient = new Compositor.Client({
-                            address: address,
-                            class: focusedClient.class ?? "",
-                            initialClass: focusedClient.initialClass ?? "",
-                            mapped: focusedClient.mapped,
-                            position: focusedClient.at,
-                            size: focusedClient.size,
-                            title: focusedClient.title ?? ""
-                        });
-
-                        this.notify("focused-client");
-                        return;
-                    }
-
-                    this._focusedClient = null;
-                    this.notify("focused-client");
-                    break;
-
-                case "configreloaded":
-                    if(!this.#ignoreConfigReload) {
-                        this.#ignoreConfigReload = true;
-                        this.reload();
-                        return;
-                    }
-
-                    this.#ignoreConfigReload &&= false;
-                    break;
-
-                case "bell":
-                    playSystemBell();
-                break;
+                this.reload();
             }
-        }
+        );
+    }
 
-        private getClients(): Array<Hyprland.Client> {
-            return JSON.parse(
-                this.hyprctl("clients", "json", true) ?? "[]"
-            ) as Array<Hyprland.Client>;
-        }
-        
-        private source(path: string): void {
-            if(!path.endsWith(".lua"))
-                return;
+    private handleEvents(event: string, data: string): void {
+        switch(event as Hyprland.Event) {
+            case "activewindowv2": // we handle this manually cuz astal does a terrible job with this property
+                const address = data;
+                const focusedClient = this._clients.find(cl => cl.address === address);
 
-            try {
-                const out = this.hyprctl(`eval \
+                this._focusedClient = focusedClient ?? null;
+                this.notify("focused-client");
+                break;
+            case "configreloaded":
+                if(!this.#ignoreConfigReload) {
+                    this.#ignoreConfigReload = true;
+                    this.reload();
+                    return;
+                }
+
+                this.#ignoreConfigReload &&= false;
+                break;
+
+            case "bell":
+                playSystemBell();
+            break;
+        }
+    }
+
+    private source(path: string): void {
+        if(!path.endsWith(".lua"))
+            return;
+
+        try {
+            const out = this.#sock.simpleSendSync(`eval \
 local file, err = loadfile("${path}");
 if file ~= nil then
     file();
 else
     print(err);
-end`, undefined, true);
-                if(out !== null && !/^ok.*$/.test(out))
-                    throw new Error(out);
-            } catch(e) {
-                console.error(e);
-            }
-        }
-
-        private reload(): void {
-            const loadHyprDecorations = generalConfig.getProperty("misc.match_window_border_color", "boolean");
-            const names = Gio.resources_enumerate_children(
-                "/io/github/retrozinndev/Colorshell/config/hyprland",
-                Gio.ResourceLookupFlags.NONE
-            );
-
-            this.hyprctl("reload");
-            for(const name of names) {
-                if(name.includes("decorations") && !loadHyprDecorations)
-                    return;
-
-                this.source(`${this.#configDir.peek_path()!}/${name}`);
-            }
-        }
-
-        /** load necessary hyprland configs from gresource */
-        private initConfig(): void {
-            const names = Gio.resources_enumerate_children(
-                "/io/github/retrozinndev/Colorshell/config/hyprland",
-                Gio.ResourceLookupFlags.NONE
-            );
-
-            if(!this.#configDir.query_exists(null))
-                this.#configDir.make_directory_with_parents(null);
-
-            names.forEach(name => {
-                const file = Gio.File.new_for_path(`${this.#configDir.peek_path()!}/${name}`);
-                const data = Gio.resources_lookup_data(
-                    `/io/github/retrozinndev/Colorshell/config/hyprland/${name}`,
-                    Gio.ResourceLookupFlags.NONE
-                );
-
-                try {
-                    if(file.query_exists(null)) {
-                        const original = GLib.compute_checksum_for_bytes(GLib.ChecksumType.SHA256, data);
-                        const local = GLib.compute_checksum_for_data(GLib.ChecksumType.SHA256, encoder.encode(
-                            readFile(file.peek_path()!)
-                        ));
-
-                        // check hashes
-                        if(original === local)
-                            return;
-                    }
-                } catch(e) {
-                    console.error("Failed to read local hyprland runtime config.", e);
-                }
-
-                try {
-                    file.replace_contents(data.toArray(), null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null);
-                } catch(e) {
-                    console.error(`Compositor: Hyprland: Failed to write config file "${name}":`, e);
-                }
-            });
-
-            this.reload();
-        }
-
-        private getActiveClient(): Hyprland.Client|null {
-            const client = JSON.parse(
-                this.hyprctl("activewindow", "json", true) ?? "{}"
-            ) as Hyprland.Client;
-
-            if(Object.keys(client).length === 0)
-                return null;
-
-            return client as Hyprland.Client;
-        }
-
-        /** send a hyprctl `command` with optional `args`
-         * @param wait whether to wait for a response from hyprctl(socket) */
-        public hyprctl(command: string, args?: string, wait: boolean = false): string|null {
-            if(wait)
-                return this.#sock.simpleSendSync(`${args ?? ""}/${command}`);
-
-            this.#sock.sendSync(`${args ?? ""}/${command}`).close(null);
-            return null;
-        }
-
-        /** asynchronous version of `CompositorHyprland.hyprctl()`
-          * WARNING: this is currently not behaving correctly!
-          * ---
-          * send a hyprctl `command` with optional `args`.
-          * @param wait whether to wait for a response from hyprctl(socket) */
-        public async hyprctlAsync(command: string, args?: string, wait: boolean = false): Promise<string|null> {
-            if(wait)
-                return await this.#sock.simpleSend(`${args ?? ""}/${command}`);
-
-            (await this.#sock.send(`${args ?? ""}/${command}`)).close(null);
-            return null;
+end`);
+            if(out !== null && !/^ok.*$/.test(out))
+                throw new Error(out);
+        } catch(e) {
+            console.error(e);
         }
     }
 
+    private reload(): void {
+        const loadHyprDecorations = generalConfig.getProperty("misc.match_window_border_color", "boolean");
+        const names = Gio.resources_enumerate_children(
+            "/io/github/retrozinndev/Colorshell/config/hyprland",
+            Gio.ResourceLookupFlags.NONE
+        );
 
+        this.#sock.simpleSendSync("reload");
+        for(const name of names) {
+            if(name.includes("decorations") && !loadHyprDecorations)
+                return;
+
+            this.source(`${this.#configDir.peek_path()!}/${name}`);
+        }
+    }
+
+    /** load necessary hyprland configs from gresource */
+    private initConfig(): void {
+        const names = Gio.resources_enumerate_children(
+            "/io/github/retrozinndev/Colorshell/config/hyprland",
+            Gio.ResourceLookupFlags.NONE
+        );
+
+        if(!this.#configDir.query_exists(null))
+            this.#configDir.make_directory_with_parents(null);
+
+        names.forEach(name => {
+            const file = Gio.File.new_for_path(`${this.#configDir.peek_path()!}/${name}`);
+            const data = Gio.resources_lookup_data(
+                `/io/github/retrozinndev/Colorshell/config/hyprland/${name}`,
+                Gio.ResourceLookupFlags.NONE
+            );
+
+            try {
+                if(file.query_exists(null)) {
+                    const original = GLib.compute_checksum_for_bytes(GLib.ChecksumType.SHA256, data);
+                    const local = GLib.compute_checksum_for_data(GLib.ChecksumType.SHA256, encoder.encode(
+                        readFile(file.peek_path()!)
+                    ));
+
+                    // check hashes
+                    if(original === local)
+                        return;
+                }
+            } catch(e) {
+                console.error("Failed to read local hyprland runtime config.", e);
+            }
+
+            try {
+                file.replace_contents(data.toArray(), null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null);
+            } catch(e) {
+                console.error(`Compositor: Hyprland: Failed to write config file "${name}":`, e);
+            }
+        });
+
+        this.reload();
+    }
+
+    public hyprctl(cmd: string, flags?: string): string|null {
+        return this.#sock.simpleSendSync(`${flags !== undefined ? `${flags}/` : ""}${cmd}`);
+    }
+}
+
+
+namespace Hyprland {
     export type Event = keyof Events;
     export type Bind = {
         params: string;

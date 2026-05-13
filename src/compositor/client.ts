@@ -1,16 +1,18 @@
 import { getter, gtype, register } from "ags/gobject";
+import { Gdk } from "ags/gtk4";
 import GObject from "gi://GObject?version=2.0";
 
 
+/** @abstract */
 @register({ GTypeName: "CompositorClient" })
 class Client extends GObject.Object {
     readonly #address: string|null = null;
-    #initialClass: string;
-    #class: string;
+    #initialTitle: string = "";
+    #initialClass: string = "";
+    #class: string = "";
     #title: string = "";
     #mapped: boolean = true;
-    #position: [number, number] = [0, 0];
-    #size: [number, number] = [1, 1];
+    #allocation: Client.Allocation|null = null;
     #xwayland: boolean = false;
 
     @getter(gtype<string|null>(String))
@@ -23,10 +25,13 @@ class Client extends GObject.Object {
     get class() { return this.#class; }
 
     @getter(String)
+    get initialTitle() { return this.#initialTitle; }
+
+    @getter(String)
     get initialClass() { return this.#initialClass; }
 
-    @getter(gtype<[number, number]>(Array))
-    get position() { return this.#position; }
+    @getter(gtype<Client.Allocation|null>(Object))
+    get allocation() { return this.#allocation; }
 
     @getter(Boolean)
     get xwayland() { return this.#xwayland; }
@@ -34,13 +39,11 @@ class Client extends GObject.Object {
     @getter(Boolean)
     get mapped() { return this.#mapped; }
 
-    @getter(Array)
-    get size() { return this.#size; }
-
-    constructor(props: Client.ConstructorProps) {
+    constructor(props: Partial<Client.ConstructorProps> = {}) {
         super();
 
-        this.#class = props.class;
+        if(props.class !== undefined)
+            this.#class = props.class;
 
         if(props.title !== undefined)
             this.#title = props.title;
@@ -51,30 +54,90 @@ class Client extends GObject.Object {
         if(props.address !== undefined)
             this.#address = props.address;
 
-        if(props.position !== undefined)
-            this.#position = props.position;
+        if(props.allocation !== undefined)
+            this.#allocation = props.allocation;
 
-        if(props.size !== undefined)
-            this.#size = props.size;
+        if(props.initialTitle !== undefined)
+            this.#initialTitle = props.initialTitle;
 
-        this.#initialClass = props.initialClass !== undefined ?
-            props.initialClass
-        : props.class;
+        if(props.initialClass !== undefined || props.class !== undefined)
+            this.#initialClass = props.initialClass ?? props.class!;
+    }
+
+    /** ask the client to quit / be closed */
+    close(): void {}
+
+    /** force-close the client */
+    kill(): void {}
+
+    /** grab focus to the client */
+    focus(): void {}
+
+
+    toString(): string {
+        return `{\n${([
+            "address",
+            "class",
+            "title",
+            "allocation",
+            "mapped",
+            "xwayland",
+            "initialClass",
+            "initialTitle"
+        ] satisfies Array<keyof this>)
+            .map(k => `${" ".repeat(4)}"${k}": ${this[k]}`)
+            .join(",\n")
+        }\n}`
     }
 }
 
 namespace Client {
+    export class Allocation {
+        public x: number = 0;
+        public y: number = 0;
+        public width: number = 0;
+        public height: number = 0;
+
+        constructor(props: Partial<{
+            x: number,
+            y: number,
+            width: number,
+            height: number
+        }> = {}) {
+
+            if(props.x !== undefined)
+                this.x = props.x;
+
+            if(props.y !== undefined)
+                this.y = props.y;
+
+            if(props.width !== undefined)
+                this.width = props.width;
+
+            if(props.height !== undefined)
+                this.height = props.height;
+
+        }
+
+        toString(): string {
+            return `{\n${([
+                "x", "y", "width", "height"
+            ] satisfies Array<keyof this>)
+                .map(k => `${" ".repeat(4)}"${k}": ${this[k]}`)
+                .join(",\n")
+            }\n}`
+        }
+    }
+
     export interface SignalSignatures extends GObject.Object.SignalSignatures {}
     export interface ConstructorProps extends GObject.Object.ConstructorProps {
-        address?: string;
-        title?: string;
-        mapped?: boolean;
+        address: string;
+        title: string;
+        mapped: boolean;
         class: string;
-        initialClass?: string;
-        /** [x, y] */
-        position?: [number, number];
-        /** [width, height] */
-        size?: [number, number];
+        initialTitle: string;
+        initialClass: string;
+        allocation: Gdk.Rectangle;
     }
 }
 

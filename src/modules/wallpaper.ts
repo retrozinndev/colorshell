@@ -16,7 +16,7 @@ export class Wallpaper extends GObject.Object {
     declare $signals: Wallpaper.SignalSignatures;
     private static instance: Wallpaper;
 
-    #sock: Socket;
+    #sock!: Socket;
     #wallpaper: Gio.File|null = null;
     #userHyprpaperFile!: Gio.File;
     #defaultHyprpaperFile!: Gio.File;
@@ -54,15 +54,6 @@ export class Wallpaper extends GObject.Object {
         this.#wallpapersDir = Gio.File.new_for_path(
             GLib.getenv("WALLPAPERS") ?? `${GLib.get_home_dir()}/wallpapers`
         );
-
-        const instSignature = GLib.getenv("HYPRLAND_INSTANCE_SIGNATURE");
-        if(!instSignature)
-            throw new Error("Hyprland instance signature is invalid. Are you using Hyprland?");
-
-        this.#sock = new Socket(
-            Socket.Type.CLIENT, `${GLib.get_user_runtime_dir()}/hypr/${instSignature}/.hyprpaper.sock`
-        );
-
         this.#userHyprpaperFile = Gio.File.new_for_path(
             `${GLib.get_user_config_dir()}/hypr/hyprpaper.conf`
         );
@@ -82,12 +73,19 @@ may check the syntax of your hyprpaper.conf for errors");
         }
 
         const pid = getPID("hyprpaper");
-
         if(pid != null)
             killProc(pid);
 
         this.restartDaemon().catch((e: Error) => {
             console.error(`Wallpaper: Couldn't restart hyprpaper daemon. Stderr: ${e.message}`);
+        }).then(() => {
+            const instSignature = GLib.getenv("HYPRLAND_INSTANCE_SIGNATURE");
+            if(!instSignature)
+                throw new Error("Hyprland instance signature is invalid. Are you using Hyprland?");
+
+            this.#sock = new Socket(
+                Socket.Type.CLIENT, `${GLib.get_user_runtime_dir()}/hypr/${instSignature}/.hyprpaper.sock`
+            );
         });
 
         globalScope.run(() => {

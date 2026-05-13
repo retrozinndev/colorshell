@@ -24,3 +24,4 @@ Package.require({
     "AstalTray": "0.1",
     "AstalWp": "0.1",
 });
+Package.initGettext();

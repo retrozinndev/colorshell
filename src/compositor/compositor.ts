@@ -8,6 +8,8 @@ import Workspace from "./workspace";
 /** WIP modular implementation of a system that supports implementing
 * a variety of Wayland Compositors 
 * @todo implement more general compositor properties + a lot of stuff
+* @abstract
+* @readonly
 * */
 @register({ GTypeName: "ClshCompositor" })
 class Compositor extends GObject.Object {

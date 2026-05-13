@@ -35,7 +35,7 @@ export const Workspaces = () => {
                           name = name.replace(/^special\:/, "");
                           return name.charAt(0).toUpperCase().concat(name.substring(1, name.length));
                       })} onClicked={() => AstalHyprland.get_default().dispatch(
-                          "togglespecialworkspace", ws.name.replace(/^special[:]/, "")
+                          "workspace.toggle_special", `"${ws.name.replace(/^special[:]/, "")}"`
                       )}>
 
                         <With value={createBinding(ws, "lastClient")}>

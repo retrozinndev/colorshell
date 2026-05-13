@@ -2,7 +2,7 @@ import { Gdk, Gtk } from "ags/gtk4";
 import { execAsync } from "ags/process";
 import AstalApps from "gi://AstalApps";
 import Compositor from "../compositor";
-import Hyprland from "../compositor/interface/hyprland/compositor";
+import Hyprland from "../compositor/interface/hyprland";
 
 
 export const uwsmIsActive: boolean = await execAsync(

@@ -1,8 +1,8 @@
-import Hyprland from "./compositor";
+import Hypr from "./compositor";
 
 
-const CompositorHyprland = {
-    ...Hyprland
-};
+namespace Hyprland {
+    export import Hyprland = Hypr;
+}
 
-export default CompositorHyprland;
+export default Hyprland;

@@ -3,6 +3,7 @@ import GObject from "gi://GObject?version=2.0";
 import Monitor from "./monitor";
 
 
+/** @abstract */
 @register({ GTypeName: "CompositorWorkspace" })
 class Workspace extends GObject.Object {
     #id: number;
