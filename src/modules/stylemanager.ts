@@ -195,7 +195,19 @@ class StyleManager extends GObject.Object {
     /** gets the pywal-generated stylesheet that declares color variables.
       * @returns a string containing ready-to-use pywal color declarations in CSS */
     protected getColorsStyle(): string {
-        return readFile(`${GLib.get_user_cache_dir()}/wal/colors.css`);
+        try {
+            return readFile(`${GLib.get_user_cache_dir()}/wal/colors.css`);
+        } catch(e) {
+            console.warn("Failed to load pywal colors. Let's regenerate them!");
+            try {
+                this.generateColors();
+                return this.getColorsStyle();
+            } catch(e) {
+                console.error("Couldn't load pywal colors:", e);
+                console.warn("Since there is no pywal colors set, styling may be broken");
+                return "";
+            }
+        }
     }
 }
 

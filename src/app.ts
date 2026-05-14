@@ -154,9 +154,9 @@ export class Shell extends Adw.Application {
         this.init();
 
         console.log("Colorshell: Initializing modules");
+        StyleManager.init();
         initCompositor();
         Media.getDefault();
-        StyleManager.init();
 
         initWindows();
 
