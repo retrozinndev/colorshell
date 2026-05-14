@@ -85,7 +85,7 @@ class Client extends GObject.Object {
             "initialClass",
             "initialTitle"
         ] satisfies Array<keyof this>)
-            .map(k => `${" ".repeat(4)}"${k}": ${this[k]}`)
+            .map(k => `${" ".repeat(4)}"${k}": ${String(this[k]).replace(/\n/g, `\n${" ".repeat(4)}`)}`)
             .join(",\n")
         }\n}`
     }
