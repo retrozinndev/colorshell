@@ -4,7 +4,7 @@ import { readFile } from "ags/file";
 import GObject from "gi://GObject?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
-import { Wallpaper } from "./wallpaper";
+import Wallpaper from "./wallpaper";
 import { exec, execAsync } from "ags/process";
 
 

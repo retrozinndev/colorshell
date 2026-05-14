@@ -1,8 +1,8 @@
 import { Accessor, createBinding, With } from "ags";
 import { Gtk } from "ags/gtk4";
 import { Separator } from "../../../widget/Separator";
-import { Windows } from "../../../window";
-import { Clipboard } from "../../../modules/clipboard";
+import Windows from "../../../window";
+import Clipboard from "../../../modules/clipboard";
 import { getPlayerIconFromBusName, secureBaseBinding, secureBinding, variableToBoolean } from "../../../modules/utils";
 import { tr } from "../../../i18n/intl";
 import { default as Player } from "../../../modules/media";

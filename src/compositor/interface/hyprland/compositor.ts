@@ -4,10 +4,10 @@ import AstalHyprland from "gi://AstalHyprland";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import { createScopedConnection, createSubscription, encoder, playSystemBell, runtimeConfigDir } from "../../../modules/utils";
-import { Wallpaper } from "../../../modules/wallpaper";
+import Wallpaper from "../../../modules/wallpaper";
 import { generalConfig } from "../../../config";
 import { readFile } from "ags/file";
-import { Socket } from "../../../modules/socket";
+import Socket from "../../../modules/socket";
 import Client from "./client";
 
 

@@ -1,5 +1,5 @@
 import Cli from "..";
-import { Wireplumber } from "../../modules/volume";
+import Wireplumber from "../../modules/volume";
 
 
 type DeviceType = "sink"|"source";

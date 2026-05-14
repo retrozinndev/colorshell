@@ -7,7 +7,7 @@ import Gio from "gi://Gio?version=2.0";
 
 
 @register({ GTypeName: "ClshNightLight" })
-export class NightLight extends GObject.Object {
+class NightLight extends GObject.Object {
     private static instance: NightLight;
 
     public static readonly maxTemperature = 20000;
@@ -231,3 +231,5 @@ isn't set(are you running on Hyprland?)");
         this.notify("identity");
     }
 }
+
+export default NightLight;

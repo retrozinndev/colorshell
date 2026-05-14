@@ -9,7 +9,7 @@ import GLib from "gi://GLib?version=2.0";
 
 
 @register({ GTypeName: "Notifications" })
-export class Notifications extends GObject.Object {
+class Notifications extends GObject.Object {
     private static instance: (Notifications|null) = null;
 
     declare $signals: GObject.Object.SignalSignatures & {
@@ -311,7 +311,7 @@ export class Notifications extends GObject.Object {
     public getNotifd(): AstalNotifd.Notifd { return AstalNotifd.get_default(); }
 }
 
-export namespace Notifications {
+namespace Notifications {
     export type HistoryNotification = {
         id: number;
         appName: string;
@@ -376,3 +376,5 @@ export namespace Notifications {
         }
     }
 }
+
+export default Notifications;

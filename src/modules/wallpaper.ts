@@ -1,18 +1,17 @@
 import { readFile, readFileAsync } from "ags/file";
+import { createSubscription, encoder, getPID, globalScope, killProc, runtimeConfigDir } from "./utils";
+import { generalConfig } from "../config";
+import { execAsync } from "ags/process";
 import GObject, { register, getter, gtype, property, setter, signal } from "ags/gobject";
-
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
-import { createSubscription, encoder, getPID, globalScope, killProc, runtimeConfigDir } from "./utils";
-import { Notifications } from "./notifications";
-import { generalConfig } from "../config";
-import { Socket } from "./socket";
-import { execAsync } from "ags/process";
+import Notifications from "./notifications";
+import Socket from "./socket";
 
 
 // TODO: support different wallpapers for each monitor
 @register({ GTypeName: "Wallpaper" })
-export class Wallpaper extends GObject.Object {
+class Wallpaper extends GObject.Object {
     declare $signals: Wallpaper.SignalSignatures;
     private static instance: Wallpaper;
 
@@ -306,7 +305,7 @@ wallpaper {
     }   
 }
 
-export namespace Wallpaper {
+namespace Wallpaper {
     /** wallpaper positioning strategy */
     export type Positioning = "contain"|"tile"|"cover"|"fill";
     export type WalColorMode = "darken"|"lighten";
@@ -317,3 +316,5 @@ export namespace Wallpaper {
         "wallpaper-changed": (file: Gio.File) => void;
     }
 }
+
+export default Wallpaper;

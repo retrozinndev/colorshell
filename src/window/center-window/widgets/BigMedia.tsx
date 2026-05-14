@@ -1,7 +1,7 @@
 import { createBinding, For } from "ags";
 import { register } from "ags/gobject";
 import { Astal, Gdk, Gtk } from "ags/gtk4";
-import { Clipboard } from "../../../modules/clipboard";
+import Clipboard from "../../../modules/clipboard";
 import { variableToBoolean } from "../../../modules/utils";
 import { tr } from "../../../i18n/intl";
 import Media from "../../../modules/media";

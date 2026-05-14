@@ -1,12 +1,12 @@
 import { Gtk } from "ags/gtk4";
 import { Separator } from "./Separator";
-import { Notifications } from "../modules/notifications";
 import { getIconByAppName, getSymbolicIcon, lookupIcon } from "../modules/apps";
 import { omitObjectKeys } from "../modules/utils";
 import { Accessor, createBinding, createComputed, For } from "ags";
 import { getter, gtype, property, register, signal } from "ags/gobject";
 
 import AstalNotifd from "gi://AstalNotifd";
+import Notifications from "../modules/notifications";
 import Pango from "gi://Pango?version=1.0";
 import GLib from "gi://GLib?version=2.0";
 import Image from "./Image";

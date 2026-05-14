@@ -1,19 +1,19 @@
 import { Gtk } from "ags/gtk4";
-import { Clipboard } from "../../modules/clipboard";
+import Clipboard from "../../modules/clipboard";
 import Runner from "..";
 import { jsx } from "ags/gtk4/jsx-runtime";
 import Fuse from "fuse.js";
 
 
 export class PluginClipboard implements Runner.Plugin {
-    #fuse!: Fuse<unknown>;
+    #fuse!: Fuse<Clipboard.Item>;
     name = "Clipboard";
     prefix = '>';
     prioritize = true;
     
     init() {
         const items: ReadonlyArray<Clipboard.Item> = [...Clipboard.getDefault().history];
-        this.#fuse = new Fuse(
+        this.#fuse = new Fuse<Clipboard.Item>(
             items,
             {
                 keys: [ "id", "preview" ] satisfies Array<keyof Clipboard.Item>,

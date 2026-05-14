@@ -1,5 +1,5 @@
 import { Gtk } from "ags/gtk4";
-import { Wallpaper } from "../../modules/wallpaper";
+import Wallpaper from "../../modules/wallpaper";
 import Runner from "..";
 import { createRoot, jsx } from "ags";
 import ResultItem from "../widgets/ResultItem";

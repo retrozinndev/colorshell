@@ -3,13 +3,12 @@ import { execAsync } from "ags/process";
 import { userData } from "../config";
 import { createScopedConnection } from "../modules/utils";
 import GObject, { getter, gtype, property, register, setter } from "ags/gobject";
-
 import AstalBluetooth from "gi://AstalBluetooth";
 
 
 /** AstalBluetooth helper (implements the default adapter feature) */
 @register({ GTypeName: "Bluetooth" })
-export class Bluetooth extends GObject.Object {
+class Bluetooth extends GObject.Object {
     declare $signals: Bluetooth.SignalSignatures;
 
     private static instance: Bluetooth;
@@ -154,7 +153,7 @@ export class Bluetooth extends GObject.Object {
     }
 }
 
-export namespace Bluetooth {
+namespace Bluetooth {
     export interface SignalSignatures extends GObject.Object.SignalSignatures {
         "notify": () => void;
         "notify::adapter": () => void;
@@ -163,3 +162,5 @@ export namespace Bluetooth {
         "notify::last-device": () => void;
     }
 }
+
+export default Bluetooth;

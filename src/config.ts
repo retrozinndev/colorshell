@@ -1,6 +1,6 @@
-import { Config } from "./modules/config";
-import { NightLight } from "./modules/nightlight";
-import type { Idle } from "./modules/idle";
+import Config from "./modules/config";
+import NightLight from "./modules/nightlight";
+import type Idle from "./modules/idle";
 
 import GLib from "gi://GLib?version=2.0";
 

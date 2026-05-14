@@ -4,7 +4,7 @@ import GObject from "gi://GObject?version=2.0";
 
 
 @register({ GTypeName: "ClshNotifyMap" })
-export class NotifyMap<K extends string|symbol|number = string, V = any> extends GObject.Object {
+class NotifyMap<K extends string|symbol|number = string, V = any> extends GObject.Object {
     declare $signals: NotifyMap.SignalSignatures<K, V>;
 
     #map: Map<K, V> = new Map();
@@ -73,7 +73,7 @@ export class NotifyMap<K extends string|symbol|number = string, V = any> extends
     }
 }
 
-export namespace NotifyMap {
+namespace NotifyMap {
     export interface SignalSignatures<K extends string|symbol|number, V> extends GObject.Object.SignalSignatures {
         "added": (key: K, value: V) => void;
         "replaced": (map: Map<K, V>) => void;
@@ -81,3 +81,5 @@ export namespace NotifyMap {
         "notify::map": () => void;
     }
 }
+
+export default NotifyMap;

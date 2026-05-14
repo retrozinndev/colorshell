@@ -1,5 +1,5 @@
 import { Gtk } from "ags/gtk4";
-import { Windows } from "../../../window";
+import Windows from "../../../window";
 import { createBinding } from "ags";
 import { time } from "../../../modules/utils";
 import { generalConfig } from "../../../config";

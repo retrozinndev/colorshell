@@ -1,5 +1,4 @@
 import { createScopedConnection } from "./modules/utils";
-import { Windows } from "./window";
 import { AppsWindow } from "./window/apps-window";
 import { Bar } from "./window/bar";
 import { CenterWindow } from "./window/center-window";
@@ -7,7 +6,8 @@ import { ControlCenter } from "./window/control-center";
 import { FloatingNotifications } from "./window/floating-notifications";
 import { LogoutMenu } from "./window/logout-menu";
 import { OSD } from "./window/osd";
-import { Notifications } from "./modules/notifications";
+import Notifications from "./modules/notifications";
+import Windows from "./window";
 
 
 // add new windows here!

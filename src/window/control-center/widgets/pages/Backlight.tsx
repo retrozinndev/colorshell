@@ -1,10 +1,10 @@
 import { Astal, Gtk } from "ags/gtk4";
 import { tr } from "../../../../i18n/intl";
-import { Backlights } from "../../../../modules/backlight";
 import { Page, PageButton } from "../Page";
 import { createBinding, For, With } from "ags";
 import { addSliderMarksFromMinMax } from "../../../../modules/utils";
 import { userData } from "../../../../config";
+import Backlights from "../../../../modules/backlight";
 
 
 export const PageBacklight = <Page

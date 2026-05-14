@@ -5,7 +5,7 @@ import { NotifHistory } from "./widgets/NotifHistory";
 import { Tiles } from "./widgets/tiles";
 import { Sliders } from "./widgets/Sliders";
 import { generalConfig } from "../../config";
-import { Windows } from "..";
+import Windows from "..";
 
 
 export const ControlCenter = Windows.forFocusedMonitor((mon) => {

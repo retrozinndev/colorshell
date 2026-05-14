@@ -14,8 +14,8 @@ import { createPoll } from "ags/time";
 import { exec, execAsync } from "ags/process";
 import { Astal, Gtk } from "ags/gtk4";
 import { getSymbolicIcon } from "./apps";
-import { Notifications } from "./notifications";
 import { createRoot, getScope, Scope } from "ags";
+import Notifications from "./notifications";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 

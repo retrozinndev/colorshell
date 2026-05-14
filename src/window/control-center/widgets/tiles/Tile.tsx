@@ -2,24 +2,12 @@ import { Gtk } from "ags/gtk4";
 import { createBinding } from "ags";
 import { omitObjectKeys, variableToBoolean } from "../../../../modules/utils";
 import { property, register, signal } from "ags/gobject";
-
 import Pango from "gi://Pango?version=1.0";
 
 
 @register({ GTypeName: "ClshTile" })
-export class Tile extends Gtk.Box {
-    declare $signals: Gtk.Box.SignalSignatures & {
-        "toggled": (state: boolean) => void;
-        "enabled": () => void;
-        "disabled": () => void;
-        "clicked": () => void;
-        "notify::icon": () => void;
-        "notify::title": () => void;
-        "notify::description": () => void;
-        "notify::toggle-on-click": () => void;
-        "notify::state": () => void;
-        "notify::has-arrow": () => void;
-    };
+class Tile extends Gtk.Box {
+    declare $signals: Tile.SignalSignatures;
 
     @signal(Boolean) 
     toggled(_: boolean) {}
@@ -155,17 +143,21 @@ export class Tile extends Gtk.Box {
             );
     }
 
-    emit<Signal extends keyof typeof this.$signals>(
-        signal: Signal, 
-        ...args: Parameters<(typeof this.$signals)[Signal]>
-    ): void {
-        super.emit(signal, ...args);
-    }
+}
 
-    connect<Signal extends keyof typeof this.$signals>(
-        signal: Signal, 
-        callback: (typeof this.$signals)[Signal]
-    ): number {
-        return super.connect(signal, callback);
+namespace Tile {
+    export interface SignalSignatures extends Gtk.Box.SignalSignatures {
+        "toggled": (state: boolean) => void;
+        "enabled": () => void;
+        "disabled": () => void;
+        "clicked": () => void;
+        "notify::icon": () => void;
+        "notify::title": () => void;
+        "notify::description": () => void;
+        "notify::toggle-on-click": () => void;
+        "notify::state": () => void;
+        "notify::has-arrow": () => void;
     }
 }
+
+export default Tile;

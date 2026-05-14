@@ -1,12 +1,12 @@
 import { Astal, Gdk, Gtk } from "ags/gtk4";
-import { execApp, getAppIcon, getApps, getAstalApps } from "../../modules/apps";
+import { execApp, getApps, getAstalApps } from "../../modules/apps";
 import { PopupWindow } from "../../widget/PopupWindow";
 
 import AstalApps from "gi://AstalApps";
 import Pango from "gi://Pango?version=1.0";
 import { createRoot, createState } from "ags";
 import { escapeUnintendedMarkup } from "../../modules/utils";
-import { Windows } from "..";
+import Windows from "..";
 import AppIcon from "../../widget/AppIcon";
 
 

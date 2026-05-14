@@ -3,12 +3,12 @@ import Gio from "gi://Gio?version=2.0";
 import GObject from "gi://GObject?version=2.0";
 import { createSubscription, encoder, getPID, isInstalled, killProc, runtimeConfigDir } from "./utils";
 import { generalConfig } from "../config";
-import { Notifications } from "./notifications";
+import Notifications from "./notifications";
 
 
 /** wrapper module for hypridle */
 @register({ GTypeName: "ClshIdleDaemon" })
-export class Idle extends GObject.Object {
+class Idle extends GObject.Object {
     private static instance: Idle;
 
     #daemon: Gio.Subprocess|null = null;
@@ -164,7 +164,7 @@ listener {
     }
 }
 
-export namespace Idle {
+namespace Idle {
     export type Listener = {
         timeout: number;
         on_timeout?: string;
@@ -195,3 +195,5 @@ export namespace Idle {
 
     export type InhibitSleep = 0|1|2|3;
 }
+
+export default Idle;

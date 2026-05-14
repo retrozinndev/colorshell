@@ -1,13 +1,11 @@
 import { Page, PageButton } from "../Page";
 import { Astal, Gtk } from "ags/gtk4";
 import { getAppIcon, lookupIcon } from "../../../../modules/apps";
-import { Wireplumber } from "../../../../modules/volume";
 import { tr } from "../../../../i18n/intl";
-import { createBinding, For } from "ags";
-import { createScopedConnection, variableToBoolean } from "../../../../modules/utils";
-
+import { Accessor, createBinding, For } from "ags";
+import { variableToBoolean } from "../../../../modules/utils";
+import Wireplumber from "../../../../modules/volume";
 import AstalWp from "gi://AstalWp";
-import GObject from "gi://GObject?version=2.0";
 import Pango from "gi://Pango?version=1.0";
 
 
@@ -18,7 +16,7 @@ export const PageSound = <Page
     content={() => [
         <Gtk.Label class={"sub-header"} label={tr("devices")} xalign={0} />,
         <Gtk.Box orientation={Gtk.Orientation.VERTICAL} spacing={4}>
-            <For each={createBinding(Wireplumber.getWireplumber().audio!, "speakers")}>
+            <For each={createBinding(Wireplumber.getWireplumber().get_audio(), "speakers") as Accessor<Array<AstalWp.Endpoint>>}>
                 {(sink: AstalWp.Endpoint) => 
                     <PageButton class={createBinding(sink, "isDefault").as(isDefault =>
                           isDefault ? "selected" : "")} 
@@ -42,24 +40,13 @@ export const PageSound = <Page
                   createBinding(Wireplumber.getWireplumber().audio!, "streams")
               )}
             />
-            <For each={createBinding(Wireplumber.getWireplumber().audio!, "streams")}>
+            <For each={createBinding(Wireplumber.getWireplumber().get_audio(), "streams") as Accessor<Array<AstalWp.Stream>>}>
                 {(stream: AstalWp.Stream) => 
-                    <Gtk.Box hexpand $={(self) => {
-                        const controllerMotion = Gtk.EventControllerMotion.new();
-
-                        self.add_controller(controllerMotion);
-                        createScopedConnection(controllerMotion, "enter", () => {
-                            const revealer = self.get_last_child()!.get_first_child() as Gtk.Revealer;
-                            revealer.set_reveal_child(true);
-                        });
-                        createScopedConnection(controllerMotion, "leave", () => {
-                            const revealer = self.get_last_child()!.get_first_child() as Gtk.Revealer;
-                            revealer.set_reveal_child(false);
-                        });
-                    }}>
+                    <Gtk.Box hexpand>
                         <Gtk.Image iconName={createBinding(stream, "name").as(name => 
-                            getAppIcon(name.split(' ')[0]) ?? "application-x-executable-symbolic")}
-                          css={"font-size: 18px; margin-right: 6px;"} />
+                              getAppIcon(name?.split(' ')[0] ?? "application-x-executable-symbolic")!
+                          )} css={"font-size: 18px; margin-right: 6px;"}
+                        />
 
                         <Gtk.Box orientation={Gtk.Orientation.VERTICAL} hexpand={true}>
                             <Gtk.Revealer transitionDuration={180} 
@@ -68,7 +55,7 @@ export const PageSound = <Page
                                 <Gtk.Label label={createBinding(stream, "description").as(desc =>
                                       desc ?? "Unnamed audio stream")} 
                                   ellipsize={Pango.EllipsizeMode.END}
-                                  tooltipText={createBinding(stream, "name")}
+                                  tooltipText={createBinding(stream, "name").as(name => name ?? "")}
                                   class={"name"} xalign={0}
                                 />
                             </Gtk.Revealer>

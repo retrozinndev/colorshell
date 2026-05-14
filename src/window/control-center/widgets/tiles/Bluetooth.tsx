@@ -1,12 +1,11 @@
-import { Tile } from "./Tile";
 import { BluetoothPage } from "../pages/Bluetooth";
 import { TilesPages } from "../tiles";
 import { createBinding, createComputed } from "ags";
-import { Bluetooth } from "../../../../modules/bluetooth";
-
-import AstalBluetooth from "gi://AstalBluetooth";
 import { secureBaseBinding } from "../../../../modules/utils";
 import { tr } from "../../../../i18n/intl";
+import Bluetooth from "../../../../modules/bluetooth";
+import AstalBluetooth from "gi://AstalBluetooth";
+import Tile from "./Tile";
 
 
 export const TileBluetooth = () => 

@@ -1,6 +1,5 @@
 -- colorshell-specific configuration, please don't modify unless you know what you're doing!
 
--- TODO pywal doesn't have lua shit, so colorshell will have to do it on its own
 -- TODO native blur, so we won't be depending on Hyprland
 
 local cacheHome = os.getenv("XDG_CACHE_HOME");

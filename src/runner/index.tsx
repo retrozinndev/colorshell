@@ -7,7 +7,7 @@ import { omitObjectKeys } from "../modules/utils";
 import { getter, gtype, property, register } from "ags/gobject";
 import GObject from "gi://GObject?version=2.0";
 import AstalHyprland from "gi://AstalHyprland";
-import { Windows } from "../window";
+import Windows from "../window";
 import ResultsList from "./widgets/ResultsList";
 
 

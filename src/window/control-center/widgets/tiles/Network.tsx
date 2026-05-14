@@ -1,4 +1,4 @@
-import { Tile } from "./Tile";
+import Tile from "./Tile";
 import { execAsync } from "ags/process";
 import { PageNetwork } from "../pages/Network";
 import { tr } from "../../../../i18n/intl";
@@ -7,37 +7,37 @@ import { Accessor, createBinding, createComputed } from "ags";
 import { secureBaseBinding } from "../../../../modules/utils";
 
 import AstalNetwork from "gi://AstalNetwork";
-import { Notifications } from "../../../../modules/notifications";
+import Notifications from "../../../../modules/notifications";
 
 
 const { WIFI, WIRED } = AstalNetwork.Primary,
     { CONNECTED, CONNECTING, DISCONNECTED } = AstalNetwork.Internet;
 
-const wiredInternet = secureBaseBinding<AstalNetwork.Wired>(
+const wiredInternet = secureBaseBinding<AstalNetwork.Wired|null>(
     createBinding(AstalNetwork.get_default(), "wired"),
     "internet",
     AstalNetwork.Internet.DISCONNECTED
 ) as Accessor<AstalNetwork.Internet>;
 
-const wifiInternet = secureBaseBinding<AstalNetwork.Wifi>(
+const wifiInternet = secureBaseBinding<AstalNetwork.Wifi|null>(
     createBinding(AstalNetwork.get_default(), "wifi"),
     "internet",
     AstalNetwork.Internet.DISCONNECTED
 ) as Accessor<AstalNetwork.Internet>;
 
-const wifiSSID = secureBaseBinding<AstalNetwork.Wifi>(
+const wifiSSID = secureBaseBinding<AstalNetwork.Wifi|null>(
     createBinding(AstalNetwork.get_default(), "wifi"),
     "ssid",
     "Unknown"
 ) as Accessor<string>;
 
-const wifiIcon = secureBaseBinding<AstalNetwork.Wifi>(
+const wifiIcon = secureBaseBinding<AstalNetwork.Wifi|null>(
     createBinding(AstalNetwork.get_default(), "wifi"),
     "iconName",
     "network-wireless-symbolic"
 );
 
-const wiredIcon = secureBaseBinding<AstalNetwork.Wired>(
+const wiredIcon = secureBaseBinding<AstalNetwork.Wired|null>(
     createBinding(AstalNetwork.get_default(), "wired"),
     "iconName",
     "network-wired-symbolic"
@@ -83,7 +83,7 @@ export const TileNetwork = () =>
       state={createComputed([
           primary,
           secureBaseBinding<AstalNetwork.Wifi>(
-              createBinding(AstalNetwork.get_default(), "wifi"),
+              createBinding(AstalNetwork.get_default(), "wifi") as Accessor<AstalNetwork.Wifi>,
               "enabled",
               false
           ),
@@ -120,7 +120,7 @@ export const TileNetwork = () =>
 
           switch(AstalNetwork.get_default().primary) {
               case WIFI:
-                  wifi.set_enabled(state);
+                  wifi?.set_enabled(state);
                   return;
 
               case WIRED:

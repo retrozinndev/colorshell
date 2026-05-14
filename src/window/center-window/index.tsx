@@ -5,7 +5,7 @@ import { BigMedia } from "./widgets/BigMedia";
 import { time, variableToBoolean } from "../../modules/utils";
 import { createBinding } from "ags";
 import { generalConfig } from "../../config";
-import { Windows } from "..";
+import Windows from "..";
 import Media from "../../modules/media";
 import AstalMpris from "gi://AstalMpris";
 

@@ -5,12 +5,11 @@ import { createRoot, getScope, Scope } from "ags";
 import { programArgs, programInvocationName } from "system";
 import { setConsoleLogDomain } from "console";
 import { cacheDir, createScopedConnection, dataDir, encoder, getDBusNamePID, globalScope, runtimeConfigDir, runtimeDir } from "./modules/utils";
-import { Clipboard } from "./modules/clipboard";
+import Clipboard from "./modules/clipboard";
 import { OSD } from "./window/osd";
-import { NightLight } from "./modules/nightlight";
+import NightLight from "./modules/nightlight";
 import { initCompositor } from "./compositors";
-import { Input } from "./modules/input";
-import { Idle } from "./modules/idle";
+import Idle from "./modules/idle";
 import { register } from "ags/gobject";
 import { initWindows } from "./windows";
 import { initCli } from "./cli/init";
@@ -161,7 +160,6 @@ export class Shell extends Adw.Application {
         initWindows();
 
         Clipboard.getDefault();
-        Input.getDefault();
         NightLight.getDefault();
         Idle.getDefault();
         OSD.init();

@@ -1,7 +1,7 @@
 import { gtype, property, register, signal } from "ags/gobject";
 import { execAsync } from "ags/process";
 import Compositor from "../compositor";
-import { Notifications } from "./notifications";
+import Notifications from "./notifications";
 import GObject from "gi://GObject?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
@@ -9,7 +9,7 @@ import GLib from "gi://GLib?version=2.0";
 
 /** screen-shotting tool for colorshell, based on grim and slurp */
 @register({ GTypeName: "ClshScreenshotTool" })
-export class Screenshot extends GObject.Object {
+class Screenshot extends GObject.Object {
     private static instance: Screenshot;
     declare $signals: Screenshot.SignalSignatures;
 
@@ -68,14 +68,10 @@ export class Screenshot extends GObject.Object {
             const activeClient = Compositor.getDefault().focusedClient;
 
             if(activeClient) {
-                const clientArea = new Screenshot.Area({
-                    x: activeClient.position[0],
-                    y: activeClient.position[1],
-                    width: activeClient.size[0],
-                    height: activeClient.size[1]
-                });
+                const clientArea = activeClient.allocation!;
 
-                // TODO: implement Workspace access via Client object to change to its workspace if not currently in it
+                // TODO: screenshot in a more clean way, lik,e getting the pixels from the window instead of
+                // screenshoting the window's area
 
                 try {
                     await this.grim(output, clientArea);
@@ -169,7 +165,7 @@ export class Screenshot extends GObject.Object {
     }
 }
 
-export namespace Screenshot {
+namespace Screenshot {
     export enum Mode {
         /** open a selection layer to select the screenshot area */
         SELECT = 0,
@@ -208,3 +204,5 @@ export namespace Screenshot {
         "notify::include-cursors": () => void;
     }
 }
+
+export default Screenshot;

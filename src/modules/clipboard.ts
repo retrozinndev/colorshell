@@ -6,10 +6,11 @@ import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 
 
+// TODO: better history monitoring
 /** Cliphist Manager and event listener
   * This only supports wipe and store events from cliphist */
 @register({ GTypeName: "Clipboard" })
-export class Clipboard extends GObject.Object {
+class Clipboard extends GObject.Object {
     private static instance: Clipboard;
 
     #dbFile: Gio.File;
@@ -240,7 +241,7 @@ stderr for more info.`);
     }
 }
 
-export namespace Clipboard {   
+namespace Clipboard {   
     export enum ItemType {
         TEXT = 0,
         IMAGE = 1
@@ -263,3 +264,5 @@ export namespace Clipboard {
         "wiped": () => void;
     }
 }
+
+export default Clipboard;

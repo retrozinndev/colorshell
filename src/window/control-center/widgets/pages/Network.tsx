@@ -1,9 +1,9 @@
 import { Gtk } from "ags/gtk4";
 import { Page, PageButton } from "../Page";
-import { Windows } from "../../../../window";
+import Windows from "../../../../window";
 import { tr } from "../../../../i18n/intl";
 import { execApp } from "../../../../modules/apps";
-import { Notifications } from "../../../../modules/notifications";
+import Notifications from "../../../../modules/notifications";
 import { AskPopup, AskPopupProps } from "../../../../widget/AskPopup";
 import { encoder, variableToBoolean } from "../../../../modules/utils";
 import { createBinding, createRoot, For, With } from "ags";
@@ -20,7 +20,7 @@ export const PageNetwork = createRoot((dispose) => <Page
         primary === AstalNetwork.Primary.WIFI ? [{
             icon: "arrow-circular-top-right-symbolic",
             tooltipText: "Re-scan networks",
-            actionClicked: () => AstalNetwork.get_default().wifi.scan()
+            actionClicked: () => AstalNetwork.get_default().wifi?.scan()
         }] : []
     )}
     bottomButtons={[{
@@ -63,9 +63,9 @@ export const PageNetwork = createRoot((dispose) => <Page
               orientation={Gtk.Orientation.VERTICAL}>
 
                 <Gtk.Label class={"sub-header"} label={"Wi-Fi"} />
-                <For each={createBinding(AstalNetwork.get_default().wifi, "accessPoints")}>
+                <For each={createBinding(AstalNetwork.get_default().wifi!, "accessPoints")}>
                     {(ap: AstalNetwork.AccessPoint) => <PageButton class={
-                        createBinding(AstalNetwork.get_default().wifi, "activeAccessPoint").as(activeAP =>
+                        createBinding(AstalNetwork.get_default().wifi!, "activeAccessPoint").as(activeAP =>
                             activeAP.ssid === ap.ssid ? "active" : "")
                       } title={createBinding(ap, "ssid").as(ssid => ssid ?? "No SSID")}
                       icon={createBinding(ap, "iconName")} endWidget={<Gtk.Image iconName={
@@ -77,15 +77,15 @@ export const PageNetwork = createRoot((dispose) => <Page
                           css={"font-size: 18px;"}
                       />} extraButtons={[
                           <Gtk.Button iconName={"window-close-symbolic"} visible={
-                              createBinding(AstalNetwork.get_default().wifi, "activeAccessPoint").as(activeAp =>
+                              createBinding(AstalNetwork.get_default().wifi!, "activeAccessPoint").as(activeAp =>
                                   activeAp.ssid === ap.ssid)
                           } css={"font-size: 18px;"} onClicked={() => {
-                                const active = AstalNetwork.get_default().wifi.activeAccessPoint;
+                                const active = AstalNetwork.get_default().wifi!.activeAccessPoint;
 
                                 if(active?.ssid === ap.ssid) {
-                                    AstalNetwork.get_default().wifi.deactivate_connection((_, res) => {
+                                    AstalNetwork.get_default().wifi!.deactivate_connection((_, res) => {
                                         try { 
-                                            AstalNetwork.get_default().wifi.deactivate_connection_finish(res);
+                                            AstalNetwork.get_default().wifi!.deactivate_connection_finish(res);
                                         } catch(e: any) {
                                             e = e as Error;
 
@@ -99,7 +99,7 @@ export const PageNetwork = createRoot((dispose) => <Page
                             }}/>
                       ]} actionClicked={() => {
                           const uuid = NM.utils_uuid_generate();
-                          const ssidBytes = GLib.Bytes.new(encoder.encode(ap.ssid));
+                          const ssidBytes = GLib.Bytes.new(encoder.encode(ap.ssid!));
 
                           const connection = NM.SimpleConnection.new();
                           const connSetting = NM.SettingConnection.new();
@@ -136,7 +136,7 @@ export const PageNetwork = createRoot((dispose) => <Page
 
 function activateWirelessConnection(connection: NM.RemoteConnection, ssid: string): void {
     AstalNetwork.get_default().get_client().activate_connection_async(
-        connection, AstalNetwork.get_default().wifi.get_device(), null, null, (_, asyncRes) => {
+        connection, AstalNetwork.get_default().wifi!.get_device(), null, null, (_, asyncRes) => {
             const activeConnection = AstalNetwork.get_default().get_client().activate_connection_finish(asyncRes);
             if(!activeConnection) {
                 Notifications.getDefault().sendNotification({

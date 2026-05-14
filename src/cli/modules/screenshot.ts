@@ -1,5 +1,5 @@
 import Cli from "..";
-import { Screenshot } from "../../modules/screenshot";
+import Screenshot from "../../modules/screenshot";
 
 
 export default {

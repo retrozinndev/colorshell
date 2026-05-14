@@ -2,14 +2,14 @@ import { Astal, Gdk, Gtk } from "ags/gtk4";
 import { execAsync } from "ags/process";
 import { generalConfig } from "../../config";
 import { AskPopup } from "../../widget/AskPopup";
-import { Notifications } from "../../modules/notifications";
-import { NightLight } from "../../modules/nightlight";
+import Notifications from "../../modules/notifications";
+import NightLight from "../../modules/nightlight";
 import { time } from "../../modules/utils";
 
 import GObject from "ags/gobject";
 import AstalNotifd from "gi://AstalNotifd";
 import Gio from "gi://Gio?version=2.0";
-import { Windows } from "..";
+import Windows from "..";
 
 
 const { TOP, LEFT, RIGHT, BOTTOM } = Astal.WindowAnchor;

@@ -1,5 +1,5 @@
 import { Gtk } from "ags/gtk4";
-import { Windows } from "../../../window";
+import Windows from "../../../window";
 import { createBinding } from "ags";
 import { tr } from "../../../i18n/intl";
 

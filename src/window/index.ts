@@ -12,7 +12,7 @@ import Adw from "gi://Adw?version=1";
   * Also contains util functions to create multi-monitor and 
   * focused-monitor-only windows */
 @register({ GTypeName: "Windows" })
-export class Windows<T extends string = string> extends GObject.Object {
+class Windows<T extends string = string> extends GObject.Object {
     declare $signals: Windows.SignalSignatures
 
     private static instance: (Windows | null);
@@ -333,7 +333,7 @@ export class Windows<T extends string = string> extends GObject.Object {
     }
 }
 
-export namespace Windows {
+namespace Windows {
     export enum Status {
         CLOSED = 0,
         OPEN = 1
@@ -358,3 +358,5 @@ export namespace Windows {
         "window-closed": (name: string) => void;
     }
 }
+
+export default Windows;

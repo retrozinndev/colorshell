@@ -1,7 +1,7 @@
 import GLib from "gi://GLib?version=2.0";
 import Cli from "..";
 import { showWorkspaceNumber } from "../../window/bar/widgets/Workspaces";
-import { Windows } from "../../window";
+import Windows from "../../window";
 import { Shell } from "../../app";
 import System from "system";
 import { execApp } from "../../modules/apps";
