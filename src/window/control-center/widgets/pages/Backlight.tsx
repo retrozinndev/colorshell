@@ -1,5 +1,4 @@
 import { Astal, Gtk } from "ags/gtk4";
-import { tr } from "../../../../i18n/intl";
 import { Page, PageButton } from "../Page";
 import { createBinding, For, With } from "ags";
 import { addSliderMarksFromMinMax } from "../../../../modules/utils";

@@ -1,7 +1,6 @@
 import { Gtk } from "ags/gtk4";
 import { Page, PageButton } from "../Page";
 import Windows from "../../../../window";
-import { tr } from "../../../../i18n/intl";
 import { execApp } from "../../../../modules/apps";
 import Notifications from "../../../../modules/notifications";
 import { AskPopup, AskPopupProps } from "../../../../widget/AskPopup";

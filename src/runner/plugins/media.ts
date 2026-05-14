@@ -1,7 +1,6 @@
 import { Accessor, createBinding, createComputed } from "ags";
 import Runner from "..";
 import { secureBaseBinding } from "../../modules/utils";
-import { tr } from "../../i18n/intl";
 import Media from "../../modules/media";
 import AstalMpris from "gi://AstalMpris";
 

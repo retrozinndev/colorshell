@@ -1,7 +1,6 @@
 import Tile from "./Tile";
 import { execAsync } from "ags/process";
 import { PageNetwork } from "../pages/Network";
-import { tr } from "../../../../i18n/intl";
 import { TilesPages } from "../tiles";
 import { Accessor, createBinding, createComputed } from "ags";
 import { secureBaseBinding } from "../../../../modules/utils";

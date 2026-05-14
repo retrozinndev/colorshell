@@ -1,7 +1,6 @@
 import { Astal, Gtk } from "ags/gtk4";
 import { PopupWindow } from "./PopupWindow";
 import { Separator } from "./Separator";
-import { tr } from "../i18n/intl";
 import { Accessor, Node } from "ags";
 import { transformWidget, variableToBoolean } from "../modules/utils";
 import Windows from "../window";

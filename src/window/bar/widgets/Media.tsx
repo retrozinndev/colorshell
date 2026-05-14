@@ -4,8 +4,7 @@ import { Separator } from "../../../widget/Separator";
 import Windows from "../../../window";
 import Clipboard from "../../../modules/clipboard";
 import { getPlayerIconFromBusName, secureBaseBinding, secureBinding, variableToBoolean } from "../../../modules/utils";
-import { tr } from "../../../i18n/intl";
-import { default as Player } from "../../../modules/media";
+import Player from "../../../modules/media";
 
 import AstalMpris from "gi://AstalMpris";
 import Pango from "gi://Pango?version=1.0";

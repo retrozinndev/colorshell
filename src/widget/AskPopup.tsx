@@ -1,5 +1,4 @@
 import { Accessor } from "ags";
-import { tr } from "../i18n/intl";
 import { CustomDialog } from "./CustomDialog";
 import { Astal } from "ags/gtk4";
 

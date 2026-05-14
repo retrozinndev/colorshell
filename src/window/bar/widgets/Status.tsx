@@ -170,10 +170,10 @@ function StatusIcons() {
             let device: AstalNetwork.Wifi | AstalNetwork.Wired;
             switch (primary) {
               case AstalNetwork.Primary.WIRED:
-                device = AstalNetwork.get_default().wired;
+                device = AstalNetwork.get_default().wired!;
                 break;
               case AstalNetwork.Primary.WIFI:
-                device = AstalNetwork.get_default().wifi;
+                device = AstalNetwork.get_default().wifi!;
                 break;
 
               default:

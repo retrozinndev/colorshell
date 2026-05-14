@@ -1,7 +1,7 @@
 import { Accessor } from "ags";
-import { tr } from "../i18n/intl";
 import { CustomDialog } from "./CustomDialog";
 import { Astal, Gtk } from "ags/gtk4";
+
 
 export type EntryPopupProps = {
     title: string | Accessor<string>;

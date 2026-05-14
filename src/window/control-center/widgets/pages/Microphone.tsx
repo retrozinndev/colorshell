@@ -1,7 +1,6 @@
 import { Page, PageButton } from "../Page";
 import Wireplumber from "../../../../modules/volume";
 import { Gtk } from "ags/gtk4";
-import { tr } from "../../../../i18n/intl";
 import { Accessor, createBinding, For } from "ags";
 import { lookupIcon } from "../../../../modules/apps";
 import AstalWp from "gi://AstalWp";
