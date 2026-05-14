@@ -101,9 +101,15 @@ class Image extends Adw.Bin {
             return;
         }
 
-        this.#file = Gio.File.new_for_uri(newUri);
-        this.notify("file");
-        this.notify("uri");
+        if(newUri.startsWith("file://")) { // resolve file protocol
+            this.#file = Gio.File.new_for_path(decodeURI(newUri).replace(/^file:\/\//, ""));
+            this.notify("file");
+            this.notify("uri");
+        } else {
+            this.#file = Gio.File.new_for_uri(newUri);
+            this.notify("file");
+            this.notify("uri");
+        }
 
         this.load(this.#file).catch(console.error);
     }
