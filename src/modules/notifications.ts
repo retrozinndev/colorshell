@@ -3,7 +3,6 @@ import { generalConfig } from "../config";
 import { onCleanup } from "ags";
 import { pathToURI } from "./utils";
 import GObject, { getter, ParamSpec, property, register, signal } from "ags/gobject";
-
 import AstalNotifd from "gi://AstalNotifd";
 import GLib from "gi://GLib?version=2.0";
 
@@ -57,6 +56,13 @@ class Notifications extends GObject.Object {
 
     constructor() {
         super();
+
+        try {
+            AstalNotifd.get_default();
+        } catch(e) {
+            console.error("Failed to acquire the notification daemon!");
+            return;
+        }
 
         this.#connections.push(
             AstalNotifd.get_default().connect("notified", (notifd, id) => {

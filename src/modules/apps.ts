@@ -1,11 +1,12 @@
 import { Gdk, Gtk } from "ags/gtk4";
 import { execAsync } from "ags/process";
+import { isInstalled } from "./utils";
 import AstalApps from "gi://AstalApps";
 import Compositor from "../compositor";
 import Hyprland from "../compositor/interface/hyprland";
 
 
-export const uwsmIsActive: boolean = await execAsync(
+export const uwsmIsActive: boolean = isInstalled("uwsm") && await execAsync(
     "uwsm check is-active"
 ).then(() => true).catch(() => false);
 const astalApps: AstalApps.Apps = new AstalApps.Apps();
