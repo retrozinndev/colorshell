@@ -1,5 +1,4 @@
-import "./overrides"; // thanks Aylur!!
-import "./config";
+import "./pkg";
 import { Gdk, Gtk } from "ags/gtk4";
 import { createRoot, getScope, Scope } from "ags";
 import { programArgs, programInvocationName } from "system";
@@ -20,7 +19,6 @@ import Media from "./modules/media";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import Adw from "gi://Adw?version=1";
-import I18n from "./i18n/intl";
 
 
 @register({ GTypeName: "Colorshell" })
@@ -154,7 +152,6 @@ export class Shell extends Adw.Application {
         this.init();
 
         console.log("Colorshell: Initializing modules");
-        I18n.init();
         StyleManager.init();
         initCompositor();
         Media.getDefault();

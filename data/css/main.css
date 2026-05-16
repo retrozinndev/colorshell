@@ -171,24 +171,31 @@ tooltip > box label {
   color: var(--fg-primary);
 }
 
-popover.menu contents {
+popover.menu {
   background: var(--bg-primary);
   border-radius: 14px;
   padding: 4px;
 }
-popover.menu contents viewport > stack > * > * > * > separator {
+popover.menu separator {
   min-height: 0.5px;
   margin: 3px 2px;
   background: oklch(from var(--fg-disabled) l c h / .1);
 }
-popover.menu contents viewport > stack > * > * > * > *:not(separator) > * {
+popover.menu modelbutton,
+popover.menu button {
   padding: 6px;
   border-radius: 10px;
   font-size: 12px;
   font-weight: 600;
 }
-popover.menu contents viewport > stack > * > * > * > *:not(separator) > *:hover, popover.menu contents viewport > stack > * > * > * > *:not(separator) > *:focus {
+popover.menu modelbutton:hover,
+popover.menu button:hover {
   background: var(--bg-secondary);
+}
+popover.menu modelbutton:focus,
+popover.menu button:focus {
+    border-width: 2px;
+    border-color: var(--bg-secondary);
 }
 
 .button-row > button {

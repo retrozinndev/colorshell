@@ -1,4 +1,6 @@
+import "./overrides"; // thanks Aylur!!
 const Package = imports.package;
+import I18n from "./i18n/intl";
 
 
 Package.init({
@@ -24,4 +26,4 @@ Package.require({
     "AstalTray": "0.1",
     "AstalWp": "0.1",
 });
-Package.initGettext();
+I18n.init();

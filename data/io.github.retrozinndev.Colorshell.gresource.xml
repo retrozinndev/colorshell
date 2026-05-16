@@ -20,6 +20,7 @@
         <file alias="arrow-circular-top-right-symbolic.svg">icons/arrow-circular-top-right-symbolic.svg</file>
         <file alias="circle-filled-symbolic.svg">icons/circle-filled-symbolic.svg</file>
         <file alias="hourglass-symbolic.svg">icons/hourglass-symbolic.svg</file>
+        <file alias="circle-crossed-symbolic.svg">icons/circle-crossed-symbolic.svg</file>
         <file alias="loop-arrow-symbolic.svg">icons/loop-arrow-symbolic.svg</file>
         <file alias="minus-circle-filled-symbolic.svg">icons/minus-circle-filled-symbolic.svg</file>
         <file alias="shield-danger-symbolic.svg">icons/shield-danger-symbolic.svg</file>
