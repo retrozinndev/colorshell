@@ -23,6 +23,9 @@ export default {
     copy_to_clipboard: "Copy to clipboard",
     battery: "Battery",
 
+    close: "Close",
+    kill: "Kill",
+
     media: {
         play: "Play",
         pause: "Pause",

@@ -23,6 +23,9 @@ export default {
     copy_to_clipboard: "Copiar para a Área de Transferência",
     battery: "Bateria",
 
+    kill: "Matar",
+    close: "Fechar",
+
     media: {
         next: "Próxima faixa",
         pause: "Pausar",

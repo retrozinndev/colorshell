@@ -22,6 +22,11 @@ export type i18nStruct = {
     copy_to_clipboard: string,
     battery: string,
 
+    /** context: kill a process, resource or application */
+    kill: string,
+    /** context: close an application, a popup or window */
+    close: string,
+
     media: {
         loop: string,
         song_loop: string,
