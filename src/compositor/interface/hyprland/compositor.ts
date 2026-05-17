@@ -1,9 +1,10 @@
 import Compositor from "../..";
+import { Gtk } from "ags/gtk4";
 import { register } from "ags/gobject";
 import AstalHyprland from "gi://AstalHyprland";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
-import { createScopedConnection, createSubscription, encoder, playSystemBell, runtimeConfigDir } from "../../../modules/utils";
+import { createScopedConnection, createSubscription, encoder, runtimeConfigDir } from "../../../modules/utils";
 import Wallpaper from "../../../modules/wallpaper";
 import { generalConfig } from "../../../config";
 import { readFile } from "ags/file";
@@ -38,7 +39,7 @@ class Hyprland extends Compositor.Compositor {
             this._clients.push(client);
         }
         this._focusedClient = this._clients.find(c =>
-            c.address === this.#inst.get_focused_client().get_address()
+            c.address === this.#inst.get_focused_client()?.get_address()
         ) ?? null;
 
         createScopedConnection(this.#inst, "client-added", (c) => {
@@ -101,7 +102,7 @@ class Hyprland extends Compositor.Compositor {
                 break;
 
             case "bell":
-                playSystemBell();
+                this.bell().catch(console.error);
             break;
         }
     }
@@ -185,6 +186,18 @@ end`);
 
     public hyprctl(cmd: string, flags?: string): string|null {
         return this.#sock.simpleSendSync(`${flags !== undefined ? `${flags}/` : ""}${cmd}`);
+    }
+
+    protected async bell(): Promise<void> {
+        const file = Gio.File.new_for_path("/usr/share/sounds/freedesktop/stereo/bell.oga");
+
+        if(!file.query_exists(null))
+            return;
+
+
+        const media = Gtk.MediaFile.new();
+        media.set_file(file);
+        media.play();
     }
 }
 

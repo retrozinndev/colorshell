@@ -1,28 +1,38 @@
 -- colorshell-specific configuration, please don't modify unless you know what you're doing!
 
+---@class HL.BindParams
+---@field cmd string
+---@field dsp HL.Dispatcher
+---@field opts? HL.BindOptions
+local __HLBindParams = {};
+
 -- TODO detect if a bind already executes the same command before binding
-hl.bind("SUPER + SPACE", hl.dsp.exec_cmd("colorshell runner"));
+---@type HL.BindParams[]
+local binds = {
+    { cmd = "Print", dsp = hl.dsp.exec_cmd("colorshell screenshot") },
+    { cmd = "ALT + Print", dsp = hl.dsp.exec_cmd("colorshell screenshot active") },
+    { cmd = "SUPER + Print", dsp = hl.dsp.exec_cmd("colorshell screenshot full") },
+    { cmd = "SUPER + F7", dsp = hl.dsp.exec_cmd("colorshell reload") },
 
-hl.bind(" + Print", hl.dsp.exec_cmd("colorshell screenshot"));
-hl.bind("ALT + Print", hl.dsp.exec_cmd("colorshell screenshot active"));
-hl.bind("SUPER + Print", hl.dsp.exec_cmd("colorshell screenshot full"));
+    { cmd = "SUPER + SPACE", dsp = hl.dsp.exec_cmd("colorshell runner") },
+    { cmd = "SUPER + N", dsp = hl.dsp.exec_cmd("colorshell toggle -w control-center") },
+    { cmd = "SUPER + M", dsp = hl.dsp.exec_cmd("colorshell toggle -w center-window") },
+    { cmd = "SUPER + L", dsp = hl.dsp.exec_cmd("colorshell lock") },
+    { cmd = "SUPER + V", dsp = hl.dsp.exec_cmd("colorshell runner -t '\\>'") },
+    { cmd = "SUPER + W", dsp = hl.dsp.exec_cmd("colorshell runner -t '\\#'") },
+    { cmd = "SUPER + SUPER_L", dsp = hl.dsp.exec_cmd("colorshell peek-workspaces") },
 
-hl.bind("SUPER + F7", hl.dsp.exec_cmd("colorshell reload"));
+    { cmd = "XF86AudioLowerVolume", dsp = hl.dsp.exec_cmd("colorshell volume -d sink -m 5"), opts = { repeating = true } },
+    { cmd = "XF86AudioRaiseVolume", dsp = hl.dsp.exec_cmd("colorshell volume -d sink -p 5"), opts = { repeating = true } },
+    { cmd = "XF86AudioMute", dsp = hl.dsp.exec_cmd("colorshell volume -d sink mute") },
+    { cmd = "XF86AudioPrev", dsp = hl.dsp.exec_cmd("colorshell media previous") },
+    { cmd = "XF86AudioNext", dsp = hl.dsp.exec_cmd("colorshell media next") },
+    { cmd = "XF86AudioPlay", dsp = hl.dsp.exec_cmd("colorshell media play-pause") },
 
-hl.bind("SUPER + N", hl.dsp.exec_cmd("colorshell toggle -w control-center"));
-hl.bind("SUPER + M", hl.dsp.exec_cmd("colorshell toggle -w center-window"));
-hl.bind("SUPER + L", hl.dsp.exec_cmd("colorshell lock"));
-hl.bind("SUPER + V", hl.dsp.exec_cmd("colorshell runner -t '\\>'"));
-hl.bind("SUPER + W", hl.dsp.exec_cmd("colorshell runner -t '\\##'"));
+    { cmd = "XF86MonBrightnessDown", dsp = hl.dsp.exec_cmd("brightnessctl -c backlight s 5%-") },
+    { cmd = "XF86MonBrightnessUp", dsp = hl.dsp.exec_cmd("brightnessctl -c backlight s +5%") }
+};
 
-hl.bind("SUPER + SUPER_L", hl.dsp.exec_cmd("colorshell peek-workspaces"));
-
-hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("colorshell volume -d sink -m 5"), { repeating = true });
-hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("colorshell volume -d sink -p 5"), { repeating = true });
-hl.bind("XF86AudioMute", hl.dsp.exec_cmd("colorshell volume -d sink mute"));
-hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("colorshell media previous"));
-hl.bind("XF86AudioNext", hl.dsp.exec_cmd("colorshell media next"));
-hl.bind("XF86AudioPlay", hl.dsp.exec_cmd("colorshell media play-pause"));
-
-hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl -c backlight s 5%-"));
-hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("brightnessctl -c backlight s +5%"));
+for _, bind in ipairs(binds) do
+    hl.bind(bind.cmd, bind.dsp, bind.opts);
+end
