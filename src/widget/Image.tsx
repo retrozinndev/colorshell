@@ -41,6 +41,11 @@ class Image extends Adw.Bin {
         this.#texture = newTexture;
         this.notify("texture");
 
+        if(this.#file && !newTexture) {
+            this.#file = null;
+            this.notify("file");
+        }
+
         this.setPaintable(newTexture);
         if(newTexture) {
             !this.is_visible() && this.show();
@@ -55,8 +60,8 @@ class Image extends Adw.Bin {
     @setter(gtype<Gio.File|null>(Gio.File))
     set file(newFile: Gio.File|null) {
         if(!newFile) {
-            this.setPaintable(null);
-            this.notify("texture");
+            this.texture = null;
+            this.#file = null;
             this.notify("file");
             return;
         }
@@ -72,8 +77,9 @@ class Image extends Adw.Bin {
     @setter(gtype<string|null>(String))
     set path(newPath: string|null) {
         if(newPath === null) {
-            this.setPaintable(null);
-            this.notify("texture");
+            this.texture = null;
+            this.#file = null;
+            this.notify("file");
             this.notify("path");
             return;
         }
@@ -95,8 +101,9 @@ class Image extends Adw.Bin {
     @setter(gtype<string|null>(String))
     set uri(newUri : string|null) {
         if(newUri === null) {
-            this.setPaintable(null);
-            this.notify("texture");
+            this.texture = null;
+            this.#file = null;
+            this.notify("file");
             this.notify("uri");
             return;
         }
