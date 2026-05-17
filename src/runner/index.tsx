@@ -190,8 +190,8 @@ class Runner extends PopupWindow {
     }
 
     /** request a scroll animation to the currently-selected result (if any) */
-    public requestScroll(): void {
-        this.#list.requestScroll();
+    public requestScroll(targetY?: number): void {
+        this.#list.requestScroll(targetY);
     }
 
     /** grab focus to the search entry */

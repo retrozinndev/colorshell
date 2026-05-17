@@ -99,16 +99,19 @@ class ResultsList extends Adw.Bin {
     }
 
     /** request a scroll animation to the currently-selected `ResultItem` (if any) */
-    public requestScroll(): void {
+    public requestScroll(targetY?: number): void {
+        if(targetY !== undefined) {
+            this.animateScroll(targetY);
+            return;
+        }
+
         const selected = this.getSelected();
         if(!selected) {
             this.animateScroll(0);
             return;
         }
 
-        const [, matrix] = selected.compute_transform(this.#list);
-        const y = matrix.get_y_translation();
-        this.animateScroll(y);
+        this.animateScroll(selected.get_allocation().y);
     }
 
     /** animate scroll to `targetY` */

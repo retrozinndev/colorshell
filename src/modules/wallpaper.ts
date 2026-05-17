@@ -6,7 +6,7 @@ import GObject, { register, getter, gtype, property, setter, signal } from "ags/
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
 import Notifications from "./notifications";
-import Socket from "./socket";
+import AstalHyprland from "gi://AstalHyprland?version=0.1";
 
 
 // TODO: support different wallpapers for each monitor
@@ -15,7 +15,6 @@ class Wallpaper extends GObject.Object {
     declare $signals: Wallpaper.SignalSignatures;
     private static instance: Wallpaper;
 
-    #sock!: Socket;
     #wallpaper: Gio.File|null = null;
     #userHyprpaperFile!: Gio.File;
     #defaultHyprpaperFile!: Gio.File;
@@ -77,14 +76,6 @@ may check the syntax of your hyprpaper.conf for errors");
 
         this.restartDaemon().catch((e: Error) => {
             console.error(`Wallpaper: Couldn't restart hyprpaper daemon. Stderr: ${e.message}`);
-        }).then(() => {
-            const instSignature = GLib.getenv("HYPRLAND_INSTANCE_SIGNATURE");
-            if(!instSignature)
-                throw new Error("Hyprland instance signature is invalid. Are you using Hyprland?");
-
-            this.#sock = new Socket(
-                Socket.Type.CLIENT, `${GLib.get_user_runtime_dir()}/hypr/${instSignature}/.hyprpaper.sock`
-            );
         });
 
         globalScope.run(() => {
@@ -264,8 +255,11 @@ wallpaper {
         if(this.#wallpaper?.peek_path()?.trim() === "")
             return;
 
-        this.#sock.simpleSendSync(`wallpaper , ${this.#wallpaper?.peek_path()?.replaceAll(',', "\\,")}, ${this.positioning}`)
-        //this.restartDaemon();
+        for(const mon of AstalHyprland.get_default().get_monitors()) {
+            await execAsync(`hyprctl hyprpaper wallpaper '${mon.get_name()},${
+                this.#wallpaper?.peek_path()?.replaceAll(/,|\\/g, "\\&")
+            },${this.positioning}'`);
+        }
 
         write && this.writeChanges();
     }
