@@ -59,11 +59,19 @@ export const Workspaces = () => {
             />
         </Gtk.Revealer>
         <Gtk.Box class={"default-workspaces"} spacing={4}>
-            <Gtk.EventControllerScroll $={(self) => self.set_flags(Gtk.EventControllerScrollFlags.VERTICAL)}
+            <Gtk.EventControllerScroll flags={Gtk.EventControllerScrollFlags.VERTICAL}
               onScroll={(_, __, dy) => {
-                  dy > 0 ?
-                      AstalHyprland.get_default().dispatch("workspace", "e-1")
-                  : AstalHyprland.get_default().dispatch("workspace", "e+1");
+                  const workspaces = defaultWorkspaces.get();
+                  if(workspaces.length <= 1)
+                      return;
+
+                  const fwsIndex = workspaces.findIndex(ws => ws.id === focusedWorkspace.get()?.id) ?? 0;
+                  const prevIndex = (fwsIndex - 1) < 0 ? (workspaces.length-1) : (fwsIndex-1);
+                  const nextIndex = (fwsIndex + 1) > (workspaces.length-1) ? 0 : (fwsIndex+1);
+
+                  dy < 0 ?
+                      workspaces[prevIndex].focus() // up
+                  : workspaces[nextIndex].focus(); // down
 
                   return true;
               }}
