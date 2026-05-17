@@ -1,53 +1,70 @@
-runner .container {
-  --radius: 24px;
-  background: oklch(from var(--bg-primary) l c h / .8);
-  border-radius: var(--radius);
-  box-shadow: inset 0 0 0 1px var(--bg-secondary), 0 0 8px 1px var(--bg-translucent-primary);
-  padding: 4px;
+:root {
+    --runner-radius: 28px;
+    --runner-padding: 6px;
 }
-runner .container entry {
+
+runner .container {
+  background: oklch(from var(--bg-primary) l c h / .8);
+  border-radius: var(--runner-radius);
+  box-shadow: inset 0 0 0 1px var(--bg-secondary), 0 0 8px 1px var(--bg-translucent-primary);
+  padding: var(--runner-padding);
+}
+
+runner entry {
   transition: 80ms ease-in;
   min-height: 1.6em;
   padding: 14px;
   border-radius: inherit;
   background: none;
 }
-runner .container entry:focus {
+runner entry placeholder {
+    font-weight: 400;
+    font-size: 16px;
+    color: oklch(from var(--fg-disabled) calc(l - 5%) c h / alpha);
+}
+runner entry image {
+  -gtk-icon-size: 18px;
+}
+runner entry image.left {
+  -gtk-icon-size: 24px;
+  margin-right: 8px;
+}
+runner entry image.right {
+  margin-left: 8px;
+}
+runner entry:focus {
   box-shadow: none;
 }
-runner .container entry image {
-  margin-right: 6px;
-  -gtk-icon-size: 16px;
+
+runner scrolledwindow {
+    border-radius: calc(var(--runner-radius) - var(--runner-padding));
 }
-runner .container scrolledwindow {
-  margin: 6px;
-  margin-top: 0;
-  margin-bottom: 0;
-}
-runner .container list resultwidget {
+
+runner resultitem {
   padding: 10px;
   background: var(--bg-primary);
   margin: 2px 0;
-  border-radius: 14px;
+  border-radius: calc(var(--runner-radius) - var(--runner-padding));
 }
-runner .container list resultwidget image {
+runner resultitem image {
   -gtk-icon-size: 28px;
   margin-right: 6px;
 }
-runner .container list resultwidget .title {
+runner resultitem .title {
   font-weight: 500;
   font-size: 16px;
 }
-runner .container list resultwidget .description {
+runner resultitem .description {
   font-size: 12px;
   color: var(--fg-disabled);
 }
-runner .container list resultwidget:selected, runner .container list resultwidget:active, runner .container list resultwidget:hover {
+runner resultitem:selected,
+runner resultitem:active,
+runner resultitem:hover {
   background: var(--bg-secondary);
 }
-runner .container list:first-child {
-  margin-top: 12px;
-}
-runner .container list:last-child {
-  margin-bottom: 4px;
+
+runner resultitem:focus-visible {
+    border-color: oklch(from var(--bg-secondary) calc(l + 25%) c h / alpha);
+    border-width: 2px;
 }
