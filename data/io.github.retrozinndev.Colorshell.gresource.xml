@@ -38,7 +38,6 @@
     <gresource prefix="/io/github/retrozinndev/Colorshell/config/hyprland">
         <file alias="environment.lua">config/hyprland/environment.lua</file>
         <file alias="decorations.lua">config/hyprland/decorations.lua</file>
-        <file alias="bindings.lua">config/hyprland/bindings.lua</file>
         <file alias="rules.lua">config/hyprland/rules.lua</file>
     </gresource>
 </gresources>
