@@ -68,7 +68,7 @@ class Runner extends PopupWindow {
         this.#container.add_css_class("container");
 
         this.#entry = new Gtk.Entry({
-            text: this.search,
+            text: props.search,
             primaryIconName: "system-search-symbolic",
             primaryIconTooltipText: "Search in the Multifunctional Command Runner",
             secondaryIconTooltipText: "Clear"
