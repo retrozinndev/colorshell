@@ -68,7 +68,6 @@ class Runner extends PopupWindow {
         this.#container.add_css_class("container");
 
         this.#entry = new Gtk.Entry({
-            text: props.search,
             primaryIconName: "system-search-symbolic",
             primaryIconTooltipText: "Search in the Multifunctional Command Runner",
             secondaryIconTooltipText: "Clear"
@@ -98,8 +97,10 @@ class Runner extends PopupWindow {
             this.#entry.set_placeholder_text(props.searchPlaceholder);
         }
 
-        if(props.search !== undefined)
+        if(props.search !== undefined) {
             this.search = props.search;
+            this.#entry.set_text(this.search);
+        }
 
         if(props.maxResults !== undefined)
             this.maxResults = props.maxResults;
