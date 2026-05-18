@@ -153,8 +153,8 @@ class Runner extends PopupWindow {
             })
         ]);
 
-        this.bind_property("search", this.#entry, "text", GObject.BindingFlags.BIDIRECTIONAL | GObject.BindingFlags.SYNC_CREATE);
-        this.bind_property("search-placeholder", this.#entry, "placeholder-text", GObject.BindingFlags.BIDIRECTIONAL | GObject.BindingFlags.SYNC_CREATE);
+        this.bind_property("search", this.#entry, "text", GObject.BindingFlags.BIDIRECTIONAL);
+        this.bind_property("search-placeholder", this.#entry, "placeholder-text", GObject.BindingFlags.BIDIRECTIONAL);
 
         // add widgets
         const box = <Gtk.Box widthRequest={this.widthRequest} vexpand={false}
