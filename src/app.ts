@@ -172,3 +172,4 @@ export class Shell extends Adw.Application {
 }
 
 Shell.getDefault().runAsync([ programInvocationName, ...programArgs ]);
+GLib.unsetenv("LD_PRELOAD");

@@ -66,7 +66,7 @@ Others:
   peek-workspaces: peek the workspace numbers in the "bar" window. see "peek-workspaces --help"
   reload: restart current colorshell instance. see "reload --help"
   quit: exit the main instance of the shell
-  -v, --version: display current colorshell version.
+  -v, --version[-detailed]: display current colorshell version.
   -h, --help: shows this help message.
 
 2026 (c) retrozinndev, licensed under the BSD 3-Clause License.
@@ -80,7 +80,17 @@ https://github.com/retrozinndev/colorshell
             alias: "v",
             help: "Show the version number of colorshell",
             onCalled: (remote) => {
-                remote.println(`colorshell ${COLORSHELL_VERSION}${DEVEL ? " (dev build)" : ""}`);
+                remote.println(`Colorshell ${COLORSHELL_VERSION} ${DEVEL ? "(dev) " : ""}`);
+                remote.exit(0);
+            }
+        }, {
+            name: "version-detailed",
+            alias: "V",
+            help: "Show the version of this colorshell build, with detailed info",
+            onCalled: (remote) => {
+                remote.println(`Colorshell ${COLORSHELL_VERSION}${DEVEL ? " (dev)" : ""}`);
+                remote.println(`Built from commit "${HASH}", at ${GLib.DateTime.new_from_unix_local(BUILD_DATE).format_iso8601()}`);
+                remote.println("(c) 2026 Colorshell, made by retrozinndev. https://github.com/retrozinndev/colorshell");
                 remote.exit(0);
             }
         }

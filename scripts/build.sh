@@ -5,6 +5,8 @@ output="./build"
 esbuild="/bin/env esbuild"
 is_devel=false
 version=`cat package.json | jq -r .version`
+head_hash=`git rev-parse HEAD`
+build_date=`date +%s`
 appid="io.github.retrozinndev.Colorshell"
 
 while getopts r:o:e:bdh args; do
@@ -63,7 +65,9 @@ $esbuild --bundle ./src/app.ts \
     --external:"gettext" \
     --define:"DEVEL=$is_devel" \
     --define:"COLORSHELL_VERSION='$version'" \
-    --define:"GRESOURCES_FILE='${gresources_target:-"$output/resources.gresource"}'"
+    --define:"GRESOURCES_FILE='${gresources_target:-"$output/resources.gresource"}'" \
+    --define:"BUILD_DATE=$build_date" \
+    --define:"HASH='$head_hash'"
 _rawjs=`echo "#!/usr/bin/gjs -m" | cat - $output/clsh.js`
 echo "$_rawjs" > $output/clsh.js
 
@@ -87,7 +91,8 @@ mkdir -p \"\$runtime_dir\"
 echo -n '`cat $output/clsh.js | base64`' | base64 --decode > \"\$file\"
 chmod +x "\$file"
 
-LD_PRELOAD=\"/usr/lib/libgtk4-layer-shell.so\" \$file \$@
+export LD_PRELOAD=\"/usr/lib/libgtk4-layer-shell.so\"
+\$file \$@
 LD_PRELOAD=
 " > $output/colorshell
 chmod +x $output/colorshell
