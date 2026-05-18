@@ -58,6 +58,21 @@ class Runner extends PopupWindow {
             ])
         });
 
+        if(props.search !== undefined)
+            this.search = props.search;
+
+        if(props.maxResults !== undefined)
+            this.maxResults = props.maxResults;
+
+        if(props.showResultPlaceholders !== undefined)
+            this.showResultPlaceholders = props.showResultPlaceholders;
+
+        if(props.placeholders !== undefined && props.placeholders.length > 0)
+            props.placeholders.forEach(p => this.placeholders.push(p));
+
+        if(props.searchPlaceholder !== undefined)
+            this.searchPlaceholder = props.searchPlaceholder;
+
         const connections: Map<GObject.Object, number|Array<number>> = new Map();
         this.#container = new Gtk.Box({
             hexpand: true,
@@ -68,10 +83,13 @@ class Runner extends PopupWindow {
         this.#container.add_css_class("container");
 
         this.#entry = new Gtk.Entry({
+            text: this.search,
+            placeholderText: this.searchPlaceholder,
             primaryIconName: "system-search-symbolic",
             primaryIconTooltipText: "Search in the Multifunctional Command Runner",
             secondaryIconTooltipText: "Clear"
         });
+
         connections.set(this.#entry, [
             this.#entry.connect("icon-release", (self, pos) => {
                 if(pos === Gtk.EntryIconPosition.PRIMARY) {
@@ -84,35 +102,13 @@ class Runner extends PopupWindow {
             this.#entry.connect("activate", (self) => {
                 const row = this.#list.getSelected();
                 if(!row) {
-                    self.grab_focus();
+                    self.grab_focus_without_selecting();
                     return;
                 }
 
                 row.emit("clicked");
             })
         ]);
-
-        if(props.searchPlaceholder !== undefined) {
-            this.searchPlaceholder = props.searchPlaceholder;
-            this.#entry.set_placeholder_text(props.searchPlaceholder);
-        }
-
-        if(props.search !== undefined) {
-            this.search = props.search;
-            this.#entry.set_text(this.search);
-        }
-
-        if(props.maxResults !== undefined)
-            this.maxResults = props.maxResults;
-
-        if(props.showResultPlaceholders !== undefined)
-            this.showResultPlaceholders = props.showResultPlaceholders;
-
-        if(props.placeholders !== undefined && props.placeholders.length > 0)
-            props.placeholders.forEach(p => this.placeholders.push(p));
-
-        this.bind_property("search", this.#entry, "text", GObject.BindingFlags.BIDIRECTIONAL);
-        this.bind_property("search-placeholder", this.#entry, "placeholder-text", GObject.BindingFlags.BIDIRECTIONAL);
 
         this.#list = new ResultsList({
             maxContentSize: this.heightRequest,
@@ -135,6 +131,9 @@ class Runner extends PopupWindow {
                         return;
                 }
             }),
+            this.connect("show", (self) => {
+                self.#entry.select_region(this.#entry.textLength, this.#entry.textLength);
+            }),
             this.connect("destroy", () => {
                 connections.forEach((id, gobj) => Array.isArray(id) ?
                     id.forEach(num => gobj.disconnect(num))
@@ -153,6 +152,9 @@ class Runner extends PopupWindow {
                 }).catch(console.error);
             })
         ]);
+
+        this.bind_property("search", this.#entry, "text", GObject.BindingFlags.BIDIRECTIONAL | GObject.BindingFlags.SYNC_CREATE);
+        this.bind_property("search-placeholder", this.#entry, "placeholder-text", GObject.BindingFlags.BIDIRECTIONAL | GObject.BindingFlags.SYNC_CREATE);
 
         // add widgets
         const box = <Gtk.Box widthRequest={this.widthRequest} vexpand={false}
@@ -207,7 +209,6 @@ class Runner extends PopupWindow {
 
         this.instance.search = search;
         this.instance.searchGrabFocus();
-        this.instance.#entry.select_region(search.length, search.length);
     }
 
     /** open a default instance of the app runner */
@@ -360,7 +361,7 @@ class Runner extends PopupWindow {
             this.#results = await this.generateResults(input, limit);
             this.notify("results");
         } catch(e) {
-            console.error(`Couldn't get results because of an error: ${(e as Error).message}\n${(e as Error).stack}`);
+            console.error("Couldn't get results because of an error:", e);
 
             this.#list.prepend(
                 new ResultItem({

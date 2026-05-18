@@ -171,15 +171,15 @@ export class Notification extends Gtk.Box {
         );
 
         this.append(
-            <Gtk.ListBox class={"actions"} selectionMode={Gtk.SelectionMode.NONE}>
-                <For each={createBinding(this, "actions").as(Notifications.getDefault().removeDuplicateActions)}>
+            <Gtk.Box class={"actions"} orientation={Gtk.Orientation.VERTICAL}>
+                <For each={createBinding(this, "actions")} >
                     {(action: AstalNotifd.Action) => {
                         return <Gtk.Button class={"action"} label={action.label} hexpand
                           onClicked={() => this.emit("action-clicked", action)}
                         />;
                     }}
                 </For>
-            </Gtk.ListBox> as Gtk.ListBox
+            </Gtk.Box> as Gtk.Box
         );
     }
 

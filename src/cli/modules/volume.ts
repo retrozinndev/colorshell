@@ -1,5 +1,7 @@
+import { Gdk } from "ags/gtk4";
 import Cli from "..";
 import Wireplumber from "../../modules/volume";
+import { generalConfig } from "../../config";
 
 
 type DeviceType = "sink"|"source";
@@ -49,6 +51,8 @@ Commands:
                     return;
                 }
 
+                if(generalConfig.getProperty("misc.play_bell_on_volume_change", "boolean"))
+                    Gdk.Display.get_default()!.beep();
                 remote.println(`Increasing volume of ${device} by ${value}`);
                 if(device === "sink") {
                     Wireplumber.getDefault().increaseSinkVolume(increase);
@@ -69,6 +73,9 @@ Commands:
                     remote.println("Provided value is not a number/percentage!", true);
                     return;
                 }
+
+                if(generalConfig.getProperty("misc.play_bell_on_volume_change", "boolean"))
+                    Gdk.Display.get_default()!.beep();
 
                 remote.println(`Decreasing volume of ${device} by ${value}`,);
                 if(device === "sink") {

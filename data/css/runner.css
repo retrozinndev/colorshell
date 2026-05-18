@@ -26,7 +26,7 @@ runner entry image {
   -gtk-icon-size: 18px;
 }
 runner entry image.left {
-  -gtk-icon-size: 24px;
+  -gtk-icon-size: 20px;
   margin-right: 8px;
 }
 runner entry image.right {
