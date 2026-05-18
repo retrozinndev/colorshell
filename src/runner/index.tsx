@@ -356,6 +356,7 @@ class Runner extends PopupWindow {
     public async update(input: string, limit?: number) {
         this.#list.clear();
         this.#results.splice(0, this.#results.length);
+        this.notify("results");
 
         try {
             this.#results = await this.generateResults(input, limit);

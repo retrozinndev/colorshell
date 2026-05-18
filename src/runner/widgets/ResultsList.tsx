@@ -61,12 +61,15 @@ class ResultsList extends Adw.Bin {
         const listConn: number = this.#list.connect("row-selected", () => this.requestScroll());
         const selfConns: Array<number> = [
             this.connect("notify::n-results", () => {
-                if(this.nResults < 1) {
+                if(this.nResults < 1) { // hide if empty
                     this.hide();
                     return;
                 }
 
                 this.show();
+                // autofocus first result if none are selected
+                if(!this.getSelected())
+                    this.select(0);
             }),
             this.connect("destroy", () => {
                 this.#list.disconnect(listConn);
