@@ -2,7 +2,7 @@ declare const DEVEL: boolean;
 declare const GRESOURCE: string;
 declare const VERSION: string;
 declare const BUILD_DATE: number;
-declare const HASH: string;
+declare const HEAD: string;
 
 
 /** get a translation string from the current language.

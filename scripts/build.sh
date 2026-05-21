@@ -6,7 +6,7 @@ socket_support=
 output="./build"
 is_devel=true
 version=`cat package.json | jq -r .version`
-hash=`git rev-parse HEAD`
+head=`command -v git 2>&1 && git rev-parse HEAD || echo $version`
 udate=`date +%s`
 appid="io.github.retrozinndev.Colorshell"
 
@@ -72,7 +72,7 @@ echo "[info] bundling"
       --define:"VERSION='$version'" \
       --define:"GRESOURCE='$gresource_target'" \
       --define:"BUILD_DATE=$udate" \
-      --define:"HASH='$hash'"
+      --define:"HEAD='$head'"
 
 } > $output/clsh.js
 

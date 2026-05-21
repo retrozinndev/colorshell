@@ -89,7 +89,7 @@ https://github.com/retrozinndev/colorshell
             help: "Show the version of this colorshell build, with detailed info",
             onCalled: (remote) => {
                 remote.println(`Colorshell ${VERSION}${DEVEL ? " (dev)" : ""}`);
-                remote.println(`Built from commit "${HASH}", at ${GLib.DateTime.new_from_unix_local(BUILD_DATE).format_iso8601()}`);
+                remote.println(`Built from from HEAD "${HEAD}", at ${GLib.DateTime.new_from_unix_local(BUILD_DATE).format_iso8601()}`);
                 remote.println("(c) 2026 Colorshell, made by retrozinndev. https://github.com/retrozinndev/colorshell");
                 remote.exit(0);
             }

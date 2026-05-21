@@ -16,9 +16,11 @@
   socat,
   libglycin-gtk4,
   glycin-loaders,
+  jq,
 }:
 let
   packageJSON = lib.importJSON ../package.json;
+  appid = "io.github.retrozinndev.Colorshell";
   pname = packageJSON.name;
   version = packageJSON.version;
 
@@ -48,8 +50,8 @@ let
     buildPhase = ''
       runHook preBuild
 
-      glib-compile-resources resources.gresource.xml \
-        --sourcedir ./resources \
+      glib-compile-resources data/${appid}.gresource.xml \
+        --sourcedir ./data \
         --target resources.gresource
 
       runHook postBuild
@@ -116,6 +118,7 @@ buildNpmPackage (finalAttrs: {
     gobject-introspection
     inputs'.ags.packages.default
     moreutils
+    jq
   ];
 
   buildInputs = [
@@ -143,7 +146,7 @@ buildNpmPackage (finalAttrs: {
 
     mkdir build
     outPath=./build/${packageJSON.name}
-    pnpm build -rjg \$COLORSHELL_GRESOURCE
+    pnpm build -rjg \$COLORSHELL_GRESOURCE -o ./build
 
     runHook postBuild
   '';
