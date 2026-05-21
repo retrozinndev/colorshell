@@ -13,9 +13,7 @@
   glib,
   gjs,
   libadwaita,
-  dart-sass,
   socat,
-  fcitx5,
   libglycin-gtk4,
   glycin-loaders,
 }:
@@ -145,19 +143,7 @@ buildNpmPackage (finalAttrs: {
 
     mkdir build
     outPath=./build/${packageJSON.name}
-    ags bundle ./src/app.ts $outPath \
-      --gtk 4 \
-      --root ./src \
-      --define "DEVEL=false" \
-      --define "COLORSHELL_VERSION='${finalAttrs.version}'" \
-      --define "GRESOURCES_FILE='\$COLORSHELL_GRESOURCE'"
-
-    # add socket-communication support on executable
-    {
-      head -n1 $outPath
-      sed '1{/^#!.*$/d}' ${../scripts/socket.sh}
-      cat "$outPath" | sed '/^#!.*$/d'
-    } | sponge $outPath
+    pnpm build -rjg \$COLORSHELL_GRESOURCE
 
     runHook postBuild
   '';
@@ -179,10 +165,8 @@ buildNpmPackage (finalAttrs: {
       --prefix PATH : ${
         lib.makeBinPath [
           # runtime executables
-          dart-sass
           glib
           socat
-          fcitx5
         ]
       }
     )

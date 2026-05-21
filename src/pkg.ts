@@ -5,7 +5,7 @@ import I18n from "./i18n/intl";
 
 Package.init({
     name: "io.github.retrozinndev.Colorshell",
-    version: COLORSHELL_VERSION,
+    version: VERSION,
     prefix: "~/.local",
     datadir: "/share",
     libdir: "/lib"

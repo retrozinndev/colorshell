@@ -5,11 +5,11 @@
     "packageManager": "pnpm@10.12.1",
     "scripts": {
         "types": "sh ./scripts/types.sh",
-        "dev": "sh ./scripts/build.sh -d && sh ./scripts/start.sh",
+        "dev": "sh ./scripts/build.sh && sh ./scripts/start.sh",
         "start": "sh ./scripts/start.sh",
         "clean": "sh ./scripts/clean.sh",
         "build": "sh ./scripts/build.sh",
-        "build:release": "sh ./scripts/release.sh"
+        "build:release": "sh ./scripts/build.sh -r"
     },
     "devDependencies": {
         "esbuild": "^0.28.0"

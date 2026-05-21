@@ -80,7 +80,7 @@ https://github.com/retrozinndev/colorshell
             alias: "v",
             help: "Show the version number of colorshell",
             onCalled: (remote) => {
-                remote.println(`Colorshell ${COLORSHELL_VERSION} ${DEVEL ? "(dev) " : ""}`);
+                remote.println(`Colorshell ${VERSION} ${DEVEL ? "(dev) " : ""}`);
                 remote.exit(0);
             }
         }, {
@@ -88,7 +88,7 @@ https://github.com/retrozinndev/colorshell
             alias: "V",
             help: "Show the version of this colorshell build, with detailed info",
             onCalled: (remote) => {
-                remote.println(`Colorshell ${COLORSHELL_VERSION}${DEVEL ? " (dev)" : ""}`);
+                remote.println(`Colorshell ${VERSION}${DEVEL ? " (dev)" : ""}`);
                 remote.println(`Built from commit "${HASH}", at ${GLib.DateTime.new_from_unix_local(BUILD_DATE).format_iso8601()}`);
                 remote.println("(c) 2026 Colorshell, made by retrozinndev. https://github.com/retrozinndev/colorshell");
                 remote.exit(0);

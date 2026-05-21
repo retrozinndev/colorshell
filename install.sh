@@ -9,10 +9,12 @@ XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-"$HOME/.config"}
 BIN_HOME=${BIN_HOME:-"$HOME/.local/bin"}
 APPS_HOME=${APPS_HOME:-"$XDG_DATA_HOME/applications"}
 
-skip_prompts=`[[ "$1" == -y ]] && echo -n true`
+skip_prompts=
 is_standalone=`(git remote -v > /dev/null 2>&1) || echo -n true`
 
+appid="io.github.retrozinndev.Colorshell"
 temp_dir="$XDG_CACHE_HOME/colorshell-installer"
+gresource_path="$XDG_DATA_HOME/colorshell/.gresource"
 repo_directory=`[ "$is_standalone" ] && echo -n "$temp_dir/repo" || echo -n "."`
 target_branch=ryo
 utils_path=`[ -z "$is_standalone" ] && echo -n "$repo_directory/scripts/utils.sh"`
@@ -77,20 +79,20 @@ fi
 # handle arguments and modes
 while getopts b:huy arg; do
     case $arg in
-        b|branch)
+        b | branch)
             target_branch=${OPTARG:-"ryo"}
             ;;
 
-        u|update)
+        u | update)
             mode="update"
             echo "Let's update :D"
             ;;
 
-        y|yes)
+        y | yes)
             skip_prompts=true
             ;;
 
-        ?|h|help)
+        ? | h | help)
             echo "\
 Install colorshell, override or update an existing installation.
 
@@ -170,7 +172,7 @@ if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
     pnpm -C "$repo_directory" i > /dev/null 2>&1
 
     Send_log "Building colorshell"
-    pnpm -C "$repo_directory" build:release
+    pnpm -C "$repo_directory" build -rg 
 
     action_prefix=${mode/e/}
     Send_log "${action_prefix^}ing colorshell" # hell yeah
@@ -179,12 +181,14 @@ if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
     cp -f $repo_directory/build/release/colorshell $BIN_HOME
 
     # install gresource
-    mkdir -p $XDG_DATA_HOME/colorshell
-    cp -f $repo_directory/build/release/resources.gresource $XDG_DATA_HOME/colorshell/.gresource
+    mkdir -p $gresource_path
+    cp -f $repo_directory/build/release/resources.gresource $gresource_path
 
     # install desktop entry
     mkdir -p $APPS_HOME
-    cp -f $repo_directory/build/release/colorshell.desktop $APPS_HOME
+    cat $repo_directory/data/$appid.desktop | \
+        sed -Ee 's/(Exec=).*/\1sh -c "$HOME\/.local\/bin\/colorshell"/' \
+        > $APPS_HOME/$appid.desktop
 
     [[ $mode == "install" ]] && \
         Post_install

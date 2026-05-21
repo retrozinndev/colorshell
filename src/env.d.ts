@@ -1,7 +1,6 @@
-declare const SRC: string
 declare const DEVEL: boolean;
-declare const GRESOURCES_FILE: string;
-declare const COLORSHELL_VERSION: string;
+declare const GRESOURCE: string;
+declare const VERSION: string;
 declare const BUILD_DATE: number;
 declare const HASH: string;
 

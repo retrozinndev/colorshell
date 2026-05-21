@@ -35,7 +35,7 @@ export class Shell extends Adw.Application {
         super({
             applicationId: "io.github.retrozinndev.Colorshell",
             flags: Gio.ApplicationFlags.HANDLES_COMMAND_LINE,
-            version: COLORSHELL_VERSION,
+            version: VERSION,
         });
 
         setConsoleLogDomain("Colorshell");
@@ -56,7 +56,7 @@ export class Shell extends Adw.Application {
 
         createRoot((dispose) => {
             createScopedConnection(this as Adw.Application, "shutdown", () => {
-                globalScope.dispose()
+                globalScope.dispose();
                 dispose();
             });
 
@@ -105,8 +105,8 @@ export class Shell extends Adw.Application {
 
         // load gresource from build-defined path
         try {
-            const gresourcesPath: string = !/^\//.test(GRESOURCES_FILE) ?
-                (GRESOURCES_FILE.split('/').filter(s => s !== "").map(path => {
+            const gresourcesPath: string = !/^\//.test(GRESOURCE) ?
+                (GRESOURCE.split('/').filter(s => s !== "").map(path => {
                     // support environment variables at runtime
                     if(/^\$/.test(path)) {
                         const env = GLib.getenv(path.replace(/^\$/, ""));
@@ -117,7 +117,7 @@ export class Shell extends Adw.Application {
                     }
                     return path;
                 }).join('/'))
-            : GRESOURCES_FILE;
+            : GRESOURCE;
 
             const gresource = Gio.Resource.load(gresourcesPath);
             Gio.resources_register(gresource);
@@ -154,6 +154,7 @@ export class Shell extends Adw.Application {
         console.log("Colorshell: Initializing modules");
         StyleManager.init();
         initCompositor();
+        Idle.getDefault();
         Media.getDefault();
 
         initWindows();
