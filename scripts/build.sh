@@ -6,7 +6,7 @@ socket_support=
 output="./build"
 is_devel=true
 version=`cat package.json | jq -r .version`
-head=`command -v git 2>&1 && git rev-parse HEAD || echo $version`
+head=`command -v git 2>&1 > /dev/null && git rev-parse HEAD || echo $version`
 udate=`date +%s`
 appid="io.github.retrozinndev.Colorshell"
 
