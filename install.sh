@@ -172,7 +172,7 @@ if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
     pnpm -C "$repo_directory" i > /dev/null 2>&1
 
     Send_log "Building colorshell"
-    pnpm -C "$repo_directory" build -rg 
+    pnpm -C "$repo_directory" build -rg $gresource_path
 
     action_prefix=${mode/e/}
     Send_log "${action_prefix^}ing colorshell" # hell yeah
