@@ -114,7 +114,7 @@ class Config<K extends string, V = any> extends GObject.Object {
                     urgency: AstalNotifd.Urgency.NORMAL,
                     appName: "colorshell",
                     summary: "Config apply error",
-                    body: `Failed to apply properties: ${e.message}`
+                    body: `Failed to apply properties: ${e.message}\n${e.stack}`
                 });
             }).finally(() => this.notify("entries"));
         } catch(e) {
@@ -135,10 +135,10 @@ class Config<K extends string, V = any> extends GObject.Object {
         lastPath?: string
     ): Promise<void> {
         for(const key of Object.keys(newObject)) {
-            if(newObject[key as keyof T1] === undefined) // leave unchanged if unset in user config
-                continue;
+            const val = newObject[key as keyof T1] as Config.JSONValue,
+                oldVal = targetObject[key as keyof T2] as Config.JSONValue|undefined;
 
-            if(typeof newObject[key as keyof T1] === "object") {
+            if(val === "object" && oldVal !== undefined) {
                 await this.syncEntries(
                     newObject[key as keyof T1] as object,
                     targetObject[key as keyof T2] as object,
@@ -147,11 +147,9 @@ class Config<K extends string, V = any> extends GObject.Object {
                 continue;
             }
 
-            const newVal = newObject[key as keyof T1] as Config.JSONValue,
-                curVal = targetObject?.[key as keyof T2] as Config.JSONValue|undefined;
 
             // check if the value changed
-            if(curVal !== undefined && newVal === curVal)
+            if(oldVal !== undefined && val === oldVal)
                 continue;
 
             targetObject[key as keyof T2] = newObject[key as keyof T1] as never;
