@@ -32,11 +32,8 @@ export class PluginClipboard implements Runner.Plugin {
                 css: "font-size: 16px; margin-right: 8px; font-weight: 600;"
             }),
             title: item.preview,
-            onClicked: () => Clipboard.getDefault().selectItem(item).catch((err: Error) => {
-                console.error(`Runner(Plugin/Clipboard): An error occurred while selecting clipboard item. Stderr:\n${
-                    err.message ? `${err.message}\n` : ""}Stack: ${err.stack}`
-                );
-            })
+            onClicked: () => Clipboard.getDefault().copy(item)
+                .catch(console.error)
         };
     }
 

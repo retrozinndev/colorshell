@@ -1,129 +1,93 @@
-import { monitorFile, readFile } from "ags/file"; 
-import { execAsync } from "ags/process";
+import { exec, execAsync } from "ags/process";
+import { isInstalled } from "./utils";
+import { readFile } from "ags/file";
 import GObject, { getter, register, signal } from "ags/gobject";
-
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 
 
-// TODO: better history monitoring
-/** Cliphist Manager and event listener
-  * This only supports wipe and store events from cliphist */
+/** Cliphist Manager and clipboard event listener */
 @register({ GTypeName: "Clipboard" })
 class Clipboard extends GObject.Object {
-    private static instance: Clipboard;
+    private static instance: Clipboard|null = null;
 
-    #dbFile: Gio.File;
-    #dbMonitor: Gio.FileMonitor;
-    #updateDone: boolean = false;
-    #history = new Array<Clipboard.Item>;
-    #changesTimeout?: GLib.Source;
-    #ignoreChanges: boolean = false;
+    #db!: Gio.File;
+    #monitor!: [Gio.FileMonitor, number];
     #procs: Array<Gio.Subprocess> = [];
+    #history: Array<Clipboard.Item> = [];
 
-    @signal(GObject.TYPE_JSOBJECT) copied(_item: object) {}
+    @signal(Object) copied(_: Clipboard.Item) {}
+    @signal(Object) removed(_: Clipboard.Item) {}
     @signal() wiped() {};
 
+    /** last-to-first list of clipboard items */
     @getter(Array)
-    public get history() { return this.#history; }
+    public get history() { return [...this.#history]; }
 
 
     constructor() {
         super();
 
-        this.#procs = [
+        if(!isInstalled("cliphist")) {
+            console.warn("Clipboard: cliphist doesn't seem to be installed; clipboard features may not work");
+            return;
+        }
+
+        this.#procs.push(
             Gio.Subprocess.new(
-                ["wl-paste", "--type", "text", "--watch", "cliphist", "store"],
-                Gio.SubprocessFlags.STDOUT_SILENCE
+                ["wl-paste", "--type", "text", "--watch", "cliphist store"],
+                Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
             ),
             Gio.Subprocess.new(
-                ["wl-paste", "--type", "image", "--watch", "cliphist", "store"],
-                Gio.SubprocessFlags.STDOUT_SILENCE
+                ["wl-paste", "--type", "image", "--watch", "cliphist store"],
+                Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
             )
-        ];
+        );
 
-        this.#dbFile = this.getCliphistDatabase();
-
-        this.#dbMonitor = monitorFile(this.#dbFile.get_path()!, () => {
-            if(this.#ignoreChanges || this.#changesTimeout) 
-                return;
-
-            this.#changesTimeout = setTimeout(() => this.#changesTimeout = undefined, 300);
-            
-            if(this.#updateDone) {
-                this.updateDatabase();
+        this.#db = this.getCliphistDatabase();
+        const monitor = this.#db.monitor_file(Gio.FileMonitorFlags.NONE, null);
+        this.#monitor = [monitor, monitor.connect("changed", (_, file) => {
+            if(!file.query_exists(null)) {
+                this.wipe(true);
                 return;
             }
 
-            this.init();
-        });
+            this.readDatabase().catch(console.error);
+        })];
 
-        if(this.#dbFile.query_exists(null)) {
-            this.init();
+        this.readDatabase().catch(console.error);
+    }
+
+    public static init(): Clipboard {
+        if(!this.instance)
+            this.instance = new Clipboard();
+
+        return this.instance;
+    }
+
+    public static deinit(): void {
+        if(!this.instance)
             return;
-        }
 
-        console.log("Clipboard: cliphist database not found. Try copying something first!");
+        this.instance.#monitor?.[0].disconnect(this.instance.#monitor[1]);
+        this.instance.#procs.splice(0, this.instance.#procs.length)
+            .forEach(p => p.force_exit());
+        this.instance.#history.splice(0, this.instance.#history.length);
+        this.instance = null;
     }
 
-    private init() {
-        console.log("Clipboard: Starting to read cliphist history...");
-
-        this.updateDatabase().then(() => {
-            console.log("Clipboard: Done reading cliphist history!");
-        }).catch((err) => 
-            console.error(`Clipboard: An error occurred while reading cliphist history. Stderr: ${err}`)
-        );
+    public static getDefault(): Clipboard {
+        return this.init();
     }
 
-    public async copyAsync(content: string): Promise<boolean> {
-        const proc = Gio.Subprocess.new(
-            ["wl-copy", content],
-            Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
-        );
-
-        const stderr = Gio.DataInputStream.new(proc.get_stderr_pipe()!);
-
-        if(!proc.wait_check(null)) {
-            try {
-                const [err, ] = stderr.read_upto('\x00', -1, null);
-                console.error(`Clipboard: An error occurred while copying text. Stderr: ${err}`);
-            } catch(_) {
-                console.error(`Clipboard: An error occurred while copying text and shell couldn't read \
-stderr for more info.`);
-            }
-        }
-
-        return proc.get_exit_status() === 0;
+    /** store item in cliphist database */
+    protected async store(data: string): Promise<void> {
+        await execAsync(["cliphist", "store", data]);
     }
 
-    public async selectItem(itemToSelect: number|Clipboard.Item): Promise<boolean> {
-        const item = await this.getItemContent(itemToSelect);
-        let res: boolean = true;
-
-        if(item) 
-            await this.copyAsync(item).catch(() => res = false);
-
-        return res;
-    }
-
-    /** Gets history item's content by its ID.
-        * @returns the clipboard item's content */
-    public async getItemContent(item: number|Clipboard.Item): Promise<string|undefined> {
-        const id = (typeof item === "number") ?
-            item : item.id;
-
-        const cmd = Gio.Subprocess.new([ "cliphist", "decode", id.toString() ], 
-            Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE);
-
-        const [ , stdout, stderr ] = cmd.communicate_utf8(null, null);
-
-        if(stderr) {
-            console.error(`Clipboard: An error occurred while getting item content. Stderr:\n${stderr}`);
-            return;
-        }
-
-        return stdout;
+    /** store item in cliphist database. synchronously. */
+    protected storeSync(data: string): void {
+        exec(["cliphist", "store", data]);
     }
 
     /** Searches for the cliphist database file 
@@ -153,109 +117,167 @@ stderr for more info.`);
         return Gio.File.new_for_path(`${GLib.get_user_cache_dir()}/cliphist/db`);
     }
 
-    private getContentType(preview: string): Clipboard.ItemType {
-        return /^\[\[.*binary data.*x.*\]\]$/u.test(preview) ?
-            Clipboard.ItemType.IMAGE
-        : Clipboard.ItemType.TEXT;
+    /** add item to the clipboard history.
+      * use `Clipboard.store` to actually store data inside of the cliphist database */
+    protected add(type: Clipboard.Item.Type, data?: string): void {
+        const lastId = (this.#history[0]?.id ?? 0);
+        const preview = type === Clipboard.Item.Type.IMAGE ?
+            "[[ binary data ]]"
+        : data?.substring(0, 24) ?? "<unknown text>";
+        const item: Clipboard.Item = { type, data, preview, id: lastId+1 };
+
+        this.#history.unshift(item);
+        this.emit("copied", item);
+        this.notify("history");
     }
 
-    public async wipeHistory(noExec?: boolean): Promise<void> {
-        if(noExec) {
-            this.#history = [];
-            this.emit("wiped");
+    /** remove item from history.
+      * @param item identifier for the `ClipboardItem` to remove or the item itself
+      * @returns `true` if removed sucessfully, `false` otherwise */
+    protected remove(item: number|Clipboard.Item): boolean {
+        item = typeof item === "object" && assert("id" in item) ? item.id : item;
+
+        const i = this.#history.findIndex(i => i.id === item);
+        if(i < 0)
+            return false;
+
+        exec(`cliphist delete-query ${item}`);
+        this.emit("removed", this.#history.splice(i, 1)[0]);
+        this.notify("history");
+        return true;
+    }
+
+    public async copy(item: string|Clipboard.Item): Promise<boolean> {
+        if(typeof item === "object") {
+            assert("type" in item, "id" in item);
+            
+            try {
+                await this.copy("data" in item ?
+                    item.data!
+                : (await this.getItemContent(item))!);
+            } catch(e) {
+                console.error(e);
+                return false;
+            }
+
+            return true;
+        }
+
+        const proc = Gio.Subprocess.new(
+            ["wl-copy", item],
+            Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
+        );
+        Gio._promisify(proc, "wait_check_async", "wait_check_finish");
+
+        return await proc.wait_check_async(null);;
+    }
+
+    /** Gets history item's content by its ID.
+        * @returns the clipboard item's content */
+    public async getItemContent(item: number|Clipboard.Item): Promise<string|undefined> {
+        item = typeof item === "object" ? item.id : item;
+
+        const cmd = Gio.Subprocess.new([ "cliphist", "decode", item.toString() ], 
+            Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE);
+
+        const [ , stdout, stderr ] = cmd.communicate_utf8(null, null);
+
+        if(stderr) {
+            console.error("Clipboard: An error occurred while getting item content:", stderr);
             return;
         }
 
-        this.#ignoreChanges = true;
-        await execAsync("cliphist wipe").then(() => {
-            this.#history = [];
+        return stdout;
+    }
+
+    private getItemType(preview: string): Clipboard.Item.Type {
+        return /^\[\[ binary data (.* )?\]\]$/.test(preview) ?
+            Clipboard.Item.Type.IMAGE
+        : Clipboard.Item.Type.TEXT;
+    }
+
+    /** wipes clipboard history.
+      * @param skipDB skips wiping the database (only wipes the internal list) */
+    public async wipe(skipDB: boolean = false): Promise<void> {
+        if(skipDB) {
+            this.#history.splice(0, this.#history.length);
             this.emit("wiped");
-        }).catch((err: Gio.IOErrorEnum) => 
-            console.error(`Clipboard: An error occurred on cliphist database wipe. Stderr: ${
-                err.message ? `${err.message}\n` : ""}${err.stack}`)
-        ).finally(() => this.#ignoreChanges = false);
+
+            return;
+        }
+
+        try {
+            await execAsync("cliphist wipe");
+            this.#history.splice(0, this.#history.length);
+            this.emit("wiped");
+        } catch(err) {
+            console.error("Clipboard: An error occurred on cliphist database wipe:", err);
+        }
     }
 
-    public async updateDatabase(): Promise<void> {
-        const proc = Gio.Subprocess.new([ "cliphist", "list" ],
-            Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE);
+    public async readDatabase(): Promise<void> {
+        const proc = Gio.Subprocess.new(
+            [ "cliphist", "list" ],
+            Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
+        );
 
-        proc.communicate_utf8_async(null, null, (_, asyncRes) => {
-            const [ success, stdout, stderr ] = proc.communicate_utf8_finish(asyncRes);
+        Gio._promisify(proc, "communicate_utf8_async", "communicate_utf8_finish");
+        let stdout: string|undefined;
 
-            if(!success || stderr) {
-                console.error("Clipboard: Couldn't communicate with cliphist! Is it installed?");
-                return;
-            }
+        try {
+            stdout = (await proc.communicate_utf8_async(null, null))[0];
+        } catch(e) {
+            console.error("Clipboard: Couldn't read cliphist history! Is it installed?");
+            return;
+        }
 
-            if(!stdout.trim()) {
-                this.wipeHistory(true);
-                this.notify("history");
-                return;
-            }
+
+        if(stdout?.trim() === "") {
+            this.wipe(true);
+            this.notify("history");
+            return;
+        }
             
-            const items = stdout.split('\n');
+        const items = stdout.split('\n');
 
-            if(this.#updateDone) {
-                const [ id, preview ] = items[0].split('\t');
-                const clipItem = {
-                    id: Number.parseInt(id),
-                    preview,
-                    type: this.getContentType(preview)
-                } as Clipboard.Item;
-                
-                this.#history.unshift(clipItem);
+        for(let i = items.length-1; i >= 0; i--) {
+            const item = items[i];
 
-                this.emit("copied", clipItem);
-                this.notify("history");
-                return;
-            }
+            if(item.trim() === "")
+                continue;
 
-            for(const item of items) {
-                if(!item) continue;
+            const [ idStr, preview ] = item.split('\t');
+            const id = Number.parseInt(idStr);
 
-                const [ id, preview ] = item.split('\t');
+            if(i === items.length && this.#history[0]?.id === id)
+                break;
 
-                const clipItem = {
-                    id: Number.parseInt(id),
-                    preview,
-                    type: this.getContentType(preview)
-                } as Clipboard.Item;
+            if(this.#history.findIndex(i => i.id === id) > -1)
+                continue;
 
-                this.#history.push(clipItem);
+            const clipItem = {
+                id, preview, type: this.getItemType(preview)
+            } as Clipboard.Item;
 
-                this.emit("copied", clipItem);
-                this.notify("history");
-            }
-
-            this.#updateDone = true;
-
-        });
-    }
-
-    public static getDefault(): Clipboard {
-        if(!this.instance)
-            this.instance = new Clipboard();
-
-        return this.instance;
+            this.#history.unshift(clipItem);
+            this.emit("copied", clipItem);
+            this.notify("history");
+        }
     }
 }
 
 namespace Clipboard {   
-    export enum ItemType {
-        TEXT = 0,
-        IMAGE = 1
-    }
-
-    export class Item {
+    export type Item = {
         id: number;
-        type: ItemType;
+        type: Item.Type;
         preview: string;
+        data?: string;
+    };
 
-        constructor(id: number, type: ItemType, preview: string) {
-            this.id = id;
-            this.type = type;
-            this.preview = preview;
+    export namespace Item {
+        export enum Type {
+            TEXT = 0,
+            IMAGE = 1
         }
     }
 
@@ -264,5 +286,6 @@ namespace Clipboard {
         "wiped": () => void;
     }
 }
+
 
 export default Clipboard;

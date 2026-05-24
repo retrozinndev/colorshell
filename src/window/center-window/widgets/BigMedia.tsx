@@ -143,7 +143,7 @@ class PlayerWidget extends Gtk.Box {
                               // a widget that supports adding multiple icons and allows switching
                               // through them would be pretty nice!! (i'll probably do this later)
                               url &&
-                                  Clipboard.getDefault().copyAsync(url).then(() => {
+                                  Clipboard.getDefault().copy(url).then(() => {
                                       if(this.#copyClickTimeout && !this.#copyClickTimeout.is_destroyed()) 
                                           this.#copyClickTimeout.destroy();
 

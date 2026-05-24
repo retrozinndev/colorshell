@@ -83,7 +83,7 @@ export const Media = () =>
                           visible={variableToBoolean(Player.accessMediaUrl(Player.getDefault().player!))}
                           tooltipText={tr("copy_to_clipboard")} onClicked={() => {
                               const url = Player.getMediaUrl(Player.getDefault().player!);
-                              url && Clipboard.getDefault().copyAsync(url);
+                              url && Clipboard.getDefault().copy(url);
                           }}
                         />
                     </Gtk.Box>
