@@ -74,11 +74,15 @@ isn't set(are you running on Hyprland?)");
         });
     }
 
-    public static getDefault(): NightLight {
+    public static init(): NightLight {
         if(!this.instance)
             this.instance = new NightLight();
 
         return this.instance;
+    }
+
+    public static getDefault(): NightLight {
+        return this.init();
     }
 
     public async quitDaemon(): Promise<boolean> {

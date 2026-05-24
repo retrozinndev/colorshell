@@ -1,21 +1,19 @@
 import "./pkg";
 import { Gdk, Gtk } from "ags/gtk4";
 import { createRoot, getScope, Scope } from "ags";
-import { programArgs, programInvocationName } from "system";
+import { programArgs, programInvocationName, exit } from "system";
 import { setConsoleLogDomain } from "console";
 import { cacheDir, createScopedConnection, dataDir, encoder, getDBusNamePID, globalScope, runtimeConfigDir, runtimeDir } from "./modules/utils";
 import Clipboard from "./modules/clipboard";
 import { OSD } from "./window/osd";
 import NightLight from "./modules/nightlight";
 import { initCompositor } from "./compositors";
-import Idle from "./modules/idle";
 import { register } from "ags/gobject";
 import { initWindows } from "./windows";
 import { initCli } from "./cli/init";
 import Cli from "./cli";
 import SocketCli from "./cli/interface/socket";
 import StyleManager from "./modules/stylemanager";
-import Media from "./modules/media";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import Adw from "gi://Adw?version=1";
@@ -71,7 +69,7 @@ export class Shell extends Adw.Application {
     }
 
     private init(): void {
-        console.log("Colorshell: Initializing things");
+        console.log("Preparing init");
 
         // create shell directories
         [
@@ -151,24 +149,22 @@ export class Shell extends Adw.Application {
     private main(): void {
         this.init();
 
-        console.log("Colorshell: Initializing modules");
+        console.log("Initializing main modules...");
+
         StyleManager.init();
+        Clipboard.init();
         initCompositor();
-        Idle.getDefault();
-        Media.getDefault();
-
         initWindows();
-
-        Clipboard.getDefault();
-        NightLight.getDefault();
-        Idle.getDefault();
         OSD.init();
+        NightLight.init();
     }
 
     quit(): void {
         this.release();
         Cli.deinit();
+        Clipboard.deinit();
         super.quit();
+        exit(0);
     }
 }
 

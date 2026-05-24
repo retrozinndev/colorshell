@@ -1,7 +1,5 @@
 import Config from "./modules/config";
 import NightLight from "./modules/nightlight";
-import type Idle from "./modules/idle";
-
 import GLib from "gi://GLib?version=2.0";
 
 
@@ -37,20 +35,6 @@ const generalConfigDefaults = {
           * @default true */
         save_on_shutdown: true
     },
-
-    /** mostly the same properties as hypridle, just reach the wiki */
-    idle: {
-        /** screen lock timeout in seconds. @default 3600 (1 hour) */
-        lock_timeout: 3600,
-
-        ignore_dbus_inhibit: false,
-        ignore_systemd_inhibit: false,
-        ignore_wayland_inhibit: false,
-        inhibit_sleep: 2,
-
-        /** idle listeners. these also work the same as in hypridle */
-        listeners: {}
-    } satisfies Idle.Config,
 
     screen_recording: {
         /** include desktop audio output when screen-recording */

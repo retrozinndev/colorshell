@@ -80,11 +80,6 @@ class Notifications extends GObject.Object {
                 this.addHistory(notifd.get_notification(id)!);
             })
         );
-
-        onCleanup(() => {
-            this.#connections.map(id => 
-                AstalNotifd.get_default().disconnect(id));
-        });
     }
 
     public static getDefault(): Notifications {

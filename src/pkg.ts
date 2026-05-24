@@ -26,4 +26,12 @@ Package.require({
     "AstalTray": "0.1",
     "AstalWp": "0.1",
 });
+Object.assign(globalThis, {
+    assert(...conditions: Array<any>): boolean {
+        if(!conditions.every(v => Boolean(v)))
+            throw new Error("Assertion: At least one of the conditions are falsy");
+
+        return true;
+    }
+});
 I18n.init();
