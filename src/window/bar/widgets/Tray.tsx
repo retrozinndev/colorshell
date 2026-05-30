@@ -3,7 +3,7 @@ import { Gdk, Gtk } from "ags/gtk4";
 import { variableToBoolean } from "../../../modules/utils";
 
 import GObject from "gi://GObject?version=2.0";
-import AstalTray from "gi://AstalTray"
+import AstalTray from "gi://AstalTray?version=0.1"
 import Gio from "gi://Gio?version=2.0";
 
 

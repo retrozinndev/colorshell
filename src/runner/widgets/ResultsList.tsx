@@ -15,6 +15,9 @@ import Adw from "gi://Adw?version=1";
   * */
 @register({ GTypeName: "ClshResultsList" })
 class ResultsList extends Adw.Bin {
+    declare readonly $signals: ResultsList.SignalSignatures;
+    declare readonly $readWriteProperties: ResultsList.ReadWriteProperties;
+    declare readonly $readableProperties: ResultsList.ReadableProperties;
     #scrollAnimation: number|null = null;
     #scrollAnimationTime: number = 600;
     #scroll: Gtk.ScrolledWindow;
@@ -30,7 +33,7 @@ class ResultsList extends Adw.Bin {
     maxContentSize: number = -1;
 
 
-    constructor(props: Partial<ResultsList.ConstructorProps> = {}) {
+    constructor(props: Partial<GObject.ConstructorProps<ResultsList>> = {}) {
         super({
             cssName: "resultlist",
             ...omitObjectKeys(props, [
@@ -60,18 +63,18 @@ class ResultsList extends Adw.Bin {
 
         const listConn: number = this.#list.connect("row-selected", () => this.requestScroll());
         const selfConns: Array<number> = [
-            this.connect("notify::n-results", () => {
+            (this as ResultsList).connect("notify::n-results", () => {
                 if(this.nResults < 1) { // hide if empty
-                    this.hide();
+                    this.set_visible(false);
                     return;
                 }
 
-                this.show();
+                this.set_visible(true);
                 // autofocus first result if none are selected
                 if(!this.getSelected())
                     this.select(0);
             }),
-            this.connect("destroy", () => {
+            (this as ResultsList).connect("destroy", () => {
                 this.#list.disconnect(listConn);
                 selfConns.forEach(id => this.disconnect(id));
             })
@@ -114,7 +117,7 @@ class ResultsList extends Adw.Bin {
             return;
         }
 
-        this.animateScroll(selected.get_allocation().y);
+        this.animateScroll(selected.compute_bounds(selected.parent!)[1].get_y());
     }
 
     /** animate scroll to `targetY` */
@@ -260,13 +263,17 @@ class ResultsList extends Adw.Bin {
 
 
 namespace ResultsList {
-    export interface ConstructorProps extends Gtk.Widget.ConstructorProps {
-        maxContentSize: number;
+    export interface ReadWriteProperties extends Adw.Bin.ReadWriteProperties {
+        "max-content-size": number;
+    }
+
+    export interface ReadableProperties extends Adw.Bin.ReadableProperties {
+        "n-results": number;
     }
 
     export interface SignalSignatures extends Gtk.Widget.SignalSignatures {
-        "notify::n-results": () => void;
-        "notify::max-content-size": () => void;
+        "notify::n-results"(): void;
+        "notify::max-content-size"(): void;
     }
 }
 

@@ -5,7 +5,7 @@ import { generalConfig } from "../../../config";
 import { Accessor, createBinding, createComputed, createState, For, With } from "ags";
 import { variableToBoolean } from "../../../modules/utils";
 
-import AstalHyprland from "gi://AstalHyprland";
+import AstalHyprland from "gi://AstalHyprland?version=0.1";
 
 
 const [showNumbers, setShowNumbers] = createState(false);

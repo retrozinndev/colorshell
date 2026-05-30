@@ -4,19 +4,22 @@ import { getIconByAppName, getSymbolicIcon, lookupIcon } from "../modules/apps";
 import { omitObjectKeys } from "../modules/utils";
 import { Accessor, createBinding, createComputed, For } from "ags";
 import { getter, gtype, property, register, signal } from "ags/gobject";
-
-import AstalNotifd from "gi://AstalNotifd";
+import AstalNotifd from "gi://AstalNotifd?version=0.1";
 import Notifications from "../modules/notifications";
 import Pango from "gi://Pango?version=1.0";
 import GLib from "gi://GLib?version=2.0";
 import Image from "./Image";
 import Adw from "gi://Adw?version=1";
 import Cache from "../modules/cache";
+import GObject from "gi://GObject?version=2.0";
 
 
 @register({ GTypeName: "ClshNotification" })
 export class Notification extends Gtk.Box {
-    declare $signals: Notification.SignalSignatures;
+    declare readonly $signals: Notification.SignalSignatures;
+    declare readonly $readableProperties: Notification.ReadableProperties;
+    declare readonly $constructOnlyProperties: Notification.ConstructOnlyProperties;
+    declare readonly $readWriteProperties: Notification.ReadWriteProperties;
 
     #id: number;
 
@@ -51,7 +54,7 @@ export class Notification extends Gtk.Box {
     time: number|null = null;
 
 
-    constructor(props: Notification.ConstructorProps) {
+    constructor(props: Partial<GObject.ConstructorProps<Notification>>) {
         super({
             cssName: "notification",
             ...omitObjectKeys(props, [
@@ -64,7 +67,10 @@ export class Notification extends Gtk.Box {
                 "image",
                 "id"
             ])
-        });
+        } as GObject.ConstructorProps<Gtk.Box>);
+
+        if(props.summary === undefined || props.id === undefined)
+            throw new Error("Missing one or more of the obligatory properties: \"id\",\"summary\"");
 
         this.summary = props.summary;
         this.#id = props.id;
@@ -182,19 +188,10 @@ export class Notification extends Gtk.Box {
             </Gtk.Box> as Gtk.Box
         );
     }
-
-    connect<S extends keyof Notification.SignalSignatures>(
-        signal: S,
-        callback: (self: Notification, ...params: Parameters<Notification.SignalSignatures[S]>) => ReturnType<Notification.SignalSignatures[S]>
-    ): number {
-        return super.connect(signal, callback);
-    }
 }
 
 export namespace Notification {
     export interface SignalSignatures extends Gtk.Box.SignalSignatures {
-        "dismissed": () => void;
-        "action-clicked": (action: AstalNotifd.Action) => void;
         "notify::summary": () => void;
         "notify::body": () => void;
         "notify::app-icon": () => void;
@@ -202,16 +199,26 @@ export namespace Notification {
         "notify::actions": () => void;
         "notify::time": () => void;
         "notify::image": () => void;
+
+        "dismissed": () => void;
+        "action-clicked": (action: AstalNotifd.Action) => void;
+    }
+
+    export interface ReadableProperties extends Gtk.Box.ReadableProperties {
+        "id": number;
+    }
+
+    export interface ConstructOnlyProperties extends Gtk.Box.ConstructOnlyProperties {
+        "id": number;
     }
     
-    export interface ConstructorProps extends Partial<Gtk.Box.ConstructorProps> {
-        id: number;
-        summary: string;
-        body?: string;
-        appIcon?: string;
-        appName?: string;
-        actions?: Array<AstalNotifd.Action>;
-        time?: number;
-        image?: string;
+    export interface ReadWriteProperties extends Gtk.Box.ReadWriteProperties {
+        "summary": string;
+        "body": string;
+        "app-icon": string;
+        "app-name": string;
+        "actions": Array<AstalNotifd.Action>;
+        "time": number;
+        "image": string;
     }
 }

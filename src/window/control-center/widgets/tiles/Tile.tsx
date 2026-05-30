@@ -3,11 +3,13 @@ import { createBinding } from "ags";
 import { omitObjectKeys, variableToBoolean } from "../../../../modules/utils";
 import { property, register, signal } from "ags/gobject";
 import Pango from "gi://Pango?version=1.0";
+import GObject from "gi://GObject?version=2.0";
 
 
 @register({ GTypeName: "ClshTile" })
 class Tile extends Gtk.Box {
     declare $signals: Tile.SignalSignatures;
+    declare $readWriteProperties: Tile.ReadWriteProperties;
 
     @signal(Boolean) 
     toggled(_: boolean) {}
@@ -52,8 +54,8 @@ class Tile extends Gtk.Box {
         !this.has_css_class("enabled") &&
             this.add_css_class("enabled");
 
-        this.emit("toggled", true);
-        this.emit("enabled");
+        (this as Tile).emit("toggled", true);
+        (this as Tile).emit("enabled");
     }
 
     public disable(): void {
@@ -61,40 +63,40 @@ class Tile extends Gtk.Box {
 
         this.state = false;
         this.remove_css_class("enabled");
-        this.emit("toggled", false);
-        this.emit("disabled");
+        (this as Tile).emit("toggled", false);
+        (this as Tile).emit("disabled");
     }
 
-    constructor(props: Partial<Omit<Gtk.Box.ConstructorProps, "orientation">> & {
-        icon: string;
-        title: string;
-        description?: string;
-        state?: boolean;
-        toggleOnClick?: boolean;
-        hasArrow?: boolean;
-    }) {
+    constructor(props: Partial<GObject.ConstructorProps<Tile>>) {
         super(omitObjectKeys(props, [
             "icon",
             "title",
             "description",
             "state",
-            "toggleOnClick"
-        ]));
+            "toggleOnClick",
+            "hasArrow"
+        ]) as never); // tmp fix
 
         this.add_css_class("tile");
         this.add_controller(
             <Gtk.GestureClick onReleased={(_, __, px, py) => {
                 // gets the icon part of the tile
-                const { x, y, width, height } = this.get_first_child()!.get_allocation();
+                const alloc = this.get_first_child()!.compute_bounds(this)[1];
                 
-                if((px < x || px > x+width) || (py < y || y > py+height)) 
-                    this.emit("clicked");
+                if((px < alloc.get_x() || px > alloc.get_x()+alloc.get_width()) || 
+                   (py < alloc.get_y() || alloc.get_y() > py+alloc.get_height())) {
+
+                    (this as Tile).emit("clicked");
+                }
             }} /> as Gtk.GestureClick
         );
 
+        if(props.icon === undefined || props.title === undefined)
+            throw new Error("One or more of the obligatory properties are unset: \"icon\",\"title\"");
+
         this.icon = props.icon;
         this.title = props.title;
-        this.hexpand = true;
+        this.set_hexpand(true);
 
         if(props.hasArrow !== undefined)
             this.hasArrow = props.hasArrow;
@@ -147,16 +149,26 @@ class Tile extends Gtk.Box {
 
 namespace Tile {
     export interface SignalSignatures extends Gtk.Box.SignalSignatures {
-        "toggled": (state: boolean) => void;
-        "enabled": () => void;
-        "disabled": () => void;
-        "clicked": () => void;
         "notify::icon": () => void;
         "notify::title": () => void;
         "notify::description": () => void;
         "notify::toggle-on-click": () => void;
         "notify::state": () => void;
         "notify::has-arrow": () => void;
+
+        "toggled": (state: boolean) => void;
+        "enabled": () => void;
+        "disabled": () => void;
+        "clicked": () => void;
+    }
+
+    export interface ReadWriteProperties extends Omit<Gtk.Box.ReadWriteProperties, "orientation"> {
+        "title": string;
+        "description": string;
+        "icon": string;
+        "toggle-on-click": boolean;
+        "has-arrow": boolean;
+        "state": boolean;
     }
 }
 

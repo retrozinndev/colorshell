@@ -7,5 +7,4 @@ class Monitor extends Compositor.Monitor {}
 
 namespace Monitor {
     export interface SignalSignatures extends Compositor.Monitor.SignalSignatures {}
-    export interface ConstructorProps extends Compositor.Monitor.ConstructorProps {}
 }

@@ -10,8 +10,9 @@ import GLib from "gi://GLib?version=2.0";
 /** screen-shotting tool for colorshell, based on grim and slurp */
 @register({ GTypeName: "ClshScreenshotTool" })
 class Screenshot extends GObject.Object {
+    declare readonly $signals: Screenshot.SignalSignatures;
+    declare readonly $readWriteProperties: Screenshot.ReadWriteProperties;
     private static instance: Screenshot;
-    declare $signals: Screenshot.SignalSignatures;
 
     @signal(String)
     tookScreenshot(_: string) {}
@@ -144,7 +145,7 @@ class Screenshot extends GObject.Object {
 
     /** generates a screenshot file name based in the current local time */
     protected genFileName(): string {
-        return GLib.DateTime.new_now_local().format("%Y-%m-%d-%H-%M-%S")!;
+        return GLib.DateTime.new_now_local()!.format("%Y-%m-%d-%H-%M-%S")!;
     }
 
     /** translates a slurp geometry string to a `Screenshot.Area` object */
@@ -199,9 +200,16 @@ namespace Screenshot {
           * @param mode the screenshot area mode
           * @param path the output file of the screenshot
           * */
-        "took-screenshot": (mode: Screenshot.Mode, path: string) => void;
-        "notify::mode": () => void;
-        "notify::include-cursors": () => void;
+        "took-screenshot"(mode: Screenshot.Mode, path: string): void;
+        "notify::mode"(): void;
+        "notify::include-cursors"(): void;
+    }
+
+    export interface ReadWriteProperties extends GObject.Object.ReadWriteProperties {
+        "mode": Screenshot.Mode;
+        "include-cursors": boolean;
+        "copy-to-clipboard": boolean;
+        "output-dir": Gio.File;
     }
 }
 

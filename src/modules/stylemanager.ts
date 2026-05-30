@@ -173,7 +173,7 @@ class StyleManager extends GObject.Object {
             this.remove(this.#colorsStyle);
 
         this.#colorsStyle = this.addCss(this.getColorsStyle());
-        this.emit("colors-reloaded");
+        (this as StyleManager).emit("colors-reloaded");
     }
 
     /** get pywal colors in the js `object` format */

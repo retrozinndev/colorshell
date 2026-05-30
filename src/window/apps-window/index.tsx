@@ -2,7 +2,7 @@ import { Astal, Gdk, Gtk } from "ags/gtk4";
 import { execApp, getApps, getAstalApps } from "../../modules/apps";
 import { PopupWindow } from "../../widget/PopupWindow";
 
-import AstalApps from "gi://AstalApps";
+import AstalApps from "gi://AstalApps?version=0.1";
 import Pango from "gi://Pango?version=1.0";
 import { createRoot, createState } from "ags";
 import { escapeUnintendedMarkup } from "../../modules/utils";

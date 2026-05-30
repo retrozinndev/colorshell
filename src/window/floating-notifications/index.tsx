@@ -4,14 +4,12 @@ import Notifications from "../../modules/notifications";
 import { Notification } from "../../widget/Notification";
 import { generalConfig } from "../../config";
 import { createScopedConnection } from "../../modules/utils";
-
-import AstalNotifd from "gi://AstalNotifd";
+import AstalNotifd from "gi://AstalNotifd?version=0.1";
 import Adw from "gi://Adw?version=1";
 import Windows from "..";
 
 
 const size = 450;
-
 export const FloatingNotifications = Windows.forFocusedMonitor((mon, scope) => {
 
     const notifs: Array<number> = [];

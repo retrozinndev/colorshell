@@ -1,33 +1,36 @@
 import { monitorFile, readFile, writeFileAsync } from "ags/file";
 import { Accessor } from "ags";
-import GObject, { getter, gtype, register, signal } from "ags/gobject";
+import { getter, gtype, register, signal } from "ags/gobject";
 import Notifications from "./notifications";
 import Gio from "gi://Gio?version=2.0";
-import AstalNotifd from "gi://AstalNotifd";
+import AstalNotifd from "gi://AstalNotifd?version=0.1";
 import GLib from "gi://GLib?version=2.0";
+import GObject from "gi://GObject?version=2.0";
 
 
 @register({ GTypeName: "Config" })
 class Config<K extends string, V = any> extends GObject.Object {
-    declare $signals: Config.SignalSignatures;
+    declare readonly $signals: Config.SignalSignatures;
+    declare readonly $readableProperties: Config.ReadableProperties<K, V>;
+
+    private timeout: (GLib.Source|boolean|undefined);
 
     /** unmodified object with default entries. User-values are stored 
     * in the `entries` field */
     public readonly defaults: Record<K, V>;
 
-    @getter(gtype<Record<K, V>>(Object))
-    public get entries() { return this.#entries; }
-
     #file: Gio.File;
     #entries: Record<K, V>;
+    
+    @signal(String)
+    propertyChanged(_: string) {}
 
-    private timeout: (GLib.Source|boolean|undefined);
+    @getter(gtype<Record<K, V>>(Object))
+    public get entries() { return this.#entries; }
 
     @getter(Gio.File)
     public get file() { return this.#file; };
 
-    @signal(String)
-    propertyChanged(_: string) {}
 
     constructor(
         filePath: Gio.File|string,
@@ -156,9 +159,9 @@ class Config<K extends string, V = any> extends GObject.Object {
             
             // notify for property source object
             if(lastPath !== undefined)
-                this.emit("property-changed", lastPath);
+                (this as Config<K, V>).emit("property-changed", lastPath);
 
-            this.emit("property-changed", `${
+            (this as Config<K, V>).emit("property-changed", `${
                 lastPath !== undefined ? `${lastPath}.` : ""
             }${key}`);
         }
@@ -172,7 +175,7 @@ class Config<K extends string, V = any> extends GObject.Object {
 
     public bindProperty(propertyPath: string, expectType?: Config.ValueType): Accessor<boolean|number|string|object|any> {
         return new Accessor(() => this.getProperty(propertyPath, expectType as never), (callback: () => void) => {
-            const id = this.connect("property-changed", (_, path: string) => {
+            const id = (this as Config<K, V>).connect("property-changed", (_, path: string) => {
                 if(path === propertyPath || path.startsWith(propertyPath))
                     callback();
 
@@ -250,12 +253,18 @@ class Config<K extends string, V = any> extends GObject.Object {
 
 namespace Config {
     export interface SignalSignatures extends GObject.Object.SignalSignatures {
-        "notify::entries": () => void;
+        "notify::entries"(): void;
+        "notify::file"(): void;
+
         /** a property has been updated
           * @param path the property path (e.g.: `"wallpaper.splash"`) */
         "property-changed": (path: string) => void;
     }
 
+    export interface ReadableProperties<K extends string, V = any> extends GObject.Object.ReadableProperties {
+        "entries": Record<K, V>;
+        "file": Gio.File;
+    }
     
     export type JSONValue = string|boolean|null|number|object;
     export type ValueType = "string" | "boolean" | "object" | "number" | "any";

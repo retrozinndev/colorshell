@@ -53,7 +53,7 @@ export class PluginShell implements Runner.Plugin {
                     Notifications.getDefault().sendNotification({
                         appName: this.#shell,
                         summary: "Command output",
-                        body: stdout
+                        body: stdout ?? undefined
                     });
                 });
             },

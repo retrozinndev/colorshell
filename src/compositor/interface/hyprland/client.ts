@@ -1,4 +1,4 @@
-import AstalHyprland from "gi://AstalHyprland";
+import AstalHyprland from "gi://AstalHyprland?version=0.1";
 import Compositor from "../..";
 import Hyprland from ".";
 import { register } from "ags/gobject";
@@ -24,11 +24,11 @@ class Client extends Compositor.Client {
     get allocation() { return this.#allocation; }
 
 
-    constructor(props: Client.ConstructorProps) {
+    constructor(client: AstalHyprland.Client) {
         super();
 
         this.inst = Compositor.getDefault() as Hyprland.Hyprland;
-        this.client = props.client;
+        this.client = client;
         this.syncAllocation();
 
         this.subs.push(
@@ -74,10 +74,6 @@ class Client extends Compositor.Client {
         this.subs.forEach(unsub => unsub());
     }
 
-    public static new(client: AstalHyprland.Client): Client {
-        return new this({ client });
-    }
-
     close(): void {
         this.client.kill();
     }
@@ -87,11 +83,8 @@ class Client extends Compositor.Client {
     }
 }
 
-export namespace Client {
+namespace Client {
     export interface SignalSignatures extends Compositor.Client.SignalSignatures {}
-    export interface ConstructorProps {
-        client: AstalHyprland.Client;
-    }
 }
 
 export default Client;

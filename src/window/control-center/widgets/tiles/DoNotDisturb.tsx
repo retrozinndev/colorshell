@@ -2,6 +2,7 @@ import Notifications from "../../../../modules/notifications";
 import Tile from "./Tile";
 import { createBinding } from "ags";
 
+
 export const TileDND = () => 
     <Tile title={tr("control_center.tiles.dnd.title")}
       description={createBinding(Notifications.getDefault().getNotifd(), "dontDisturb").as(

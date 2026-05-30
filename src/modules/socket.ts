@@ -66,11 +66,15 @@ class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.Object 
 
             this.scope.run(() => {
                 createScopedConnection(
-                    this.server!, "incoming", (conn) => {
+                    this.server as Gio.SocketService, "incoming", (conn) => {
                         const data = Gio.DataInputStream.new(conn.get_input_stream());
-                        data.read_upto_async('\x00', -1, GLib.PRIORITY_DEFAULT, null).then(([str]) =>
-                            this.emit("received", str)
-                        ).catch(console.error);
+                        // @ts-ignore
+                        (data.read_upto_async('\x00', -1, GLib.PRIORITY_DEFAULT, null) as Promise<[string, number]>)
+                            .then(([str]) =>
+                                (this as Socket).emit("received", str)
+                            ).catch(console.error);
+
+                        return false;
                     }
                 );
             });
@@ -91,11 +95,12 @@ class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.Object 
         client.set_timeout(0);
         client.set_socket_type(Gio.SocketType.STREAM);
         client.set_family(Gio.SocketFamily.UNIX);
-        client.connect_async(this.address, null).then(conn => {
+        // @ts-ignore
+        (client.connect_async(this.address, null) as Promise<Gio.SocketConnection>).then(conn => {
             this.watchOutput(conn, (data) => {
                 // separate messages by line-break
                 data.split(outputSeparator).filter(s => s.trim() !== "").forEach(msg =>
-                    this.emit("received", msg)
+                    (this as Socket).emit("received", msg)
                 );
             });
         }).catch((e) => console.error("Failed to estabilish a listening connection to socket:", e));
@@ -146,7 +151,8 @@ class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.Object 
             return null;
 
         return decoder.decode(
-            (await stream.read_bytes_async(4096, GLib.PRIORITY_DEFAULT, null)).toArray()
+            // @ts-ignore
+            (await (stream.read_bytes_async(4096, GLib.PRIORITY_DEFAULT, null) as Promise<GLib.Bytes>)).toArray()
         );
     }
 
@@ -180,12 +186,14 @@ class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.Object 
         client.set_socket_type(Gio.SocketType.STREAM);
         client.set_protocol(Gio.SocketProtocol.DEFAULT);
 
-        const conn = await client.connect_async(this.address!, null);
-        await conn.outputStream.write_bytes_async(
+        // @ts-ignore
+        const conn = await (client.connect_async(this.address!, null) as Promise<Gio.SocketConnection>);
+        // @ts-ignore
+        await (conn.outputStream.write_bytes_async(
             encoder.encode(message),
             GLib.PRIORITY_DEFAULT,
             null
-        );
+        ) as Promise<number>);
 
         return conn;
     }

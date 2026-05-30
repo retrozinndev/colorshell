@@ -1,4 +1,4 @@
-import AstalWp from "gi://AstalWp";
+import AstalWp from "gi://AstalWp?version=0.1";
 
 
 class Wireplumber {

@@ -23,8 +23,9 @@ Gio._promisify(Gio.InputStream.prototype, "read_bytes_async", "read_bytes_finish
 
 export const decoder = new TextDecoder("utf-8"),
     encoder = new TextEncoder();
-export const time = createPoll(GLib.DateTime.new_now_local(), 500, () => 
-    GLib.DateTime.new_now_local());
+export const time = createPoll(GLib.DateTime.new_now_local()!, 500, () => 
+    GLib.DateTime.new_now_local()!
+);
 
 export const globalScope: Scope = createRoot(() => getScope());
 
@@ -340,7 +341,8 @@ export async function watchInputStream(
 
     while(!stop)
         stop = callback(decoder.decode(
-            (await stream.read_bytes_async(size, GLib.PRIORITY_DEFAULT, null)).toArray()
+            // @ts-ignore
+            (await (stream.read_bytes_async(size, GLib.PRIORITY_DEFAULT, null) as Promise<GLib.Bytes>)).toArray()
         )) ?? false;
 }
 

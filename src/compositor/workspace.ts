@@ -1,14 +1,18 @@
-import { getter, gtype, register } from "ags/gobject";
+import { getter, gtype, property, register } from "ags/gobject";
 import GObject from "gi://GObject?version=2.0";
 import Monitor from "./monitor";
+import Compositor from ".";
 
 
 /** @abstract */
 @register({ GTypeName: "CompositorWorkspace" })
 class Workspace extends GObject.Object {
+    declare readonly $readableProperties: Workspace.ReadableProperties;
+    declare readonly $readWriteProperties: Workspace.ReadWriteProperties;
+    declare readonly $constructOnlyProperties: Workspace.ConstructOnlyProperties;
+
     #id: number;
     #name: string|null = null;
-    #monitor: Monitor;
 
     @getter(Number)
     get id() { return this.#id; }
@@ -16,14 +20,19 @@ class Workspace extends GObject.Object {
     @getter(gtype<string|null>(String))
     get name() { return this.#name; }
 
-    @getter(GObject.Object)
-    get monitor() { return this.#monitor; }
+    @property(GObject.Object)
+    monitor: Monitor;
 
-    constructor(props: Workspace.ConstructorProps) {
+    constructor(props: Partial<GObject.ConstructorProps<Workspace>>) {
         super();
 
-        this.#monitor = props.monitor;
-        this.#id = props.id;
+        if(!props.monitor)
+            throw new Error("Monitor not set for workspace");
+
+        this.monitor = props.monitor;
+        this.#id = props.id ?? Compositor.getDefault().workspaces.sort((w1, w2) =>
+            w1.id - w2.id
+        ).at(-1)?.id ?? 0;
 
         if(props.name !== undefined)
             this.#name = props.name;
@@ -32,10 +41,17 @@ class Workspace extends GObject.Object {
 
 namespace Workspace {
     export interface SignalSignatures extends GObject.Object.SignalSignatures {}
-    export interface ConstructorProps extends GObject.Object.ConstructorProps {
+    export interface ConstructOnlyProperties extends GObject.Object.ConstructOnlyProperties {
         id: number;
+        name: string;
         monitor: Monitor;
-        name?: string;
+    }
+    export interface ReadableProperties extends GObject.Object.ReadableProperties {
+        "id": number;
+        "name": string|null;
+    }
+    export interface ReadWriteProperties extends GObject.Object.ReadWriteProperties {
+        "monitor": Monitor;
     }
 }
 

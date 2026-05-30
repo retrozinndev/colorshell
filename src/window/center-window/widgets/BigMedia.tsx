@@ -4,7 +4,7 @@ import { Astal, Gdk, Gtk } from "ags/gtk4";
 import Clipboard from "../../../modules/clipboard";
 import { variableToBoolean } from "../../../modules/utils";
 import Media from "../../../modules/media";
-import AstalMpris from "gi://AstalMpris";
+import AstalMpris from "gi://AstalMpris?version=0.1";
 import Pango from "gi://Pango?version=1.0";
 import Adw from "gi://Adw?version=1";
 import GLib from "gi://GLib?version=2.0";

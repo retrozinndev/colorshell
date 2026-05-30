@@ -6,7 +6,7 @@ import Clipboard from "../../../modules/clipboard";
 import { getPlayerIconFromBusName, secureBaseBinding, secureBinding, variableToBoolean } from "../../../modules/utils";
 import Player from "../../../modules/media";
 
-import AstalMpris from "gi://AstalMpris";
+import AstalMpris from "gi://AstalMpris?version=0.1";
 import Pango from "gi://Pango?version=1.0";
 
 

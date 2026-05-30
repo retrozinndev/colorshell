@@ -2,15 +2,13 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
     "allowJs": false,
-    "checkJs": true,
-    "module": "es2022",
-    "target": "es2020",
+    "noImplicitThis": true,
     "lib": ["ES2024"],
     "moduleResolution": "bundler",
     "skipLibCheck": true,
-    "types": ["./@types"],
     "strict": true,
     "jsx": "react-jsx",
-    "jsxImportSource": "ags/gtk4"
+    "jsxImportSource": "ags/gtk4",
+    "types": ["./.types/gi"]
   }
 }

@@ -2,7 +2,7 @@ import { Gdk, Gtk } from "ags/gtk4";
 import { Notification } from "../../../widget/Notification";
 import { createBinding, For } from "ags";
 import Notifications from "../../../modules/notifications";
-import AstalNotifd from "gi://AstalNotifd";
+import AstalNotifd from "gi://AstalNotifd?version=0.1";
 
 
 export const NotifHistory = () => 
@@ -12,14 +12,15 @@ export const NotifHistory = () =>
 
         <Gtk.ScrolledWindow class={"history-scrollable"} hscrollbarPolicy={Gtk.PolicyType.NEVER}
           vscrollbarPolicy={Gtk.PolicyType.AUTOMATIC} propagateNaturalHeight={true}
-          onShow={(self) => {
-              if(!(self.get_child()! as Gtk.Viewport).get_child()) return;
+          /*onShow={(self) => {
+              const viewport = self.get_child() as Gtk.Viewport;
+              if(!viewport.get_child()) return;
 
               self.minContentHeight = 
-                  ((self.get_child()! as Gtk.Viewport).get_child() as Gtk.Box
-                      ).get_first_child()!.get_allocation().height 
+                  (viewport.get_child() as Gtk.Box).get_first_child()!
+                    .compute_bounds(viewport.get_child()!)[1].get_height() 
                   || 0;
-          }}>
+          }}*/>
 
             <Gtk.Box class={"notifications"} hexpand={true} orientation={Gtk.Orientation.VERTICAL}
               spacing={4} valign={Gtk.Align.START}>

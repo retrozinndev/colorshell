@@ -1,24 +1,17 @@
 import { execAsync } from "ags/process";
 import { generalConfig } from "../config";
-import { onCleanup } from "ags";
 import { pathToURI } from "./utils";
-import GObject, { getter, ParamSpec, property, register, signal } from "ags/gobject";
-import AstalNotifd from "gi://AstalNotifd";
+import { getter, gtype, property, register, signal } from "ags/gobject";
+import AstalNotifd from "gi://AstalNotifd?version=0.1";
 import GLib from "gi://GLib?version=2.0";
+import GObject from "gi://GObject?version=2.0";
 
 
 @register({ GTypeName: "Notifications" })
 class Notifications extends GObject.Object {
-    private static instance: (Notifications|null) = null;
-
-    declare $signals: GObject.Object.SignalSignatures & {
-        "history-added": (notification: Notifications.HistoryNotification) => void;
-        "history-removed": (notificationId: number) => void;
-        "history-cleared": () => void;
-        "notification-added": (notification: AstalNotifd.Notification) => void;
-        "notification-removed": (notificationId: number) => void;
-        "notification-replaced": (notificationId: number) => void;
-    };
+    declare readonly $signals: Notifications.SignalSignatures;
+    declare readonly $readableProperties: Notifications.ReadableProperties;
+    private static instance: Notifications|null = null;
 
     #notifications = new Map<number, [AstalNotifd.Notification, Notifications.Timeout]>();
     #history: Array<Notifications.HistoryNotification> = [];
@@ -42,17 +35,29 @@ class Notifications extends GObject.Object {
     @property(Number)
     public historyLimit: number = 10;
 
-    /** skip notifications directly to notification history */
+    /** move new notifications directly to notification history (dnd) */
     @property(Boolean)
     public ignoreNotifications: boolean = false;
 
 
-    @signal(AstalNotifd.Notification) notificationAdded(_notification: AstalNotifd.Notification) {};
-    @signal(Number) notificationRemoved(_id: number) {};
-    @signal(Object as unknown as ParamSpec<Notifications.HistoryNotification>) historyAdded(_notification: Object) {};
-    @signal() historyCleared() {};
-    @signal(Number) historyRemoved(_id: number) {};
-    @signal(Number) notificationReplaced(_id: number) {};
+    @signal(AstalNotifd.Notification)
+    notificationAdded(_notification: AstalNotifd.Notification) {}
+
+    @signal(Number)
+    notificationRemoved(_id: number) {}
+
+    @signal(gtype<Notifications.HistoryNotification>(Object))
+    historyAdded(_notification: Object) {}
+
+    @signal()
+    historyCleared() {}
+
+    @signal(Number)
+    historyRemoved(_id: number) {}
+
+    @signal(Number)
+    notificationReplaced(_id: number) {}
+
 
     constructor() {
         super();
@@ -166,27 +171,27 @@ class Notifications extends GObject.Object {
 
         this.#history.unshift({
             id: notif.id,
-            appName: notif.app_name,
+            appName: notif.appName,
             body: notif.body,
             summary: notif.summary,
             urgency: notif.urgency,
-            appIcon: notif.app_icon,
+            appIcon: notif.appIcon,
             time: notif.time,
             image: notif.image ? notif.image : undefined
         } as Notifications.HistoryNotification);
 
         this.notify("history");
-        this.emit("history-added", this.#history[0]);
+        (this as Notifications).emit("history-added", this.#history[0]);
         onAdded?.(notif);
     }
 
     public async clearHistory(): Promise<void> {
         this.#history.reverse().map((notif) => {
             this.#history = this.history.filter((n) => n.id !== notif.id);
-            this.emit("history-removed", notif.id);
+            (this as Notifications).emit("history-removed", notif.id);
         });
 
-        this.emit("history-cleared");
+        (this as Notifications).emit("history-cleared");
         this.notify("history");
     }
 
@@ -196,7 +201,7 @@ class Notifications extends GObject.Object {
             item.id !== notifId);
 
         this.notify("history");
-        this.emit("history-removed", notifId);
+        (this as Notifications).emit("history-removed", notifId);
     }
 
     private addNotification(
@@ -224,10 +229,10 @@ class Notifications extends GObject.Object {
             new Notifications.Timeout(notifTimeout, onEnd, notifTimeout > 0)
         ]);
 
-        replaced && this.emit("notification-replaced", notif.id);
+        replaced && (this as Notifications).emit("notification-replaced", notif.id);
 
         this.notify("notifications");
-        this.emit("notification-added", notif);
+        (this as Notifications).emit("notification-added", notif);
 
         if(notifTimeout <= 0) onEnd?.();
     }
@@ -254,7 +259,7 @@ class Notifications extends GObject.Object {
 
         notif.dismiss();
         this.notify("notifications");
-        this.emit("notification-removed", notif.id);
+        (this as Notifications).emit("notification-removed", notif.id);
     }
 
     public holdNotification(notif: AstalNotifd.Notification|number): void {
@@ -324,9 +329,25 @@ namespace Notifications {
         image?: string;
     };
 
+    export interface SignalSignatures extends GObject.Object.SignalSignatures {
+        "history-added"(notification: Notifications.HistoryNotification): void;
+        "history-removed"(notificationId: number): void;
+        "history-cleared"(): void;
+        "notification-added"(notification: AstalNotifd.Notification): void;
+        "notification-removed"(notificationId: number): void;
+        "notification-replaced"(notificationId: number): void;
+    }
+
+    export interface ReadableProperties extends GObject.Object.ReadableProperties {
+        "notifications": Array<AstalNotifd.Notification>;
+        "history": Array<Notifications.HistoryNotification>;
+        "notifications-on-hold": Array<AstalNotifd.Notification>;
+        "history-limit": number;
+        "ignore-notifications": boolean;
+    }
+
     export class Timeout {
         #source?: GLib.Source;
-        #args?: Array<any>;
         #millis: number;
         #lastRemained: number = 0;
 
@@ -337,10 +358,9 @@ namespace Notifications {
         get running(): boolean { return Boolean(this.source?.is_destroyed()); }
         get source(): GLib.Source|undefined { return this.#source; }
 
-        constructor(millis: number, callback: () => void, start: boolean = true, ...args: Array<any>) {
+        constructor(millis: number, callback: () => void, start: boolean = true) {
             this.#millis = millis;
             this.callback = callback;
-            this.#args = args;
 
             if(!start) return;
             this.start();
@@ -367,8 +387,7 @@ namespace Notifications {
 
             this.#source = setTimeout(
                 this.callback,
-                this.#millis,
-                this.#args
+                this.#millis
             );
 
             this.#lastRemained = Math.floor(Math.max(this.#source.get_ready_time() - GLib.get_monotonic_time()) / 1000);

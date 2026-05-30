@@ -2,14 +2,17 @@ import { createRoot, getScope, Scope } from "ags";
 import { execAsync } from "ags/process";
 import { userData } from "../config";
 import { createScopedConnection } from "../modules/utils";
-import GObject, { getter, gtype, property, register, setter } from "ags/gobject";
-import AstalBluetooth from "gi://AstalBluetooth";
+import { getter, gtype, property, register, setter } from "ags/gobject";
+import GObject from "gi://GObject?version=2.0";
+import AstalBluetooth from "gi://AstalBluetooth?version=0.1";
 
 
 /** AstalBluetooth helper (implements the default adapter feature) */
 @register({ GTypeName: "Bluetooth" })
 class Bluetooth extends GObject.Object {
-    declare $signals: Bluetooth.SignalSignatures;
+    declare readonly $signals: Bluetooth.SignalSignatures;
+    declare readonly $readWriteProperties: Bluetooth.ReadWriteProperties;
+    declare readonly $readableProperties: Bluetooth.ReadableProperties;
 
     private static instance: Bluetooth;
     private astalBl: AstalBluetooth.Bluetooth;
@@ -26,7 +29,7 @@ class Bluetooth extends GObject.Object {
     @getter(Boolean)
     get isAvailable() { return this.#isAvailable; }
 
-    /** last connected device, can be null */
+    /** last still-connected device, can be null */
     @getter(gtype<AstalBluetooth.Device|null>(AstalBluetooth.Device))
     get lastDevice() { return this.#lastDevice; }
 
@@ -36,7 +39,7 @@ class Bluetooth extends GObject.Object {
     @setter(gtype<AstalBluetooth.Adapter|null>(AstalBluetooth.Adapter))
     set adapter(newAdapter: AstalBluetooth.Adapter|null) {
         this.#adapter = newAdapter;
-        this.notify("adapter");
+        (this as Bluetooth).notify("adapter");
         
         if(!newAdapter) return;
 
@@ -61,7 +64,7 @@ class Bluetooth extends GObject.Object {
 
         if(this.astalBl.adapters.length > 0) {
             this.#isAvailable = true;
-            this.notify("is-available");
+            (this as Bluetooth).notify("is-available");
         }
 
         createRoot(() => {
@@ -83,7 +86,7 @@ class Bluetooth extends GObject.Object {
                 if(this.astalBl.adapters.length < 1) {
                     this.adapter = null;
                     this.#isAvailable = false;
-                    this.notify("is-available");
+                    (this as Bluetooth).notify("is-available");
                 }
 
                 if(this.#adapter?.address !== adapter.address) 
@@ -94,7 +97,7 @@ class Bluetooth extends GObject.Object {
                 if(this.astalBl.adapters.length < 1) {
                     this.adapter = null;
                     this.#isAvailable = false;
-                    this.notify("is-available");
+                    (this as Bluetooth).notify("is-available");
 
                     return;
                 }
@@ -103,14 +106,14 @@ class Bluetooth extends GObject.Object {
             });
             
             this.#lastDevice = this.getLastConnectedDevice();
-            this.notify("last-device");
+            (this as Bluetooth).notify("last-device");
 
             const deviceConns: Map<string, number> = new Map();
 
             this.astalBl.devices.forEach((dev) => {
                 deviceConns.set(dev.address, dev.connect("notify::connected", () => {
                     this.#lastDevice = this.getLastConnectedDevice();
-                    this.notify("last-device");
+                    (this as Bluetooth).notify("last-device");
                 }));
             });
 
@@ -118,7 +121,7 @@ class Bluetooth extends GObject.Object {
                 AstalBluetooth.get_default(), "device-added", (dev) => {
                     deviceConns.set(dev.address, dev.connect("notify::connected", () => {
                         this.#lastDevice = this.getLastConnectedDevice();
-                        this.notify("last-device");
+                        (this as Bluetooth).notify("last-device");
                     }));
                 }
             );
@@ -130,7 +133,7 @@ class Bluetooth extends GObject.Object {
                         dev.disconnect(id);
 
                     this.#lastDevice = this.getLastConnectedDevice();
-                    this.notify("last-device");
+                    (this as Bluetooth).notify("last-device");
                 }
             );
         });
@@ -160,6 +163,15 @@ namespace Bluetooth {
         "notify::is-available": () => void;
         "notify::save-default-adapter": () => void;
         "notify::last-device": () => void;
+    }
+
+    export interface ReadableProperties extends GObject.Object.ReadableProperties {
+        "is-available": boolean;
+        "last-device": AstalBluetooth.Device|null;
+    }
+    export interface ReadWriteProperties extends GObject.Object.ReadWriteProperties {
+        "save-default-adapter": boolean;
+        "adapter": AstalBluetooth.Adapter|null;
     }
 }
 

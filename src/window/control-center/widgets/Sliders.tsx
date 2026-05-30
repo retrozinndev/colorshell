@@ -6,8 +6,7 @@ import { PageMicrophone } from "./pages/Microphone";
 import { createBinding, With } from "ags";
 import Backlights from "../../../modules/backlight";
 import { PageBacklight } from "./pages/Backlight";
-
-import AstalWp from "gi://AstalWp";
+import AstalWp from "gi://AstalWp?version=0.1";
 
 
 export let slidersPages: Pages|undefined;
