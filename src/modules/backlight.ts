@@ -1,12 +1,15 @@
 import { monitorFile, readFile } from "ags/file";
 import { exec } from "ags/process";
-import GObject, { getter, gtype, ParamSpec, register, setter, signal } from "ags/gobject";
+import { getter, gtype, ParamSpec, register, setter, signal } from "ags/gobject";
+import GObject from "gi://GObject?version=2.0";
 import Gio from "gi://Gio?version=2.0";
-import { omitObjectKeys } from "./utils";
 
 
 @register({ GTypeName: "ClshBacklights" })
 class Backlights extends GObject.Object {
+    declare readonly $signals: Backlights.SignalSignatures;
+    declare readonly $readableProperties: Backlights.ReadableProperties;
+    declare readonly $readWriteProperties: Backlights.ReadWriteProperties;
     private static instance: Backlights;
 
     #backlights: Array<Backlights.Backlight> = [];
@@ -46,7 +49,7 @@ class Backlights extends GObject.Object {
         if(backlights.length < 1) {
             if(this.#available) {
                 this.#available = false;
-                this.notify("available");
+                (this as Backlights).notify("available");
             }
 
             this.#default = null;
@@ -93,7 +96,8 @@ class Backlights extends GObject.Object {
 namespace Backlights {
     @register({ GTypeName: "Backlight" })
     export class Backlight extends GObject.Object {
-        declare $signals: Backlight.SignalSignatures;
+        declare readonly $signals: Backlight.SignalSignatures;
+        declare readonly $constructOnlyProperties: Backlight.ConstructOnlyProperties;
 
         readonly #name: string;
         #path: string;
@@ -121,7 +125,7 @@ namespace Backlights {
 
             this.#brightness = level;
             this.notify("brightness");
-            this.emit("brightness-changed", level);
+            (this as Backlight).emit("brightness-changed", level);
         }
 
         @getter(Number) 
@@ -130,12 +134,9 @@ namespace Backlights {
 
         // intel_backlight is mostly the default on laptops
         constructor({
-            name = "intel_backlight",
-            ...props
-        }: Partial<Backlight.ConstructorProps> = {}) {
-            super(omitObjectKeys((props as Backlight.ConstructorProps), [
-                "name"
-            ]));
+            name = "intel_backlight"
+        }: Partial<GObject.ConstructorProps<Backlight>> = {}) {
+            super();
 
             // check if backlight exists
             if(!Gio.File.new_for_path(`/sys/class/backlight/${name}/brightness`).query_exists(null)) 
@@ -156,7 +157,7 @@ namespace Backlights {
             this.#monitor = monitorFile(`/sys/class/backlight/${name}/brightness`, () => {
                 this.#brightness = this.readBrightness();
                 this.notify("brightness");
-                this.emit("brightness-changed", this.brightness);
+                (this as Backlight).emit("brightness-changed", this.brightness);
             });
         }
 
@@ -184,12 +185,26 @@ namespace Backlights {
     }
 
     export namespace Backlight {
-        export interface ConstructorProps extends GObject.Object.ConstructorProps {
+        export interface ConstructOnlyProperties extends GObject.Object.ConstructOnlyProperties {
             name: string;
         }
         export interface SignalSignatures extends GObject.Object.SignalSignatures {
-            "brightness-changed": (value: number) => void;
+            "notify::brightness"(): void;
+            "notify::name"(): void;
+            "notify::path"(): void;
+            "notify::is-default"(): void;
+            "notify::max-brightness"(): void;
+
+            "brightness-changed"(value: number): void;
         }
+    }
+
+    export interface ReadWriteProperties extends GObject.Object.ReadWriteProperties {}
+    export interface ReadableProperties extends GObject.Object.ReadableProperties {}
+    export interface SignalSignatures extends GObject.Object.SignalSignatures {
+        "notify::default"(): void;
+        "notify::available"(): void;
+        "notify::backlights"(): void;
     }
 }
 

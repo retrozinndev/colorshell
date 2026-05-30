@@ -2,17 +2,21 @@ import { readFile, readFileAsync } from "ags/file";
 import { createSubscription, encoder, getPID, globalScope, killProc, runtimeConfigDir } from "./utils";
 import { generalConfig } from "../config";
 import { execAsync } from "ags/process";
-import GObject, { register, getter, gtype, property, setter, signal } from "ags/gobject";
+import { register, getter, gtype, property, setter, signal } from "ags/gobject";
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
 import Notifications from "./notifications";
 import AstalHyprland from "gi://AstalHyprland?version=0.1";
+import GObject from "gi://GObject?version=2.0";
 
 
 // TODO: support different wallpapers for each monitor
 @register({ GTypeName: "Wallpaper" })
 class Wallpaper extends GObject.Object {
-    declare $signals: Wallpaper.SignalSignatures;
+    declare readonly $signals: Wallpaper.SignalSignatures;
+    declare readonly $readableProperties: Wallpaper.ReadableProperties;
+    declare readonly $readWriteProperties: Wallpaper.ReadWriteProperties;
+
     private static instance: Wallpaper;
 
     #wallpaper: Gio.File|null = null;
@@ -26,17 +30,13 @@ class Wallpaper extends GObject.Object {
     @signal(Gio.File)
     wallpaperChanged(_: Gio.File) {}
 
-    @property(Boolean)
-    splash: boolean = true;
-
-
     /** current wallpaper's `GFile`. can be null if unset by the user */
     @getter(gtype<Gio.File|null>(Gio.File))
     get wallpaper() { return this.#wallpaper; }
-
     @setter(gtype<Gio.File|null>(Gio.File))
     set wallpaper(newValue: Gio.File|null) { this.setWallpaper(newValue); }
 
+    @getter(Gio.File)
     get wallpapersDir() { return this.#wallpapersDir; }
 
     @property(gtype<Wallpaper.Positioning>(String))
@@ -45,9 +45,12 @@ class Wallpaper extends GObject.Object {
     @property(gtype<Wallpaper.WalColorMode>(String))
     colorMode: Wallpaper.WalColorMode = "darken";
 
+    @property(Boolean)
+    splash: boolean = true;
 
-    constructor(props?: Wallpaper.ConstructorProps) {
-        super(props);
+
+    constructor() {
+        super();
 
         this.#wallpapersDir = Gio.File.new_for_path(
             GLib.getenv("WALLPAPERS") ?? `${GLib.get_home_dir()}/wallpapers`
@@ -280,7 +283,7 @@ wallpaper {
         this.notify("wallpaper");
 
         this.reloadWallpaper(write).then(() => {
-            this.emit("wallpaper-changed", this.#wallpaper!);
+            (this as Wallpaper).emit("wallpaper-changed", this.#wallpaper!);
         }).catch((e: Error) => {
             console.error("Wallpaper: Couldn't set wallpaper:", e);
         });
@@ -304,10 +307,24 @@ namespace Wallpaper {
     export type Positioning = "contain"|"tile"|"cover"|"fill";
     export type WalColorMode = "darken"|"lighten";
 
-    export interface ConstructorProps extends GObject.Object.ConstructorProps {}
     export interface SignalSignatures extends GObject.Object.SignalSignatures {
+        "notify::wallpaper"(): void;
+        "notify::positioning"(): void;
+        "notify::color-mode"(): void;
+        "notify::splash"(): void;
+        "notify::wallpapers-dir"(): void;
+
         /** emitted when the wallpaper is changed in hyprpaper(not the :wallpaper property directly) */
         "wallpaper-changed": (file: Gio.File) => void;
+    }
+    export interface ReadableProperties extends GObject.Object.ReadableProperties {
+        "wallpapers-dir": Gio.File;
+    }
+    export interface ReadWriteProperties extends GObject.Object.ReadWriteProperties {
+        "wallpaper": Gio.File|null;
+        "positioning": Wallpaper.Positioning;
+        "color-mode": Wallpaper.WalColorMode;
+        "splash": boolean;
     }
 }
 

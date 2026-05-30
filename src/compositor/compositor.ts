@@ -1,4 +1,5 @@
-import GObject, { getter, gtype, register, signal } from "ags/gobject";
+import { getter, gtype, register, signal } from "ags/gobject";
+import GObject from "gi://GObject?version=2.0";
 import Monitor from "./monitor";
 import Client from "./client";
 import Workspace from "./workspace";
@@ -13,7 +14,9 @@ import Workspace from "./workspace";
 * */
 @register({ GTypeName: "ClshCompositor" })
 class Compositor extends GObject.Object {
-    declare $signals: Compositor.SignalSignatures;
+    declare readonly $signals: Compositor.SignalSignatures;
+    declare readonly $readableProperties: Compositor.ReadableProperties;
+
     public static instance: Compositor;
 
     protected _monitors: Array<Monitor> = [];
@@ -57,14 +60,25 @@ class Compositor extends GObject.Object {
 }
 
 namespace Compositor {
-    export interface ConstructorProps extends GObject.Object.ConstructorProps {}
+    export interface ReadableProperties extends GObject.Object.ReadableProperties {
+        "monitors": Array<Monitor>;
+        "workspaces": Array<Workspace>;
+        "clients": Array<Client>;
+        "focused-client": Client|null;
+    }
+
     export interface SignalSignatures extends GObject.Object.SignalSignatures {
-        "client-added": (client: Client) => void;
-        "client-removed": (client: Client) => void;
-        "workspace-added": (workspace: Workspace) => void;
-        "workspace-removed": (Workspace: Workspace) => void;
-        "monitor-added": (monitor: Monitor) => void;
-        "monitor-removed": (monitor: Monitor) => void;
+        "notify::monitors"(): void;
+        "notify::workspaces"(): void;
+        "notify::clients"(): void;
+        "notify::focused-client"(): void;
+
+        "client-added"(client: Client): void;
+        "client-removed"(client: Client): void;
+        "workspace-added"(workspace: Workspace): void;
+        "workspace-removed"(Workspace: Workspace): void;
+        "monitor-added"(monitor: Monitor): void;
+        "monitor-removed"(monitor: Monitor): void;
     }
 }
 

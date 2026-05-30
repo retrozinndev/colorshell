@@ -3,7 +3,7 @@ import { TilesPages } from "../tiles";
 import { createBinding, createComputed } from "ags";
 import { secureBaseBinding } from "../../../../modules/utils";
 import Bluetooth from "../../../../modules/bluetooth";
-import AstalBluetooth from "gi://AstalBluetooth";
+import AstalBluetooth from "gi://AstalBluetooth?version=0.1";
 import Tile from "./Tile";
 
 

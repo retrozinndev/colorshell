@@ -6,13 +6,17 @@ import ResultItem from "./widgets/ResultItem";
 import { omitObjectKeys } from "../modules/utils";
 import { getter, gtype, property, register } from "ags/gobject";
 import GObject from "gi://GObject?version=2.0";
-import AstalHyprland from "gi://AstalHyprland";
+import AstalHyprland from "gi://AstalHyprland?version=0.1";
 import Windows from "../window";
 import ResultsList from "./widgets/ResultsList";
 
 
 @register({ GTypeName: "ClshRunner" })
 class Runner extends PopupWindow {
+    declare readonly $signals: Runner.SignalSignatures;
+    declare readonly $readableProperties: Runner.ReadableProperties;
+    declare readonly $readWriteProperties: Runner.ReadWriteProperties;
+
     private static instance: Runner|null = null;
     private static plugins: Array<Runner.PluginConstructor> = [];
     public static get isOpen() { return this.instance !== null; }
@@ -42,7 +46,7 @@ class Runner extends PopupWindow {
     get results() { return [...this.#results]; }
 
 
-    constructor(props: Partial<Runner.ConstructorProps> = {}) {
+    constructor(props: Partial<GObject.ConstructorProps<Runner>> = {}) {
         super({
             namespace: "runner",
             cssName: "runner",
@@ -79,7 +83,7 @@ class Runner extends PopupWindow {
             valign: Gtk.Align.START,
             visible: true,
             orientation: Gtk.Orientation.VERTICAL
-        });
+        } as never);
         this.#container.add_css_class("container");
 
         this.#entry = new Gtk.Entry({
@@ -88,7 +92,7 @@ class Runner extends PopupWindow {
             primaryIconName: "system-search-symbolic",
             primaryIconTooltipText: "Search in the Multifunctional Command Runner",
             secondaryIconTooltipText: "Clear"
-        });
+        } as never);
 
         connections.set(this.#entry, [
             this.#entry.connect("icon-release", (self, pos) => {
@@ -116,7 +120,7 @@ class Runner extends PopupWindow {
         });
 
         connections.set(this, [
-            this.connect("key-pressed", (_, key) => {
+            (this as Runner).connect("key-pressed", (_, key) => {
                 switch(key) {
                     case Gdk.KEY_F5:
                         updateApps();
@@ -131,15 +135,15 @@ class Runner extends PopupWindow {
                         return;
                 }
             }),
-            this.connect("show", (self) => {
+            (this as Runner).connect("show", (self) => {
                 self.#entry.select_region(this.#entry.textLength, this.#entry.textLength);
             }),
-            this.connect("destroy", () => {
+            (this as Runner).connect("destroy", () => {
                 connections.forEach((id, gobj) => Array.isArray(id) ?
                     id.forEach(num => gobj.disconnect(num))
                 : gobj.disconnect(id));
             }),
-            this.connect("notify::search", () => {
+            (this as Runner).connect("notify::search", () => {
                 this.update(this.search, this.maxResults).then(() => {
                     if(this.#results.length < 1) {
                         this.#entry.secondaryIconName = "";
@@ -267,7 +271,7 @@ class Runner extends PopupWindow {
               ]}
             />
         )()) as unknown as Runner;
-        this.instance.show();
+        this.instance.set_visible(true);
 
         return this.instance;
     }
@@ -394,23 +398,27 @@ class Runner extends PopupWindow {
 
 namespace Runner {
     export interface SignalSignatures extends PopupWindow.SignalSignatures {
-        "notify::search": () => void;
-        "notify::search-placeholder": () => void;
-        "notify::show-result-placeholders": () => void;
-        "notify::max-results": () => void;
-        "notify::placeholders": () => void;
+        "notify::search"(): void;
+        "notify::search-placeholder"(): void;
+        "notify::show-result-placeholders"(): void;
+        "notify::max-results"(): void;
+        "notify::placeholders"(): void;
     }
 
-    export interface ConstructorProps extends PopupWindow.ConstructorProps {
-        searchPlaceholder: string;
-        search: string;
-        maxResults: number;
-        searchOnStartup: boolean;
-        showResultPlaceholders: boolean;
-        placeholders: Array<Runner.Result>;
+    export type ReadableProperties = PopupWindow["$readableProperties"] & {
+        "results": Array<Runner.Result>;
     };
 
-    export type Result = CCProps<ResultItem, ResultItem.ConstructorProps>;
+    export interface ReadWriteProperties extends PopupWindow.ReadWriteProperties {
+        "search-placeholder": string;
+        "search": string;
+        "max-results": number;
+        "search-on-startup": boolean;
+        "show-result-placeholders": boolean;
+        "placeholders": Array<Runner.Result>;
+    }
+
+    export type Result = Partial<CCProps<ResultItem, GObject.ConstructorProps<ResultItem>>>;
     export interface Plugin {
         /** prefix to call the plugin. if undefined, will be triggered like applications plugin */
         readonly prefix?: string;

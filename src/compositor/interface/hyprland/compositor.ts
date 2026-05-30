@@ -1,15 +1,15 @@
 import Compositor from "../..";
 import { Gtk } from "ags/gtk4";
 import { register } from "ags/gobject";
-import AstalHyprland from "gi://AstalHyprland";
+import AstalHyprland from "gi://AstalHyprland?version=0.1";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import { createScopedConnection, createSubscription, encoder, runtimeConfigDir } from "../../../modules/utils";
-import Wallpaper from "../../../modules/wallpaper";
 import { generalConfig } from "../../../config";
 import { readFile } from "ags/file";
 import Socket from "../../../modules/socket";
 import Client from "./client";
+import StyleManager from "../../../modules/stylemanager";
 
 
 @register({ GTypeName: "ClshCompositorHyprland" })
@@ -35,7 +35,7 @@ class Hyprland extends Compositor.Compositor {
         createScopedConnection(this.#inst, "event", (e, dat) => this.handleEvents(e, dat));
 
         for(const c of this.#inst.get_clients()) {
-            const client = Client.new(c);
+            const client = new Client(c);
             this._clients.push(client);
         }
         this._focusedClient = this._clients.find(c =>
@@ -43,15 +43,15 @@ class Hyprland extends Compositor.Compositor {
         ) ?? null;
 
         createScopedConnection(this.#inst, "client-added", (c) => {
-            const client = Client.new(c);
+            const client = new Client(c);
             this._clients.push(client);
             this.notify("clients");
-            this.emit("client-added", client);
+            (this as Hyprland).emit("client-added", client);
         });
         createScopedConnection(this.#inst, "client-removed", (addr) => {
             const i = this._clients.findIndex(cl => cl.address === addr);
 
-            this.emit("client-removed", this._clients.splice(i, 1)[0]);
+            (this as Hyprland).emit("client-removed", this._clients.splice(i, 1)[0]);
             this.notify("clients");
         });
         // TODO support workspaces
@@ -63,10 +63,10 @@ class Hyprland extends Compositor.Compositor {
                 const matchBorderColor = generalConfig.getProperty("misc.match_window_border_color", "boolean");
 
                 if(matchBorderColorId !== null)
-                    Wallpaper.getDefault().disconnect(matchBorderColorId);
+                    StyleManager.getDefault().disconnect(matchBorderColorId);
 
                 if(matchBorderColor) {
-                    matchBorderColorId = Wallpaper.getDefault().connect(
+                    matchBorderColorId = StyleManager.getDefault().connect(
                         "colors-reloaded", () => this.reload()
                     );
                     this.reload();
@@ -75,7 +75,7 @@ class Hyprland extends Compositor.Compositor {
                 }
 
                 matchBorderColorId !== null && 
-                    Wallpaper.getDefault().disconnect(matchBorderColorId);
+                    StyleManager.getDefault().disconnect(matchBorderColorId);
 
                 this.reload();
             }

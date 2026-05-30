@@ -21,6 +21,9 @@ importers:
       esbuild:
         specifier: ^0.28.0
         version: 0.28.0
+      girgen:
+        specifier: ^0.3.16
+        version: 0.3.16
 
 packages:
 
@@ -180,6 +183,16 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@girgen/linux-arm64@0.3.16':
+    resolution: {integrity: sha512-8qCNPILoCRRWxkqhBtigHRPE9dD/MbELrSRYkbRycjH+vUZe8oLwVKWrqldS61Qcuu1++WmlXUUKTtnxjLiX/A==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@girgen/linux-x64@0.3.16':
+    resolution: {integrity: sha512-veMH9+FDCa1CFBxQTco8UcdQN594LbjhF0QPQadLkvjBy5/Xkj1rdDm6+Qj/B6BkYPMXX+GpOJbmzyYNGbe2kQ==}
+    cpu: [x64]
+    os: [linux]
+
   ags@file:../../../../usr/share/ags/js:
     resolution: {directory: ../../../../usr/share/ags/js, type: directory}
     engines: {gjs: '>=1.79.0'}
@@ -195,6 +208,10 @@ packages:
   fuse.js@7.3.0:
     resolution: {integrity: sha512-plz8RVjfcDedTGfVngWH1jmJvBvAwi1v2jecfDerbEnMcmOYUEEwKFTHbNoCiYyzaK2Ws8lABkTCcRSqCY1q4w==}
     engines: {node: '>=10'}
+
+  girgen@0.3.16:
+    resolution: {integrity: sha512-G6HtMIGIJWchB1eRgWqk9CwBcOZJtnrlnFVBHdconXosooNDy8fREeKgX8SsjdgfzboIGt/HJu4DurpioZOJdA==}
+    hasBin: true
 
   gnim-utils@https://codeload.github.com/retrozinndev/gnim-utils/tar.gz/3c3b9ac6209b47e1efb2ac219acab938e8d97426:
     resolution: {tarball: https://codeload.github.com/retrozinndev/gnim-utils/tar.gz/3c3b9ac6209b47e1efb2ac219acab938e8d97426}
@@ -286,6 +303,12 @@ snapshots:
   '@esbuild/win32-x64@0.28.0':
     optional: true
 
+  '@girgen/linux-arm64@0.3.16':
+    optional: true
+
+  '@girgen/linux-x64@0.3.16':
+    optional: true
+
   ags@file:../../../../usr/share/ags/js(gnim@1.8.2):
     dependencies:
       gnim: 1.8.2
@@ -320,6 +343,11 @@ snapshots:
       '@esbuild/win32-x64': 0.28.0
 
   fuse.js@7.3.0: {}
+
+  girgen@0.3.16:
+    optionalDependencies:
+      '@girgen/linux-arm64': 0.3.16
+      '@girgen/linux-x64': 0.3.16
 
   gnim-utils@https://codeload.github.com/retrozinndev/gnim-utils/tar.gz/3c3b9ac6209b47e1efb2ac219acab938e8d97426(gnim@1.8.2):
     dependencies:

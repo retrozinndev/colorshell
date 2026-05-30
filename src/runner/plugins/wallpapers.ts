@@ -46,6 +46,7 @@ export class PluginWallpapers implements Runner.Plugin {
     }
 
     private loadPreview(path: string, revealer: Gtk.Revealer): void {
+        // @ts-ignore
         const image = revealer.get_child() as Image ?? jsx(Image, {
             css: "margin-bottom: 6px; border-radius: 14px;",
             hexpand: true,
@@ -81,7 +82,7 @@ export class PluginWallpapers implements Runner.Plugin {
                 return;
 
             if(scroll)
-                Runner.open().requestScroll(widget.get_allocation().y - this.previewSize);
+                Runner.open().requestScroll(widget.compute_bounds(widget.parent!)[1].get_y() - this.previewSize);
 
             this.loadPreview(path, (widget.get_child() as Gtk.Box).get_first_child() as Gtk.Revealer);
         };

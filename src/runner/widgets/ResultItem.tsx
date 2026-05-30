@@ -6,11 +6,13 @@ import Runner from "..";
 import Pango from "gi://Pango?version=1.0";
 import Adw from "gi://Adw?version=1";
 import GLib from "gi://GLib?version=2.0";
+import GObject from "gi://GObject?version=2.0";
 
 
 @register({ GTypeName: "ResultWidget" })
 class ResultItem extends Gtk.ListBoxRow {
-    declare $signals: ResultItem.SignalSignatures;
+    declare readonly $signals: ResultItem.SignalSignatures;
+    declare readonly $readWriteProperties: ResultItem.ReadWriteProperties;
     #timeout: GLib.Source|null = null;
 
     @signal()
@@ -46,7 +48,7 @@ class ResultItem extends Gtk.ListBoxRow {
     clickTimeout: number = 300;
 
 
-    constructor(props: ResultItem.ConstructorProps) {
+    constructor(props: Partial<GObject.ConstructorProps<ResultItem>>) {
         super({
             cssName: "resultitem",
             ...omitObjectKeys(props, [
@@ -79,7 +81,7 @@ class ResultItem extends Gtk.ListBoxRow {
                     return;
 
                 this.#timeout = setTimeout(() => this.#timeout = null, this.clickTimeout);
-                this.emit("clicked");
+                (this as ResultItem).emit("clicked");
             }
         );
 
@@ -119,19 +121,19 @@ class ResultItem extends Gtk.ListBoxRow {
 }
 
 namespace ResultItem {
-    export interface ConstructorProps extends Partial<Gtk.ListBoxRow> {
-        icon?: string|Gdk.Texture|Gtk.Widget;
-        title: string;
-        description?: string;
-        closeOnClick?: boolean;
+    export interface ReadWriteProperties extends Gtk.ListBoxRow.ReadWriteProperties {
+        "icon": string|Gdk.Texture|Gtk.Widget;
+        "title": string;
+        "description": string;
+        "close-on-click": boolean;
     };
 
     export interface SignalSignatures extends Gtk.ListBoxRow.SignalSignatures {
-        "clicked": () => void;
-        "selected": () => void;
-        "unselected": () => void;
-        "hovered": () => void;
-        "unhovered": () => void;
+        "clicked"(): void;
+        "selected"(): void;
+        "unselected"(): void;
+        "hovered"(): void;
+        "unhovered"(): void;
     }
 }
 

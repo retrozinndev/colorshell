@@ -1,9 +1,9 @@
-import { Page, PageButton } from "../Page";
+import { Page } from "../Page";
 import Wireplumber from "../../../../modules/volume";
 import { Gtk } from "ags/gtk4";
 import { Accessor, createBinding, For } from "ags";
 import { lookupIcon } from "../../../../modules/apps";
-import AstalWp from "gi://AstalWp";
+import AstalWp from "gi://AstalWp?version=0.1";
 
 
 export const PageMicrophone = <Page
@@ -14,7 +14,7 @@ export const PageMicrophone = <Page
         <Gtk.Label class={"sub-header"} label={tr("devices")} xalign={0} />,
         <Gtk.Box orientation={Gtk.Orientation.VERTICAL} spacing={4}>
             <For each={createBinding(Wireplumber.getWireplumber().get_audio(), "microphones") as Accessor<Array<AstalWp.Endpoint>>}>
-                {(source: AstalWp.Endpoint) => <PageButton class={
+                {(source: AstalWp.Endpoint) => <Page.Button class={
                       createBinding(source, "isDefault").as(isDefault => isDefault ? "selected" : "")
                   } icon={createBinding(source, "icon").as(ico => lookupIcon(ico) ? 
                       ico : "audio-input-microphone-symbolic")} title={

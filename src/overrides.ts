@@ -53,21 +53,17 @@ await suppress(import("gi://AstalHyprland"), ({ Hyprland, Monitor, Workspace }) 
     patch(Hyprland.prototype, "workspaces")
     patch(Hyprland.prototype, "clients")
     patch(Monitor.prototype, "availableModes")
-    patch(Monitor.prototype, "available_modes")
     patch(Workspace.prototype, "clients")
 })
 
 await suppress(import("gi://AstalMpris"), ({ Mpris, Player }) => {
     patch(Mpris.prototype, "players")
-    patch(Player.prototype, "supported_uri_schemes")
     patch(Player.prototype, "supportedUriSchemes")
-    patch(Player.prototype, "supported_mime_types")
     patch(Player.prototype, "supportedMimeTypes")
     patch(Player.prototype, "comments")
 })
 
 await suppress(import("gi://AstalNetwork"), ({ Wifi }) => {
-    patch(Wifi.prototype, "access_points")
     patch(Wifi.prototype, "accessPoints")
 })
 

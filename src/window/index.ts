@@ -1,10 +1,11 @@
 import { Astal, Gdk } from "ags/gtk4";
-import GObject, { getter, register, signal } from "ags/gobject";
+import { getter, register, signal } from "ags/gobject";
 import { createRoot, getScope, Scope } from "ags";
-import AstalHyprland from "gi://AstalHyprland";
+import AstalHyprland from "gi://AstalHyprland?version=0.1";
 import { shellWindows } from "../windows";
 import Gio from "gi://Gio?version=2.0";
 import Adw from "gi://Adw?version=1";
+import GObject from "gi://GObject?version=2.0";
 
 
 /** Manage shell windows and in which monitors they appear.
@@ -13,7 +14,9 @@ import Adw from "gi://Adw?version=1";
   * focused-monitor-only windows */
 @register({ GTypeName: "Windows" })
 class Windows<T extends string = string> extends GObject.Object {
-    declare $signals: Windows.SignalSignatures
+    declare readonly $signals: Windows.SignalSignatures
+    declare readonly $readableProperties: Windows.ReadableProperties;
+    declare readonly $readWriteProperties: GObject.Object.ReadWriteProperties;
 
     private static instance: (Windows | null);
     #windows: Record<string, Windows.Window> = {};
@@ -34,7 +37,7 @@ class Windows<T extends string = string> extends GObject.Object {
     constructor() {
         super();
 
-        const monitors = Gdk.Display.get_default()?.get_monitors() as Gio.ListModel<Gdk.Monitor>|undefined;
+        const monitors = Gdk.Display.get_default()?.get_monitors();
         if(!monitors)
             throw new Error("Windows: Couldn't get GdkDisplay for the window/widget management system!!");
 
@@ -42,7 +45,7 @@ class Windows<T extends string = string> extends GObject.Object {
             console.warn("Windows: There are no monitors/displays plugged in for colorshell to open the widgets. You might have to manually open them after plugging in a monitor to your system");
 
         monitors.connect("items-changed", (
-            _: Gio.ListModel<Gdk.Monitor>,
+            _: Gio.ListModel,
             _pos: number,
             nRemoved: number,
             nAdded: number
@@ -132,7 +135,7 @@ class Windows<T extends string = string> extends GObject.Object {
             // @ts-ignore
             delete data.instance;
             window.status = Windows.Status.CLOSED;
-            this.notify("open-windows");
+            (this as Windows).notify("open-windows");
         };
 
         const data = window.data;
@@ -280,19 +283,19 @@ class Windows<T extends string = string> extends GObject.Object {
 
         if(Array.isArray(instance)) {
             window.data! = instance.map(win => {
-                win.show();
+                win.set_visible(true);
                 return { instance: win, connections: [] };
             });
         } else {
             window.data = { instance: instance, connections: [] };
-            instance.show();
+            instance.set_visible(true);
         }
 
         this.#windows[name].status = Windows.Status.OPEN;
         this.connectWindow(name);
 
-        this.emit("window-open", name);
-        this.notify("open-windows");
+        (this as Windows).emit("window-open", name);
+        (this as Windows).notify("open-windows");
     }
 
     public close(name: T): void {
@@ -313,8 +316,8 @@ class Windows<T extends string = string> extends GObject.Object {
 
         this.#windows[name].status = Windows.Status.CLOSED;
 
-        this.emit("window-closed", name);
-        this.notify("open-windows");
+        (this as Windows).emit("window-closed", name);
+        (this as Windows).notify("open-windows");
     }
 
     public toggle(name: T): void {
@@ -323,7 +326,7 @@ class Windows<T extends string = string> extends GObject.Object {
 
     public closeAll(): void {
         this.openWindows.forEach(name => this.close(name as T));
-        this.notify("open-windows");
+        (this as Windows).notify("open-windows");
     }
     
     public reopen(): void {
@@ -351,6 +354,11 @@ namespace Windows {
             instance: Astal.Window;
             connections: Array<number>;
         };
+    }
+
+    export interface ReadableProperties extends GObject.Object.ReadableProperties {
+        "windows": Record<string, Windows.Window>;
+        "open-windows": Array<string>;
     }
 
     export interface SignalSignatures extends GObject.Object.SignalSignatures {

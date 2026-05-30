@@ -1,18 +1,18 @@
 import { Gtk } from "ags/gtk4";
-import { Page, PageButton } from "../Page";
+import { Page } from "../Page";
 import Windows from "../../../../window";
 import { execApp } from "../../../../modules/apps";
 import Notifications from "../../../../modules/notifications";
 import { AskPopup, AskPopupProps } from "../../../../widget/AskPopup";
-import { encoder, variableToBoolean } from "../../../../modules/utils";
-import { createBinding, createRoot, For, With } from "ags";
+import { encoder, globalScope, variableToBoolean } from "../../../../modules/utils";
+import { createBinding, For, With } from "ags";
 
 import GLib from "gi://GLib?version=2.0";
-import NM from "gi://NM";
-import AstalNetwork from "gi://AstalNetwork";
+import NM from "gi://NM?version=1.0";
+import AstalNetwork from "gi://AstalNetwork?version=0.1";
 
 
-export const PageNetwork = createRoot((dispose) => <Page
+export const PageNetwork = globalScope.run(() => <Page
     id={"network"}
     title={tr("control_center.pages.network.title")}
     headerButtons={createBinding(AstalNetwork.get_default(), "primary").as(primary =>
@@ -29,7 +29,6 @@ export const PageNetwork = createRoot((dispose) => <Page
             execApp("nm-connection-editor", "[animationstyle gnomed]");
         }
     }]}
-    actionClosed={() => dispose()}
     content={() => [
         <Gtk.Box class={"devices"} hexpand orientation={Gtk.Orientation.VERTICAL}
           visible={variableToBoolean(createBinding(AstalNetwork.get_default().client, "devices"))}
@@ -39,7 +38,7 @@ export const PageNetwork = createRoot((dispose) => <Page
             <For each={createBinding(AstalNetwork.get_default().client, "devices").as(devs => 
               devs.filter(dev => dev.interface !== "lo" && dev.real /* filter local device */))}>
 
-                {(device: NM.Device) => <PageButton title={createBinding(device, "interface").as(iface =>
+                {(device: NM.Device) => <Page.Button title={createBinding(device, "interface").as(iface =>
                     iface ?? tr("control_center.pages.network.interface"))} class={"device"}
                   icon={createBinding(device, "deviceType").as(type => type === NM.DeviceType.WIFI ?
                     "network-wireless-symbolic" : "network-wired-symbolic")} extraButtons={[
@@ -63,7 +62,7 @@ export const PageNetwork = createRoot((dispose) => <Page
 
                 <Gtk.Label class={"sub-header"} label={"Wi-Fi"} />
                 <For each={createBinding(AstalNetwork.get_default().wifi!, "accessPoints")}>
-                    {(ap: AstalNetwork.AccessPoint) => <PageButton class={
+                    {(ap: AstalNetwork.AccessPoint) => <Page.Button class={
                         createBinding(AstalNetwork.get_default().wifi!, "activeAccessPoint").as(activeAP =>
                             activeAP.ssid === ap.ssid ? "active" : "")
                       } title={createBinding(ap, "ssid").as(ssid => ssid ?? "No SSID")}

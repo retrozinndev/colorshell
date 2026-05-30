@@ -1,5 +1,5 @@
 node_modules
-@types/
+[.@]types/
 build/
 
 *.log

@@ -1,7 +1,7 @@
 import { Accessor, createConnection } from "ags";
 import { createScopedConnection, decoder } from "./utils";
 import { gtype, property, register } from "ags/gobject";
-import AstalMpris from "gi://AstalMpris";
+import AstalMpris from "gi://AstalMpris?version=0.1";
 import GObject from "gi://GObject?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
@@ -9,7 +9,8 @@ import GLib from "gi://GLib?version=2.0";
 
 @register({ GTypeName: "Media" })
 class Media extends GObject.Object {
-    declare $signals: Media.SignalSignatures;
+    declare readonly $signals: Media.SignalSignatures;
+    declare readonly $readableProperties: Media.ReadableProperties;
     private static instance: Media;
 
     /** player connections */
@@ -171,7 +172,7 @@ class Media extends GObject.Object {
 
     public static accessMediaUrl(player: AstalMpris.Player): Accessor<string|undefined> {
         return createConnection(player.get_meta("xesam:url"),
-            [player, "notify::metadata", () => player.get_meta("xesam:url")]
+            [player, "notify::metadata" as never, () => player.get_meta("xesam:url")]
         ).as(url => {
             const byteString = url?.get_data_as_bytes();
 
@@ -245,6 +246,10 @@ class Media extends GObject.Object {
 namespace Media {
     export interface SignalSignatures extends GObject.Object.SignalSignatures {
         "notify::player": () => void;
+    }
+
+    export interface ReadableProperties extends GObject.Object.ReadableProperties {
+        "player": AstalMpris.Player|null;
     }
 }
 

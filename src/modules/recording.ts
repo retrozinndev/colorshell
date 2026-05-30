@@ -6,7 +6,7 @@ import Notifications from "./notifications";
 import { time } from "./utils";
 import { generalConfig } from "../config";
 
-import GObject from "ags/gobject";
+import GObject from "gi://GObject?version=2.0";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 
@@ -15,6 +15,9 @@ import Gio from "gi://Gio?version=2.0";
 /** screen-recording module for colorshell */
 @register({ GTypeName: "Recording" })
 class Recording extends GObject.Object {
+    declare readonly $signals: Recording.SignalSignatures;
+    declare readonly $readableProperties: Recording.ReadableProperties;
+    declare readonly $readWriteProperties: Recording.ReadWriteProperties;
     private static instance: Recording;
 
     @signal() started() {};
@@ -32,7 +35,7 @@ class Recording extends GObject.Object {
     #process: (Gio.Subprocess|null) = null;
     #output: (string|null) = null;
 
-    /** GLib.DateTime of when recording started 
+    /** unix local time of when the recording started 
     * its value can be `-1` if undefined(no recording is happening) */
     @getter(Number)
     public get startedAt() { return this.#startedAt; }
@@ -113,7 +116,7 @@ class Recording extends GObject.Object {
                 console.log("stopped recording :D");
                 this.#recording = false;
                 disposeTimeSub();
-                this.emit("stopped");
+                (this as Recording).emit("stopped");
                 this.notify("recording");
                 this.#startedAt = -1;
                 this.notify("started-at");
@@ -177,7 +180,7 @@ class Recording extends GObject.Object {
         this.#recording = true;
         this.notify("started-at");
         this.notify("recording");
-        this.emit("started");
+        (this as Recording).emit("started");
 
     }
 
@@ -222,6 +225,30 @@ class Recording extends GObject.Object {
             : "Saved under an unknown path. Either colorshell was started after \
 starting a screen recording, or the shell was closed while screen-recording"
         });
+    }
+}
+
+namespace Recording {
+    export interface SignalSignatures extends GObject.Object.SignalSignatures {
+        "notify::started-at"(): void;
+        "notify::recording"(): void;
+        "notify::recording-time"(): void;
+        "notify::path"(): void;
+        "notify::extension"(): void;
+
+        "started"(): void;
+        "stopped"(): void;
+    }
+
+    export interface ReadableProperties extends GObject.Object.ReadableProperties {
+        "started-at": number;
+        "recording": boolean;
+        "recording-time": string;
+    }
+
+    export interface ReadWriteProperties extends GObject.Object.ReadWriteProperties {
+         "path": string;
+         "extension": string;
     }
 }
 

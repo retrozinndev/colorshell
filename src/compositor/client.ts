@@ -6,6 +6,11 @@ import GObject from "gi://GObject?version=2.0";
 /** @abstract */
 @register({ GTypeName: "CompositorClient" })
 class Client extends GObject.Object {
+    declare readonly $signals: Client.SignalSignatures;
+    declare readonly $readableProperties: Client.ReadableProperties;
+    declare readonly $constructOnlyProperties: Client.ConstructOnlyProperties;
+
+
     readonly #address: string|null = null;
     #initialTitle: string = "";
     #initialClass: string = "";
@@ -39,7 +44,7 @@ class Client extends GObject.Object {
     @getter(Boolean)
     get mapped() { return this.#mapped; }
 
-    constructor(props: Partial<Client.ConstructorProps> = {}) {
+    constructor(props: Partial<GObject.ConstructorProps<Client>> = {}) {
         super();
 
         if(props.class !== undefined)
@@ -130,14 +135,23 @@ namespace Client {
     }
 
     export interface SignalSignatures extends GObject.Object.SignalSignatures {}
-    export interface ConstructorProps extends GObject.Object.ConstructorProps {
-        address: string;
-        title: string;
-        mapped: boolean;
-        class: string;
-        initialTitle: string;
-        initialClass: string;
-        allocation: Gdk.Rectangle;
+    export interface ConstructOnlyProperties extends GObject.Object.ConstructOnlyProperties {
+        "address": string;
+        "title": string;
+        "mapped": boolean;
+        "class": string;
+        "initial-title": string;
+        "initial-class": string;
+        "allocation": Gdk.Rectangle;
+    }
+    export interface ReadableProperties extends GObject.Object.ReadableProperties {
+        "address": string;
+        "title": string;
+        "mapped": boolean;
+        "class": string;
+        "initial-title": string;
+        "initial-class": string;
+        "allocation": Gdk.Rectangle;
     }
 }
 

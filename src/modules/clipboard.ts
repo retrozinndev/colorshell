@@ -1,14 +1,17 @@
 import { exec, execAsync } from "ags/process";
 import { isInstalled } from "./utils";
 import { readFile } from "ags/file";
-import GObject, { getter, register, signal } from "ags/gobject";
+import { getter, register, signal } from "ags/gobject";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
+import GObject from "gi://GObject?version=2.0";
 
 
 /** Cliphist Manager and clipboard event listener */
 @register({ GTypeName: "Clipboard" })
 class Clipboard extends GObject.Object {
+    declare readonly $signals: Clipboard.SignalSignatures;
+    declare readonly $readableProperties: Clipboard.ReadableProperties;
     private static instance: Clipboard|null = null;
 
     #db!: Gio.File;
@@ -127,7 +130,7 @@ class Clipboard extends GObject.Object {
         const item: Clipboard.Item = { type, data, preview, id: lastId+1 };
 
         this.#history.unshift(item);
-        this.emit("copied", item);
+        (this as Clipboard).emit("copied", item);
         this.notify("history");
     }
 
@@ -142,7 +145,7 @@ class Clipboard extends GObject.Object {
             return false;
 
         exec(`cliphist delete-query ${item}`);
-        this.emit("removed", this.#history.splice(i, 1)[0]);
+        (this as Clipboard).emit("removed", this.#history.splice(i, 1)[0]);
         this.notify("history");
         return true;
     }
@@ -169,7 +172,8 @@ class Clipboard extends GObject.Object {
         );
         Gio._promisify(proc, "wait_check_async", "wait_check_finish");
 
-        return await proc.wait_check_async(null);;
+        // @ts-ignore
+        return await (proc.wait_check_async(null) as Promise<boolean>);
     }
 
     /** Gets history item's content by its ID.
@@ -187,7 +191,7 @@ class Clipboard extends GObject.Object {
             return;
         }
 
-        return stdout;
+        return stdout ?? undefined;
     }
 
     private getItemType(preview: string): Clipboard.Item.Type {
@@ -201,7 +205,7 @@ class Clipboard extends GObject.Object {
     public async wipe(skipDB: boolean = false): Promise<void> {
         if(skipDB) {
             this.#history.splice(0, this.#history.length);
-            this.emit("wiped");
+            (this as Clipboard).emit("wiped");
 
             return;
         }
@@ -209,7 +213,7 @@ class Clipboard extends GObject.Object {
         try {
             await execAsync("cliphist wipe");
             this.#history.splice(0, this.#history.length);
-            this.emit("wiped");
+            (this as Clipboard).emit("wiped");
         } catch(err) {
             console.error("Clipboard: An error occurred on cliphist database wipe:", err);
         }
@@ -222,10 +226,11 @@ class Clipboard extends GObject.Object {
         );
 
         Gio._promisify(proc, "communicate_utf8_async", "communicate_utf8_finish");
-        let stdout: string|undefined;
+        let stdout!: string;
 
         try {
-            stdout = (await proc.communicate_utf8_async(null, null))[0];
+            // @ts-ignore
+            stdout = (await (proc.communicate_utf8_async(null, null) as Promise<[boolean, string|null, string|null]>))[0];
         } catch(e) {
             console.error("Clipboard: Couldn't read cliphist history! Is it installed?");
             return;
@@ -260,8 +265,8 @@ class Clipboard extends GObject.Object {
             } as Clipboard.Item;
 
             this.#history.unshift(clipItem);
-            this.emit("copied", clipItem);
-            this.notify("history");
+            (this as Clipboard).emit("copied", clipItem);
+            (this as Clipboard).notify("history");
         }
     }
 }
@@ -281,9 +286,14 @@ namespace Clipboard {
         }
     }
 
+    export interface ReadableProperties extends GObject.Object.ReadableProperties {
+        "history": Array<Clipboard.Item>;
+    }
+
     export interface SignalSignatures extends GObject.Object.SignalSignatures {
-        "copied": (item: Clipboard.Item) => void;
-        "wiped": () => void;
+        "copied"(item: Clipboard.Item): void;
+        "removed"(item: Clipboard.Item): void;
+        "wiped"(): void;
     }
 }
 

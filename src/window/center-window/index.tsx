@@ -7,7 +7,7 @@ import { createBinding } from "ags";
 import { generalConfig } from "../../config";
 import Windows from "..";
 import Media from "../../modules/media";
-import AstalMpris from "gi://AstalMpris";
+import AstalMpris from "gi://AstalMpris?version=0.1";
 
 
 export const CenterWindow = Windows.forFocusedMonitor((mon) => {

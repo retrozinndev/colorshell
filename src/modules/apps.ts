@@ -1,7 +1,7 @@
 import { Gdk, Gtk } from "ags/gtk4";
 import { execAsync } from "ags/process";
 import { isInstalled } from "./utils";
-import AstalApps from "gi://AstalApps";
+import AstalApps from "gi://AstalApps?version=0.1";
 import Compositor from "../compositor";
 import Hyprland from "../compositor/interface/hyprland";
 

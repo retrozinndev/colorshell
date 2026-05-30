@@ -7,7 +7,7 @@ import NightLight from "../../modules/nightlight";
 import { time } from "../../modules/utils";
 
 import GObject from "ags/gobject";
-import AstalNotifd from "gi://AstalNotifd";
+import AstalNotifd from "gi://AstalNotifd?version=0.1";
 import Gio from "gi://Gio?version=2.0";
 import Windows from "..";
 

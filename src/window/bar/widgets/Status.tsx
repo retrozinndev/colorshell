@@ -8,9 +8,9 @@ import { Accessor, createBinding, createComputed, With } from "ags";
 import { variableToBoolean } from "../../../modules/utils";
 import Bluetooth from "../../../modules/bluetooth";
 import GObject from "ags/gobject";
-import AstalBluetooth from "gi://AstalBluetooth";
-import AstalNetwork from "gi://AstalNetwork";
-import AstalWp from "gi://AstalWp";
+import AstalBluetooth from "gi://AstalBluetooth?version=0.1";
+import AstalNetwork from "gi://AstalNetwork?version=0.1";
+import AstalWp from "gi://AstalWp?version=0.1";
 
 
 export const Status = () =>

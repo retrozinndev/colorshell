@@ -1,10 +1,10 @@
-import { Page, PageButton } from "../Page";
+import { Page } from "../Page";
 import { Astal, Gtk } from "ags/gtk4";
 import { getAppIcon, lookupIcon } from "../../../../modules/apps";
 import { Accessor, createBinding, For } from "ags";
 import { variableToBoolean } from "../../../../modules/utils";
 import Wireplumber from "../../../../modules/volume";
-import AstalWp from "gi://AstalWp";
+import AstalWp from "gi://AstalWp?version=0.1";
 import Pango from "gi://Pango?version=1.0";
 
 
@@ -17,7 +17,7 @@ export const PageSound = <Page
         <Gtk.Box orientation={Gtk.Orientation.VERTICAL} spacing={4}>
             <For each={createBinding(Wireplumber.getWireplumber().get_audio(), "speakers") as Accessor<Array<AstalWp.Endpoint>>}>
                 {(sink: AstalWp.Endpoint) => 
-                    <PageButton class={createBinding(sink, "isDefault").as(isDefault =>
+                    <Page.Button class={createBinding(sink, "isDefault").as(isDefault =>
                           isDefault ? "selected" : "")} 
                       icon={createBinding(sink, "icon").as(ico =>
                           lookupIcon(ico) ? ico : "audio-card-symbolic")}
@@ -43,7 +43,7 @@ export const PageSound = <Page
                 {(stream: AstalWp.Stream) => 
                     <Gtk.Box hexpand>
                         <Gtk.Image iconName={createBinding(stream, "name").as(name => 
-                              getAppIcon(name?.split(' ')[0] ?? "application-x-executable-symbolic")!
+                              getAppIcon(name?.split(' ')[0] ?? "") ?? "application-x-executable-symbolic"
                           )} css={"font-size: 18px; margin-right: 6px;"}
                         />
 

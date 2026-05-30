@@ -51,7 +51,7 @@ class SocketCli extends GObject.Object implements CliInterface {
 
         this.#service.connect("incoming", (_, conn) => {
             const remote = new SocketCli.Remote(conn);
-            this.emit("connected", remote);
+            (this as SocketCli).emit("connected", remote);
 
             const stream = conn.get_input_stream();
             stream.read_bytes_async(1024, GLib.PRIORITY_DEFAULT, null, (_, res) => {
@@ -66,12 +66,14 @@ class SocketCli extends GObject.Object implements CliInterface {
                 if(cmd !== null && cmd !== undefined) {
                     try {
                         const [, args] = GLib.shell_parse_argv(cmd);
-                        this.emit("received", args ?? [], remote);
+                        (this as SocketCli).emit("received", args ?? [], remote);
                     } catch(e) {
-                        this.emit("received", [], remote);
+                        (this as SocketCli).emit("received", [], remote);
                     }
                 }
             });
+
+            return false;
         });
     }
 

@@ -38,11 +38,11 @@ class GAppCli extends GObject.Object implements CliInterface {
 Please add the HANDLES_COMMAND_LINE flag to the GApplication");
         
 
-        this.#connection = this.#gapp.connect("command-line", (_, cmd: Gio.ApplicationCommandLine) => {
+        this.#connection = this.#gapp.connect("command-line" as never, ((_: any, cmd: Gio.ApplicationCommandLine) => {
             const remote = new GAppCli.Remote(cmd);
-            this.emit("connected", remote);
-            this.emit("received", cmd.get_arguments().toSpliced(0, 1), remote);
-        });
+            (this as GAppCli).emit("connected", remote);
+            (this as GAppCli).emit("received", cmd.get_arguments().toSpliced(0, 1), remote);
+        }) as never);
         
     }
 

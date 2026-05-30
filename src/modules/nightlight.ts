@@ -1,13 +1,16 @@
 import { execAsync } from "ags/process";
 import { userData } from "../config";
 import { getPID, killProc, watchInputStream } from "./utils";
-import GObject, { getter, register, setter } from "ags/gobject";
+import { getter, register, setter } from "ags/gobject";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
+import GObject from "gi://GObject?version=2.0";
 
 
 @register({ GTypeName: "ClshNightLight" })
 class NightLight extends GObject.Object {
+    declare readonly $signals: NightLight.SignalSignatures;
+    declare readonly $readWriteProperties: NightLight.ReadWriteProperties;
     private static instance: NightLight;
 
     public static readonly maxTemperature = 20000;
@@ -233,6 +236,19 @@ isn't set(are you running on Hyprland?)");
 
         this.#identity = identity;
         this.notify("identity");
+    }
+}
+
+namespace NightLight {
+    export interface SignalSignatures extends GObject.Object.SignalSignatures {
+        "notify::temperature"(): void;
+        "notify::gamma"(): void;
+        "notify::identity"(): void;
+    }
+    export interface ReadWriteProperties extends GObject.Object.ReadWriteProperties {
+        "temperature": number;
+        "gamma": number;
+        "identity": boolean;
     }
 }
 

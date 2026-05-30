@@ -4,8 +4,7 @@ import { PageNetwork } from "../pages/Network";
 import { TilesPages } from "../tiles";
 import { Accessor, createBinding, createComputed } from "ags";
 import { secureBaseBinding } from "../../../../modules/utils";
-
-import AstalNetwork from "gi://AstalNetwork";
+import AstalNetwork from "gi://AstalNetwork?version=0.1";
 import Notifications from "../../../../modules/notifications";
 
 

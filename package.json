@@ -12,7 +12,8 @@
         "build:release": "sh ./scripts/build.sh -r"
     },
     "devDependencies": {
-        "esbuild": "^0.28.0"
+        "esbuild": "^0.28.0",
+        "girgen": "^0.3.16"
     },
     "dependencies": {
         "ags": "file:/usr/share/ags/js",

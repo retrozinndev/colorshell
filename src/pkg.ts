@@ -1,9 +1,8 @@
 import "./overrides"; // thanks Aylur!!
-const Package = imports.package;
 import I18n from "./i18n/intl";
 
 
-Package.init({
+pkg.init({
     name: "io.github.retrozinndev.Colorshell",
     version: VERSION,
     prefix: "~/.local",
@@ -11,7 +10,7 @@ Package.init({
     libdir: "/lib"
 });
 
-Package.require({
+pkg.require({
     "Adw": "1",
     "Gly": "2",
     "GlyGtk4": "2",

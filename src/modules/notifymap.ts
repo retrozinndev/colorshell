@@ -3,9 +3,10 @@ import { getter, gtype, register, signal } from "ags/gobject";
 import GObject from "gi://GObject?version=2.0";
 
 
-@register({ GTypeName: "ClshNotifyMap" })
-class NotifyMap<K extends string|symbol|number = string, V = any> extends GObject.Object {
-    declare $signals: NotifyMap.SignalSignatures<K, V>;
+@register({ GTypeName: "ClshNotifiableMap" })
+class NotifiableMap<K extends string|symbol|number = string, V = any> extends GObject.Object {
+    declare readonly $signals: NotifiableMap.SignalSignatures<K, V>;
+    declare readonly $readableProperties: NotifiableMap.ReadableProperties<K, V>;
 
     #map: Map<K, V> = new Map();
 
@@ -38,8 +39,8 @@ class NotifyMap<K extends string|symbol|number = string, V = any> extends GObjec
         const replaced = this.#map.has(key);
         this.#map.set(key, value);
         replaced ?
-            this.emit("replaced", this.#map)
-        : this.emit("added", key, value);
+            (this as NotifiableMap).emit("replaced", this.#map as never)
+        : (this as NotifiableMap).emit("added", key as never, value as never);
         
         this.notify("map");
     }
@@ -50,7 +51,7 @@ class NotifyMap<K extends string|symbol|number = string, V = any> extends GObjec
 
     remove(key: K): boolean {
         const ok = this.#map.delete(key);
-        ok && this.emit("removed", key);
+        ok && (this as NotifiableMap).emit("removed", key as never);
         this.notify("map");
 
         return ok;
@@ -61,7 +62,7 @@ class NotifyMap<K extends string|symbol|number = string, V = any> extends GObjec
 
     sub(transform?: <T>(value: Map<K, V>) => T): Accessor<Map<K, V>>|unknown {
         const accessor = new Accessor(this.getMap, (notify) => {
-            const id = this.connect("notify::map", () => notify());
+            const id = (this as NotifiableMap).connect("notify::map", () => notify());
 
             return () => {
                 if(GObject.signal_handler_is_connected(this, id))
@@ -73,13 +74,22 @@ class NotifyMap<K extends string|symbol|number = string, V = any> extends GObjec
     }
 }
 
-namespace NotifyMap {
-    export interface SignalSignatures<K extends string|symbol|number, V> extends GObject.Object.SignalSignatures {
-        "added": (key: K, value: V) => void;
-        "replaced": (map: Map<K, V>) => void;
-        "removed": (key: K) => void;
-        "notify::map": () => void;
+namespace NotifiableMap {
+    export interface SignalSignatures<K extends string|symbol|number, V>
+        extends GObject.Object.SignalSignatures {
+
+        "notify::map"(): void;
+
+        "added"(key: K, value: V): void;
+        "replaced"(map: Map<K, V>): void;
+        "removed"(key: K): void;
+    }
+
+    export interface ReadableProperties<K extends string|symbol|number = string, V = any>
+        extends GObject.Object.ReadableProperties {
+
+        "map": Map<K, V>;
     }
 }
 
-export default NotifyMap;
+export default NotifiableMap;
