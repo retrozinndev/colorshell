@@ -2,7 +2,6 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
     "allowJs": false,
-    "checkJs": true,
     "module": "es2022",
     "target": "es2020",
     "lib": ["ES2024"],
