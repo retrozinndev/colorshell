@@ -6,7 +6,7 @@ import { Apps } from "./widgets/Apps";
 import { Clock } from "./widgets/Clock";
 import { Status } from "./widgets/Status";
 import { Media } from "./widgets/Media";
-import { Windows } from "..";
+import Windows from "..";
 
 
 export const Bar = Windows.forMonitors((mon) => {

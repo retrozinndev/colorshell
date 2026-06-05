@@ -14,8 +14,8 @@ import { createPoll } from "ags/time";
 import { exec, execAsync } from "ags/process";
 import { Astal, Gtk } from "ags/gtk4";
 import { getSymbolicIcon } from "./apps";
-import { Notifications } from "./notifications";
 import { createRoot, getScope, Scope } from "ags";
+import Notifications from "./notifications";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 
@@ -37,14 +37,6 @@ export const cacheDir: Gio.File = Gio.File.new_for_path(`${
 /** where runtime-generated config files are stored */
 export const runtimeConfigDir: Gio.File = Gio.File.new_for_path(`${runtimeDir.peek_path()}/config`);
 
-
-export function getHyprlandInstanceSig(): (string|null) {
-    return GLib.getenv("HYPRLAND_INSTANCE_SIGNATURE");
-}
-
-export function getHyprlandVersion(): string {
-    return exec(`${GLib.getenv("HYPRLAND_CMD") ?? "Hyprland"} --version | head -n1`).split(" ")[1];
-}
 
 export function getPlayerIconFromBusName(busName: string): string {
     const splitName = busName.split('.').filter(str => str !== "" && 
@@ -250,12 +242,6 @@ export function makeDirectory(dir: string): void {
 
 export function deleteFile(path: string): void {
     execAsync([ "rm", "-r", path ]);
-}
-
-export function playSystemBell(): void {
-    execAsync("canberra-gtk-play -i bell").catch((e: Error) => {
-        console.error(`Couldn't play system bell. Stderr: ${e.message}\n${e.stack}`);
-    });
 }
 
 /** run the specified `method` inside a try-catch block, then

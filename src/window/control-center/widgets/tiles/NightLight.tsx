@@ -1,7 +1,6 @@
-import { Tile } from "./Tile";
-import { NightLight } from "../../../../modules/nightlight";
+import Tile from "./Tile";
+import NightLight from "../../../../modules/nightlight";
 import { PageNightLight } from "../pages/NightLight";
-import { tr } from "../../../../i18n/intl";
 import { TilesPages } from "../tiles";
 import { isInstalled } from "../../../../modules/utils";
 import { createBinding, createComputed } from "ags";

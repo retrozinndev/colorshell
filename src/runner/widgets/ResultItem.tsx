@@ -48,7 +48,7 @@ class ResultItem extends Gtk.ListBoxRow {
 
     constructor(props: ResultItem.ConstructorProps) {
         super({
-            cssName: "resultwidget",
+            cssName: "resultitem",
             ...omitObjectKeys(props, [
                 "icon",
                 "title",

@@ -1,9 +1,11 @@
+import "./overrides"; // thanks Aylur!!
 const Package = imports.package;
+import I18n from "./i18n/intl";
 
 
 Package.init({
     name: "io.github.retrozinndev.Colorshell",
-    version: COLORSHELL_VERSION,
+    version: VERSION,
     prefix: "~/.local",
     datadir: "/share",
     libdir: "/lib"
@@ -24,3 +26,12 @@ Package.require({
     "AstalTray": "0.1",
     "AstalWp": "0.1",
 });
+Object.assign(globalThis, {
+    assert(...conditions: Array<any>): boolean {
+        if(!conditions.every(v => Boolean(v)))
+            throw new Error("Assertion: At least one of the conditions are falsy");
+
+        return true;
+    }
+});
+I18n.init();

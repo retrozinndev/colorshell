@@ -1,10 +1,10 @@
 import { Gtk } from "ags/gtk4";
-import { Windows } from "../../../window";
-import { Wallpaper } from "../../../modules/wallpaper";
+import Windows from "../../../window";
+import Wallpaper from "../../../modules/wallpaper";
 import { execApp } from "../../../modules/apps";
 import { Accessor } from "ags";
 import { createPoll } from "ags/time";
-import { Screenshot } from "../../../modules/screenshot";
+import Screenshot from "../../../modules/screenshot";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import { runtimeDir } from "../../../modules/utils";

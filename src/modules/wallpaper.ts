@@ -1,22 +1,20 @@
 import { readFile, readFileAsync } from "ags/file";
+import { createSubscription, encoder, getPID, globalScope, killProc, runtimeConfigDir } from "./utils";
+import { generalConfig } from "../config";
+import { execAsync } from "ags/process";
 import GObject, { register, getter, gtype, property, setter, signal } from "ags/gobject";
-
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
-import { createSubscription, encoder, getPID, globalScope, killProc, runtimeConfigDir } from "./utils";
-import { Notifications } from "./notifications";
-import { generalConfig } from "../config";
-import { Socket } from "./socket";
-import { execAsync } from "ags/process";
+import Notifications from "./notifications";
+import AstalHyprland from "gi://AstalHyprland?version=0.1";
 
 
 // TODO: support different wallpapers for each monitor
 @register({ GTypeName: "Wallpaper" })
-export class Wallpaper extends GObject.Object {
+class Wallpaper extends GObject.Object {
     declare $signals: Wallpaper.SignalSignatures;
     private static instance: Wallpaper;
 
-    #sock: Socket;
     #wallpaper: Gio.File|null = null;
     #userHyprpaperFile!: Gio.File;
     #defaultHyprpaperFile!: Gio.File;
@@ -54,15 +52,6 @@ export class Wallpaper extends GObject.Object {
         this.#wallpapersDir = Gio.File.new_for_path(
             GLib.getenv("WALLPAPERS") ?? `${GLib.get_home_dir()}/wallpapers`
         );
-
-        const instSignature = GLib.getenv("HYPRLAND_INSTANCE_SIGNATURE");
-        if(!instSignature)
-            throw new Error("Hyprland instance signature is invalid. Are you using Hyprland?");
-
-        this.#sock = new Socket(
-            Socket.Type.CLIENT, `${GLib.get_user_runtime_dir()}/hypr/${instSignature}/.hyprpaper.sock`
-        );
-
         this.#userHyprpaperFile = Gio.File.new_for_path(
             `${GLib.get_user_config_dir()}/hypr/hyprpaper.conf`
         );
@@ -82,7 +71,6 @@ may check the syntax of your hyprpaper.conf for errors");
         }
 
         const pid = getPID("hyprpaper");
-
         if(pid != null)
             killProc(pid);
 
@@ -267,8 +255,11 @@ wallpaper {
         if(this.#wallpaper?.peek_path()?.trim() === "")
             return;
 
-        this.#sock.simpleSendSync(`wallpaper , ${this.#wallpaper?.peek_path()?.replaceAll(',', "\\,")}, ${this.positioning}`)
-        //this.restartDaemon();
+        for(const mon of AstalHyprland.get_default().get_monitors()) {
+            await execAsync(`hyprctl hyprpaper wallpaper '${mon.get_name()},${
+                this.#wallpaper?.peek_path()?.replaceAll(/,|\\/g, "\\&")
+            },${this.positioning}'`);
+        }
 
         write && this.writeChanges();
     }
@@ -308,7 +299,7 @@ wallpaper {
     }   
 }
 
-export namespace Wallpaper {
+namespace Wallpaper {
     /** wallpaper positioning strategy */
     export type Positioning = "contain"|"tile"|"cover"|"fill";
     export type WalColorMode = "darken"|"lighten";
@@ -319,3 +310,5 @@ export namespace Wallpaper {
         "wallpaper-changed": (file: Gio.File) => void;
     }
 }
+
+export default Wallpaper;

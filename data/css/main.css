@@ -131,16 +131,7 @@ notification .content .body {
 }
 notification .actions {
   padding: 6px;
-}
-notification .actions row:first-child button {
-  border-top-left-radius: 12px;
-  border-top-right-radius: 12px;
-  margin-top: 0;
-}
-notification .actions row:last-child button {
-  border-bottom-right-radius: 12px;
-  border-bottom-left-radius: 12px;
-  margin-bottom: 0;
+  padding-bottom: 10px;
 }
 notification .actions button.action {
   border-radius: 4px;
@@ -152,6 +143,16 @@ notification .actions button.action {
 notification .actions button.action label {
   font-size: 14px;
   font-weight: 600;
+}
+notification .actions button:first-child {
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  margin-top: 0;
+}
+notification .actions button:last-child {
+  border-bottom-right-radius: 10px;
+  border-bottom-left-radius: 10px;
+  margin-bottom: 0;
 }
 notification .actions button.action:hover {
   background: var(--bg-tertiary);
@@ -171,24 +172,31 @@ tooltip > box label {
   color: var(--fg-primary);
 }
 
-popover.menu contents {
+popover.menu {
   background: var(--bg-primary);
   border-radius: 14px;
   padding: 4px;
 }
-popover.menu contents viewport > stack > * > * > * > separator {
+popover.menu separator {
   min-height: 0.5px;
   margin: 3px 2px;
   background: oklch(from var(--fg-disabled) l c h / .1);
 }
-popover.menu contents viewport > stack > * > * > * > *:not(separator) > * {
+popover.menu modelbutton,
+popover.menu button {
   padding: 6px;
   border-radius: 10px;
   font-size: 12px;
   font-weight: 600;
 }
-popover.menu contents viewport > stack > * > * > * > *:not(separator) > *:hover, popover.menu contents viewport > stack > * > * > * > *:not(separator) > *:focus {
+popover.menu modelbutton:hover,
+popover.menu button:hover {
   background: var(--bg-secondary);
+}
+popover.menu modelbutton:focus,
+popover.menu button:focus {
+    border-width: 2px;
+    border-color: var(--bg-secondary);
 }
 
 .button-row > button {

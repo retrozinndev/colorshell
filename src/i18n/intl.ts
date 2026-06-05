@@ -16,7 +16,7 @@ const i18nKeys = {
 
 
 @register({ GTypeName: "ClshI18n" })
-export class I18n extends GObject.Object {
+class I18n extends GObject.Object {
     declare $signals: I18n.SignalSignatures;
     private static instance: I18n;
     private systemLang: string|null = null;
@@ -48,6 +48,20 @@ export class I18n extends GObject.Object {
     @getter(gtype<I18n.Language>(String))
     get language() { return this.#language; }
 
+
+    /** initialize the internationalization system.
+      * also adds the `tr` function to the global context, for easier access */
+    public static init(): I18n {
+        if(!this.instance) {
+            this.instance = new I18n();
+
+            Object.assign(globalThis, {
+                tr: (key: string) => this.instance.translate(key)
+            });
+        }
+        
+        return this.instance;
+    }
     
     constructor(language?: I18n.Language, fallback?: I18n.Language) {
         super();
@@ -63,10 +77,7 @@ export class I18n extends GObject.Object {
     }
 
     public static getDefault(): I18n {
-        if(!this.instance)
-            this.instance = new I18n();
-
-        return this.instance;
+        return this.init();
     }
 
     
@@ -135,7 +146,7 @@ Consider contributing with a translation if you can ;D`);
     }
 }
 
-export namespace I18n {
+namespace I18n {
     export type Language = keyof typeof i18nKeys;
 
     export interface ConstructorProps extends GObject.Object.ConstructorProps {}
@@ -146,5 +157,4 @@ export namespace I18n {
     }
 }
 
-export const tr = (string: string) => 
-    I18n.getDefault().translate(string);
+export default I18n;

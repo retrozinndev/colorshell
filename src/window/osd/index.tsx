@@ -1,8 +1,8 @@
 import { Astal, Gtk } from "ags/gtk4";
 import { createBinding, createComputed, createState, With } from "ags";
-import { Wireplumber } from "../../modules/volume";
-import { Windows } from "../../window";
-import { Backlights } from "../../modules/backlight";
+import Wireplumber from "../../modules/volume";
+import Windows from "../../window";
+import Backlights from "../../modules/backlight";
 import { createSubscription, secureBaseBinding, variableToBoolean } from "../../modules/utils";
 
 import Pango from "gi://Pango?version=1.0";

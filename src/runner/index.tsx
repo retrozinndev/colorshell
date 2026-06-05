@@ -7,7 +7,7 @@ import { omitObjectKeys } from "../modules/utils";
 import { getter, gtype, property, register } from "ags/gobject";
 import GObject from "gi://GObject?version=2.0";
 import AstalHyprland from "gi://AstalHyprland";
-import { Windows } from "../window";
+import Windows from "../window";
 import ResultsList from "./widgets/ResultsList";
 
 
@@ -24,7 +24,7 @@ class Runner extends PopupWindow {
     #plugins: Array<Runner.Plugin> = [];
 
     @property(gtype<string|null>(String))
-    searchPlaceholder: string|null = null
+    searchPlaceholder: string|null = null;
 
     @property(Boolean)
     showResultPlaceholders: boolean = false;
@@ -41,21 +41,22 @@ class Runner extends PopupWindow {
     @getter(Array<Runner.Result>)
     get results() { return [...this.#results]; }
 
+
     constructor(props: Partial<Runner.ConstructorProps> = {}) {
         super({
             namespace: "runner",
             cssName: "runner",
+            widthRequest: 780,
+            heightRequest: 460,
             ...omitObjectKeys(props, [
                 "searchPlaceholder",
                 "search",
                 "maxResults",
+                "searchOnStartup",
                 "showResultPlaceholders",
                 "placeholders"
             ])
         });
-
-        if(props.searchPlaceholder !== undefined)
-            this.searchPlaceholder = props.searchPlaceholder;
 
         if(props.search !== undefined)
             this.search = props.search;
@@ -69,22 +70,26 @@ class Runner extends PopupWindow {
         if(props.placeholders !== undefined && props.placeholders.length > 0)
             props.placeholders.forEach(p => this.placeholders.push(p));
 
+        if(props.searchPlaceholder !== undefined)
+            this.searchPlaceholder = props.searchPlaceholder;
 
         const connections: Map<GObject.Object, number|Array<number>> = new Map();
         this.#container = new Gtk.Box({
             hexpand: true,
             valign: Gtk.Align.START,
+            visible: true,
             orientation: Gtk.Orientation.VERTICAL
         });
         this.#container.add_css_class("container");
 
         this.#entry = new Gtk.Entry({
             text: this.search,
+            placeholderText: this.searchPlaceholder,
             primaryIconName: "system-search-symbolic",
             primaryIconTooltipText: "Search in the Multifunctional Command Runner",
-            secondaryIconName: "edit-clear-symbolic",
             secondaryIconTooltipText: "Clear"
         });
+
         connections.set(this.#entry, [
             this.#entry.connect("icon-release", (self, pos) => {
                 if(pos === Gtk.EntryIconPosition.PRIMARY) {
@@ -97,7 +102,7 @@ class Runner extends PopupWindow {
             this.#entry.connect("activate", (self) => {
                 const row = this.#list.getSelected();
                 if(!row) {
-                    self.grab_focus();
+                    self.grab_focus_without_selecting();
                     return;
                 }
 
@@ -105,10 +110,9 @@ class Runner extends PopupWindow {
             })
         ]);
 
-        this.bind_property("search", this.#entry, "text", GObject.BindingFlags.BIDIRECTIONAL);
-
         this.#list = new ResultsList({
-            maxContentSize: props.heightRequest ?? 420
+            maxContentSize: this.heightRequest,
+            visible: true
         });
 
         connections.set(this, [
@@ -127,6 +131,9 @@ class Runner extends PopupWindow {
                         return;
                 }
             }),
+            this.connect("show", (self) => {
+                self.#entry.select_region(this.#entry.textLength, this.#entry.textLength);
+            }),
             this.connect("destroy", () => {
                 connections.forEach((id, gobj) => Array.isArray(id) ?
                     id.forEach(num => gobj.disconnect(num))
@@ -135,20 +142,25 @@ class Runner extends PopupWindow {
             this.connect("notify::search", () => {
                 this.update(this.search, this.maxResults).then(() => {
                     if(this.#results.length < 1) {
+                        this.#entry.secondaryIconName = "";
                         this.#list.unselect();
                         return;
                     }
 
+                    this.#entry.secondaryIconName = "edit-clear-symbolic";
                     this.#list.select(0);
                 }).catch(console.error);
             })
         ]);
 
+        this.bind_property("search", this.#entry, "text", GObject.BindingFlags.BIDIRECTIONAL);
+        this.bind_property("search-placeholder", this.#entry, "placeholder-text", GObject.BindingFlags.BIDIRECTIONAL);
+
         // add widgets
-        const box = <Gtk.Box widthRequest={props.widthRequest ?? 780} vexpand={false}
-          heightRequest={props.heightRequest ?? 420} halign={Gtk.Align.CENTER}
+        const box = <Gtk.Box widthRequest={this.widthRequest} vexpand={false}
+          heightRequest={this.heightRequest} halign={Gtk.Align.CENTER}
           valign={Gtk.Align.START} hexpand css={`
-              margin-top: ${((AstalHyprland.get_default().get_focused_monitor()?.height ?? 640) / 2) - ((props.heightRequest ?? 420) / 2)}px;
+              margin-top: ${((AstalHyprland.get_default().get_focused_monitor()?.height ?? 640) / 2) - (this.heightRequest / 2)}px;
           `}
         /> as Gtk.Box;
 
@@ -166,6 +178,12 @@ class Runner extends PopupWindow {
             if(typeof result === "object" && (result as object) instanceof Promise)
                 (result as Promise<any>).catch(console.error);
         }
+
+        if(props.searchOnStartup || (this.search.length > 0 &&
+                                     props.searchOnStartup !== false)
+          ) {
+            this.update(this.search, this.maxResults);
+        }
     }
 
     vfunc_close_request(): boolean {
@@ -175,8 +193,8 @@ class Runner extends PopupWindow {
     }
 
     /** request a scroll animation to the currently-selected result (if any) */
-    public requestScroll(): void {
-        this.#list.requestScroll();
+    public requestScroll(targetY?: number): void {
+        this.#list.requestScroll(targetY);
     }
 
     /** grab focus to the search entry */
@@ -200,7 +218,7 @@ class Runner extends PopupWindow {
             return this.instance;
 
         this.instance = createRoot((dispose) => Windows.forFocusedMonitor(() =>
-            <Runner searchPlaceholder="Start typing..." search={search}
+            <Runner searchPlaceholder="Search anything..." search={search}
               showResultPlaceholders={false} maxResults={24}
               onClosed={() => dispose()}
               placeholders={[
@@ -339,12 +357,13 @@ class Runner extends PopupWindow {
     public async update(input: string, limit?: number) {
         this.#list.clear();
         this.#results.splice(0, this.#results.length);
+        this.notify("results");
 
         try {
             this.#results = await this.generateResults(input, limit);
             this.notify("results");
         } catch(e) {
-            console.error(`Couldn't get results because of an error: ${(e as Error).message}\n${(e as Error).stack}`);
+            console.error("Couldn't get results because of an error:", e);
 
             this.#list.prepend(
                 new ResultItem({
@@ -358,7 +377,7 @@ class Runner extends PopupWindow {
         }
 
         // Insert placeholder if there are no results
-        if(this.#results.length < 1) {
+        if(this.#results.length < 1 && this.showResultPlaceholders) {
             for(const ph of this.placeholders) {
                 this.#list.append(this.resultToWidget(ph));
             }
@@ -386,6 +405,7 @@ namespace Runner {
         searchPlaceholder: string;
         search: string;
         maxResults: number;
+        searchOnStartup: boolean;
         showResultPlaceholders: boolean;
         placeholders: Array<Runner.Result>;
     };

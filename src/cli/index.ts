@@ -69,14 +69,14 @@ abstract class Cli {
 
         let skip: boolean = false;
         for(let i = 0; i < args.length; i++) {
-            const argName = args[i];
+            const part = args[i];
             if(skip) {
                 skip = false;
                 continue;
             }
 
-            if(this.isArgument(argName)) {
-                if(/^(-h|-[?]|--help)$/.test(argName)) {
+            if(this.isArgument(part)) {
+                if(/^(-h|-[?]|--help)$/.test(part)) {
                     const help = cmd === undefined ?
                         (mod.help ?? this.genHelp(mod))
                     : this.genHelp(cmd);
@@ -99,10 +99,16 @@ abstract class Cli {
                 continue;
             }
 
-            const foundCmd = mod.commands?.find(c => c.name === argName);
-            if(!cmd && foundCmd) {
-                cmd = foundCmd;
+            if(cmd)
                 continue;
+
+            cmd = mod.commands?.find(c => c.name === part);
+            if(!cmd) {
+                remote.println(`Error: No such command "${part}"${
+                    mod.prefix !== undefined ? ` for module "${mod.prefix}"` : ""
+                }`, true);
+                remote.exit(1);
+                return;
             }
         }
         mod.onCalled?.(remote, cmd ?? undefined, moduleArgs);
@@ -255,7 +261,7 @@ abstract class Cli {
     }
 
     /** @returns `true` if provided argument is a full argument (e.g.: --help) */
-    private static isFullArgument(arg: string): boolean {
+    public static isFullArgument(arg: string): boolean {
         return arg.startsWith("--");
     }
 

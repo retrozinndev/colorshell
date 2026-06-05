@@ -1,9 +1,10 @@
-import { property, register } from "ags/gobject";
+import { getter, property, register } from "ags/gobject";
 import { Gtk } from "ags/gtk4";
 import ResultItem from "./ResultItem";
 import GLib from "gi://GLib?version=2.0";
 import { omitObjectKeys } from "../../modules/utils";
 import GObject from "gi://GObject?version=2.0";
+import Adw from "gi://Adw?version=1";
 
 
 /** a scrolled `GtkListBox` implementation, with useful methods for a
@@ -13,50 +14,70 @@ import GObject from "gi://GObject?version=2.0";
   * like `set_child()` or `child.set_parent()`
   * */
 @register({ GTypeName: "ClshResultsList" })
-class ResultsList extends Gtk.Widget {
+class ResultsList extends Adw.Bin {
     #scrollAnimation: number|null = null;
     #scrollAnimationTime: number = 600;
     #scroll: Gtk.ScrolledWindow;
     #list: Gtk.ListBox;
     #items: Set<ResultItem> = new Set();
 
+    /** number of `ResultItem` in the list */
+    @getter(Number)
+    get nResults() { return this.#items.size; }
+
     /** maximum height for list content */
     @property(Number)
     maxContentSize: number = -1;
 
+
     constructor(props: Partial<ResultsList.ConstructorProps> = {}) {
-        super(omitObjectKeys(props, [
-            "maxContentSize"
-        ]));
+        super({
+            cssName: "resultlist",
+            ...omitObjectKeys(props, [
+                "maxContentSize"
+            ])
+        });
 
         if(props.maxContentSize !== undefined)
             this.maxContentSize = props.maxContentSize;
 
-        this.set_layout_manager(Gtk.BinLayout.new());
         this.#list = new Gtk.ListBox({
+            cssName: "listbox",
             selectionMode: Gtk.SelectionMode.SINGLE,
             activateOnSingleClick: true
         });
         this.#scroll = new Gtk.ScrolledWindow({
             propagateNaturalHeight: true,
             child: this.#list,
+            overflow: Gtk.Overflow.HIDDEN,
             hscrollbarPolicy: Gtk.PolicyType.NEVER,
             vscrollbarPolicy: Gtk.PolicyType.AUTOMATIC,
             maxContentHeight: this.maxContentSize
         });
-        this.#scroll.set_parent(this);
+        this.set_child(this.#scroll);
 
         this.bind_property("max-content-size", this.#scroll, "max-content-height", GObject.BindingFlags.BIDIRECTIONAL);
 
+        const listConn: number = this.#list.connect("row-selected", () => this.requestScroll());
+        const selfConns: Array<number> = [
+            this.connect("notify::n-results", () => {
+                if(this.nResults < 1) { // hide if empty
+                    this.hide();
+                    return;
+                }
 
-        const listConns: Array<number> = [
-            this.#list.connect("row-selected", () => this.requestScroll())
+                this.show();
+                // autofocus first result if none are selected
+                if(!this.getSelected())
+                    this.select(0);
+            }),
+            this.connect("destroy", () => {
+                this.#list.disconnect(listConn);
+                selfConns.forEach(id => this.disconnect(id));
+            })
         ];
 
-        const id = this.connect("destroy", () => {
-            this.disconnect(id);
-            listConns.forEach(id => this.#list.disconnect(id));
-        });
+        this.notify("n-results");
     }
 
     public static "new"(): ResultsList {
@@ -71,6 +92,7 @@ class ResultsList extends Gtk.Widget {
     clear(): void {
         this.#items.clear();
         this.#list.remove_all();
+        this.notify("n-results");
     }
 
     /** unselect the currently-selected result (if any) */
@@ -80,16 +102,19 @@ class ResultsList extends Gtk.Widget {
     }
 
     /** request a scroll animation to the currently-selected `ResultItem` (if any) */
-    public requestScroll(): void {
+    public requestScroll(targetY?: number): void {
+        if(targetY !== undefined) {
+            this.animateScroll(targetY);
+            return;
+        }
+
         const selected = this.getSelected();
         if(!selected) {
             this.animateScroll(0);
             return;
         }
 
-        const [, matrix] = selected.compute_transform(this.#list);
-        const y = matrix.get_y_translation();
-        this.animateScroll(y);
+        this.animateScroll(selected.get_allocation().y);
     }
 
     /** animate scroll to `targetY` */
@@ -179,6 +204,7 @@ class ResultsList extends Gtk.Widget {
 
         this.#list.prepend(item);
         this.#items.add(item);
+        this.notify("n-results");
     }
 
     /** append a `ResultItem` to the list */
@@ -188,6 +214,7 @@ class ResultsList extends Gtk.Widget {
 
         this.#list.append(item);
         this.#items.add(item);
+        this.notify("n-results");
     }
 
     /** insert a `ResultItem` to a specific position of the list.
@@ -199,6 +226,7 @@ class ResultsList extends Gtk.Widget {
 
         this.#list.insert(item, pos);
         this.#items.add(item);
+        this.notify("n-results");
     }
 
     /** remove an item from the list by its index */
@@ -212,6 +240,7 @@ class ResultsList extends Gtk.Widget {
             
             if(item !== undefined) {
                 this.#list.remove(item);
+                this.notify("n-results");
                 return true;
             }
 
@@ -220,6 +249,7 @@ class ResultsList extends Gtk.Widget {
 
         if(this.#items.has(i)) {
             this.#list.remove(i);
+            this.notify("n-results");
             return true;
         }
 
@@ -233,7 +263,11 @@ namespace ResultsList {
     export interface ConstructorProps extends Gtk.Widget.ConstructorProps {
         maxContentSize: number;
     }
-    export interface SignalSignatures extends Gtk.Widget.SignalSignatures {}
+
+    export interface SignalSignatures extends Gtk.Widget.SignalSignatures {
+        "notify::n-results": () => void;
+        "notify::max-content-size": () => void;
+    }
 }
 
 export default ResultsList;

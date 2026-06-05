@@ -1,9 +1,8 @@
 import { createBinding, For } from "ags";
 import { register } from "ags/gobject";
 import { Astal, Gdk, Gtk } from "ags/gtk4";
-import { Clipboard } from "../../../modules/clipboard";
+import Clipboard from "../../../modules/clipboard";
 import { variableToBoolean } from "../../../modules/utils";
-import { tr } from "../../../i18n/intl";
 import Media from "../../../modules/media";
 import AstalMpris from "gi://AstalMpris";
 import Pango from "gi://Pango?version=1.0";
@@ -144,7 +143,7 @@ class PlayerWidget extends Gtk.Box {
                               // a widget that supports adding multiple icons and allows switching
                               // through them would be pretty nice!! (i'll probably do this later)
                               url &&
-                                  Clipboard.getDefault().copyAsync(url).then(() => {
+                                  Clipboard.getDefault().copy(url).then(() => {
                                       if(this.#copyClickTimeout && !this.#copyClickTimeout.is_destroyed()) 
                                           this.#copyClickTimeout.destroy();
 

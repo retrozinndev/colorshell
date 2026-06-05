@@ -1,15 +1,15 @@
 import { Accessor, createConnection } from "ags";
 import { createScopedConnection, decoder } from "./utils";
-
+import { gtype, property, register } from "ags/gobject";
 import AstalMpris from "gi://AstalMpris";
 import GObject from "gi://GObject?version=2.0";
-import { gtype, property, register } from "ags/gobject";
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
 
 
 @register({ GTypeName: "Media" })
-export default class Media extends GObject.Object {
+class Media extends GObject.Object {
+    declare $signals: Media.SignalSignatures;
     private static instance: Media;
 
     /** player connections */
@@ -241,3 +241,11 @@ export default class Media extends GObject.Object {
         : undefined;
     }
 }
+
+namespace Media {
+    export interface SignalSignatures extends GObject.Object.SignalSignatures {
+        "notify::player": () => void;
+    }
+}
+
+export default Media;

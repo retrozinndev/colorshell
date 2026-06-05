@@ -1,13 +1,12 @@
 import { Gtk } from "ags/gtk4";
-import { Wireplumber } from "../../../modules/volume";
-import { Battery } from "../../../modules/battery";
-import { Notifications } from "../../../modules/notifications";
-import { Windows } from "../../../window";
-import { Recording } from "../../../modules/recording";
+import Wireplumber from "../../../modules/volume";
+import Battery from "../../../modules/battery";
+import Notifications from "../../../modules/notifications";
+import Windows from "../../../window";
+import Recording from "../../../modules/recording";
 import { Accessor, createBinding, createComputed, With } from "ags";
 import { variableToBoolean } from "../../../modules/utils";
-import { Bluetooth } from "../../../modules/bluetooth";
-
+import Bluetooth from "../../../modules/bluetooth";
 import GObject from "ags/gobject";
 import AstalBluetooth from "gi://AstalBluetooth";
 import AstalNetwork from "gi://AstalNetwork";
@@ -171,10 +170,10 @@ function StatusIcons() {
             let device: AstalNetwork.Wifi | AstalNetwork.Wired;
             switch (primary) {
               case AstalNetwork.Primary.WIRED:
-                device = AstalNetwork.get_default().wired;
+                device = AstalNetwork.get_default().wired!;
                 break;
               case AstalNetwork.Primary.WIFI:
-                device = AstalNetwork.get_default().wifi;
+                device = AstalNetwork.get_default().wifi!;
                 break;
 
               default:

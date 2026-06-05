@@ -1,6 +1,6 @@
 import { execAsync } from "ags/process";
 import Runner from "..";
-import { Notifications } from "../../modules/notifications";
+import Notifications from "../../modules/notifications";
 
 
 export class PluginKill implements Runner.Plugin {

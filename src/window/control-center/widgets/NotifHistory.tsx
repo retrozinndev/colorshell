@@ -1,9 +1,7 @@
 import { Gdk, Gtk } from "ags/gtk4";
-import { Notifications } from "../../../modules/notifications";
 import { Notification } from "../../../widget/Notification";
-import { tr } from "../../../i18n/intl";
 import { createBinding, For } from "ags";
-
+import Notifications from "../../../modules/notifications";
 import AstalNotifd from "gi://AstalNotifd";
 
 

@@ -1,9 +1,8 @@
 import { Page } from "../Page";
-import { NightLight } from "../../../../modules/nightlight";
-import { tr } from "../../../../i18n/intl";
 import { Astal, Gtk } from "ags/gtk4";
 import { addSliderMarksFromMinMax } from "../../../../modules/utils";
 import { createBinding } from "ags";
+import NightLight from "../../../../modules/nightlight";
 
 
 export const PageNightLight = <Page

@@ -24,7 +24,7 @@ Gio._promisify(Gio.OutputStream.prototype, "write_bytes_async", "write_bytes_fin
   *     });
   * ``` */
 @register({ GTypeName: "ClshSocket" })
-export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.Object {
+class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.Object {
     declare $signals: Socket.SignalSignatures;
 
     protected server: Gio.SocketService|null = null;
@@ -215,7 +215,7 @@ export class Socket<T extends Socket.Type = Socket.Type.CLIENT> extends GObject.
     }
 }
 
-export namespace Socket {
+namespace Socket {
     export interface SignalSignatures extends GObject.Object.SignalSignatures {
         /** server: when a client sends a message; client: when the server sends a message */
         "received": (content: string) => boolean|void;
@@ -228,3 +228,5 @@ export namespace Socket {
         CLIENT = 1
     }
 }
+
+export default Socket;

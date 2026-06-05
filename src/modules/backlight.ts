@@ -6,7 +6,7 @@ import { omitObjectKeys } from "./utils";
 
 
 @register({ GTypeName: "ClshBacklights" })
-export class Backlights extends GObject.Object {
+class Backlights extends GObject.Object {
     private static instance: Backlights;
 
     #backlights: Array<Backlights.Backlight> = [];
@@ -90,7 +90,7 @@ export class Backlights extends GObject.Object {
 }
 
 
-export namespace Backlights {
+namespace Backlights {
     @register({ GTypeName: "Backlight" })
     export class Backlight extends GObject.Object {
         declare $signals: Backlight.SignalSignatures;
@@ -192,3 +192,5 @@ export namespace Backlights {
         }
     }
 }
+
+export default Backlights;

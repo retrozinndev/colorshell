@@ -2,7 +2,7 @@ import { execAsync } from "ags/process";
 import { getter, register, signal } from "ags/gobject";
 import { Gdk } from "ags/gtk4";
 import { getPID, killProc, makeDirectory, tryNotifyOptions } from "./utils";
-import { Notifications } from "./notifications";
+import Notifications from "./notifications";
 import { time } from "./utils";
 import { generalConfig } from "../config";
 
@@ -14,7 +14,7 @@ import Gio from "gi://Gio?version=2.0";
 // TODO: support monitoring an already-running instance of wf-recorder on startup
 /** screen-recording module for colorshell */
 @register({ GTypeName: "Recording" })
-export class Recording extends GObject.Object {
+class Recording extends GObject.Object {
     private static instance: Recording;
 
     @signal() started() {};
@@ -223,4 +223,6 @@ export class Recording extends GObject.Object {
 starting a screen recording, or the shell was closed while screen-recording"
         });
     }
-};
+}
+
+export default Recording;

@@ -1,7 +1,7 @@
 import AstalWp from "gi://AstalWp";
 
 
-export class Wireplumber {
+class Wireplumber {
     private static astalWireplumber: AstalWp.Wp|null = AstalWp.get_default();
     private static inst: Wireplumber;
 
@@ -141,3 +141,5 @@ export class Wireplumber {
         return this.muteSource();
     }
 }
+
+export default Wireplumber;

@@ -1,7 +1,7 @@
 import { Astal, Gdk } from "ags/gtk4";
 import GObject, { getter, register, signal } from "ags/gobject";
 import { createRoot, getScope, Scope } from "ags";
-import AstalHyprland from "gi://AstalHyprland";
+import Compositor from "../compositor";
 import { shellWindows } from "../windows";
 import Gio from "gi://Gio?version=2.0";
 import Adw from "gi://Adw?version=1";
@@ -12,7 +12,7 @@ import Adw from "gi://Adw?version=1";
   * Also contains util functions to create multi-monitor and 
   * focused-monitor-only windows */
 @register({ GTypeName: "Windows" })
-export class Windows<T extends string = string> extends GObject.Object {
+class Windows<T extends string = string> extends GObject.Object {
     declare $signals: Windows.SignalSignatures
 
     private static instance: (Windows | null);
@@ -169,7 +169,7 @@ export class Windows<T extends string = string> extends GObject.Object {
     public static forMonitors(create: (mon: number, scope: Scope) => JSX.Element|Astal.Window): (() => Array<Astal.Window>) {
         // create a scope for every window generator function and dispose on ::close-request
         return () => {
-            const monitors = AstalHyprland.get_default().get_monitors();
+            const monitors = Compositor.getDefault().monitors;
 
             if(monitors.length < 1) 
                 throw new Error("Couldn't create window for monitors", {
@@ -183,7 +183,12 @@ export class Windows<T extends string = string> extends GObject.Object {
                     const app = Adw.Application.get_default();
                     const id = instance.connect("close-request", () => dispose());
 
-                    instance.set_monitor(mon.get_id());
+                    try {
+                        instance.set_gdkmonitor(mon.getGMonitor()!);
+                    } catch(_) {
+                        instance.set_monitor(mon.id);
+                    }
+
                     instance.set_application(app as Adw.Application);
 
                     scope.onCleanup(() => GObject.signal_handler_is_connected(instance, id) &&
@@ -260,7 +265,7 @@ export class Windows<T extends string = string> extends GObject.Object {
       *
       * @returns the monitor id. if none are found, `null` */
     public static getFocusedMonitorId(): number|null {
-        const monitors = AstalHyprland.get_default().get_monitors();
+        const monitors = Compositor.getDefault().monitors;
         return monitors.find(mon => mon.focused)?.id ?? monitors[0]?.id ?? null;
     }
 
@@ -333,7 +338,7 @@ export class Windows<T extends string = string> extends GObject.Object {
     }
 }
 
-export namespace Windows {
+namespace Windows {
     export enum Status {
         CLOSED = 0,
         OPEN = 1
@@ -358,3 +363,5 @@ export namespace Windows {
         "window-closed": (name: string) => void;
     }
 }
+
+export default Windows;

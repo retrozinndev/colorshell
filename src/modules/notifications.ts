@@ -3,13 +3,12 @@ import { generalConfig } from "../config";
 import { onCleanup } from "ags";
 import { pathToURI } from "./utils";
 import GObject, { getter, ParamSpec, property, register, signal } from "ags/gobject";
-
 import AstalNotifd from "gi://AstalNotifd";
 import GLib from "gi://GLib?version=2.0";
 
 
 @register({ GTypeName: "Notifications" })
-export class Notifications extends GObject.Object {
+class Notifications extends GObject.Object {
     private static instance: (Notifications|null) = null;
 
     declare $signals: GObject.Object.SignalSignatures & {
@@ -58,6 +57,13 @@ export class Notifications extends GObject.Object {
     constructor() {
         super();
 
+        try {
+            AstalNotifd.get_default();
+        } catch(e) {
+            console.error("Failed to acquire the notification daemon!");
+            return;
+        }
+
         this.#connections.push(
             AstalNotifd.get_default().connect("notified", (notifd, id) => {
                 const notification = notifd.get_notification(id)!;
@@ -74,11 +80,6 @@ export class Notifications extends GObject.Object {
                 this.addHistory(notifd.get_notification(id)!);
             })
         );
-
-        onCleanup(() => {
-            this.#connections.map(id => 
-                AstalNotifd.get_default().disconnect(id));
-        });
     }
 
     public static getDefault(): Notifications {
@@ -311,7 +312,7 @@ export class Notifications extends GObject.Object {
     public getNotifd(): AstalNotifd.Notifd { return AstalNotifd.get_default(); }
 }
 
-export namespace Notifications {
+namespace Notifications {
     export type HistoryNotification = {
         id: number;
         appName: string;
@@ -376,3 +377,5 @@ export namespace Notifications {
         }
     }
 }
+
+export default Notifications;

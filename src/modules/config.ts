@@ -1,61 +1,14 @@
 import { monitorFile, readFile, writeFileAsync } from "ags/file";
-import { Notifications } from "./notifications";
 import { Accessor } from "ags";
 import GObject, { getter, gtype, register, signal } from "ags/gobject";
-
+import Notifications from "./notifications";
 import Gio from "gi://Gio?version=2.0";
 import AstalNotifd from "gi://AstalNotifd";
 import GLib from "gi://GLib?version=2.0";
 
 
-type JSONValues = string|boolean|null|number|object;
-type ValueTypes = "string" | "boolean" | "object" | "number" | "any";
-type SelectorOption = {
-    /** this property is set at runtime, with the same zero-based index of the item in the array */
-    id?: number,
-    label: string,
-    actionSelected?: () => void;
-};
-type Section = {
-    title: string;
-    description?: string;
-    properties: Record<string, Property>;
-};
-type Property<T extends Config.PropertyType = Config.PropertyType.ENTRY> = {
-    type: T;
-    description?: string;
-} & (
-    T extends Config.PropertyType.ENTRY ? {
-        value?: string;
-        setText: (newText: string) => void;
-        getText: () => string;
-        subscribe?: (notify: () => void) => void;
-    } : T extends Config.PropertyType.LEVEL ? {
-        value: number;
-        setValue: (newValue: number) => void;
-        getValue: () => number;
-        subscribe?: (notify: () => void) => void;
-    } : T extends Config.PropertyType.SELECT ? {
-        options: Array<SelectorOption>;
-        /** pre-selected option by the index of the provided array */
-        option: number;
-        setSelection: (optionId: number) => void;
-        getSelection: () => number;
-        subscribe?: (notify: () => void) => void;
-    } : T extends Config.PropertyType.SLIDER ? {
-        maxValue: number;
-        /** @default 0 */
-        minValue?: number;
-        setValue: (newValue: number) => void;
-    } : T extends Config.PropertyType.SWITCH ? {
-        state: boolean;
-        getState: () => boolean;
-        setState: (newState: boolean) => void;
-    } : {}
-);
-
 @register({ GTypeName: "Config" })
-export class Config<K extends string, V = any> extends GObject.Object {
+class Config<K extends string, V = any> extends GObject.Object {
     declare $signals: Config.SignalSignatures;
 
     /** unmodified object with default entries. User-values are stored 
@@ -161,7 +114,7 @@ export class Config<K extends string, V = any> extends GObject.Object {
                     urgency: AstalNotifd.Urgency.NORMAL,
                     appName: "colorshell",
                     summary: "Config apply error",
-                    body: `Failed to apply properties: ${e.message}`
+                    body: `Failed to apply properties: ${e.message}\n${e.stack}`
                 });
             }).finally(() => this.notify("entries"));
         } catch(e) {
@@ -182,10 +135,10 @@ export class Config<K extends string, V = any> extends GObject.Object {
         lastPath?: string
     ): Promise<void> {
         for(const key of Object.keys(newObject)) {
-            if(newObject[key as keyof T1] === undefined) // leave unchanged if unset in user config
-                continue;
+            const val = newObject[key as keyof T1] as Config.JSONValue,
+                oldVal = targetObject[key as keyof T2] as Config.JSONValue|undefined;
 
-            if(typeof newObject[key as keyof T1] === "object") {
+            if(val === "object" && oldVal !== undefined) {
                 await this.syncEntries(
                     newObject[key as keyof T1] as object,
                     targetObject[key as keyof T2] as object,
@@ -194,11 +147,9 @@ export class Config<K extends string, V = any> extends GObject.Object {
                 continue;
             }
 
-            const newVal = newObject[key as keyof T1] as JSONValues,
-                curVal = targetObject?.[key as keyof T2] as JSONValues|undefined;
 
             // check if the value changed
-            if(curVal !== undefined && newVal === curVal)
+            if(oldVal !== undefined && val === oldVal)
                 continue;
 
             targetObject[key as keyof T2] = newObject[key as keyof T1] as never;
@@ -219,7 +170,7 @@ export class Config<K extends string, V = any> extends GObject.Object {
     public bindProperty(path: string, expectType: "object"): Accessor<object>;
     public bindProperty(path: string, expectType?: "any"): Accessor<any>;
 
-    public bindProperty(propertyPath: string, expectType?: ValueTypes): Accessor<boolean|number|string|object|any> {
+    public bindProperty(propertyPath: string, expectType?: Config.ValueType): Accessor<boolean|number|string|object|any> {
         return new Accessor(() => this.getProperty(propertyPath, expectType as never), (callback: () => void) => {
             const id = this.connect("property-changed", (_, path: string) => {
                 if(path === propertyPath || path.startsWith(propertyPath))
@@ -236,7 +187,7 @@ export class Config<K extends string, V = any> extends GObject.Object {
     public getProperty(path: string, expectType: "object"): object;
     public getProperty(path: string, expectType?: "any"): any;
 
-    public getProperty(path: string, expectType?: ValueTypes): boolean|number|string|object|any {
+    public getProperty(path: string, expectType?: Config.ValueType): boolean|number|string|object|any {
         return this._getProperty(path, this.#entries, expectType);
     }
 
@@ -246,7 +197,7 @@ export class Config<K extends string, V = any> extends GObject.Object {
     public getPropertyDefault(path: string, expectType: "object"): object;
     public getPropertyDefault(path: string, expectType?: "any"): any;
 
-    public getPropertyDefault(path: string, expectType?: ValueTypes): boolean|number|string|object|any {
+    public getPropertyDefault(path: string, expectType?: Config.ValueType): boolean|number|string|object|any {
         return this._getProperty(path, this.defaults, expectType);
     }
 
@@ -273,7 +224,12 @@ export class Config<K extends string, V = any> extends GObject.Object {
         ));
     }
 
-    private _getProperty(path: string, entries: Record<K, V>, expectType?: ValueTypes, ignoreUndefined: boolean = false): (any|undefined) {
+    private _getProperty(
+        path: string,
+        entries: Record<K, V>,
+        expectType?: Config.ValueType,
+        ignoreUndefined: boolean = false
+    ): (any|undefined) {
         let property: any = entries;
         const pathArray = path.split('.').filter(str => str);
 
@@ -292,13 +248,60 @@ export class Config<K extends string, V = any> extends GObject.Object {
     }
 }
 
-export namespace Config {
+namespace Config {
     export interface SignalSignatures extends GObject.Object.SignalSignatures {
         "notify::entries": () => void;
         /** a property has been updated
           * @param path the property path (e.g.: `"wallpaper.splash"`) */
         "property-changed": (path: string) => void;
     }
+
+    
+    export type JSONValue = string|boolean|null|number|object;
+    export type ValueType = "string" | "boolean" | "object" | "number" | "any";
+    export type SelectorOption = {
+        /** this property is set at runtime, with the same zero-based index of the item in the array */
+        id?: number,
+        label: string,
+        actionSelected?: () => void;
+    };
+    export type Section = {
+        title: string;
+        description?: string;
+        properties: Record<string, Property>;
+    };
+    export type Property<T extends Config.PropertyType = Config.PropertyType.ENTRY> = {
+        type: T;
+        description?: string;
+    } & (
+        T extends Config.PropertyType.ENTRY ? {
+            value?: string;
+            setText: (newText: string) => void;
+            getText: () => string;
+            subscribe?: (notify: () => void) => void;
+        } : T extends Config.PropertyType.LEVEL ? {
+            value: number;
+            setValue: (newValue: number) => void;
+            getValue: () => number;
+            subscribe?: (notify: () => void) => void;
+        } : T extends Config.PropertyType.SELECT ? {
+            options: Array<SelectorOption>;
+            /** pre-selected option by the index of the provided array */
+            option: number;
+            setSelection: (optionId: number) => void;
+            getSelection: () => number;
+            subscribe?: (notify: () => void) => void;
+        } : T extends Config.PropertyType.SLIDER ? {
+            maxValue: number;
+            /** @default 0 */
+            minValue?: number;
+            setValue: (newValue: number) => void;
+        } : T extends Config.PropertyType.SWITCH ? {
+            state: boolean;
+            getState: () => boolean;
+            setState: (newState: boolean) => void;
+        } : {}
+    );
    
     export enum PropertyType {
         /** prefers using an increase/decrease type of UI */
@@ -313,3 +316,5 @@ export namespace Config {
         SLIDER = 4
     }
 }
+
+export default Config;

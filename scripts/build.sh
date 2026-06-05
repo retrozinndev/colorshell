@@ -1,93 +1,107 @@
-
 set -e
 
+skip_gresource=
+gresource_target=
+socket_support=
 output="./build"
-esbuild="/bin/env esbuild"
-is_devel=false
+is_devel=true
 version=`cat package.json | jq -r .version`
+head=`command -v git 2>&1 > /dev/null && git rev-parse HEAD || echo $version`
+udate=`date +%s`
 appid="io.github.retrozinndev.Colorshell"
 
-while getopts r:o:e:bdh args; do
-    case "$args" in
-        r) 
-            gresources_target=${OPTARG}
+while getopts :g:o:srhj arg; do
+    case "$arg" in
+        g)
+            gresource_target=${OPTARG}
             ;;
-        b) 
-            keep_gresource=true
+        j)
+            skip_gresource=true
             ;;
         o)
             output=${OPTARG}
             ;;
-        d)
-            is_devel=true
+        s)
+            socket_support=true
             ;;
-        e)
-            esbuild=${OPTARG}
+        r)
+            unset is_devel
+            output="./build/release"
+            socket_support=true
             ;;
-        h)
+        h | ?)
             echo "\
 colorshell's build script. 
-use \`build:release\` for release builds.
+use the \"-r\" flag for release builds.
 
 options: 
-  -r \$file: specify gresource's target path (default: \`\$output/resources.gresource\`)
-  -o \$path: specify the build's output directory (default: \`./build\`)
-  -e \$cmd: specify which command to use as an esbuild wrapper(default: \`/bin/env esbuild\`)
-  -b: only target gresource in the build, keeping the file in the output dir
-  -d: enable developer mode in the build
+  -g \$file: tell colorshell which path to search for the gresource (default: \`./build/resources.gresource\`)
+  -o \$path: build output directory (where build output is stored. default: \`./build\`)
+  -j: skip gresource compiling step (useful for nix)
+  -s: enable socket cli support (sends args to socket if available, avoids wasting your time)
+  -r: make a release build
   -h: show this help message"
             exit 0
             ;;
     esac
 done
 
-if [[ -d "$output" ]] && [[ ! -z "$(ls -A -w1 $output)" ]]; then
-    echo "[info] cleaning previous build"
-    rm -rf $output/*
+gresource_target=${gresource_target:-"$output/resources.gresource"}
+
+if [[ -d $output ]] && [[ ! -z `ls -A -w1 $output` ]]; then
+    echo "[info] cleaning up"
+    rm -r $output/*
 else
     mkdir -p $output
 fi
 
+echo "[info] bundling"
+{
+    echo -e "#!/usr/bin/gjs -m\n"
+    esbuild --bundle ./src/app.ts \
+      --source-root=./src \
+      --sourcemap=inline \
+      --format="esm" \
+      --target=firefox128 \
+      --external:"gi://*" \
+      --external:"resource://*" \
+      --external:"console" \
+      --external:"system" \
+      --external:"gettext" \
+      --define:"DEVEL=${is_devel:-"false"}" \
+      --define:"VERSION='$version'" \
+      --define:"GRESOURCE='$gresource_target'" \
+      --define:"BUILD_DATE=$udate" \
+      --define:"HEAD='$head'"
 
-echo "[info] bundling project"
-$esbuild --bundle ./src/app.ts \
-    --outfile=$output/clsh.js \
-    --source-root=./src \
-    --sourcemap=inline \
-    --format="esm" \
-    --target=firefox128 \
-    --external:"gi://*" \
-    --external:"resource://*" \
-    --external:"console" \
-    --external:"system" \
-    --external:"gettext" \
-    --define:"DEVEL=$is_devel" \
-    --define:"COLORSHELL_VERSION='$version'" \
-    --define:"GRESOURCES_FILE='${gresources_target:-"$output/resources.gresource"}'"
-_rawjs=`echo "#!/usr/bin/gjs -m" | cat - $output/clsh.js`
-echo "$_rawjs" > $output/clsh.js
+} > $output/clsh.js
 
-echo "[info] compiling gresource"
-gres_target=`[[ "$keep_gresource" ]] && echo -n "$output/resources.gresource" || \
-    echo -n "${gresources_target:-$output/resources.gresource}"`
-mkdir -p `dirname "$gres_target"`
-glib-compile-resources data/$appid.gresource.xml \
-    --sourcedir ./data \
-    --target "$gres_target"
+if [[ -z $skip_gresource ]]; then
+    echo "[info] compiling gresource"
+    glib-compile-resources data/$appid.gresource.xml \
+        --sourcedir ./data \
+        --target $output/resources.gresource
+fi
 
 echo "[info] creating executable"
 echo -en "\
 #!/usr/bin/bash
 
-runtime_dir=\${XDG_RUNTIME_DIR:-\"/run/user/\$(id -u)\"}/colorshell
-file=\"\$runtime_dir/colorshell\"
+export XDG_CACHE_HOME=\${XDG_CACHE_HOME:-\"\$HOME/.cache\"}
+export XDG_DATA_HOME=\${XDG_DATA_HOME:-\"\$HOME/.local/share\"}
+export XDG_CONFIG_HOME=\${XDG_CONFIG_HOME:-\"\$HOME/.config\"}
+export XDG_RUNTIME_DIR=\${XDG_RUNTIME_DIR:-\"/run/user/\`id -u\`\"}
 
-mkdir -p \"\$runtime_dir\"
+runtime_dir=\$XDG_RUNTIME_DIR/colorshell
+file=\"\$XDG_RUNTIME_DIR/colorshell/colorshell\"
+`[[ $socket_support ]] && (cat ./scripts/socket.sh | sed -E '/(^#!.*)|^$/d')`
 
+mkdir -p \"\$XDG_RUNTIME_DIR/colorshell\"
 echo -n '`cat $output/clsh.js | base64`' | base64 --decode > \"\$file\"
 chmod +x "\$file"
 
-LD_PRELOAD=\"/usr/lib/libgtk4-layer-shell.so\" \$file \$@
-LD_PRELOAD=
+export LD_PRELOAD=\"/usr/lib/libgtk4-layer-shell.so\"
+\$file \$@
+export LD_PRELOAD=
 " > $output/colorshell
 chmod +x $output/colorshell

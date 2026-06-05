@@ -1,12 +1,9 @@
 #!/usr/bin/env bash
 
-runtime_dir="${XDG_RUNTIME_DIR:-"/run/user/`id -u`"}/colorshell"
-pidfile="$runtime_dir/.pid"
-sock="$runtime_dir/.sock"
-
+pidfile="$XDG_RUNTIME_DIR/colorshell/.pid"
+sock="$XDG_RUNTIME_DIR/colorshell/.sock"
 
 if [ -f "$pidfile" ] && ps -p `cat "$pidfile"` > /dev/null 2>&1; then
-
     if command -v socat > /dev/null 2>&1; then
         echo "$@" | socat - "$sock"
         exit ${?:-"0"}

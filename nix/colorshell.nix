@@ -13,14 +13,14 @@
   glib,
   gjs,
   libadwaita,
-  dart-sass,
   socat,
-  fcitx5,
   libglycin-gtk4,
   glycin-loaders,
+  jq,
 }:
 let
   packageJSON = lib.importJSON ../package.json;
+  appid = "io.github.retrozinndev.Colorshell";
   pname = packageJSON.name;
   version = packageJSON.version;
 
@@ -50,8 +50,8 @@ let
     buildPhase = ''
       runHook preBuild
 
-      glib-compile-resources resources.gresource.xml \
-        --sourcedir ./resources \
+      glib-compile-resources data/${appid}.gresource.xml \
+        --sourcedir ./data \
         --target resources.gresource
 
       runHook postBuild
@@ -118,6 +118,7 @@ buildNpmPackage (finalAttrs: {
     gobject-introspection
     inputs'.ags.packages.default
     moreutils
+    jq
   ];
 
   buildInputs = [
@@ -145,19 +146,7 @@ buildNpmPackage (finalAttrs: {
 
     mkdir build
     outPath=./build/${packageJSON.name}
-    ags bundle ./src/app.ts $outPath \
-      --gtk 4 \
-      --root ./src \
-      --define "DEVEL=false" \
-      --define "COLORSHELL_VERSION='${finalAttrs.version}'" \
-      --define "GRESOURCES_FILE='\$COLORSHELL_GRESOURCE'"
-
-    # add socket-communication support on executable
-    {
-      head -n1 $outPath
-      sed '1{/^#!.*$/d}' ${../scripts/socket.sh}
-      cat "$outPath" | sed '/^#!.*$/d'
-    } | sponge $outPath
+    pnpm build -rjg \$COLORSHELL_GRESOURCE -o ./build
 
     runHook postBuild
   '';
@@ -179,10 +168,8 @@ buildNpmPackage (finalAttrs: {
       --prefix PATH : ${
         lib.makeBinPath [
           # runtime executables
-          dart-sass
           glib
           socat
-          fcitx5
         ]
       }
     )

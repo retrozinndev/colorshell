@@ -1,13 +1,13 @@
 import { Astal, Gdk, Gtk } from "ags/gtk4";
 import { createBinding, createComputed } from "ags";
-import { Notifications } from "../../modules/notifications";
+import Notifications from "../../modules/notifications";
 import { Notification } from "../../widget/Notification";
 import { generalConfig } from "../../config";
 import { createScopedConnection } from "../../modules/utils";
 
 import AstalNotifd from "gi://AstalNotifd";
 import Adw from "gi://Adw?version=1";
-import { Windows } from "..";
+import Windows from "..";
 
 
 const size = 450;

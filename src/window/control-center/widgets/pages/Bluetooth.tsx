@@ -1,13 +1,11 @@
 import { Gtk } from "ags/gtk4";
 import { Page, PageButton } from "../Page";
-import { tr } from "../../../../i18n/intl";
-import { Windows } from "../../../../window";
-import { Notifications } from "../../../../modules/notifications";
+import Windows from "../../../../window";
+import Notifications from "../../../../modules/notifications";
 import { execApp } from "../../../../modules/apps";
 import { createBinding, createComputed, createRoot, For, With } from "ags";
 import { variableToBoolean } from "../../../../modules/utils";
-import { Bluetooth } from "../../../../modules/bluetooth";
-
+import Bluetooth from "../../../../modules/bluetooth";
 import AstalNotifd from "gi://AstalNotifd";
 import AstalBluetooth from "gi://AstalBluetooth";
 import Adw from "gi://Adw?version=1";

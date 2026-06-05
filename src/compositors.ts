@@ -1,12 +1,12 @@
 import GLib from "gi://GLib?version=2.0";
-import Compositor from "./modules/compositors";
-import { CompositorHyprland } from "./modules/compositors/interface/hyprland";
+import Compositor from "./compositor";
+import CompositorHyprland from "./compositor/interface/hyprland";
 
 export function initCompositor(): void {
     const desktopName = GLib.getenv("XDG_CURRENT_DESKTOP")?.toLowerCase();
     switch(desktopName) {
         case "hyprland": {
-            Compositor.instance = new CompositorHyprland();
+            Compositor.setDefault(new CompositorHyprland.Hyprland());
 
             return;
         };

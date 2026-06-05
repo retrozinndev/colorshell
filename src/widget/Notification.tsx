@@ -1,12 +1,12 @@
 import { Gtk } from "ags/gtk4";
 import { Separator } from "./Separator";
-import { Notifications } from "../modules/notifications";
 import { getIconByAppName, getSymbolicIcon, lookupIcon } from "../modules/apps";
 import { omitObjectKeys } from "../modules/utils";
 import { Accessor, createBinding, createComputed, For } from "ags";
 import { getter, gtype, property, register, signal } from "ags/gobject";
 
 import AstalNotifd from "gi://AstalNotifd";
+import Notifications from "../modules/notifications";
 import Pango from "gi://Pango?version=1.0";
 import GLib from "gi://GLib?version=2.0";
 import Image from "./Image";
@@ -171,15 +171,15 @@ export class Notification extends Gtk.Box {
         );
 
         this.append(
-            <Gtk.ListBox class={"actions"} selectionMode={Gtk.SelectionMode.NONE}>
-                <For each={createBinding(this, "actions").as(Notifications.getDefault().removeDuplicateActions)}>
+            <Gtk.Box class={"actions"} orientation={Gtk.Orientation.VERTICAL}>
+                <For each={createBinding(this, "actions")} >
                     {(action: AstalNotifd.Action) => {
                         return <Gtk.Button class={"action"} label={action.label} hexpand
                           onClicked={() => this.emit("action-clicked", action)}
                         />;
                     }}
                 </For>
-            </Gtk.ListBox> as Gtk.ListBox
+            </Gtk.Box> as Gtk.Box
         );
     }
 

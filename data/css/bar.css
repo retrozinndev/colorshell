@@ -95,9 +95,6 @@
   font-weight: 500;
   margin-top: -2px;
 }
-.bar-container .focused-client:hover {
-  background: oklch(from var(--fg-primary) l c h / .3);
-}
 
 .bar-container .clock.open {
   background: var(--bg-primary);

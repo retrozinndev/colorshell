@@ -1,6 +1,5 @@
 import { Astal, Gtk } from "ags/gtk4";
 import { CustomDialog, getContainerCustomDialog } from "./CustomDialog";
-
 import GLib from "gi://GLib?version=2.0";
 
 

@@ -90,28 +90,23 @@ namespace SocketCli {
     export class Remote implements CliInterface.Remote {
         #exited: boolean = false;
         #conn: Gio.SocketConnection;
-        #busy: boolean = false;
 
         protected get stream() { return this.#conn.outputStream; }
         get exited() { return this.#exited; }
 
         constructor(conn: Gio.SocketConnection) {
             this.#conn = conn;
+            Gio._promisify(this.stream, "write_bytes_async", "write_bytes_finish");
         }
 
         // TODO: support custom json output format
-        print(msg: string, err?: boolean): void {
+        print(msg: string, err: boolean = false): void {
             if(!this.stream || this.stream.is_closed()) {
                 console.error("SocketRemote: Couldn't print message: the OutputStream is closed");
                 return;
             }
 
-            if(this.#busy)
-                while(this.#busy) {}
-
-            this.stream.write_bytes_async(
-                encoder.encode(msg), GLib.PRIORITY_LOW, null, null
-            );
+            this.stream.write_bytes(encoder.encode(msg), null);
         }
 
         println(msg: string, err?: boolean): void {

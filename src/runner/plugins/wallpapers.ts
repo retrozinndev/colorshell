@@ -1,12 +1,11 @@
 import { Gtk } from "ags/gtk4";
-import { Wallpaper } from "../../modules/wallpaper";
+import Wallpaper from "../../modules/wallpaper";
 import Runner from "..";
 import { createRoot, jsx } from "ags";
 import ResultItem from "../widgets/ResultItem";
 import Fuse, { IFuseOptions } from "fuse.js";
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
-import Cache from "../../modules/cache";
 import Image from "../../widget/Image";
 
 
@@ -14,6 +13,7 @@ export class PluginWallpapers implements Runner.Plugin {
     prefix = "#";
     name = "Wallpapers";
     prioritize = true;
+    previewSize: number = 156;
     #fuse!: Fuse<string>;
     #files!: Array<Gio.FileInfo>;
     #dir: string = Wallpaper.getDefault().wallpapersDir.peek_path()!;
@@ -45,27 +45,23 @@ export class PluginWallpapers implements Runner.Plugin {
         );
     }
 
-    onClose() {
-        Cache.getDefault().removeItem("wallpapers", "last"); // unrefs the cached GdkTexture
-    }
-
     private loadPreview(path: string, revealer: Gtk.Revealer): void {
         const image = revealer.get_child() as Image ?? jsx(Image, {
-            path,
-            cache: ["wallpapers", "last"],
-            css: "margin-bottom: 6px; border-radius: 10px;",
-            heightRequest: 128
+            css: "margin-bottom: 6px; border-radius: 14px;",
+            hexpand: true,
+            overflow: Gtk.Overflow.HIDDEN,
+            hideIfEmpty: false,
+            heightRequest: this.previewSize
         });
 
-        image.picture.set_hexpand(true);
+        if(image.texture === null)
+            image.path = path;
+
         image.picture.set_content_fit(Gtk.ContentFit.COVER);
-        image.picture.set_keep_aspect_ratio(false);
+        image.picture.set_can_shrink(true);
 
         if(!revealer.get_child())
             revealer.set_child(image);
-
-        if(image.file === null)
-            image.path = path;
 
         revealer.set_reveal_child(true);
     }
@@ -80,15 +76,19 @@ export class PluginWallpapers implements Runner.Plugin {
         const isDir: boolean = info.get_file_type() === Gio.FileType.DIRECTORY;
         const path: string = this.getWallpaperPath(info);
 
-        const onSelected = (widget: ResultItem) => {
+        const onSelected = (widget: ResultItem, scroll: boolean = true) => {
             if(info.get_file_type() === Gio.FileType.DIRECTORY)
                 return;
+
+            if(scroll)
+                Runner.open().requestScroll(widget.get_allocation().y - this.previewSize);
 
             this.loadPreview(path, (widget.get_child() as Gtk.Box).get_first_child() as Gtk.Revealer);
         };
 
-        const onUnselected = (widget: ResultItem) => {
-            if(info.get_file_type() === Gio.FileType.DIRECTORY)
+        const onUnselected = (widget: ResultItem, isMouse: boolean = false) => {
+            // this is also called on ResultItem::unhover, so we need to check if it's selected
+            if(info.get_file_type() === Gio.FileType.DIRECTORY || (widget.is_selected() && isMouse))
                 return;
 
             const revealer = (widget.get_child() as Gtk.Box).get_first_child() as Gtk.Revealer;
@@ -121,8 +121,15 @@ export class PluginWallpapers implements Runner.Plugin {
             },
             onSelected: (self) => onSelected(self),
             onUnselected: (self) => onUnselected(self),
-            onHovered: (self) => onSelected(self),
-            onUnhovered: (self) => onUnselected(self),
+            onHovered: (self) => onSelected(self, false),
+            onUnhovered: (self) => onUnselected(self, true),
+            onUnrealize: (self) => {
+                const img = (self.get_child()!.get_first_child() as Gtk.Revealer)?.get_child() as Image;
+                if(!img)
+                    return;
+
+                img.texture = null;
+            },
             onClicked: () => {
                 if(isDir) {
                     Runner.setSearch(

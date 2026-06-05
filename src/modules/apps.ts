@@ -1,10 +1,12 @@
 import { Gdk, Gtk } from "ags/gtk4";
 import { execAsync } from "ags/process";
+import { isInstalled } from "./utils";
 import AstalApps from "gi://AstalApps";
-import AstalHyprland from "gi://AstalHyprland";
+import Compositor from "../compositor";
+import Hyprland from "../compositor/interface/hyprland";
 
 
-export const uwsmIsActive: boolean = await execAsync(
+export const uwsmIsActive: boolean = isInstalled("uwsm") && await execAsync(
     "uwsm check is-active"
 ).then(() => true).catch(() => false);
 const astalApps: AstalApps.Apps = new AstalApps.Apps();
@@ -30,12 +32,12 @@ export function execApp(app: AstalApps.Application|string, dispatchExecArgs?: st
     const executable = (typeof app === "string") ? app 
         : app.executable.replace(/%[fFcuUik]/g, "");
 
-    AstalHyprland.get_default().dispatch("exec", 
-        `${dispatchExecArgs ? `${dispatchExecArgs} ` : ""}${
+    (Compositor.getDefault() as Hyprland.Hyprland).hyprctl(`eval \
+        hl.exec_cmd("${
             uwsmIsActive ? "uwsm-app -- " : executable.endsWith(".desktop") ?
                 "gtk-launch "
             : ""
-        }${executable}`
+        }${executable}")`
     );
 }
 
