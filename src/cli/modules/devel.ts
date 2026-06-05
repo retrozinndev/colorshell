@@ -29,7 +29,15 @@ const devel = {
             name: "workspaces",
             help: "print compositor workspaces",
             onCalled: (remote) => {
-                remote.println(Compositor.getDefault().workspaces.map(c => String(c)).join(",\n"));
+                remote.println(Compositor.getDefault().workspaces.map(w => String(w)).join(",\n"));
+                remote.exit(0);
+            }
+        },
+        {
+            name: "monitors",
+            help: "print compositor monitors",
+            onCalled: (remote) => {
+                remote.println(Compositor.getDefault().monitors.map(m => String(m)).join(",\n"));
                 remote.exit(0);
             }
         }

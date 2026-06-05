@@ -2,6 +2,7 @@ import _Client from "./client";
 import _Monitor from "./monitor";
 import _Workspace from "./workspace";
 import _Compositor from "./compositor";
+import _CObject from "./object";
 
 
 namespace Compositor {
@@ -9,6 +10,7 @@ namespace Compositor {
     export import Compositor = _Compositor;
     export import Workspace = _Workspace;
     export import Monitor = _Monitor;
+    export import Object = _CObject;
 
     let instance: Compositor|null = null;
 

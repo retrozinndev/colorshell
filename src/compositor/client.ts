@@ -1,11 +1,13 @@
 import { getter, gtype, register } from "ags/gobject";
 import { Gdk } from "ags/gtk4";
+import CompositorObject from "./object";
 import GObject from "gi://GObject?version=2.0";
+import Compositor from "./compositor";
 
 
 /** @abstract */
 @register({ GTypeName: "CompositorClient" })
-class Client extends GObject.Object {
+class Client extends CompositorObject {
     readonly #address: string|null = null;
     #initialTitle: string = "";
     #initialClass: string = "";
@@ -39,8 +41,8 @@ class Client extends GObject.Object {
     @getter(Boolean)
     get mapped() { return this.#mapped; }
 
-    constructor(props: Partial<Client.ConstructorProps> = {}) {
-        super();
+    constructor(compositor: Compositor, props: Partial<Client.ConstructorProps> = {}) {
+        super(compositor);
 
         if(props.class !== undefined)
             this.#class = props.class;

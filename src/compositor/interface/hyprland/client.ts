@@ -1,6 +1,6 @@
 import AstalHyprland from "gi://AstalHyprland";
 import Compositor from "../..";
-import Hyprland from ".";
+import Hyprland from "./compositor";
 import { register } from "ags/gobject";
 import { createBinding, createComputed } from "ags";
 
@@ -10,7 +10,6 @@ class Client extends Compositor.Client {
     declare $signals: Client.SignalSignatures;
     #allocation!: Compositor.Client.Allocation;
 
-    protected inst: Hyprland.Hyprland;
     protected subs: Array<() => void> = [];
     public readonly client: AstalHyprland.Client;
 
@@ -24,13 +23,11 @@ class Client extends Compositor.Client {
     get allocation() { return this.#allocation; }
 
 
-    constructor(props: Client.ConstructorProps) {
-        super();
+    constructor(compositor: Hyprland, client: AstalHyprland.Client) {
+        super(compositor);
+        this.client = client;
 
-        this.inst = Compositor.getDefault() as Hyprland.Hyprland;
-        this.client = props.client;
         this.syncAllocation();
-
         this.subs.push(
             createBinding(this.client, "class").subscribe(() => {
                 this.notify("class");
@@ -59,6 +56,13 @@ class Client extends Compositor.Client {
 
     }
 
+    /** creates the object if it doesn't exist, or else returns the existing instance */
+    public static tryNew(compositor: Hyprland, client: AstalHyprland.Client) {
+        const match = compositor.clients.find(cl => cl.address === client.address);
+
+        return match ?? new this(compositor, client);
+    }
+
     /** synchronize the allocation rectangle with the client's properties */
     protected syncAllocation(): void {
         this.#allocation ??= new Compositor.Client.Allocation();
@@ -69,13 +73,8 @@ class Client extends Compositor.Client {
         this.#allocation.height = this.client.get_height()
     }
 
-    run_dispose(): void {
-        super.run_dispose();
+    dispose(): void {
         this.subs.forEach(unsub => unsub());
-    }
-
-    public static new(client: AstalHyprland.Client): Client {
-        return new this({ client });
     }
 
     close(): void {
@@ -83,11 +82,16 @@ class Client extends Compositor.Client {
     }
 
     kill(): void {
-        AstalHyprland.get_default().dispatch("window.kill", `"address:0x${this.address}"`);
+        if((this.compositor as Hyprland).configProvider === Hyprland.ConfigProvider.LUA) {
+            AstalHyprland.get_default().dispatch("window.kill", `"address:0x${this.address}"`);
+            return;
+        }
+
+        AstalHyprland.get_default().dispatch("killwindow", `address:0x${this.address}`);
     }
 }
 
-export namespace Client {
+namespace Client {
     export interface SignalSignatures extends Compositor.Client.SignalSignatures {}
     export interface ConstructorProps {
         client: AstalHyprland.Client;

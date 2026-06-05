@@ -20,6 +20,7 @@ class Compositor extends GObject.Object {
     protected _workspaces: Array<Workspace> = [];
     protected _clients: Array<Client> = []
     protected _focusedClient: Client|null = null;
+    protected _focusedWorkspace: Workspace|null = null;
 
     @getter(Array)
     get monitors() { return this._monitors; }
@@ -32,6 +33,9 @@ class Compositor extends GObject.Object {
 
     @getter(gtype<Client|null>(GObject.Object))
     get focusedClient() { return this._focusedClient; }
+
+    @getter(gtype<Workspace|null>(GObject.Object))
+    get focusedWorkspace() { return this._focusedWorkspace; }
 
     @signal(GObject.Object)
     clientAdded(_: Client) {}

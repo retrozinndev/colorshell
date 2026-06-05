@@ -2,10 +2,9 @@ import { Gtk } from "ags/gtk4";
 import { getAppIcon, getSymbolicIcon } from "../../../modules/apps";
 import { Separator } from "../../../widget/Separator";
 import { generalConfig } from "../../../config";
-import { Accessor, createBinding, createComputed, createState, For, With } from "ags";
+import { createBinding, createComputed, createState, For, With } from "ags";
 import { variableToBoolean } from "../../../modules/utils";
-
-import AstalHyprland from "gi://AstalHyprland";
+import Compositor from "../../../compositor";
 
 
 const [showNumbers, setShowNumbers] = createState(false);
@@ -14,12 +13,12 @@ export const showWorkspaceNumber = (show: boolean) =>
 
 
 export const Workspaces = () => {
-    const workspaces = createBinding(AstalHyprland.get_default(), "workspaces"),
+    const workspaces = createBinding(Compositor.getDefault(), "workspaces"),
         defaultWorkspaces = workspaces.as(wss => 
             wss.filter(ws => ws.id > 0).sort((a, b) => a.id - b.id)),
         specialWorkspaces = workspaces.as(wss => 
             wss.filter(ws => ws.id < 0).sort((a, b) => a.id - b.id)),
-        focusedWorkspace = createBinding(AstalHyprland.get_default(), "focusedWorkspace") as Accessor<AstalHyprland.Workspace|null>;
+        focusedWorkspace = createBinding(Compositor.getDefault(), "focusedWorkspace");
 
 
     return <Gtk.Box class={"workspaces-row transparent"} visible={createComputed([
@@ -29,20 +28,18 @@ export const Workspaces = () => {
     )}>
         <Gtk.Box class={"special-workspaces"} spacing={4}>
             <For each={specialWorkspaces}>
-                {(ws: AstalHyprland.Workspace) => 
+                {(ws: Compositor.Workspace) => 
                     <Gtk.Button class={"workspace"}
                       tooltipText={createBinding(ws, "name").as(name => {
-                          name = name.replace(/^special\:/, "");
+                          name = name?.replace(/^special\:/, "") ?? "";
                           return name.charAt(0).toUpperCase().concat(name.substring(1, name.length));
-                      })} onClicked={() => AstalHyprland.get_default().dispatch(
-                          "workspace.toggle_special", `"${ws.name.replace(/^special[:]/, "")}"`
-                      )}>
+                      })} onClicked={() => ws.focus()}>
 
-                        <With value={createBinding(ws, "lastClient")}>
-                            {(lastClient: AstalHyprland.Client|null) => lastClient &&
+                        <With value={createBinding(ws, "lastFocusedClient")}>
+                            {(lastClient: Compositor.Client|null) => lastClient &&
                                 <Gtk.Image class="last-client" iconName={
-                                    createBinding(lastClient, "initialClass").as(initialClass =>
-                                        getSymbolicIcon(initialClass) ?? getAppIcon(initialClass) ?? 
+                                    createBinding(lastClient, "class").as(name =>
+                                        getSymbolicIcon(name) ?? getAppIcon(name) ?? 
                                             "application-x-executable-symbolic")} 
                                 />
                             }
@@ -80,7 +77,7 @@ export const Workspaces = () => {
               onLeave={() => setShowNumbers(false)}
             />
             <For each={defaultWorkspaces}>
-                {(ws: AstalHyprland.Workspace, i) => {
+                {(ws: Compositor.Workspace, i) => {
                     const showId = createComputed([
                         generalConfig.bindProperty("workspaces.always_show_id", "boolean").as(Boolean),
                         generalConfig.bindProperty("workspaces.enable_helper", "boolean").as(Boolean),
@@ -111,18 +108,18 @@ export const Workspaces = () => {
                           `workspace ${focusedWs?.id === ws.id ? "focus" : ""} ${
                               showWsNumbers ? "show" : ""}`
                       )} tooltipText={createComputed([
-                          createBinding(ws, "lastClient"),
+                          createBinding(ws, "lastFocusedClient"),
                           focusedWorkspace
                       ], (lastClient, focusWs) => focusWs?.id === ws.id ? "" : 
                           `workspace ${ws.id}${ lastClient ? ` - ${
                               !lastClient.title.toLowerCase().includes(lastClient.class) ?
-                                  `${lastClient.get_class()}: `
+                                  `${lastClient.class}: `
                               : ""
                           } ${lastClient.title}` : "" }`
                       )} onClicked={() => focusedWorkspace.get()?.id !== ws.id && ws.focus()}>
                         
-                        <With value={createBinding(ws, "lastClient")}>
-                            {(lastClient: AstalHyprland.Client) => 
+                        <With value={createBinding(ws, "lastFocusedClient")}>
+                            {(lastClient: Compositor.Client|null) => 
                                 <Gtk.Box class={"last-client"} hexpand>
                                     <Gtk.Revealer transitionDuration={280} revealChild={showId}
                                       transitionType={focusedWorkspace(
@@ -135,8 +132,8 @@ export const Workspaces = () => {
                                         />
                                     </Gtk.Revealer>
                                     {lastClient && <Gtk.Image class={"last-client-icon"} iconName={
-                                      createBinding(lastClient, "initialClass").as(initialClass =>
-                                          getSymbolicIcon(initialClass) ?? getAppIcon(initialClass) ??
+                                      createBinding(lastClient, "class").as(name =>
+                                          getSymbolicIcon(name) ?? getAppIcon(name) ??
                                               "application-x-executable-symbolic")} 
                                       hexpand vexpand visible={focusedWorkspace(fws => fws?.id !== ws.id)}
                                     />}

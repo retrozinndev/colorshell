@@ -10,16 +10,23 @@ import { generalConfig } from "../../../config";
 import { readFile } from "ags/file";
 import Socket from "../../../modules/socket";
 import Client from "./client";
+import Workspace from "./workspace";
+import Monitor from "./monitor";
+import { exec } from "ags/process";
 
 
-@register({ GTypeName: "ClshCompositorHyprland" })
+@register({ GTypeName: "ClshHyprland" })
 class Hyprland extends Compositor.Compositor {
     declare $signals: Compositor.Compositor.SignalSignatures;
     #sock: Socket;
     #inst: AstalHyprland.Hyprland;
     #configDir: Gio.File = Gio.File.new_for_path(`${runtimeConfigDir.peek_path()!}/hyprland`);
     #ignoreConfigReload: boolean = false;
+    #configProvider: Hyprland.ConfigProvider = Hyprland.ConfigProvider.HYPRLANG;
 
+    get configProvider(): Hyprland.ConfigProvider {
+        return this.#configProvider;
+    }
 
     constructor() {
         super();
@@ -30,31 +37,107 @@ class Hyprland extends Compositor.Compositor {
             false
         );
 
+        try {
+            const prov: "lua"|"hyprlang" = JSON.parse(exec("hyprctl status -j")).configProvider;
+            if(prov === "lua")
+                this.#configProvider = Hyprland.ConfigProvider.LUA;
+        } catch(_) {}
+
         this.initConfig();
 
         createScopedConnection(this.#inst, "event", (e, dat) => this.handleEvents(e, dat));
 
+        // clients
         for(const c of this.#inst.get_clients()) {
-            const client = Client.new(c);
+            const client = new Client(this, c);
             this._clients.push(client);
         }
         this._focusedClient = this._clients.find(c =>
             c.address === this.#inst.get_focused_client()?.get_address()
         ) ?? null;
-
         createScopedConnection(this.#inst, "client-added", (c) => {
-            const client = Client.new(c);
+            if(this._clients.findIndex(cl => cl.address === c.address) > -1)
+                return;
+
+            const client = new Client(this, c);
+
             this._clients.push(client);
             this.notify("clients");
-            this.emit("client-added", client);
+            this.emit("client-added", this);
         });
         createScopedConnection(this.#inst, "client-removed", (addr) => {
             const i = this._clients.findIndex(cl => cl.address === addr);
+            const client = this._clients.splice(i, 1)[0];
 
-            this.emit("client-removed", this._clients.splice(i, 1)[0]);
+            (client as Client).dispose();
+            this.emit("client-removed", client);
             this.notify("clients");
         });
-        // TODO support workspaces
+
+        // workspaces
+        for(const w of this.#inst.get_workspaces()) {
+            const workspace = new Workspace(this, w);
+            this._workspaces.push(workspace);
+        }
+        this._focusedWorkspace = this.workspaces.find(ws =>
+            ws.id === this.#inst.get_focused_workspace().get_id()
+        ) ?? null;
+        createScopedConnection(this.#inst, "workspace-added", (ws) => {
+            if(this._workspaces.findIndex(w => w.id === ws.id) > -1)
+                return;
+
+            const workspace = new Workspace(this, ws);
+
+            this._workspaces.push(workspace);
+            this.notify("workspaces");
+            this.emit("workspace-added", ws);
+        });
+        createScopedConnection(this.#inst, "workspace-removed", (id) => {
+            const i = this._workspaces.findIndex(w => w.id === id);
+            const workspace = this._workspaces.splice(i, 1)[0];
+
+            (workspace as Workspace).dispose();
+            this.emit("workspace-removed", workspace);
+            this.notify("workspaces");
+        });
+        createScopedConnection(this.#inst, "notify::focused-workspace", () => {
+            const focused = this.#inst.get_focused_workspace();
+
+            if(!focused) {
+                this._focusedWorkspace &&= null;
+                this.notify("focused-workspace");
+                return;
+            }
+
+            this._focusedWorkspace = this.workspaces.find(ws =>
+                ws.id === focused.get_id()
+            )!;
+            this.notify("focused-workspace");
+        });
+
+        // monitors
+        for(const mon of this.#inst.get_monitors()) {
+            const monitor = new Monitor(this, mon);
+            this._monitors.push(monitor);
+        }
+        createScopedConnection(this.#inst, "monitor-added", (mon) => {
+            if(this._monitors.findIndex(m => m.id === mon.id) > -1)
+                return;
+
+            const monitor = new Monitor(this, mon);
+
+            this._monitors.push(monitor);
+            this.notify("monitors");
+            this.emit("monitor-added", monitor);
+        });
+        createScopedConnection(this.#inst, "monitor-removed", (id) => {
+            const i = this._monitors.findIndex(m => m.id === id);
+            const monitor = this._monitors.splice(i, 1)[0];
+
+            (monitor as Monitor).dispose();
+            this.notify("monitors");
+            this.emit("monitor-removed", monitor);
+        });
 
         let matchBorderColorId: number|null = null;
         createSubscription(
@@ -107,18 +190,29 @@ class Hyprland extends Compositor.Compositor {
         }
     }
 
+    /** send a message to the hyprland socket */
+    protected message(msg: string): string|null {
+        return this.#sock.simpleSendSync(msg);
+    }
+
     private source(path: string): void {
         if(!path.endsWith(".lua"))
             return;
 
         try {
-            const out = this.#sock.simpleSendSync(`eval \
+            let out: string|null = null;
+            if(this.configProvider === Hyprland.ConfigProvider.LUA) {
+                out = this.message(`eval \
 local file, err = loadfile("${path}");
 if file ~= nil then
     file();
 else
     print(err);
 end`);
+            } else {
+                out = this.message(`keyword source ${path}`);
+            }
+
             if(out !== null && !/^ok.*$/.test(out))
                 throw new Error(out);
         } catch(e) {
@@ -133,7 +227,7 @@ end`);
             Gio.ResourceLookupFlags.NONE
         );
 
-        this.#sock.simpleSendSync("reload");
+        this.message("reload");
         for(const name of names) {
             if(name.includes("decorations") && !loadHyprDecorations)
                 return;
@@ -185,7 +279,7 @@ end`);
     }
 
     public hyprctl(cmd: string, flags?: string): string|null {
-        return this.#sock.simpleSendSync(`${flags !== undefined ? `${flags}/` : ""}${cmd}`);
+        return this.message(`${flags !== undefined ? `${flags}/` : ""}${cmd}`);
     }
 
     protected async bell(): Promise<void> {
@@ -288,6 +382,11 @@ namespace Hyprland {
         minimized: [string, 0|1];
         bell: [string];
     };
+
+    export enum ConfigProvider {
+        HYPRLANG = 0,
+        LUA = 1
+    }
 }
 
 export default Hyprland;

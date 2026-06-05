@@ -43,7 +43,8 @@ export const PageSound = <Page
                 {(stream: AstalWp.Stream) => 
                     <Gtk.Box hexpand>
                         <Gtk.Image iconName={createBinding(stream, "name").as(name => 
-                              getAppIcon(name?.split(' ')[0] ?? "application-x-executable-symbolic")!
+                              getAppIcon(name?.split(' ')[0] ?? "") ??
+                                "application-x-executable-symbolic"
                           )} css={"font-size: 18px; margin-right: 6px;"}
                         />
 
@@ -58,6 +59,16 @@ export const PageSound = <Page
                                   class={"name"} xalign={0}
                                 />
                             </Gtk.Revealer>
+                            <Gtk.EventControllerMotion onEnter={(e) => {
+                                  const r = e.get_widget()!.get_first_child() as Gtk.Revealer;
+
+                                  r.set_reveal_child(true);
+                              }} onLeave={(e) => {
+                                  const r = e.get_widget()!.get_first_child() as Gtk.Revealer;
+
+                                  r.set_reveal_child(false);
+                              }}
+                            />
 
                             <Astal.Slider drawValue={false} value={createBinding(stream, "volume")} 
                               onChangeValue={(_, __, value) => stream.set_volume(value)}
