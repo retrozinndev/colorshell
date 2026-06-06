@@ -78,7 +78,7 @@ class Workspace extends Compositor.Workspace {
         const prov = (this.compositor as Hyprland).configProvider;
         if(this.name?.startsWith("special:")) {
             const dispatcher = prov === Hyprland.ConfigProvider.LUA ?
-                ["workspace.toggle_special", `"${this.name.replace(/^special\:/, "")}")`]
+                ["workspace.toggle_special", `"${this.name.replace(/^special\:/, "")}"`]
             : ["togglespecialworkspace", this.name.replace(/^special\:/, "")];
 
             AstalHyprland.get_default().dispatch(dispatcher[0], dispatcher[1]);
