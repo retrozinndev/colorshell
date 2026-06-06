@@ -156,11 +156,17 @@ class Runner extends PopupWindow {
         this.bind_property("search", this.#entry, "text", GObject.BindingFlags.BIDIRECTIONAL);
         this.bind_property("search-placeholder", this.#entry, "placeholder-text", GObject.BindingFlags.BIDIRECTIONAL);
 
+	// calculate margin position
+        const monitor = AstalHyprland.get_default().get_focused_monitor();
+        const scale = monitor?.scale ?? 1;
+        const screenHeight = (monitor?.height ?? 640) / scale;
+        const marginTop = (screenHeight / 2) - (this.heightRequest / 2);
+
         // add widgets
         const box = <Gtk.Box widthRequest={this.widthRequest} vexpand={false}
           heightRequest={this.heightRequest} halign={Gtk.Align.CENTER}
           valign={Gtk.Align.START} hexpand css={`
-              margin-top: ${((AstalHyprland.get_default().get_focused_monitor()?.height ?? 640) / 2) - (this.heightRequest / 2)}px;
+              margin-top: ${marginTop}px;
           `}
         /> as Gtk.Box;
 
