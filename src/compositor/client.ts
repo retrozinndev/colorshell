@@ -3,67 +3,76 @@ import { Gdk } from "ags/gtk4";
 import CompositorObject from "./object";
 import GObject from "gi://GObject?version=2.0";
 import Compositor from "./compositor";
+import Workspace from "./workspace";
 
 
 /** @abstract */
 @register({ GTypeName: "CompositorClient" })
 class Client extends CompositorObject {
-    readonly #address: string|null = null;
-    #initialTitle: string = "";
-    #initialClass: string = "";
-    #class: string = "";
-    #title: string = "";
-    #mapped: boolean = true;
-    #allocation: Client.Allocation|null = null;
-    #xwayland: boolean = false;
+    protected readonly _address: string|null = null;
+    protected _initialTitle: string = "";
+    protected _initialClass: string = "";
+    protected _class: string = "";
+    protected _title: string = "";
+    protected _mapped: boolean = true;
+    protected _allocation: Client.Allocation|null = null;
+    protected _xwayland: boolean = false;
+    protected _workspace: Workspace|null = null;
+    
 
     @getter(gtype<string|null>(String))
-    get address() { return this.#address; }
+    get address() { return this._address; }
 
     @getter(String)
-    get title() { return this.#title; }
+    get title() { return this._title; }
 
     @getter(String)
-    get class() { return this.#class; }
+    get class() { return this._class; }
 
     @getter(String)
-    get initialTitle() { return this.#initialTitle; }
+    get initialTitle() { return this._initialTitle; }
 
     @getter(String)
-    get initialClass() { return this.#initialClass; }
+    get initialClass() { return this._initialClass; }
 
     @getter(gtype<Client.Allocation|null>(Object))
-    get allocation() { return this.#allocation; }
+    get allocation() { return this._allocation; }
 
     @getter(Boolean)
-    get xwayland() { return this.#xwayland; }
+    get xwayland() { return this._xwayland; }
+
+    @getter(gtype<Workspace|null>(GObject.Object))
+    get workspace() { return this._workspace; }
 
     @getter(Boolean)
-    get mapped() { return this.#mapped; }
+    get mapped() { return this._mapped; }
 
     constructor(compositor: Compositor, props: Partial<Client.ConstructorProps> = {}) {
         super(compositor);
 
         if(props.class !== undefined)
-            this.#class = props.class;
+            this._class = props.class;
 
         if(props.title !== undefined)
-            this.#title = props.title;
+            this._title = props.title;
+
+        if(props.workspace !== undefined)
+            this._workspace = props.workspace;
 
         if(props.mapped !== undefined)
-            this.#mapped = props.mapped;
+            this._mapped = props.mapped;
 
         if(props.address !== undefined)
-            this.#address = props.address;
+            this._address = props.address;
 
         if(props.allocation !== undefined)
-            this.#allocation = props.allocation;
+            this._allocation = props.allocation;
 
         if(props.initialTitle !== undefined)
-            this.#initialTitle = props.initialTitle;
+            this._initialTitle = props.initialTitle;
 
         if(props.initialClass !== undefined || props.class !== undefined)
-            this.#initialClass = props.initialClass ?? props.class!;
+            this._initialClass = props.initialClass ?? props.class!;
     }
 
     /** ask the client to quit / be closed */
@@ -85,6 +94,7 @@ class Client extends CompositorObject {
             "mapped",
             "xwayland",
             "initialClass",
+            "workspace",
             "initialTitle"
         ] satisfies Array<keyof this>)
             .map(k => `${" ".repeat(4)}"${k}": ${String(this[k]).replace(/\n/g, `\n${" ".repeat(4)}`)}`)
@@ -138,6 +148,7 @@ namespace Client {
         mapped: boolean;
         class: string;
         initialTitle: string;
+        workspace: Workspace;
         initialClass: string;
         allocation: Gdk.Rectangle;
     }

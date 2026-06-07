@@ -3,7 +3,6 @@ import Compositor from "../..";
 import AstalHyprland from "gi://AstalHyprland?version=0.1";
 import { register } from "ags/gobject";
 import Hyprland from "./compositor";
-import Client from "./client";
 
 
 @register({ GTypeName: "ClshHyprlandWorkspace" })
@@ -28,7 +27,10 @@ class Workspace extends Compositor.Workspace {
             ]).subscribe(() => {
                 this.syncClients();
             }),
-            createBinding(this.ws, "lastClient").subscribe(() => {
+            createComputed([
+                createBinding(this.ws, "lastClient"),
+                createBinding(this.ws, "clients")
+            ]).subscribe(() => {
                 this.syncLastFocusedClient();
             })
         );
@@ -41,24 +43,12 @@ class Workspace extends Compositor.Workspace {
         return match ?? new this(compositor, workspace);
     }
 
-    protected syncClients(): void {
-        this._clients = this.ws.get_clients().map(cl => {
-            const match = this.compositor.clients.find(c => c.address === cl.address);
-            if(!match) {
-                const client = new Client(this.compositor as Hyprland, cl);
-                this.compositor.clients.push(client);
-                this.compositor.notify("clients");
-                this.compositor.emit("client-added", client);
-
-                return client;
-            }
-
-            return match;
-        });
+    public syncClients(): void {
+        this._clients = this.compositor.clients.filter(cl => cl.workspace?.id === this.id);
         this.notify("clients");
     }
 
-    protected syncLastFocusedClient(): void {
+    public syncLastFocusedClient(): void {
         const client = this.ws.get_last_client() ?? this._clients[0];
         if(!client) {
             this._lastFocusedClient &&= null;

@@ -47,21 +47,38 @@ class Hyprland extends Compositor.Compositor {
 
         createScopedConnection(this.#inst, "event", (e, dat) => this.handleEvents(e, dat));
 
+        // monitors
+        for(const mon of this.#inst.get_monitors()) {
+            const monitor = new Monitor(this, mon);
+            this._monitors.push(monitor);
+        }
+        // workspaces
+        for(const w of this.#inst.get_workspaces()) {
+            const workspace = new Workspace(this, w);
+            this._workspaces.push(workspace);
+        }
+        this._focusedWorkspace = this.workspaces.find(ws =>
+            ws.id === this.#inst.get_focused_workspace().get_id()
+        ) ?? null;
         // clients
         for(const c of this.#inst.get_clients()) {
             const client = new Client(this, c);
             this._clients.push(client);
+
+            (client.workspace as Workspace)?.syncClients();
+            (client.workspace as Workspace)?.syncLastFocusedClient();
         }
         this._focusedClient = this._clients.find(c =>
             c.address === this.#inst.get_focused_client()?.get_address()
         ) ?? null;
+
         createScopedConnection(this.#inst, "client-added", (c) => {
             if(this._clients.findIndex(cl => cl.address === c.address) > -1)
                 return;
 
             const client = new Client(this, c);
-
             this._clients.push(client);
+            (client.workspace as Workspace)?.syncLastFocusedClient();
             this.notify("clients");
             this.emit("client-added", this);
         });
@@ -74,14 +91,6 @@ class Hyprland extends Compositor.Compositor {
             this.notify("clients");
         });
 
-        // workspaces
-        for(const w of this.#inst.get_workspaces()) {
-            const workspace = new Workspace(this, w);
-            this._workspaces.push(workspace);
-        }
-        this._focusedWorkspace = this.workspaces.find(ws =>
-            ws.id === this.#inst.get_focused_workspace().get_id()
-        ) ?? null;
         createScopedConnection(this.#inst, "workspace-added", (ws) => {
             if(this._workspaces.findIndex(w => w.id === ws.id) > -1)
                 return;
@@ -115,11 +124,6 @@ class Hyprland extends Compositor.Compositor {
             this.notify("focused-workspace");
         });
 
-        // monitors
-        for(const mon of this.#inst.get_monitors()) {
-            const monitor = new Monitor(this, mon);
-            this._monitors.push(monitor);
-        }
         createScopedConnection(this.#inst, "monitor-added", (mon) => {
             if(this._monitors.findIndex(m => m.id === mon.id) > -1)
                 return;

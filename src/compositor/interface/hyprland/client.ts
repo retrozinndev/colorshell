@@ -8,7 +8,6 @@ import { createBinding, createComputed } from "ags";
 @register({ GTypeName: "ClshHyprlandClient" })
 class Client extends Compositor.Client {
     declare $signals: Client.SignalSignatures;
-    #allocation!: Compositor.Client.Allocation;
 
     protected subs: Array<() => void> = [];
     public readonly client: AstalHyprland.Client;
@@ -20,14 +19,19 @@ class Client extends Compositor.Client {
     get xwayland() { return this.client.get_xwayland(); }
     get initialTitle() { return this.client.get_initial_title(); }
     get initialClass() { return this.client.get_initial_class(); }
-    get allocation() { return this.#allocation; }
+    get allocation() { return this._allocation; }
 
 
     constructor(compositor: Hyprland, client: AstalHyprland.Client) {
         super(compositor);
         this.client = client;
 
+        const workspace = this.compositor.workspaces.find(ws => ws.id === this.client.workspace.get_id());
+        if(workspace)
+            this._workspace = workspace;
+
         this.syncAllocation();
+
         this.subs.push(
             createBinding(this.client, "class").subscribe(() => {
                 this.notify("class");
@@ -51,7 +55,24 @@ class Client extends Compositor.Client {
                 createBinding(this.client, "height")
             ]).subscribe(() => {
                 this.syncAllocation();
-            })
+            }),
+            (() => {
+                const id = AstalHyprland.get_default().connect("client-moved", (_, c, ws) => {
+                    if(c.get_address() !== this.address)
+                        return;
+
+                    const workspace = this.compositor.workspaces.find(w => w.id === ws.get_id());
+                    if(!workspace) {
+                        console.warn("No equivalent workspace instance found for moved client");
+                        return;
+                    }
+
+                    this._workspace = workspace;
+                    this.notify("workspace");
+                });
+
+                return () => AstalHyprland.get_default().disconnect(id);
+            })()
         );
 
     }
@@ -65,12 +86,12 @@ class Client extends Compositor.Client {
 
     /** synchronize the allocation rectangle with the client's properties */
     protected syncAllocation(): void {
-        this.#allocation ??= new Compositor.Client.Allocation();
+        this._allocation ??= new Compositor.Client.Allocation();
 
-        this.#allocation.x = this.client.get_x(),
-        this.#allocation.y = this.client.get_y(),
-        this.#allocation.width = this.client.get_width(),
-        this.#allocation.height = this.client.get_height()
+        this._allocation.x = this.client.get_x(),
+        this._allocation.y = this.client.get_y(),
+        this._allocation.width = this.client.get_width(),
+        this._allocation.height = this.client.get_height()
     }
 
     dispose(): void {
