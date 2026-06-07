@@ -4,8 +4,7 @@ import { register } from "ags/gobject";
 import AstalHyprland from "gi://AstalHyprland";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
-import { createScopedConnection, createSubscription, encoder, runtimeConfigDir } from "../../../modules/utils";
-import Wallpaper from "../../../modules/wallpaper";
+import { createScopedConnection, encoder, runtimeConfigDir } from "../../../modules/utils";
 import { generalConfig } from "../../../config";
 import { readFile } from "ags/file";
 import Socket from "../../../modules/socket";
@@ -13,6 +12,7 @@ import Client from "./client";
 import Workspace from "./workspace";
 import Monitor from "./monitor";
 import { exec } from "ags/process";
+import StyleManager from "../../../modules/stylemanager";
 
 
 @register({ GTypeName: "ClshHyprland" })
@@ -139,30 +139,14 @@ class Hyprland extends Compositor.Compositor {
             this.emit("monitor-removed", monitor);
         });
 
-        let matchBorderColorId: number|null = null;
-        createSubscription(
-            generalConfig.bindProperty("misc.match_window_border_color", "boolean"),
-            () => {
-                const matchBorderColor = generalConfig.getProperty("misc.match_window_border_color", "boolean");
+        createScopedConnection(StyleManager.getDefault(), "colors-reloaded", () => {
+            const matchBorderColor = generalConfig.getProperty("misc.match_window_border_color", "boolean");
 
-                if(matchBorderColorId !== null)
-                    Wallpaper.getDefault().disconnect(matchBorderColorId);
+            if(!matchBorderColor)
+                return;
 
-                if(matchBorderColor) {
-                    matchBorderColorId = Wallpaper.getDefault().connect(
-                        "colors-reloaded", () => this.reload()
-                    );
-                    this.reload();
-
-                    return;
-                }
-
-                matchBorderColorId !== null && 
-                    Wallpaper.getDefault().disconnect(matchBorderColorId);
-
-                this.reload();
-            }
-        );
+            this.reload();
+        });
     }
 
     private handleEvents(event: string, data: string): void {
