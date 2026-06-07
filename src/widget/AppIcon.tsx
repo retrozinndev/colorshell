@@ -49,7 +49,7 @@ class AppIcon extends Gtk.Image {
         });
 
         if(props.icon !== undefined)
-            this.icon = typeof props.icon === "object" ?
+            this.icon = (props.icon && typeof props.icon === "object") ?
                 props.icon.peek_path()!
             : props.icon;
     }
@@ -58,7 +58,7 @@ class AppIcon extends Gtk.Image {
 namespace AppIcon {
     export interface SignalSignatures extends Gtk.Image.SignalSignatures {}
     export interface ConstructorProps extends Gtk.Image.ConstructorProps {
-        icon: string|Gio.File;
+        icon: string|Gio.File|null;
     }
 }
 
