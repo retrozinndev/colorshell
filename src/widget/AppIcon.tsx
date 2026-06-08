@@ -48,8 +48,8 @@ class AppIcon extends Gtk.Image {
             ])
         });
 
-        if(props.icon !== undefined)
-            this.icon = (props.icon && typeof props.icon === "object") ?
+        if(props.icon !== undefined && props.icon !== null)
+            this.icon = typeof props.icon === "object" ?
                 props.icon.peek_path()!
             : props.icon;
     }
