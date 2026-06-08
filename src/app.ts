@@ -5,7 +5,6 @@ import { programArgs, programInvocationName, exit } from "system";
 import { setConsoleLogDomain } from "console";
 import { cacheDir, createScopedConnection, dataDir, encoder, getDBusNamePID, globalScope, runtimeConfigDir, runtimeDir } from "./modules/utils";
 import Clipboard from "./modules/clipboard";
-import { OSD } from "./window/osd";
 import NightLight from "./modules/nightlight";
 import { initCompositor } from "./compositors";
 import { register } from "ags/gobject";
@@ -155,7 +154,6 @@ export class Shell extends Adw.Application {
         Clipboard.init();
         initCompositor();
         initWindows();
-        OSD.init();
         NightLight.init();
     }
 

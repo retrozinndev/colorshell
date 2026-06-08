@@ -35,6 +35,8 @@ export function initWindows(): void {
     if(!Windows.getDefault().isOpen("bar"))
         Windows.getDefault().open("bar");
 
+    OSD.init();
+
     createScopedConnection(Notifications.getDefault(), "notification-added", () => {
         Windows.getDefault().open("floating-notifications");
     });
