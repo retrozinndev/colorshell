@@ -184,7 +184,7 @@ class Hyprland extends Compositor.Compositor {
     }
 
     private source(path: string): void {
-        if(!path.endsWith(".lua"))
+        if(!/\.(lua|conf)$/.test(path))
             return;
 
         try {
@@ -213,7 +213,9 @@ end`);
         const names = Gio.resources_enumerate_children(
             "/io/github/retrozinndev/Colorshell/config/hyprland",
             Gio.ResourceLookupFlags.NONE
-        );
+        ).filter(f => this.configProvider === Hyprland.ConfigProvider.LUA ?
+            f.endsWith(".lua")
+        : f.endsWith(".conf"));
 
         this.message("reload");
         for(const name of names) {
@@ -229,7 +231,9 @@ end`);
         const names = Gio.resources_enumerate_children(
             "/io/github/retrozinndev/Colorshell/config/hyprland",
             Gio.ResourceLookupFlags.NONE
-        );
+        ).filter(f => this.configProvider === Hyprland.ConfigProvider.LUA ?
+            f.endsWith(".lua")
+        : f.endsWith(".conf"));
 
         if(!this.#configDir.query_exists(null))
             this.#configDir.make_directory_with_parents(null);

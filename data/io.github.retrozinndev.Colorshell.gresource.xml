@@ -36,6 +36,9 @@
 
     <!-- Compositor-specific configuration -->
     <gresource prefix="/io/github/retrozinndev/Colorshell/config/hyprland">
+        <file alias="environment.conf">config/hyprland/environment.conf</file>
+        <file alias="decorations.conf">config/hyprland/decorations.conf</file>
+        <file alias="rules.conf">config/hyprland/rules.conf</file>
         <file alias="environment.lua">config/hyprland/environment.lua</file>
         <file alias="decorations.lua">config/hyprland/decorations.lua</file>
         <file alias="rules.lua">config/hyprland/rules.lua</file>

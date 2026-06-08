@@ -5,11 +5,6 @@ local env = {
     XDG_CACHE_HOME = os.getenv("HOME") .. "/.cache";
     XDG_DATA_HOME = os.getenv("HOME") .. "/.local/share";
     XDG_STATE_HOME = os.getenv("HOME") .. "/.local/state";
-
-    QT_IM_MODULE = "fcitx";
-    QT_IM_MODULES = "wayland;fcitx";
-    SDL_IM_MODULE = "fcitx";
-    XMODIFIERS = "@im=fcitx";
 };
 
 for name, val in pairs(env) do
