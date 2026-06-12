@@ -15,7 +15,7 @@ export class PluginWallpapers implements Runner.Plugin {
     prioritize = true;
     previewSize: number = 156;
     #fuse!: Fuse<string>;
-    #files!: Array<Gio.FileInfo>;
+    #files: Array<Gio.FileInfo> = [];
     #dir: string = Wallpaper.getDefault().wallpapersDir.peek_path()!;
     #subdir: string|undefined = undefined;
     readonly #options = {
@@ -25,9 +25,6 @@ export class PluginWallpapers implements Runner.Plugin {
     } satisfies IFuseOptions<string>;
 
     init() {
-        this.#files = [];
-        this.#subdir = undefined;
-
         const dir = Gio.File.new_for_path(this.#dir);
         if(dir.query_file_type(Gio.FileQueryInfoFlags.NONE, null) === Gio.FileType.DIRECTORY) {
             for(const file of dir.enumerate_children(
@@ -94,7 +91,12 @@ export class PluginWallpapers implements Runner.Plugin {
             const revealer = (widget.get_child() as Gtk.Box).get_first_child() as Gtk.Revealer;
 
             revealer.set_reveal_child(false);
-            (revealer.get_child() as Image).texture = null;
+            revealer.connect("notify::child-revealed", () => {
+                if(revealer.get_child_revealed())
+                    return;
+
+                (revealer.get_child() as Image).unload().catch(console.error);
+            });
         };
 
         return {
@@ -155,11 +157,16 @@ export class PluginWallpapers implements Runner.Plugin {
         if(!GLib.file_test(this.#dir, GLib.FileTest.IS_DIR)) 
             return {
                 title: "No wallpapers found!",
-                description: "Define the WALLPAPERS variable in Hyprland or create ~/wallpapers",
+                description: "Define the WALLPAPERS env variable or create ~/wallpapers",
                 icon: "image-missing-symbolic"
             };
 
         this.#subdir = undefined;
+        
+        if(search.length < 1)
+            return this.#files.sort(s => 
+                s.get_file_type() === Gio.FileType.DIRECTORY ? 1 : -1
+            ).map(info => this.result(info));
 
         if(search.startsWith('/')) {   
             let split = search.split('/').filter(s => s.trim() !== "");
@@ -188,12 +195,6 @@ export class PluginWallpapers implements Runner.Plugin {
                 );
             }
         }
-
-        if(search.length < 1)
-            return this.#files.sort(s => 
-                s.get_file_type() === Gio.FileType.DIRECTORY ? 1 : -1
-            ).map(info => this.result(info));
-
 
         const results: Array<Runner.Result> = [];
 

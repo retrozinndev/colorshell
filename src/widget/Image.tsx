@@ -76,7 +76,7 @@ class Image extends Adw.Bin {
 
     @setter(gtype<string|null>(String))
     set path(newPath: string|null) {
-        if(newPath === null) {
+        if(newPath === null || newPath.trim() === "") {
             this.texture = null;
             this.#file = null;
             this.notify("file");
@@ -100,7 +100,7 @@ class Image extends Adw.Bin {
 
     @setter(gtype<string|null>(String))
     set uri(newUri : string|null) {
-        if(newUri === null) {
+        if(newUri === null || newUri.trim() === "") {
             this.texture = null;
             this.#file = null;
             this.notify("file");
@@ -108,15 +108,15 @@ class Image extends Adw.Bin {
             return;
         }
 
-        if(newUri.startsWith("file://")) { // resolve file protocol
-            this.#file = Gio.File.new_for_path(decodeURI(newUri).replace(/^file:\/\//, ""));
-            this.notify("file");
-            this.notify("uri");
+        const fileExpr = /^file\:\/\//;
+        if(fileExpr.test(newUri)) { // resolve file protocol
+            this.#file = Gio.File.new_for_path(decodeURI(newUri).replace(fileExpr, ""));
         } else {
             this.#file = Gio.File.new_for_uri(newUri);
-            this.notify("file");
-            this.notify("uri");
         }
+
+        this.notify("file");
+        this.notify("uri");
 
         this.load(this.#file).catch(console.error);
     }
@@ -178,17 +178,29 @@ class Image extends Adw.Bin {
             this.#texture = props.texture;
             this.#loaded = true;
         } else if(props.path !== undefined && props.path !== null)
-            this.load(Gio.File.new_for_path(props.path))
-                .catch(console.error);
+            this.path = props.path;
         else if(props.file)
-            this.load(props.file).catch(console.error);
+            this.file = props.file;
         else {
             this.#loaded = true;
-            this.hideIfEmpty && this.hide();
+            this.hideIfEmpty && this.set_visible(false);
         }
 
         // add widget
         this.set_child(this.#stack);
+
+        const id = this.connect("destroy", () => {
+            this.disconnect(id);
+            this.texture = null;
+        });
+    }
+
+    public async unload(): Promise<void> {
+        if(!this.#texture)
+            return;
+
+        this.#texture = null;
+        this.texture = null;
     }
 
     protected async load(file: Gio.File): Promise<void> {
@@ -211,14 +223,36 @@ class Image extends Adw.Bin {
                 this.emit("loading-cancelled");
             });
 
-            const loader = Gly.Loader.new(file);
-            loader.load_async(this.#cancellable, (_, res) => {
-                if(!this.#cancellable)
+            Gly.Loader.new(file).load_async(this.#cancellable, (loader, res) => {
+                if(this.#cancellable?.is_cancelled())
                     return;
 
-                let img: Gly.Image|undefined;
                 try {
-                    img = loader.load_finish(res);
+                    loader!.load_finish(res)
+                        .next_frame_async(null, (img, res) => {
+                            try {
+                                this.texture = GlyGtk4.frame_get_texture(
+                                    img!.next_frame_finish(res)
+                                );
+                                this.#loaded = true;
+                                this.notify("loaded");
+                                resolve();
+
+                                if(this.canCache) {
+                                    // add to cache
+                                    Cache.getDefault().addItem<Image.CacheData>(
+                                        this.#cache![0], [this.#file!, this.#texture!], this.#cache![1]
+                                    );
+                                }
+                            } catch(e) {
+                                reject(e);
+                                this.#stack.set_visible_child_name("picture");
+                                this.#cancellable = null;
+                                this.emit("loading-failed", e as GLib.Error);
+
+                                return;
+                            }
+                        });
                 } catch(e) {
                     reject(e);
                     this.#stack.set_visible_child_name("picture");
@@ -226,34 +260,6 @@ class Image extends Adw.Bin {
                     this.emit("loading-failed", e as GLib.Error);
                     return;
                 }
-
-                img.next_frame_async(null, (_, res) => {
-                    let texture: Gdk.Texture|undefined;
-                    try {
-                        texture = GlyGtk4.frame_get_texture(
-                            img.next_frame_finish(res)
-                        );
-                    } catch(e) {
-                        reject(e);
-                        this.#stack.set_visible_child_name("picture");
-                        this.#cancellable = null;
-                        this.emit("loading-failed", e as GLib.Error);
-
-                        return;
-                    }
-
-                    this.texture = texture;
-                    this.#loaded = true;
-                    this.notify("loaded");
-                    resolve();
-
-                    if(this.canCache) {
-                        // add to cache
-                        Cache.getDefault().addItem<Image.CacheData>(
-                            this.#cache![0], [this.#file!, this.#texture!], this.#cache![1]
-                        );
-                    }
-                });
             });
         });
     }
@@ -271,7 +277,10 @@ class Image extends Adw.Bin {
     }
 
     protected setPaintable(paintable: Gdk.Paintable|null): void {
-        this.#picture.set_paintable(paintable);
+        GLib.idle_add(GLib.PRIORITY_LOW, () => {
+            this.#picture.set_paintable(paintable);
+            return GLib.SOURCE_REMOVE;
+        });
     }
 
     /** cancel image loading operation (if its running) */
