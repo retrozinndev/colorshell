@@ -68,7 +68,7 @@ class Workspace extends Compositor.Workspace {
         const prov = (this.compositor as Hyprland).configProvider;
         if(this.name?.startsWith("special:")) {
             const dispatcher = prov === Hyprland.ConfigProvider.LUA ?
-                ["workspace.toggle_special", `"${this.name.replace(/^special\:/, "")}"`]
+                ["hl.dsp.workspace.toggle_special", `("${this.name.replace(/^special\:/, "")}")`]
             : ["togglespecialworkspace", this.name.replace(/^special\:/, "")];
 
             AstalHyprland.get_default().dispatch(dispatcher[0], dispatcher[1]);
@@ -76,10 +76,11 @@ class Workspace extends Compositor.Workspace {
         }
 
         if(prov === Hyprland.ConfigProvider.LUA) {
-            AstalHyprland.get_default().dispatch("focus", `{workspace=${this.id}}`);
-        } else {
-            AstalHyprland.get_default().dispatch("workspace", this.id.toString());
+            AstalHyprland.get_default().dispatch("hl.dsp.focus", `{workspace=${this.id}}`);
+            return;
         }
+
+        AstalHyprland.get_default().dispatch("workspace", this.id.toString());
     }
 }
 

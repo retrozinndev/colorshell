@@ -99,12 +99,17 @@ class Client extends Compositor.Client {
     }
 
     close(): void {
-        this.client.kill();
+        if((this.compositor as Hyprland).configProvider === Hyprland.ConfigProvider.LUA) {
+            AstalHyprland.get_default().dispatch("hl.dsp.window.close", `("address:0x${this.address}")`);
+            return;
+        }
+
+        AstalHyprland.get_default().dispatch("closewindow", `address:0x${this.address}`);
     }
 
     kill(): void {
         if((this.compositor as Hyprland).configProvider === Hyprland.ConfigProvider.LUA) {
-            AstalHyprland.get_default().dispatch("window.kill", `"address:0x${this.address}"`);
+            AstalHyprland.get_default().dispatch("hl.dsp.window.kill", `("address:0x${this.address}")`);
             return;
         }
 

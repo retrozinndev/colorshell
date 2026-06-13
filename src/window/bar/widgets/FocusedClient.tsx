@@ -23,10 +23,16 @@ export const FocusedClient = () => {
         <Gtk.ListBox class={"menu"} selectionMode={Gtk.SelectionMode.NONE}
           activateOnSingleClick>
 
-            <Gtk.Button onClicked={() => focusedClient.get()?.kill()}>
+            <Gtk.Button onClicked={() => {
+                focusedClient.get()?.kill();
+                popover.popdown();
+            }}>
                 <Adw.ButtonContent iconName="circle-crossed-symbolic" label={tr("kill")} />
             </Gtk.Button>
-            <Gtk.Button onClicked={() => focusedClient.get()?.close()}>
+            <Gtk.Button onClicked={() => {
+                focusedClient.get()?.close()
+                popover.popdown();
+            }}>
                 <Adw.ButtonContent iconName="window-close-symbolic" label={tr("close")} />
             </Gtk.Button>
         </Gtk.ListBox>
