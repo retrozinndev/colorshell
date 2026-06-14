@@ -19,7 +19,7 @@ import Notifications from "./notifications";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 
-Gio._promisify(Gio.InputStream.prototype, "read_bytes_async", "read_bytes_finish");
+Gio._promisify(Gio.DataInputStream.prototype, "read_upto_async", "read_upto_finish");
 
 export const decoder = new TextDecoder("utf-8"),
     encoder = new TextEncoder();
@@ -328,9 +328,11 @@ export function isInstalled(commandName: string): boolean {
 export async function watchInputStream(
     stream: Gio.InputStream|Gio.DataInputStream,
     callback: (data: string) => boolean|void,
-    cancellable?: Gio.Cancellable|null,
-    size: number|bigint = 4096
+    cancellable?: Gio.Cancellable|null
 ): Promise<void> {
+    const istream = stream instanceof Gio.DataInputStream ?
+        stream
+    : Gio.DataInputStream.new(stream);
     let stop: boolean = false;
 
     const id = cancellable?.connect(() => {
@@ -339,9 +341,9 @@ export async function watchInputStream(
     });
 
     while(!stop)
-        stop = callback(decoder.decode(
-            (await stream.read_bytes_async(size, GLib.PRIORITY_DEFAULT, null)).toArray()
-        )) ?? false;
+        stop = callback(
+            (await istream.read_upto_async('\x00', -1, GLib.PRIORITY_DEFAULT, null))?.[0]
+        ) ?? false;
 }
 
 export function addSliderMarksFromMinMax(slider: Astal.Slider, amountOfMarks: number = 2, markup?: (string | null)) {
