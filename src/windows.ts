@@ -6,6 +6,7 @@ import { ControlCenter } from "./window/control-center";
 import { FloatingNotifications } from "./window/floating-notifications";
 import { LogoutMenu } from "./window/logout-menu";
 import { OSD } from "./window/osd";
+import { RunnerWindow } from "./runner";
 import Notifications from "./modules/notifications";
 import Windows from "./window";
 
@@ -14,6 +15,7 @@ import Windows from "./window";
 export const shellWindows = {
     "bar": Bar,
     "osd": OSD,
+    "runner": RunnerWindow,
     "control-center": ControlCenter,
     "center-window": CenterWindow,
     "logout-menu": LogoutMenu,

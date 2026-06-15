@@ -20,7 +20,7 @@ const plugins = [
 ];
 
 let initialized: boolean = false;
-function init(): void {
+export function initRunner(): void {
     if(initialized)
         return;
 
@@ -28,14 +28,4 @@ function init(): void {
         Runner.addPlugin(plugin);
 
     initialized = true;
-}
-
-export function toggleRunner(search?: string): void {
-    init();
-    if(Runner.isOpen) {
-        Runner.close();
-        return;
-    }
-
-    Runner.open(search);
 }

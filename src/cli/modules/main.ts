@@ -7,10 +7,9 @@ import System from "system";
 import { execApp } from "../../modules/apps";
 import { generalConfig } from "../../config";
 import { runtimeDir } from "../../modules/utils";
-import { toggleRunner } from "../../runner/init";
+import Runner from "../../runner";
 
 
-let window: string|undefined;
 const defaultPeekMillis = 2200;
 let peekMillis: number = defaultPeekMillis,
     peekTimeout: GLib.Source|undefined;
@@ -31,7 +30,6 @@ const windowArg = {
                 `Specified name "${name}" is not a valid window name.\nTry checking \`colorshell windows\``,
                 true
             );
-            window = undefined;
             return;
         }
     }
@@ -73,7 +71,6 @@ Others:
 https://github.com/retrozinndev/colorshell
 `.trimEnd(),
 
-    onCalled: () => window = undefined,
     arguments: [
         {
             name: "version",
@@ -192,6 +189,7 @@ https://github.com/retrozinndev/colorshell
         // others
         {
             name: "runner",
+            help: "Toggle the multifunctional runner (apps, clipboard, shell, wallpaper controls...)",
             arguments: [{
                 name: "text",
                 alias: "t",
@@ -202,7 +200,9 @@ https://github.com/retrozinndev/colorshell
                 const text = args.find(a => a.name === "text")?.value;
                 remote.println(`Toggling runner${text ? ` with "${text}"` : ""}...`);
 
-                toggleRunner(text);
+                Runner.isOpen ?
+                    Runner.close()
+                : Runner.open(text);
                 remote.exit(0);
             }
         },

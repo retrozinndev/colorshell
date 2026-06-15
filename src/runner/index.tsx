@@ -5,11 +5,14 @@ import { updateApps } from "../modules/apps";
 import ResultItem from "./widgets/ResultItem";
 import { omitObjectKeys } from "../modules/utils";
 import { getter, gtype, property, register } from "ags/gobject";
+import { initRunner } from "./init";
 import GObject from "gi://GObject?version=2.0";
 import AstalHyprland from "gi://AstalHyprland";
 import Windows from "../window";
 import ResultsList from "./widgets/ResultsList";
 
+
+export const RunnerWindow = Windows.forFocusedMonitor(() => new Runner());
 
 @register({ GTypeName: "ClshRunner" })
 class Runner extends PopupWindow {
@@ -24,7 +27,7 @@ class Runner extends PopupWindow {
     #plugins: Array<Runner.Plugin> = [];
 
     @property(gtype<string|null>(String))
-    searchPlaceholder: string|null = null;
+    searchPlaceholder: string|null = "Search anything...";
 
     @property(Boolean)
     showResultPlaceholders: boolean = false;
@@ -36,7 +39,50 @@ class Runner extends PopupWindow {
     search: string = "";
 
     @property(Array)
-    placeholders: Array<Runner.Result> = [];
+    placeholders: Array<Runner.Result> = [
+        {
+            icon: "application-x-executable-symbolic",
+            title: "Use your applications",
+            description: "Search for any app installed in your computer",
+            closeOnClick: false,
+            onClicked: () => Runner.searchGrabFocus()
+        },
+        {
+            icon: "edit-paste-symbolic",
+            title: "See your clipboard history",
+            description: "Start your search with '>' to go through your clipboard history",
+            closeOnClick: false,
+            onClicked: () => Runner.setSearch('>')
+        },
+        {
+            icon: "image-x-generic-symbolic",
+            title: "Change your wallpaper",
+            description: "Add '#' at the start to search through the wallpapers folder!",
+            closeOnClick: false,
+            onClicked: () => Runner.setSearch('#'),
+        },
+        {
+            icon: "utilities-terminal-symbolic",
+            title: "Run shell commands",
+            description: "Add '!' before your command to run it (tip: add another '!' to notify command output)",
+            closeOnClick: false,
+            onClicked: () => Runner.setSearch('!')
+        },
+        {
+            icon: "media-playback-start-symbolic",
+            title: "Control media",
+            description: "Type ':' to control playing media",
+            closeOnClick: false,
+            onClicked: () => Runner.setSearch(':')
+        },
+        {
+            icon: "applications-internet-symbolic",
+            title: "Search the Web",
+            description: "Start typing with '?' prefix to search the web",
+            closeOnClick: false,
+            onClicked: () => Runner.setSearch('?')
+        }
+    ];
 
     @getter(Array<Runner.Result>)
     get results() { return [...this.#results]; }
@@ -57,6 +103,10 @@ class Runner extends PopupWindow {
                 "placeholders"
             ])
         });
+
+        initRunner();
+        if(Runner.instance === null)
+            Runner.instance = this;
 
         if(props.search !== undefined)
             this.search = props.search;
@@ -194,6 +244,7 @@ class Runner extends PopupWindow {
 
     vfunc_close_request(): boolean {
         this.#plugins.forEach(p => p.onClose?.());
+        this.#plugins.splice(0, this.#plugins.length);
         Runner.instance = null;
         return false;
     }
@@ -204,8 +255,11 @@ class Runner extends PopupWindow {
     }
 
     /** grab focus to the search entry */
-    public searchGrabFocus(): void {
-        this.#entry.grab_focus_without_selecting();
+    public static searchGrabFocus(): void {
+        if(!Runner.instance)
+            return;
+
+        Runner.instance.#entry.grab_focus_without_selecting();
     }
     
     /** set search string for runner instance if open */
@@ -214,8 +268,8 @@ class Runner extends PopupWindow {
             return;
 
         this.instance.search = search;
-        this.instance.searchGrabFocus();
-        this.instance.#entry.select_region(search.length, search.length);
+        this.searchGrabFocus();
+        //this.instance.#entry.select_region(search.length, search.length);
     }
 
     /** open a default instance of the app runner */
@@ -223,59 +277,11 @@ class Runner extends PopupWindow {
         if(this.instance)
             return this.instance;
 
-        this.instance = createRoot((dispose) => Windows.forFocusedMonitor(() =>
-            <Runner searchPlaceholder="Search anything..." search={search}
-              showResultPlaceholders={false} maxResults={24}
-              onClosed={() => dispose()}
-              placeholders={[
-                  {
-                      icon: "application-x-executable-symbolic",
-                      title: "Use your applications",
-                      description: "Search for any app installed in your computer",
-                      closeOnClick: false,
-                      onClicked: () => this.instance?.searchGrabFocus()
-                  },
-                  {
-                      icon: "edit-paste-symbolic",
-                      title: "See your clipboard history",
-                      description: "Start your search with '>' to go through your clipboard history",
-                      closeOnClick: false,
-                      onClicked: () => this.setSearch('>')
-                  },
-                  {
-                      icon: "image-x-generic-symbolic",
-                      title: "Change your wallpaper",
-                      description: "Add '#' at the start to search through the wallpapers folder!",
-                      closeOnClick: false,
-                      onClicked: () => this.setSearch('#'),
-                  },
-                  {
-                      icon: "utilities-terminal-symbolic",
-                      title: "Run shell commands",
-                      description: "Add '!' before your command to run it (tip: add another '!' to notify command output)",
-                      closeOnClick: false,
-                      onClicked: () => this.setSearch('!')
-                  },
-                  {
-                      icon: "media-playback-start-symbolic",
-                      title: "Control media",
-                      description: "Type ':' to control playing media",
-                      closeOnClick: false,
-                      onClicked: () => this.setSearch(':')
-                  },
-                  {
-                      icon: "applications-internet-symbolic",
-                      title: "Search the Web",
-                      description: "Start typing with '?' prefix to search the web",
-                      closeOnClick: false,
-                      onClicked: () => this.setSearch('?')
-                  }
-              ]}
-            />
-        )()) as unknown as Runner;
-        this.instance.show();
+        Windows.getDefault().open("runner");
+        search !== undefined &&
+            this.setSearch(search);
 
-        return this.instance;
+        return this.instance!;
     }
 
     /** close the existing runner instance, if there is one */
@@ -283,7 +289,7 @@ class Runner extends PopupWindow {
         if(!this.isOpen)
             return;
 
-        this.instance!.close();
+        Windows.getDefault().close("runner");
     }
     
     public static addPlugin(plugin: Runner.PluginConstructor) {
