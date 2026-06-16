@@ -269,7 +269,7 @@ class Runner extends PopupWindow {
 
         this.instance.search = search;
         this.searchGrabFocus();
-        //this.instance.#entry.select_region(search.length, search.length);
+        this.instance.#entry.select_region(search.length, search.length);
     }
 
     /** open a default instance of the app runner */
