@@ -4,6 +4,7 @@ import { isInstalled } from "./utils";
 import AstalApps from "gi://AstalApps";
 import Compositor from "../compositor";
 import Hyprland from "../compositor/interface/hyprland";
+import AstalHyprland from "gi://AstalHyprland?version=0.1";
 
 
 export const uwsmIsActive: boolean = isInstalled("uwsm") && await execAsync(
@@ -30,15 +31,19 @@ export function getAstalApps(): AstalApps.Apps {
     supports desktop entries and usage of uwsm if it's active */
 export function execApp(app: AstalApps.Application|string, dispatchExecArgs?: string) {
     const executable = (typeof app === "string") ? app 
-        : app.executable.replace(/%[fFcuUik]/g, "");
+        : app.executable.replace(/%[fFuUick]/g, "");
 
-    (Compositor.getDefault() as Hyprland.Hyprland).hyprctl(`eval \
-        hl.exec_cmd("${
-            uwsmIsActive ? "uwsm-app -- " : executable.endsWith(".desktop") ?
-                "gtk-launch "
-            : ""
-        }${executable}")`
-    );
+    const comp = Compositor.getDefault() as Hyprland.Hyprland;
+    const cmd = `${uwsmIsActive ? "uwsm-app -- " : executable.endsWith(".desktop") ?
+        "gio-launch "
+    : ""}${executable}`;
+    
+    if(comp.configProvider === Hyprland.Hyprland.ConfigProvider.LUA) {
+        AstalHyprland.get_default().dispatch("hl.dsp.exec_cmd", `("${cmd}")`);
+        return;
+    }
+
+    AstalHyprland.get_default().dispatch("exec", cmd);
 }
 
 export function lookupIcon(name: string): boolean {
