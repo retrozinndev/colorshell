@@ -12,9 +12,6 @@ export class PluginApps implements Runner.Plugin {
     }
 
     handle(text: string) {
-        if(text.length < 1)
-            return;
-
         return getAstalApps().fuzzy_query(text).map(app => {
             let icon: AppIcon = new AppIcon({
                 icon: app.iconName

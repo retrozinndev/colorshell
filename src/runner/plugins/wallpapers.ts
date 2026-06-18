@@ -199,7 +199,7 @@ export class PluginWallpapers implements Runner.Plugin {
         const results: Array<Runner.Result> = [];
 
         this.#fuse.search(search, {
-            limit: limit ?? Infinity
+            limit: limit || -1
         }).map(result => {
             const info = this.#files.filter(inf => 
                 inf.get_name() === result.item
@@ -212,7 +212,6 @@ export class PluginWallpapers implements Runner.Plugin {
                 return widget;
             }));
         });
-
 
         if(results.length < 1)
             return {

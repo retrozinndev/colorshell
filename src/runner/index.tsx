@@ -10,9 +10,16 @@ import GObject from "gi://GObject?version=2.0";
 import AstalHyprland from "gi://AstalHyprland";
 import Windows from "../window";
 import ResultsList from "./widgets/ResultsList";
+import { generalConfig } from "../config";
 
 
-export const RunnerWindow = Windows.forFocusedMonitor(() => new Runner());
+export const RunnerWindow = Windows.forFocusedMonitor(() =>
+    <Runner 
+        searchOnStartup={generalConfig.getProperty("runner.search_on_open", "boolean")}
+        ignoreEmptySearch={generalConfig.getProperty("runner.ignore_empty_search", "boolean")} 
+        maxResults={generalConfig.bindProperty("runner.max_results", "number")}
+        showResultPlaceholders={generalConfig.bindProperty("runner.show_tips", "boolean")}
+    />);
 
 @register({ GTypeName: "ClshRunner" })
 class Runner extends PopupWindow {
@@ -37,6 +44,9 @@ class Runner extends PopupWindow {
     
     @property(String)
     search: string = "";
+
+    @property(Boolean)
+    ignoreEmptySearch: boolean = true;
 
     @property(Array)
     placeholders: Array<Runner.Result> = [
@@ -99,6 +109,7 @@ class Runner extends PopupWindow {
                 "search",
                 "maxResults",
                 "searchOnStartup",
+                "ignoreEmptySearch",
                 "showResultPlaceholders",
                 "placeholders"
             ])
@@ -122,6 +133,9 @@ class Runner extends PopupWindow {
 
         if(props.searchPlaceholder !== undefined)
             this.searchPlaceholder = props.searchPlaceholder;
+
+        if(props.ignoreEmptySearch != null)
+            this.ignoreEmptySearch = props.ignoreEmptySearch;
 
         const connections: Map<GObject.Object, number|Array<number>> = new Map();
         this.#container = new Gtk.Box({
@@ -235,11 +249,8 @@ class Runner extends PopupWindow {
                 (result as Promise<any>).catch(console.error);
         }
 
-        if(props.searchOnStartup || (this.search.length > 0 &&
-                                     props.searchOnStartup !== false)
-          ) {
-            this.update(this.search, this.maxResults);
-        }
+        if(props.searchOnStartup)
+            this.notify("search");
     }
 
     vfunc_close_request(): boolean {
@@ -371,6 +382,16 @@ class Runner extends PopupWindow {
         this.#results.splice(0, this.#results.length);
         this.notify("results");
 
+        if(input.trim() === "" && this.ignoreEmptySearch) {
+            if(this.showResultPlaceholders) {
+                for(const ph of this.placeholders) {
+                    this.#list.append(this.resultToWidget(ph));
+                }
+            }
+
+            return;
+        }
+
         try {
             this.#results = await this.generateResults(input, limit);
             this.notify("results");
@@ -379,8 +400,8 @@ class Runner extends PopupWindow {
 
             this.#list.prepend(
                 new ResultItem({
-                    title: `Error: ${(e as Error).message}`,
-                    description: "Try changing your search a little...",
+                    title: "Try changing your search a little...",
+                    description: `Error: ${(e as Error).message || "unknown error"}`,
                     icon: "window-close-symbolic"
                 })
             );
@@ -417,6 +438,7 @@ namespace Runner {
         searchPlaceholder: string;
         search: string;
         maxResults: number;
+        ignoreEmptySearch: boolean;
         searchOnStartup: boolean;
         showResultPlaceholders: boolean;
         placeholders: Array<Runner.Result>;

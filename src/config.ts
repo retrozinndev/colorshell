@@ -73,6 +73,20 @@ const generalConfigDefaults = {
         media: "amberol"
     },
 
+    /** multifunctional runner's settings */
+    runner: {
+        /** whether to run search upon opening the runner(useful with `runner:ignore_empty_search` to show results on open) */
+        search_on_startup: false,
+        /** limit of search results. set to 0 for unlimited. @default `24` */
+        max_results: 24,
+        /** whether to skip searching if the search string is empty(""). @default `true` */
+        ignore_empty_search: true,
+        /** whether to show placeholder results with tips on usage when the search is empty or when there aren't results for the search.
+          * ---
+          * conflicts with `runner:ignore_empty_search`(if both enabled, tips won't show when search is empty) */
+        show_tips: true
+    },
+
     clock: {
         /** use the same format as gnu's `date` command 
           * @default "%A %d, %H:%M" // -> "tuesday, 11, 15:44" */
