@@ -76,7 +76,7 @@ const generalConfigDefaults = {
     /** multifunctional runner's settings */
     runner: {
         /** whether to run search upon opening the runner(useful with `runner:ignore_empty_search` to show results on open) */
-        search_on_startup: false,
+        search_on_open: false,
         /** limit of search results. set to 0 for unlimited. @default `24` */
         max_results: 24,
         /** whether to skip searching if the search string is empty(""). @default `true` */
