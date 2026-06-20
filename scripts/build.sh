@@ -8,7 +8,10 @@ is_devel=true
 version=`cat package.json | jq -r .version`
 head=`command -v git 2>&1 > /dev/null && git rev-parse HEAD || echo $version`
 udate=`date +%s`
+appname="colorshell"
 appid="io.github.retrozinndev.Colorshell"
+entryfile=src/app.ts
+srcroot=src
 
 while getopts :g:o:srhj arg; do
     case "$arg" in
@@ -31,11 +34,11 @@ while getopts :g:o:srhj arg; do
             ;;
         h | ?)
             echo "\
-colorshell's build script. 
+$appname's build script. 
 use the \"-r\" flag for release builds.
 
 options: 
-  -g \$file: tell colorshell which path to search for the gresource (default: \`./build/resources.gresource\`)
+  -g \$file: tell $appname which path to search for the gresource (default: \`./build/resources.gresource\`)
   -o \$path: build output directory (where build output is stored. default: \`./build\`)
   -j: skip gresource compiling step (useful for nix)
   -s: enable socket cli support (sends args to socket if available, avoids wasting your time)
@@ -58,8 +61,8 @@ fi
 echo "[info] bundling"
 {
     echo -e "#!/usr/bin/gjs -m\n"
-    esbuild --bundle ./src/app.ts \
-      --source-root=./src \
+    esbuild --bundle $entryfile \
+      --source-root=$srcroot \
       --sourcemap=inline \
       --format="esm" \
       --target=firefox128 \
@@ -74,7 +77,7 @@ echo "[info] bundling"
       --define:"BUILD_DATE=$udate" \
       --define:"HEAD='$head'"
 
-} > $output/clsh.js
+} > $output/$appname.js
 
 if [[ -z $skip_gresource ]]; then
     echo "[info] compiling gresource"
@@ -92,16 +95,16 @@ export XDG_DATA_HOME=\${XDG_DATA_HOME:-\"\$HOME/.local/share\"}
 export XDG_CONFIG_HOME=\${XDG_CONFIG_HOME:-\"\$HOME/.config\"}
 export XDG_RUNTIME_DIR=\${XDG_RUNTIME_DIR:-\"/run/user/\`id -u\`\"}
 
-runtime_dir=\$XDG_RUNTIME_DIR/colorshell
-file=\"\$XDG_RUNTIME_DIR/colorshell/colorshell\"
+runtime_dir=\$XDG_RUNTIME_DIR/$appname
+file=\"\$XDG_RUNTIME_DIR/$appname/$appname\"
 `[[ $socket_support ]] && (cat ./scripts/socket.sh | sed -E '/(^#!.*)|^$/d')`
 
-mkdir -p \"\$XDG_RUNTIME_DIR/colorshell\"
-echo -n '`cat $output/clsh.js | base64`' | base64 --decode > \"\$file\"
+mkdir -p \"\$XDG_RUNTIME_DIR/$appname\"
+echo -n '`cat $output/$appname.js | base64`' | base64 --decode > \"\$file\"
 chmod +x "\$file"
 
 export LD_PRELOAD=\"/usr/lib/libgtk4-layer-shell.so\"
 \$file \$@
 export LD_PRELOAD=
-" > $output/colorshell
-chmod +x $output/colorshell
+" > $output/$appname
+chmod +x $output/$appname
