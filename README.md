@@ -1,7 +1,7 @@
 # colorshell
 
 > [!note]
-> My personal dotfiles are now on [retrozinndev/Hyprland-Dots](https://github.com/retrozinndev/Hyprland-Dots)
+> My personal dotfiles are now on [retrozinndev/.config](https://github.com/retrozinndev/.config)
 
 This is the repository for the colorshell desktop shell, made for Hyprland with [TypeScript], [GTK4], [AGS], [Gnim], and some of the [Astal] libraries.
 
