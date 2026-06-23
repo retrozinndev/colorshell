@@ -50,21 +50,6 @@ retrozinndev/colorshell/refs/heads/$target_branch/scripts/utils.sh"
 }
 
 function Post_install() {
-    # Check if user has a Hyprland config file
-    if [[ ! -f "$XDG_CONFIG_HOME/hypr/hyprland.conf" ]] && [[ -f "/usr/share/hypr/hyprland.conf" ]]; then
-        Send_log "Looks like Hyprland wasn't launched yet! Copying default config file..."
-        mkdir -p "$XDG_CONFIG_HOME/hypr"
-        cp -f "/usr/share/hypr/hyprland.conf" "$XDG_CONFIG_HOME/hypr/hyprland.conf"
-        Send_log "Adding exec for colorshell in Hyprland config..."
-        echo -ne "\nexec-once = ~/.local/bin/colorshell" >> "$XDG_CONFIG_HOME/hypr/hyprland.conf"
-
-    else
-        Ask "Do you want to autostart colorshell with Hyprland?"
-        if [ "$answer" == "y" ]; then
-            Send_log "Adding exec-once for colorshell to Hyprland..."
-            echo -ne "\nexec-once = ~/.local/bin/colorshell" >> "$XDG_CONFIG_HOME/hypr/hyprland.conf"
-        fi
-    fi
 }
 
 # check if the script is running in standalone mode(without having cloned the repo)
