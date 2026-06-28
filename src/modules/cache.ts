@@ -4,6 +4,22 @@ export default class Cache {
     #sections: Map<string, Map<string, unknown>> = new Map();
     #lastId: number = -1;
 
+    /** @returns an array containing all of the section names */
+    getSections(): Array<string> {
+        return [...this.#sections.keys()];
+    }
+
+    /** list keys for items stored inside `section`. if `section` does not exist,
+      * `null` is returned.
+      *
+      * @param section the section to list item keys from
+      * @returns all item keys that have been stored in `section` */
+    getItems(section: string): Array<string>|null {
+        if(!this.#sections.has(section))
+            return null;
+
+        return [...this.#sections.get(section)!.keys()];
+    }
 
     /** creates new cache section, with optional items in it.
       * if a section already exists with this name, this method will overwrite it.
