@@ -72,12 +72,23 @@ class PlayerWidget extends Gtk.Box {
         );
 
         if(!cachedArt) {
-            const id = AstalMpris.get_default().connect("player-closed", (_, closed) => {
+            const metaConn = this.#player.connect("notify::metadata", () => {
+                const art = this.#player.get_meta("mpris:artUrl");
+
+                if(art && art.get_string()[0]?.trim())
+                    return;
+
+                Cache.getDefault().removeItem("player", this.#player.get_bus_name());
+                this.#player.disconnect(metaConn);
+            });
+
+            const closedConn = AstalMpris.get_default().connect("player-closed", (_, closed) => {
                 if(closed.busName !== player.busName)
                     return;
 
                 Cache.getDefault().removeItem("player", player.busName);
-                AstalMpris.get_default().disconnect(id);
+                AstalMpris.get_default().disconnect(closedConn);
+                closed.disconnect(metaConn);
             });
         }
 
