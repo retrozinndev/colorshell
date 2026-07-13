@@ -3,8 +3,8 @@
   "compilerOptions": {
     "allowJs": false,
     "module": "esnext",
-    "target": "es2025",
-    "lib": ["ES2025"],
+    "target": "es2024",
+    "lib": ["ES2024"],
     "moduleResolution": "bundler",
     "skipLibCheck": true,
     "types": ["./@types"],

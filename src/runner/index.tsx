@@ -1,7 +1,6 @@
 import { Gdk, Gtk } from "ags/gtk4";
 import { CCProps, createRoot } from "ags";
 import { PopupWindow } from "../widget/PopupWindow";
-import { updateApps } from "../modules/apps";
 import ResultItem from "./widgets/ResultItem";
 import { omitObjectKeys } from "../modules/utils";
 import { getter, gtype, property, register } from "ags/gobject";
@@ -182,10 +181,6 @@ class Runner extends PopupWindow {
         connections.set(this, [
             this.connect("key-pressed", (_, key) => {
                 switch(key) {
-                    case Gdk.KEY_F5:
-                        updateApps();
-                        return;
-
                     case Gdk.KEY_Up:
                         this.#list.selectPrevious();
                         return;

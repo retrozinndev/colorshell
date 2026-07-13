@@ -5,26 +5,21 @@ import AstalApps from "gi://AstalApps";
 import Compositor from "../compositor";
 import Hyprland from "../compositor/interface/hyprland";
 import AstalHyprland from "gi://AstalHyprland?version=0.1";
+import Gio from "gi://Gio?version=2.0";
 
 
 export const uwsmIsActive: boolean = isInstalled("uwsm") && await execAsync(
     "uwsm check is-active"
 ).then(() => true).catch(() => false);
-const astalApps: AstalApps.Apps = new AstalApps.Apps();
+let astalApps: [Gio.AppInfoMonitor, AstalApps.Apps];
 
-let appsList: Array<AstalApps.Application> = astalApps.get_list();
+export function getApps(): AstalApps.Apps {
+    if(!astalApps) {
+        astalApps = [Gio.AppInfoMonitor.get(), AstalApps.Apps.new()];
+        astalApps[0].connect("changed", () => astalApps[1].reload());
+    }
 
-export function getApps(): Array<AstalApps.Application> {
-    return appsList;
-}
-
-export function updateApps(): void {
-    astalApps.reload();
-    appsList = astalApps.get_list();
-}
-
-export function getAstalApps(): AstalApps.Apps {
-    return astalApps;
+    return astalApps[1];
 }
 
 /** execute apps and commands using Hyprland's exec dispatcher.
@@ -53,7 +48,7 @@ export function lookupIcon(name: string): boolean {
 export function getAppsByName(appName: string): (Array<AstalApps.Application>|undefined) {
     let found: Array<AstalApps.Application> = [];
 
-    getApps().map((app: AstalApps.Application) => {
+    getApps().get_list().map((app: AstalApps.Application) => {
         if(app.get_name().trim().toLowerCase() === appName.trim().toLowerCase()
           || (app?.wmClass && app.wmClass.trim().toLowerCase() === appName.trim().toLowerCase()))
             found.push(app);

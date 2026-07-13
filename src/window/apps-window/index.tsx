@@ -1,8 +1,8 @@
 import { Astal, Gdk, Gtk } from "ags/gtk4";
-import { execApp, getApps, getAstalApps } from "../../modules/apps";
+import { execApp, getApps } from "../../modules/apps";
 import { PopupWindow } from "../../widget/PopupWindow";
 
-import AstalApps from "gi://AstalApps";
+import AstalApps from "gi://AstalApps?version=0.1";
 import Pango from "gi://Pango?version=1.0";
 import { createRoot, createState } from "ags";
 import { escapeUnintendedMarkup } from "../../modules/utils";
@@ -23,11 +23,11 @@ const ignoredKeys = [
 ];
 
 export const AppsWindow = Windows.forFocusedMonitor((mon) => {
-    const [results, setResults] = createState(getApps() as Array<AstalApps.Application>);
+    const [results, setResults] = createState(getApps().get_list());
 
     const entry = <Gtk.SearchEntry hexpand={false} halign={Gtk.Align.CENTER}
       onSearchChanged={(self) => {
-          setResults(getAstalApps().fuzzy_query(self.text.trim()));
+          setResults(getApps().fuzzy_query(self.text.trim()));
       }} onStopSearch={(self) => (self.get_root() as Astal.Window)?.close()} 
     /> as Gtk.SearchEntry;
 
