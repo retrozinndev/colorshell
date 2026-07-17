@@ -1,5 +1,5 @@
 import Notifications from "../../../../modules/notifications";
-import Tile from "./Tile";
+import Tile from "../Tile";
 import { createBinding } from "ags";
 
 export const TileDND = () => 

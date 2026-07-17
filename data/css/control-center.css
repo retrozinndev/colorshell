@@ -79,6 +79,9 @@
   padding: 14px;
   border-radius: 24px;
 }
+.control-center-container #page scale trough {
+    box-shadow: 0px 1px 5px 1px oklch(from var(--bg-primary) l c h / .5);
+}
 .control-center-container #page .header {
   margin-bottom: 12px;
 }
@@ -117,9 +120,6 @@
   font-weight: 400;
   color: var(--fg-disabled);
 }
-.control-center-container #page .page-button icon, .control-center-container #page .extra-buttons icon {
-  font-size: 16px;
-}
 .control-center-container #page .bottom-buttons button label.title {
   font-size: 14px;
   font-weight: 500;
@@ -138,6 +138,9 @@
 }
 .control-center-container #page .extra-buttons button:active {
   border-radius: 8px;
+}
+.control-center-container .audio-stream-controller .number {
+    margin-top: 6px;
 }
 
 .tiles-container .tile {

@@ -1,6 +1,6 @@
 import { Gtk } from "ags/gtk4";
-import { createBinding } from "ags";
-import { omitObjectKeys, variableToBoolean } from "../../../../modules/utils";
+import { createBinding, This } from "ags";
+import { omitObjectKeys, variableToBoolean } from "../../../modules/utils";
 import { property, register, signal } from "ags/gobject";
 import Pango from "gi://Pango?version=1.0";
 
@@ -111,38 +111,35 @@ class Tile extends Gtk.Box {
         this.state &&
             this.add_css_class("enabled"); // fix no highlight when enabled on init
 
-        this.prepend(
-            <Gtk.Box hexpand={false} vexpand class={"icon"}>
-                <Gtk.Image iconName={createBinding(this, "icon")} halign={Gtk.Align.CENTER} />
-                <Gtk.GestureClick onReleased={() => {
-                    this.state ? this.disable() : this.enable();
-                }} />
-            </Gtk.Box> as Gtk.Box
+        void (
+            <This this={this as Tile}>
+                <Gtk.Box hexpand={false} vexpand class={"icon"}>
+                    <Gtk.Image iconName={createBinding(this, "icon")} halign={Gtk.Align.CENTER} />
+                    <Gtk.GestureClick onReleased={() => {
+                        this.state ? this.disable() : this.enable();
+                    }} />
+                </Gtk.Box>
+                <Gtk.Box class={"content"} orientation={Gtk.Orientation.VERTICAL} vexpand
+                  valign={Gtk.Align.CENTER} hexpand>
+
+                    <Gtk.Label class={"title"} label={createBinding(this, "title")} 
+                      xalign={0} ellipsize={Pango.EllipsizeMode.END}
+                    />
+                    <Gtk.Label class={"description"} label={createBinding(this, "description")} 
+                      xalign={0} ellipsize={Pango.EllipsizeMode.END} visible={
+                          variableToBoolean(createBinding(this, "description"))
+                      }
+                    />
+                </Gtk.Box>
+
+                {this.hasArrow && 
+                    <Gtk.Image class={"arrow"} iconName={"go-next-symbolic"} 
+                      halign={Gtk.Align.END} 
+                    />
+                }
+            </This>
         );
-
-        this.append(
-            <Gtk.Box class={"content"} orientation={Gtk.Orientation.VERTICAL} vexpand
-              valign={Gtk.Align.CENTER} hexpand>
-
-                <Gtk.Label class={"title"} label={createBinding(this, "title")} 
-                  xalign={0} ellipsize={Pango.EllipsizeMode.END} hexpand={false} 
-                  maxWidthChars={10} />
-                <Gtk.Label class={"description"} label={createBinding(this, "description")} 
-                  xalign={0} ellipsize={Pango.EllipsizeMode.END} visible={
-                      variableToBoolean(createBinding(this, "description"))
-                  } maxWidthChars={12} hexpand={false}
-                />
-            </Gtk.Box> as Gtk.Box
-        );
-
-        if(this.hasArrow)
-            this.append(
-                <Gtk.Image class={"arrow"} iconName={"go-next-symbolic"} 
-                  halign={Gtk.Align.END} 
-                /> as Gtk.Image
-            );
     }
-
 }
 
 namespace Tile {

@@ -36,13 +36,6 @@ class Workspace extends Compositor.Workspace {
         );
     }
 
-    /** creates the object if it doesn't exist, or else returns the existing instance */
-    public static tryNew(compositor: Hyprland, workspace: AstalHyprland.Workspace) {
-        const match = compositor.workspaces.find(w => w.id === workspace.id);
-
-        return match ?? new this(compositor, workspace);
-    }
-
     public syncClients(): void {
         this._clients = this.compositor.clients.filter(cl => cl.workspace?.id === this.id);
         this.notify("clients");

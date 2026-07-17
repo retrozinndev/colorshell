@@ -1,4 +1,4 @@
-import Tile from "./Tile";
+import Tile from "../Tile";
 import { execAsync } from "ags/process";
 import { PageNetwork } from "../pages/Network";
 import { TilesPages } from "../tiles";

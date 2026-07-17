@@ -164,7 +164,6 @@ export function PageButton({ onUnmap, ...props }: {
     endWidget?: Node;
     description?: string | Accessor<string>;
     extraButtons?: Node;
-    maxWidthChars?: number | Accessor<number>;
     onUnmap?: (self: Gtk.Box) => void;
     actionClicked?: (self: Gtk.Button) => void;
     tooltipText?: string | Accessor<string>;
@@ -181,7 +180,6 @@ export function PageButton({ onUnmap, ...props }: {
                 <Gtk.Box orientation={Gtk.Orientation.VERTICAL} hexpand vexpand={false}>
                     <Gtk.Label class={"title"} xalign={0} tooltipText={props.title}
                       ellipsize={Pango.EllipsizeMode.END} label={props.title}
-                      maxWidthChars={props.maxWidthChars ?? 28}
                     />
                     <Gtk.Label class={"description"} xalign={0} visible={variableToBoolean(props.description)}
                       label={props.description} ellipsize={Pango.EllipsizeMode.END} 

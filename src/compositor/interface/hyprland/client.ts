@@ -12,13 +12,13 @@ class Client extends Compositor.Client {
     protected subs: Array<() => void> = [];
     public readonly client: AstalHyprland.Client;
 
-    get class() { return this.client.get_class(); }
-    get title() { return this.client.get_title(); }
-    get mapped() { return this.client.get_mapped(); }
-    get address() { return this.client.get_address(); }
-    get xwayland() { return this.client.get_xwayland(); }
-    get initialTitle() { return this.client.get_initial_title(); }
-    get initialClass() { return this.client.get_initial_class(); }
+    get class() { return this.client.class; }
+    get title() { return this.client.title; }
+    get mapped() { return this.client.mapped; }
+    get address() { return this.client.address; }
+    get xwayland() { return this.client.xwayland; }
+    get initialTitle() { return this.client.initialTitle; }
+    get initialClass() { return this.client.initialClass; }
     get allocation() { return this._allocation; }
 
 
@@ -26,7 +26,7 @@ class Client extends Compositor.Client {
         super(compositor);
         this.client = client;
 
-        const workspace = this.compositor.workspaces.find(ws => ws.id === this.client.workspace.get_id());
+        const workspace = this.compositor.workspaces.find(ws => ws.id === this.client.workspace.id);
         if(workspace)
             this._workspace = workspace;
 
@@ -61,7 +61,7 @@ class Client extends Compositor.Client {
                     if(c.get_address() !== this.address)
                         return;
 
-                    const workspace = this.compositor.workspaces.find(w => w.id === ws.get_id());
+                    const workspace = this.compositor.workspaces.find(w => w.id === ws.id);
                     if(!workspace) {
                         console.warn("No equivalent workspace instance found for moved client");
                         return;
@@ -77,21 +77,14 @@ class Client extends Compositor.Client {
 
     }
 
-    /** creates the object if it doesn't exist, or else returns the existing instance */
-    public static tryNew(compositor: Hyprland, client: AstalHyprland.Client) {
-        const match = compositor.clients.find(cl => cl.address === client.address);
-
-        return match ?? new this(compositor, client);
-    }
-
     /** synchronize the allocation rectangle with the client's properties */
     protected syncAllocation(): void {
         this._allocation ??= new Compositor.Client.Allocation();
 
-        this._allocation.x = this.client.get_x(),
-        this._allocation.y = this.client.get_y(),
-        this._allocation.width = this.client.get_width(),
-        this._allocation.height = this.client.get_height()
+        this._allocation.x = this.client.x,
+        this._allocation.y = this.client.y,
+        this._allocation.width = this.client.width,
+        this._allocation.height = this.client.height
     }
 
     dispose(): void {

@@ -1,4 +1,4 @@
-import Tile from "./Tile";
+import Tile from "../Tile";
 import NightLight from "../../../../modules/nightlight";
 import { PageNightLight } from "../pages/NightLight";
 import { TilesPages } from "../tiles";

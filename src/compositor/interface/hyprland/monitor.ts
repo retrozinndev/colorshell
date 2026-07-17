@@ -57,13 +57,6 @@ class Monitor extends Compositor.Monitor {
         );
     }
 
-    /** creates the object if it doesn't exist, or else returns the existing instance */
-    public static tryNew(compositor: Hyprland, monitor: AstalHyprland.Monitor) {
-        const match = compositor.monitors.find(m => m.id === monitor.id);
-
-        return match ?? new this(compositor, monitor);
-    }
-
     dispose(): void {
         this.#subs.forEach(unsub => unsub());
     }

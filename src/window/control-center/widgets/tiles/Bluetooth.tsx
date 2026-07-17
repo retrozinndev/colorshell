@@ -4,7 +4,7 @@ import { createBinding, createComputed } from "ags";
 import { secureBaseBinding } from "../../../../modules/utils";
 import Bluetooth from "../../../../modules/bluetooth";
 import AstalBluetooth from "gi://AstalBluetooth";
-import Tile from "./Tile";
+import Tile from "../Tile";
 
 
 export const TileBluetooth = () => 
