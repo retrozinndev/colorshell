@@ -127,39 +127,7 @@ nix profile upgrade
 There is a configuration file! You can see its documentation on [Wiki/Configuration].
 
 ## 🛠️ Development
-This project uses `pnpm` to manage packages and running scripts.
-To build the shell, run a development build or make a release build, you can use the project's integrated scripts.<br>
-The most complicated ones have a help flag, so you can learn from there.
-
-### Dependencies
-These are development-only dependencies(by package name on AUR):
-- `aylurs-gtk-shell-git`
-  
-Plus, you also need the packages listed in [Wiki/Dependencies]!
-
-### Building
-In a common build, the shell's gresource(icons and sass) will be targeted to the build output directory by default.
-If you want to ship it, you likely want to use the `pnpm build:release` command with the `-g` flag.
-```zsh
-pnpm build # add `-g "/path/gresource"` to target the gresource to the specified file path
-```
-If you want to ship the build(or install it on your local machine), you'll likely prefer a release build:
-```zsh
-pnpm build:release
-```
-Don't forget to install the gresource to the actual target directory! Or else it'll not find the resource file and will fail
-to load custom resources.<br>
-Also, the environment variables are only actually used at runtime! It's passed as a literal string in the bash
-variable format, then when the shell runs, it understands that it's an environment variable and replaces it with its value.
-
-### Testing/Running the project
-```zsh
-pnpm dev
-```
-or if you actually only want to run the current build instead of building again:
-```zsh
-pnpm start
-```
+Reach to [Wiki/Development] to learn more.
 
 ## ❗ Issues
 Having issues? Please create a [new Issue] here, I'll be happy to help you out!
@@ -202,6 +170,7 @@ This repo is licensed under the [BSD 3-clause] license, project is made and main
 [issues]: https://github.com/retrozinndev/colorshell/issues
 
 <!-- Wiki Pages -->
+[wiki/development]: https://github.com/retrozinndev/colorshell/wiki/Development
 [wiki/dependencies]: https://github.com/retrozinndev/colorshell/wiki/Dependencies
 [wiki/usage]: https://github.com/retrozinndev/colorshell/wiki/Usage
 [wiki/installation]: https://github.com/retrozinndev/colorshell/wiki/Installation
