@@ -58,8 +58,9 @@ Center Window and scrolling the player
   - Pages(the thing that shows up when you click the arrow on a tile)
     - Bluetooth devices
     - Network devices
-    - Night Light controls
-    - Brightness options
+    - Night Light controls (gamma and blue-light filter)
+    - Microfone, speaker and per-app mixer/switcher
+    - Brightness controls
   - Tiles
     - Screen Recording
     - Bluetooth
@@ -108,12 +109,13 @@ See the Installation Guide on [Wiki/Installation].
 ### AUR
 Just update the package with your favorite AUR helper(or compile it yourself). Example:
 ```zsh
-paru -Sy --needed colorshell-git
+paru -Sy --needed colorshell
 ```
+(or `colorshell-git` if you use the latest commit version)
 ### Manual installation
 You can run the following command to update colorshell if it was manually-installed:
 ```zsh
-bash -c "bash <(curl -s https://raw.githubusercontent.com/retrozinndev/colorshell/refs/heads/ryo/update.sh)"
+bash -c "bash <(curl -s https://raw.githubusercontent.com/retrozinndev/colorshell/refs/heads/main/update.sh)"
 ```
 ### Updating on Nix
 You need to update the profile that contains the flake:
@@ -137,26 +139,25 @@ Plus, you also need the packages listed in [Wiki/Dependencies]!
 
 ### Building
 In a common build, the shell's gresource(icons and sass) will be targeted to the build output directory by default.
-If you want to ship it, you likely want to use the `pnpm build:release` command.
+If you want to ship it, you likely want to use the `pnpm build:release` command with the `-g` flag.
 ```zsh
-pnpm build -d # remove the -d flag if you don't want a development build
+pnpm build # add `-g "/path/gresource"` to target the gresource to the specified file path
 ```
 If you want to ship the build(or install it on your local machine), you'll likely prefer a release build:
-(the `build:release` command targets the gresource to `$XDG_DATA_HOME/colorshell/resources.gresource` by default)
 ```zsh
 pnpm build:release
 ```
 Don't forget to install the gresource to the actual target directory! Or else it'll not find the resource file and will fail
-to load custom assets.<br>
+to load custom resources.<br>
 Also, the environment variables are only actually used at runtime! It's passed as a literal string in the bash
-variable format, then when the shell runs, it understands that it's an environment variable and replaces it with it's value.
+variable format, then when the shell runs, it understands that it's an environment variable and replaces it with its value.
 
 ### Testing/Running the project
 ```zsh
 pnpm dev
 ```
 or if you actually only want to run the current build instead of building again:
-```
+```zsh
 pnpm start
 ```
 
@@ -178,6 +179,7 @@ This repo is licensed under the [BSD 3-clause] license, project is made and main
     <br>
     <p align="center">Thanks to everyone who starred my project! 💖</p>
 </div>
+
 
 <!-- References of other projects -->
 [pywal16]: https://github.com/eylles/pywal16
@@ -204,5 +206,6 @@ This repo is licensed under the [BSD 3-clause] license, project is made and main
 [wiki/usage]: https://github.com/retrozinndev/colorshell/wiki/Usage
 [wiki/installation]: https://github.com/retrozinndev/colorshell/wiki/Installation
 [wiki/configuration]: https://github.com/retrozinndev/colorshell/wiki/Configuration
+
 <!-- Actions -->
 [new issue]: https://github.com/retrozinndev/colorshell/issues/new
