@@ -42,9 +42,6 @@ class Wallpaper extends GObject.Object {
     @property(gtype<Wallpaper.Positioning>(String))
     positioning: Wallpaper.Positioning = "cover";
 
-    @property(gtype<Wallpaper.WalColorMode>(String))
-    colorMode: Wallpaper.WalColorMode = "darken";
-
 
     constructor(props?: Wallpaper.ConstructorProps) {
         super(props);
@@ -79,24 +76,6 @@ may check the syntax of your hyprpaper.conf for errors");
         });
 
         globalScope.run(() => {
-            createSubscription(
-                generalConfig.bindProperty("wallpaper.color_mode", "string"),
-                () => {
-                    const mode = generalConfig.getProperty("wallpaper.color_mode", "string");
-
-                    if(!mode || (mode !== "darken" && mode !== "lighten")) {
-                        Notifications.getDefault().sendNotification({
-                            appName: "colorshell",
-                            summary: "Couldn't update color mode",
-                            body: "Invalid mode. Possible values are: \"darken\" or \"lighten\""
-                        });
-                        return;
-                    };
-
-                    this.colorMode = mode as Wallpaper.WalColorMode;
-                }
-            );
-
             createSubscription(
                 generalConfig.bindProperty("wallpaper.positioning", "string"),
                 () => {

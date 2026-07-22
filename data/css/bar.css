@@ -12,12 +12,8 @@
   padding: 6px;
   padding-bottom: 0px;
 }
-.bar-container label {
-  font-size: 12px;
-  font-weight: 600;
-}
 .bar-container .bar-centerbox > * {
-  background: oklch(from var(--bg-translucent-primary) l c h / .6);
+  background: var(--bg-translucent-primary);
   border-radius: var(--radius);
   padding: 0 var(--padding);
 }
@@ -34,6 +30,11 @@
 .bar-container .bar-centerbox > * > box:not(.transparent):active,
 .bar-container .bar-centerbox > * > button:active {
   box-shadow: 0 0 0 2px var(--color-hover);
+}
+
+.bar-container label {
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .bar-container .workspaces-row {

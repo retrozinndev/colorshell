@@ -1,11 +1,9 @@
 import { Gdk, Gtk } from "ags/gtk4";
 import { register, signal } from "ags/gobject";
-import { readFile } from "ags/file";
 import GObject from "gi://GObject?version=2.0";
 import Gio from "gi://Gio?version=2.0";
-import GLib from "gi://GLib?version=2.0";
 import Wallpaper from "./wallpaper";
-import { exec, execAsync } from "ags/process";
+import Color from "./color";
 
 
 /** handles stylesheet (re)loading and color transformations */
@@ -13,32 +11,28 @@ import { exec, execAsync } from "ags/process";
 class StyleManager extends GObject.Object {
     declare $signals: StyleManager.SignalSignatures;
     private static instance: StyleManager|null = null;
-    /** `Wallpaper`'s ::`wallpaper-changed` and `notify::color-mode` connections */
-    protected connections: [number, number]|null = null;
 
     #colorsStyle: Gtk.CssProvider|null = null;
     #styles: Set<Gtk.CssProvider> = new Set();
 
     @signal()
-    colorsReloaded() {}
+    colorsUpdated() {}
 
 
     /** @param resourceNames optional list resource names to read and apply styles from */
     constructor(resourceNames?: Array<string>) {
         super();
 
-        this.connections = [
-            Wallpaper.getDefault().connect("wallpaper-changed", () => {
-                this.generateColorsAsync().then(() =>
-                    this.reloadColors()
-                ).catch(console.error);
-            }),
-            Wallpaper.getDefault().connect("notify::color-mode", () => {
-                this.generateColorsAsync().then(() =>
-                    this.reloadColors()
-                ).catch(console.error);
-            })
-        ];
+        Wallpaper.getDefault().connect("wallpaper-changed", (_, image: Gio.File) => {
+            Color.getEngine().getColorsAsync(image).then(colors => {
+                this.setColors(colors);
+            }).catch(console.error);
+        });
+        Color.getDefault().connect("updated", () => {
+            Color.getEngine().getColorsAsync(Wallpaper.getDefault().wallpaper!)
+                .then(colors => this.setColors(colors))
+                .catch(console.error);
+        });
         
         if(!resourceNames || resourceNames.length < 1)
             return;
@@ -58,7 +52,9 @@ class StyleManager extends GObject.Object {
             );
         }
 
-        this.reloadColors();
+        this.setColors(
+            Color.getEngine().getColors(Wallpaper.getDefault().wallpaper!)
+        );
     }
 
     /** initialize a default instance for `StyleManager` */
@@ -75,48 +71,24 @@ class StyleManager extends GObject.Object {
         return this.instance;
     }
 
-    /** shutdown the default `StyleManager` instance and restore default theming */
-    public static deinit(): void {
-        if(!this.instance)
-            return;
-
-        this.instance.reset();
-        this.instance.connections?.forEach(id => Wallpaper.getDefault().disconnect(id));
-        this.instance.connections = null;
-        this.instance = null;
-    }
-
     /** get the default instance for `StyleManager` */
     public static getDefault(): StyleManager {
         return this.init();
     }
 
-    /** generate colors from current wallpaper with pywal16 */
-    public generateColors(): void {
-        const wallpaper = Wallpaper.getDefault().wallpaper;
-        if(!wallpaper)
-            return;
+    public setColors(colors: Color.Engine.Colors): void {
+        if(this.#colorsStyle)
+            this.remove(this.#colorsStyle);
 
-        try {
-            exec(`wal -t --cols16 "${Wallpaper.getDefault().colorMode}" -i "${wallpaper.peek_path()}"`);
-        } catch(e) {
-            throw new Error(`An error occurred while trying to generate colors: ${(e as Error).message}`);
-        }
+        this.#colorsStyle = this.addCss(
+`:root{
+${Object.keys(colors).map(name =>
+    `--${name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}: ${colors[name as keyof typeof colors]};`
+).join('\n')}
+}`
+        );
+        this.emit("colors-updated");
     }
-
-    /** asynchronous version of `StyleManager.generateColors()` */
-    public async generateColorsAsync(): Promise<void> {
-        const wallpaper = Wallpaper.getDefault().wallpaper;
-        if(!wallpaper)
-            return;
-
-        try {
-            await execAsync(`wal -t --cols16 "${Wallpaper.getDefault().colorMode}" -i "${wallpaper.peek_path()}"`);
-        } catch(e) {
-            throw new Error(`An error occurred while trying to generate colors: ${(e as Error).message}`);
-        }
-    }
-
 
     /** reset all of the styles in this `StyleManager` instance (use default user theme)
       * @param keepRegistered whether to only remove the styling from the display and keeping it registered (default: false) */
@@ -168,21 +140,6 @@ class StyleManager extends GObject.Object {
         return provider;
     }
 
-    public reloadColors(): void {
-        if(this.#colorsStyle)
-            this.remove(this.#colorsStyle);
-
-        this.#colorsStyle = this.addCss(this.getColorsStyle());
-        this.emit("colors-reloaded");
-    }
-
-    /** get pywal colors in the js `object` format */
-    public getData(): StyleManager.WalColors {
-        return JSON.parse(
-            readFile(`${GLib.get_user_cache_dir()}/wal/colors.json`)
-        ) as StyleManager.WalColors;
-    }
-
     public reload(): void {
         this.reset(true);
         this.#styles.forEach(css => Gtk.StyleContext.add_provider_for_display(
@@ -190,24 +147,6 @@ class StyleManager extends GObject.Object {
             css,
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
         ));
-    }
-
-    /** gets the pywal-generated stylesheet that declares color variables.
-      * @returns a string containing ready-to-use pywal color declarations in CSS */
-    protected getColorsStyle(): string {
-        try {
-            return readFile(`${GLib.get_user_cache_dir()}/wal/colors.css`);
-        } catch(e) {
-            console.warn("Failed to load pywal colors. Let's regenerate them!");
-            try {
-                this.generateColors();
-                return this.getColorsStyle();
-            } catch(e) {
-                console.error("Couldn't load pywal colors:", e);
-                console.warn("Since there is no pywal colors set, styling may be broken");
-                return "";
-            }
-        }
     }
 }
 
@@ -243,7 +182,7 @@ namespace StyleManager {
 
     export interface SignalSignatures extends GObject.Object.SignalSignatures {
         /** emitted when the shell colors are reloaded */
-        "colors-reloaded": () => void;
+        "colors-updated": () => void;
     }
 }
 

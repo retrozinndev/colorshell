@@ -41,14 +41,24 @@ const generalConfigDefaults = {
         include_audio: true
     },
 
+    /** tinker with the color-generation backends and their settings */
+    color: {
+        /** color gen engine to be used to generate color schemes.
+          * options: `"pywal16"` and i wish there were more...
+          * @default `"pywal16"` */
+        //engine: "pywal16",
+        /** color scheme type to generate. `"light"` or `"dark"`.
+          * @default `"dark"` */
+        //scheme: "dark",
+        /** custom backend for the engine, if supported.
+          * @default `"default"` */
+        backend: "default"
+    },
+
     wallpaper: {
         /** wallpaper positioning mode (hyprpaper) */
         positioning: "cover",
-        /** color generation mode. 
-          * darken: picks darker colors; lighten: picks brighter colors */
-        color_mode: "darken",
-        /** whether to enable Hyprland's random splash text pn the wallpaper.
-         * only takes effect after a hyprpaper restart. (`systemctl restart --user hyprpaper`) */
+        /** whether to enable Hyprland's random splash text on the wallpaper */
         splash: true
     },
 

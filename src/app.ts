@@ -1,7 +1,7 @@
 import "./pkg";
 import { Gdk, Gtk } from "ags/gtk4";
 import { createRoot, getScope, Scope } from "ags";
-import { programArgs, programInvocationName, exit } from "system";
+import { programArgs, programInvocationName } from "system";
 import { setConsoleLogDomain } from "console";
 import { cacheDir, createScopedConnection, dataDir, encoder, getDBusNamePID, globalScope, runtimeConfigDir, runtimeDir } from "./modules/utils";
 import Clipboard from "./modules/clipboard";
@@ -162,7 +162,6 @@ export class Shell extends Adw.Application {
         Cli.deinit();
         Clipboard.deinit();
         super.quit();
-        exit(0);
     }
 }
 

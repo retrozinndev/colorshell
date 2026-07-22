@@ -1,6 +1,5 @@
 import { execAsync } from "ags/process";
 import { generalConfig } from "../config";
-import { onCleanup } from "ags";
 import { pathToURI } from "./utils";
 import GObject, { getter, ParamSpec, property, register, signal } from "ags/gobject";
 import AstalNotifd from "gi://AstalNotifd";
@@ -107,6 +106,7 @@ class Notifications extends GObject.Object {
         onAction?: () => void
     }|null|void> {
         let stdout: string|undefined;
+        props.appName ??= "colorshell";
 
         try {
             stdout = (await execAsync([

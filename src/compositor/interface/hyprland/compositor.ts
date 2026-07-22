@@ -11,8 +11,9 @@ import Socket from "../../../modules/socket";
 import Client from "./client";
 import Workspace from "./workspace";
 import Monitor from "./monitor";
-import { exec } from "ags/process";
 import StyleManager from "../../../modules/stylemanager";
+import Color from "../../../modules/color";
+import Pywal16 from "../../../modules/color/engine/pywal16";
 
 
 @register({ GTypeName: "ClshHyprland" })
@@ -38,7 +39,7 @@ class Hyprland extends Compositor.Compositor {
         );
 
         try {
-            const prov: "lua"|"hyprlang" = JSON.parse(exec("hyprctl status -j")).configProvider;
+            const prov: "lua"|"hyprlang" = JSON.parse(this.hyprctl("status", "-j")!).configProvider;
             if(prov === "lua")
                 this.#configProvider = Hyprland.ConfigProvider.LUA;
         } catch(_) {}
@@ -143,14 +144,10 @@ class Hyprland extends Compositor.Compositor {
             this.emit("monitor-removed", monitor);
         });
 
-        createScopedConnection(StyleManager.getDefault(), "colors-reloaded", () => {
-            const matchBorderColor = generalConfig.getProperty("misc.match_window_border_color", "boolean");
-
-            if(!matchBorderColor)
-                return;
-
-            this.reload();
-        });
+        createScopedConnection(StyleManager.getDefault(), "colors-updated", () =>
+            this.applyClientBorderColor()
+        );
+        this.applyClientBorderColor();
     }
 
     private handleEvents(event: string, data: string): void {
@@ -183,6 +180,29 @@ class Hyprland extends Compositor.Compositor {
         return this.#sock.simpleSendSync(msg);
     }
 
+    protected applyClientBorderColor(): void {
+        const matchBorderColor = generalConfig.getProperty("misc.match_window_border_color", "boolean");
+        const engine = Color.getEngine();
+
+        // currently only works with pywal
+        if(!matchBorderColor || !(engine instanceof Pywal16) || !engine.wal)
+            return;
+
+        const activeBorder = engine.wal.colors.color1,
+            inactiveBorder = engine.wal.special.background;
+
+        if(this.configProvider === Hyprland.ConfigProvider.LUA) {
+            this.message(`eval \
+hl.config({general={
+["col.active_border"] = "${activeBorder}",
+["col.inactive_border"] = "${inactiveBorder}"
+}})`);
+        } else {
+            this.hyprctl(`keyword general:col.active_border ${activeBorder.replace(/^#/, "")}`);
+            this.hyprctl(`keyword general:col.inactive_border ${inactiveBorder.replace(/^#/, "")}`);
+        }
+    }
+
     private source(path: string): void {
         if(!/\.(lua|conf)$/.test(path))
             return;
@@ -209,7 +229,6 @@ end`);
     }
 
     private reload(): void {
-        const loadHyprDecorations = generalConfig.getProperty("misc.match_window_border_color", "boolean");
         const names = Gio.resources_enumerate_children(
             "/io/github/retrozinndev/Colorshell/config/hyprland",
             Gio.ResourceLookupFlags.NONE
@@ -217,11 +236,9 @@ end`);
             f.endsWith(".lua")
         : f.endsWith(".conf"));
 
-        this.message("reload");
+        this.hyprctl("reload");
+        this.applyClientBorderColor();
         for(const name of names) {
-            if(name.includes("decorations") && !loadHyprDecorations)
-                return;
-
             this.source(`${this.#configDir.peek_path()!}/${name}`);
         }
     }
@@ -238,7 +255,7 @@ end`);
         if(!this.#configDir.query_exists(null))
             this.#configDir.make_directory_with_parents(null);
 
-        names.forEach(name => {
+        for(const name of names) {
             const file = Gio.File.new_for_path(`${this.#configDir.peek_path()!}/${name}`);
             const data = Gio.resources_lookup_data(
                 `/io/github/retrozinndev/Colorshell/config/hyprland/${name}`,
@@ -254,7 +271,7 @@ end`);
 
                     // check hashes
                     if(original === local)
-                        return;
+                        continue;
                 }
             } catch(e) {
                 console.error("Failed to read local hyprland runtime config.", e);
@@ -265,7 +282,7 @@ end`);
             } catch(e) {
                 console.error(`Compositor: Hyprland: Failed to write config file "${name}":`, e);
             }
-        });
+        }
 
         this.reload();
     }
@@ -280,9 +297,7 @@ end`);
         if(!file.query_exists(null))
             return;
 
-
-        const media = Gtk.MediaFile.new();
-        media.set_file(file);
+        const media = Gtk.MediaFile.new_for_file(file);
         media.play();
     }
 }
