@@ -54,7 +54,7 @@ class Config<K extends string, V = any> extends GObject.Object {
                     }".\nStderr: ${e}`
             }));
         } else {
-            this.readFile(); // only read file if it already existed before
+            this.read(); // only read file if it already existed before
         }
 
         watch && monitorFile(this.#file.get_path()!, 
@@ -66,7 +66,7 @@ class Config<K extends string, V = any> extends GObject.Object {
                     this.timeout?.destroy();
                     this.timeout = true;
 
-                    this.readFile();
+                    this.read();
                     this.timeout = undefined;
 
                     return;
@@ -88,7 +88,7 @@ class Config<K extends string, V = any> extends GObject.Object {
         ).finally(() => this.timeout = false);
     }
 
-    private readFile(): void {
+    private read(): void {
         try {
             const content = readFile(this.#file.get_path()!)
 
@@ -138,12 +138,10 @@ class Config<K extends string, V = any> extends GObject.Object {
             const val = newObject[key as keyof T1] as Config.JSONValue,
                 oldVal = targetObject[key as keyof T2] as Config.JSONValue|undefined;
 
-            if(val === "object" && oldVal !== undefined) {
-                await this.syncEntries(
-                    newObject[key as keyof T1] as object,
-                    targetObject[key as keyof T2] as object,
-                    `${lastPath !== undefined ? `${lastPath}.` : ""}${key}`
-                );
+            if(typeof val === "object" && oldVal !== undefined) {
+                await this.syncEntries(val!, oldVal as object,
+                    `${lastPath !== undefined ? `${lastPath}.` : ""}${key}`);
+
                 continue;
             }
 
@@ -154,10 +152,6 @@ class Config<K extends string, V = any> extends GObject.Object {
 
             targetObject[key as keyof T2] = newObject[key as keyof T1] as never;
             
-            // notify for property source object
-            if(lastPath !== undefined)
-                this.emit("property-changed", lastPath);
-
             this.emit("property-changed", `${
                 lastPath !== undefined ? `${lastPath}.` : ""
             }${key}`);
