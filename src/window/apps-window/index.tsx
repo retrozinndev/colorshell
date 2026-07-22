@@ -40,7 +40,7 @@ export const AppsWindow = Windows.forFocusedMonitor((mon) => {
               if(key === ignoredKey) return
 
           entry.grab_focus();
-          entry.select_region(entry.get_text().length-1, 0);
+          entry.select_region(entry.get_text().length, entry.get_text().length);
       }}>
         <Gtk.Box class={"container"} hexpand vexpand orientation={Gtk.Orientation.VERTICAL}>
             {entry}
