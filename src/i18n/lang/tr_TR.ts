@@ -23,6 +23,9 @@ export default {
     copy_to_clipboard: "Panoya Kopyala",
     battery: "Pil",
 
+    close:"Kapat",
+    kill:"Süreci Sonlandır",
+
     media: {
         play: "Oynat",
         pause: "Duraklat",

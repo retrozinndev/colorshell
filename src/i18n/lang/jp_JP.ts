@@ -22,6 +22,9 @@ export default {
     disconnect: "切断",
     copy_to_clipboard: "クリップボードにコピー",
     battery: "バッテリー",
+    
+    close: "閉じる",
+    kill: "強制終了",
 
     media: {
         play: "再生",
