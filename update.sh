@@ -22,7 +22,7 @@ fi
 
 
 if [[ "$is_standalone" ]]; then
-    branch=ryo
+    branch=main
     url="https://raw.githubusercontent.com/\
 retrozinndev/colorshell/refs/heads/$branch/install.sh"
 

@@ -16,7 +16,7 @@ appid="io.github.retrozinndev.Colorshell"
 temp_dir="$XDG_CACHE_HOME/colorshell-installer"
 gresource_path="$XDG_DATA_HOME/colorshell/.gresource"
 repo_directory=`[ "$is_standalone" ] && echo -n "$temp_dir/repo" || echo -n "."`
-target_branch=ryo
+target_branch=main
 utils_path=`[ -z "$is_standalone" ] && echo -n "$repo_directory/scripts/utils.sh"`
 mode="install"
 
@@ -65,7 +65,7 @@ fi
 while getopts b:huy arg; do
     case $arg in
         b | branch)
-            target_branch=${OPTARG:-"ryo"}
+            target_branch=${OPTARG:-"$target_branch"}
             ;;
 
         u | update)
