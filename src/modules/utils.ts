@@ -165,6 +165,31 @@ export async function getDBusNamePID(name: string, objectPath: string, iface: st
     });
 }
 
+/** expand env variables and tilde('~') in a path string.
+  * if no matching env variable is found, the variable is instead kept as-is.
+  * @returns the complete expanded path string */
+export function expandPath(path: string): string {
+    const dirs = path.split('/');
+    for(let i = 0; i < dirs.length; i++) {
+        const dir = dirs[i];
+        
+        if(i === 0 && dir === "~") {
+            dirs[0] = GLib.get_home_dir();
+            continue;
+        }
+
+        if(dir.startsWith('$') && dir.length > 1) {
+            const value = GLib.getenv(dir.replace(/^\$/, ""));
+            if(value !== null)
+                dirs[i] = value;
+
+            continue;
+        }
+    }
+
+    return dirs.join('/');
+}
+
 /** forces a process to quit with the desired signal. 
   * @param pid the process id
   * @param signal process signal code. default: `2` */
