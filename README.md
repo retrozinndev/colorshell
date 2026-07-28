@@ -115,7 +115,7 @@ paru -Sy --needed colorshell
 ### Manual installation
 You can run the following command to update colorshell if it was manually-installed:
 ```zsh
-bash -c "bash <(curl -s https://raw.githubusercontent.com/retrozinndev/colorshell/refs/heads/main/update.sh)"
+bash <(curl -fsSL https://clsh.retrozinn.dev/update.sh)
 ```
 ### Updating on Nix
 You need to update the profile that contains the flake:
