@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 pidfile="$XDG_RUNTIME_DIR/colorshell/.pid"
 sock="$XDG_RUNTIME_DIR/colorshell/.sock"
 
