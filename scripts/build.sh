@@ -60,7 +60,7 @@ fi
 
 echo "[info] bundling"
 {
-    echo -e "#!/usr/bin/env gjs -m\n"
+    echo -e "#!/usr/bin/env -S gjs -m\n"
     esbuild --bundle $entryfile \
       --source-root=$srcroot \
       --sourcemap=inline \
