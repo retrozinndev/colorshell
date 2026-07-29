@@ -1,8 +1,8 @@
 import { readFile, readFileAsync } from "ags/file";
-import { createSubscription, encoder, getPID, globalScope, killProc, runtimeConfigDir } from "./utils";
+import { encoder, expandPath, getPID, killProc, runtimeConfigDir } from "./utils";
 import { generalConfig } from "../config";
 import { execAsync } from "ags/process";
-import GObject, { register, getter, gtype, property, setter, signal } from "ags/gobject";
+import GObject, { register, getter, gtype, setter, signal } from "ags/gobject";
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
 import Notifications from "./notifications";
@@ -19,36 +19,69 @@ class Wallpaper extends GObject.Object {
     #userHyprpaperFile!: Gio.File;
     #defaultHyprpaperFile!: Gio.File;
     #hyprpaperFile!: Gio.File;
-    #wallpapersDir!: Gio.File;
     #proc: Gio.Subprocess|null = null;
-
 
     @signal(Gio.File)
     wallpaperChanged(_: Gio.File) {}
 
-    @property(Boolean)
-    splash: boolean = true;
+    @getter(Boolean)
+    get splash(): boolean { return generalConfig.getProperty("wallpaper.splash", "boolean"); }
 
+    @getter(gtype<Wallpaper.Positioning>(String))
+    get positioning(): Wallpaper.Positioning {
+        const pos = generalConfig.getProperty("wallpaper.positioning", "string") as Wallpaper.Positioning;
+
+        if(!pos || (pos !== "contain" && pos !== "cover" && 
+            pos !== "tile" && pos !== "fill")) {
+
+            return "cover";
+        }
+
+        return pos;
+    }
+
+    @getter(Object)
+    get dirs(): Record<string, Gio.File> {
+        const dirs = generalConfig.getProperty("wallpaper.dirs", "array");
+        if(!dirs.every(i => typeof i === "string"))
+            return {
+                "~/wallpapers": Gio.File.new_for_path(`${GLib.get_home_dir()}/wallpapers`)
+            };
+
+        const obj: Record<string, Gio.File> = {};
+        for(const path of dirs)
+            obj[path as keyof typeof obj] = Gio.File.new_for_path(expandPath(path));
+
+        return obj;
+    }
 
     /** current wallpaper's `GFile`. can be null if unset by the user */
     @getter(gtype<Gio.File|null>(Gio.File))
     get wallpaper() { return this.#wallpaper; }
-
     @setter(gtype<Gio.File|null>(Gio.File))
-    set wallpaper(newValue: Gio.File|null) { this.setWallpaper(newValue); }
+    set wallpaper(file: Gio.File|null) {
+        if(file === undefined || file === null) {
+            this.#hyprpaperFile = this.#defaultHyprpaperFile; // fallback to default if unset
+            this.restartDaemon();
+            return;
+        }
 
-    get wallpapersDir() { return this.#wallpapersDir; }
+        if(!file.query_exists(null))
+            throw new Error("Wallpaper: Couldn't set wallpaper to a file that does not exist");
 
-    @property(gtype<Wallpaper.Positioning>(String))
-    positioning: Wallpaper.Positioning = "cover";
+        this.#wallpaper = file;
+        this.notify("wallpaper");
 
+        this.reapply(true).then(() => {
+            this.emit("wallpaper-changed", this.#wallpaper!);
+        }).catch((e: Error) => {
+            console.error("Wallpaper: Couldn't set wallpaper:", e);
+        });
+    }
 
     constructor(props?: Wallpaper.ConstructorProps) {
         super(props);
 
-        this.#wallpapersDir = Gio.File.new_for_path(
-            GLib.getenv("WALLPAPERS") ?? `${GLib.get_home_dir()}/wallpapers`
-        );
         this.#userHyprpaperFile = Gio.File.new_for_path(
             `${GLib.get_user_config_dir()}/hypr/hyprpaper.conf`
         );
@@ -61,7 +94,7 @@ class Wallpaper extends GObject.Object {
             this.#hyprpaperFile = this.#defaultHyprpaperFile;
 
         try {
-            this.#wallpaper = this.readWallpaper();
+            this.#wallpaper = this.read();
         } catch(_) {
             throw new Error("Wallpaper: Couldn't get wallpaper from hyprpaper file! You \
 may check the syntax of your hyprpaper.conf for errors");
@@ -75,47 +108,40 @@ may check the syntax of your hyprpaper.conf for errors");
             console.error(`Wallpaper: Couldn't restart hyprpaper daemon. Stderr: ${e.message}`);
         });
 
-        globalScope.run(() => {
-            createSubscription(
-                generalConfig.bindProperty("wallpaper.positioning", "string"),
-                () => {
-                    const positioning = generalConfig
-                        .getProperty("wallpaper.positioning", "string") as Wallpaper.Positioning;
+        generalConfig.connect("property-changed", (_, path: string) => {
+            switch(path) {
+                case "wallpaper.positioning": {
+                    const positioning = generalConfig.getProperty(path, "string") as Wallpaper.Positioning;
 
-                    if(!positioning || (positioning !== "contain" && 
-                                        positioning !== "cover" && 
-                                        positioning !== "tile" &&
-                                        positioning !== "fill")) {
+                    if(!positioning || (positioning !== "contain" && positioning !== "cover" && 
+                        positioning !== "tile" && positioning !== "fill")) {
 
+                        generalConfig.setProperty("wallpaper.positioning", "cover");
+                        this.notify("positioning");
                         Notifications.getDefault().sendNotification({
                             appName: "colorshell",
                             summary: "Couldn't update wallpaper position",
                             body: "Invalid position value. Possible values are: \"cover\"(default), \"contain\", \"tile\" or \"fill\""
                         });
+
                         return;
                     }
 
-                    this.positioning = positioning;
-                    this.reloadWallpaper().catch(e => {
+                    this.notify("positioning");
+                    this.reapply().catch(e => {
                         Notifications.getDefault().sendNotification({
                             appName: "colorshell",
                             summary: "Couldn't update wallpaper position",
                             body: `An error occurred while updating wallpaper's position: ${e.message}`
                         });
                     });
+
+                    break;
                 }
-            );
 
-            createSubscription(
-                generalConfig.bindProperty("wallpaper.splash", "boolean"),
-                () => {
-                    const splash = generalConfig.getProperty("wallpaper.splash", "boolean");
-
-                    this.splash = splash;
-                    this.writeChanges();
-
+                case "wallpaper.splash": {
+                    this.notify("splash");
                     Notifications.getDefault().sendNotification({
-                        appName: "colorshell",
                         summary: "Wallpaper configuration",
                         body: "This change will only take effect after a hyprpaper restart. Click the \"restart\" button to restart the wallpaper daemon",
                         actions: [{
@@ -132,8 +158,10 @@ may check the syntax of your hyprpaper.conf for errors");
                             }
                         }]
                     });
+
+                    break;
                 }
-            );
+            }
         });
     }
 
@@ -188,11 +216,11 @@ may check the syntax of your hyprpaper.conf for errors");
         this.#hyprpaperFile.replace_contents_async(encoder.encode(
 `# This file was automatically generated by colorshell
 
-splash = ${this.splash}
+splash = ${generalConfig.getProperty("wallpaper.splash", "boolean")}
 
 wallpaper {
     monitor = *
-    path = ${this.#wallpaper?.peek_path()?.replaceAll(',', "\\,")}
+    path = ${this.#wallpaper?.peek_path()}
     fit_mode = ${this.positioning}
 }`
             ), null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null,
@@ -206,7 +234,7 @@ wallpaper {
         );
     }
     
-    public readWallpaper(): Gio.File|null {
+    public read(): Gio.File|null {
         const content = readFile(this.#hyprpaperFile);
         const loaded = content.split('\n').find(line => 
             /^[ ]*?path[ ]*?\=[ *]?.*/.test(line.trimStart())
@@ -218,7 +246,7 @@ wallpaper {
         return Gio.File.new_for_path(loaded);
     }
 
-    public async readWallpaperAsync(): Promise<Gio.File|null> {
+    public async readAsync(): Promise<Gio.File|null> {
         const content = await readFileAsync(this.#hyprpaperFile);
         const loaded = content.split('\n').find(line => 
             /^[ ]*?path[ ]*?\=[ *]?.*/.test(line.trimStart())
@@ -230,46 +258,24 @@ wallpaper {
         return Gio.File.new_for_path(loaded);
     }
 
-    public async reloadWallpaper(write: boolean = true): Promise<void> {
+    public async reapply(write: boolean = true): Promise<void> {
         if(this.#wallpaper?.peek_path()?.trim() === "")
             return;
 
         for(const mon of AstalHyprland.get_default().get_monitors()) {
             await execAsync(`hyprctl hyprpaper wallpaper '${mon.get_name()},${
-                this.#wallpaper?.peek_path()?.replaceAll(/,|\\/g, "\\&")
+                this.#wallpaper?.peek_path()!.replace(/,/g, "\\\\,")
             },${this.positioning}'`);
         }
 
         write && this.writeChanges();
     }
 
-    public setWallpaper(file: string|Gio.File|null, write: boolean = true): void {
-        file = typeof file === "string" ? Gio.File.new_for_path(file) : file;
-
-        if(file === undefined || file === null) {
-            this.#hyprpaperFile = this.#defaultHyprpaperFile; // fallback to default if unset
-            this.restartDaemon();
-            return;
-        }
-
-        if(!file.query_exists(null))
-            throw new Error("Wallpaper: Couldn't set wallpaper to a file that does not exist");
-
-        this.#wallpaper = file;
-        this.notify("wallpaper");
-
-        this.reloadWallpaper(write).then(() => {
-            this.emit("wallpaper-changed", this.#wallpaper!);
-        }).catch((e: Error) => {
-            console.error("Wallpaper: Couldn't set wallpaper:", e);
-        });
-    }
-
     public async pickWallpaper(): Promise<string|undefined> {
         return (await execAsync(`zenity --file-selection`).then(wall => {
             if(!wall.trim()) return undefined;
 
-            this.setWallpaper(wall);
+            this.wallpaper = Gio.File.new_for_path(wall);
             return wall;
         }).catch((e: Error) => {
             console.error(`Wallpaper: Couldn't pick wallpaper, is \`zenity\` installed? Stderr: ${e.message}`);

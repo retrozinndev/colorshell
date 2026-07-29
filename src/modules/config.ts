@@ -158,13 +158,7 @@ class Config<K extends string, V = any> extends GObject.Object {
         }
     }
 
-    public bindProperty(path: string, expectType: "boolean"): Accessor<boolean>;
-    public bindProperty(path: string, expectType: "number"): Accessor<number>;
-    public bindProperty(path: string, expectType: "string"): Accessor<string>;
-    public bindProperty(path: string, expectType: "object"): Accessor<object>;
-    public bindProperty(path: string, expectType?: "any"): Accessor<any>;
-
-    public bindProperty(propertyPath: string, expectType?: Config.ValueType): Accessor<boolean|number|string|object|any> {
+    public bindProperty<T extends Config.ValueType>(propertyPath: string, expectType?: T): Accessor<Config.ValueTypes[T]> {
         return new Accessor(() => this.getProperty(propertyPath, expectType as never), (callback: () => void) => {
             const id = this.connect("property-changed", (_, path: string) => {
                 if(path === propertyPath || path.startsWith(propertyPath))
@@ -175,24 +169,12 @@ class Config<K extends string, V = any> extends GObject.Object {
         });
     }
 
-    public getProperty(path: string, expectType: "boolean"): boolean;
-    public getProperty(path: string, expectType: "number"): number;
-    public getProperty(path: string, expectType: "string"): string;
-    public getProperty(path: string, expectType: "object"): object;
-    public getProperty(path: string, expectType?: "any"): any;
-
-    public getProperty(path: string, expectType?: Config.ValueType): boolean|number|string|object|any {
-        return this._getProperty(path, this.#entries, expectType);
+    public getProperty<T extends Config.ValueType>(path: string, expectType?: T): Config.ValueTypes[T] {
+        return this._getProperty(path, this.#entries, expectType ?? "any");
     }
 
-    public getPropertyDefault(path: string, expectType: "boolean"): boolean;
-    public getPropertyDefault(path: string, expectType: "number"): number;
-    public getPropertyDefault(path: string, expectType: "string"): string;
-    public getPropertyDefault(path: string, expectType: "object"): object;
-    public getPropertyDefault(path: string, expectType?: "any"): any;
-
-    public getPropertyDefault(path: string, expectType?: Config.ValueType): boolean|number|string|object|any {
-        return this._getProperty(path, this.defaults, expectType);
+    public getPropertyDefault<T extends Config.ValueType>(path: string, expectType?: T): Config.ValueTypes[T] {
+        return this._getProperty(path, this.defaults, expectType ?? "any");
     }
 
     public setProperty(path: string, value: any, write?: boolean): void {
@@ -218,25 +200,30 @@ class Config<K extends string, V = any> extends GObject.Object {
         ));
     }
 
-    private _getProperty(
+    private _getProperty<T extends Config.ValueType = "any">(
         path: string,
         entries: Record<K, V>,
-        expectType?: Config.ValueType,
-        ignoreUndefined: boolean = false
-    ): (any|undefined) {
+        expectType: T
+    ): Config.ValueTypes[T] {
         let property: any = entries;
         const pathArray = path.split('.').filter(str => str);
 
         for(let i = 0; i < pathArray.length; i++) {
-            const currentPath = pathArray[i];
-
-            property = property[currentPath as keyof typeof property];
+            property = property[pathArray[i] as keyof typeof property];
         }
 
-        if(!ignoreUndefined && property === undefined) {
-            const defaultValue = this._getProperty(path, this.defaults, expectType, true);
+        if(expectType === "any")
+            return property;
+
+        const defaultValue = this._getProperty(path, this.defaults, "any");
+        if(property === undefined)
             return defaultValue;
-        }
+
+        if(expectType === "array" && !Array.isArray(property))
+            return defaultValue;
+
+        if(typeof property !== expectType)
+            return defaultValue;
 
         return property;
     }
@@ -251,8 +238,18 @@ namespace Config {
     }
 
     
-    export type JSONValue = string|boolean|null|number|object;
-    export type ValueType = "string" | "boolean" | "object" | "number" | "any";
+    export type JSONValue = string|Array<any>|boolean|null|number|object;
+    export type ValueType = keyof ValueTypes;
+    export type ValueTypes = {
+        "string": string;
+        "boolean": boolean;
+        "object": object;
+        "number": number;
+        "array": Array<any>;
+        "any": any;
+    }
+
+
     export type SelectorOption = {
         /** this property is set at runtime, with the same zero-based index of the item in the array */
         id?: number,

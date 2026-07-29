@@ -56,6 +56,9 @@ const generalConfigDefaults = {
     },
 
     wallpaper: {
+        /** directories to search for wallpapers.
+          * @default `[ "~/wallpapers" ]` */
+        dirs: ["~/wallpapers"],
         /** wallpaper positioning mode (hyprpaper) */
         positioning: "cover",
         /** whether to enable Hyprland's random splash text on the wallpaper */
