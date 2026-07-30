@@ -21,6 +21,7 @@ function Send_log() {
     log_message=`[[ -z $2 ]] && echo $1 || echo $2`
     color="\e[34m"
     log_type="info"
+    out=/dev/stdout
 
     case "${1,,}" in
         warn)
@@ -31,10 +32,11 @@ function Send_log() {
         err)
             color="\e[31m"
             log_type="error"
+            out=/dev/stderr
             ;;
     esac
 
-    echo -e "${color}[$log_type]\e[0m $log_message"
+    echo -e "${color}[$log_type]\e[0m $log_message" > $out
 }
 
 # -------------
