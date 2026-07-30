@@ -80,17 +80,19 @@ class Wallpaper extends GObject.Object {
 
         if(!this.#hyprpaperFile.query_exists(null))
             this.wallpaper = null; // so it'll write a default one
-
-        try {
-            this.#wallpaper = this.read();
-        } catch(_) {
-            throw new Error("Wallpaper: Couldn't get wallpaper from hyprpaper file! You \
-may check the syntax of your hyprpaper.conf for errors");
+        else {
+            try {
+                this.#wallpaper = this.read();
+            } catch(_) {
+                throw new Error("Wallpaper: Couldn't get wallpaper from hyprpaper file! You \
+    may check the syntax of your hyprpaper.conf for errors");
+            }
         }
 
         const pid = getPID("hyprpaper");
         if(pid == null) {
-            return;
+            console.warn(`Wallpaper: hyprpaper isn't currently running or it couldn't be spotted.`);
+            console.warn(`Wallpaper: Functionality like wallpaper hot-reloading may not work`);
         }
 
 
