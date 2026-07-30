@@ -135,7 +135,9 @@ If you're using the systemd service instead, click the \"Restart hyprpaper.servi
                             {
                                 text: "Restart hyprpaper.service",
                                 id: "restart-service",
-                                onAction() {}
+                                onAction() {
+                                    Compositor.getDefault().exec("systemctl --user restart hyprpaper.service");
+                                }
                             }, {
                                 text: "Restart daemon",
                                 id: "restart-daemon",
