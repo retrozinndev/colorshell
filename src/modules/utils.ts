@@ -96,7 +96,7 @@ export function getPID(search: string): number|undefined {
     let result!: string;
 
     try {
-        result = exec(`pgrep -x "${search}"`).trim().replaceAll('\n', '');
+        result = exec(["pidof", search]).trim().replaceAll('\n', '');
     } catch(e) {
         return undefined;
     }
