@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       ags:
-        specifier: file:/usr/share/ags/js
-        version: file:../../../../../usr/share/ags/js(gnim@1.9.1)
+        specifier: link:/usr/share/ags/js
+        version: link:../../../../../usr/share/ags/js
       fuse.js:
         specifier: ^7.5.0
         version: 7.5.0
@@ -180,13 +180,6 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  ags@file:../../../../../usr/share/ags/js:
-    resolution: {directory: ../../../../../usr/share/ags/js, type: directory}
-    engines: {gjs: '>=1.79.0'}
-    os: [linux]
-    peerDependencies:
-      gnim: ^1.9.1
-
   esbuild@0.28.1:
     resolution: {integrity: sha512-HrJrvZv5ayxBzPfwphOoNzkzOIIlifzk0KJrGK2c8R4+LKpMtpYLQeUdjnwjWv/LZlkH2laZk+4w78pi99D4Vw==}
     engines: {node: '>=18'}
@@ -285,10 +278,6 @@ snapshots:
 
   '@esbuild/win32-x64@0.28.1':
     optional: true
-
-  ags@file:../../../../../usr/share/ags/js(gnim@1.9.1):
-    dependencies:
-      gnim: 1.9.1
 
   esbuild@0.28.1:
     optionalDependencies:
