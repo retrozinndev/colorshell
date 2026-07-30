@@ -3,8 +3,6 @@ import { execAsync } from "ags/process";
 import { isInstalled } from "./utils";
 import AstalApps from "gi://AstalApps";
 import Compositor from "../compositor";
-import Hyprland from "../compositor/interface/hyprland";
-import AstalHyprland from "gi://AstalHyprland?version=0.1";
 import Gio from "gi://Gio?version=2.0";
 
 
@@ -24,21 +22,15 @@ export function getApps(): AstalApps.Apps {
 
 /** execute apps and commands using Hyprland's exec dispatcher.
     supports desktop entries and usage of uwsm if it's active */
-export function execApp(app: AstalApps.Application|string, dispatchExecArgs?: string) {
+export function execApp(app: AstalApps.Application|string) {
     const executable = (typeof app === "string") ? app 
         : app.executable.replace(/%[fFuUick]/g, "");
 
-    const comp = Compositor.getDefault() as Hyprland.Hyprland;
     const cmd = `${uwsmIsActive ? "uwsm-app -- " : executable.endsWith(".desktop") ?
         "gio-launch "
     : ""}${executable}`;
-    
-    if(comp.configProvider === Hyprland.Hyprland.ConfigProvider.LUA) {
-        AstalHyprland.get_default().dispatch("hl.dsp.exec_cmd", `("${cmd}")`);
-        return;
-    }
 
-    AstalHyprland.get_default().dispatch("exec", cmd);
+    Compositor.getDefault().exec(cmd);
 }
 
 export function lookupIcon(name: string): boolean {

@@ -10,6 +10,7 @@ import GObject from "ags/gobject";
 import AstalNotifd from "gi://AstalNotifd";
 import Gio from "gi://Gio?version=2.0";
 import Windows from "..";
+import Compositor from "../../compositor";
 
 
 const { TOP, LEFT, RIGHT, BOTTOM } = Astal.WindowAnchor;
@@ -99,28 +100,7 @@ export const LogoutMenu = Windows.forFocusedMonitor((mon) =>
                           generalConfig.getProperty("night_light.save_on_shutdown", "boolean") && 
                               NightLight.getDefault().saveData();
 
-                          execAsync(`hyprctl dispatch exit`).catch((err: Gio.IOErrorEnum) => 
-                              Notifications.getDefault().sendNotification({
-                                  appName: "colorshell",
-                                  summary: "Couldn't exit Hyprland",
-                                  body: `An error occurred and colorshell couldn't exit Hyprland. Stderr: \n${
-                                      err.message ? `${err.message}\n` : ""}${err.stack}`,
-                                  urgency: AstalNotifd.Urgency.NORMAL,
-                                  actions: [{
-                                      text: "Report Issue on colorshell",
-                                      onAction: () => execAsync(
-                                          `xdg-open https://github.com/retrozinndev/colorshell/issues/new`
-                                      ).catch((err: Gio.IOErrorEnum) => 
-                                          Notifications.getDefault().sendNotification({
-                                              appName: "colorshell",
-                                              summary: "Couldn't open link",
-                                              body: `Do you have \`xdg-utils\` installed? Stderr: \n${
-                                                  err.message ? `${err.message}\n` : ""}${err.stack}`
-                                          })
-                                      )
-                                  }]
-                              })
-                          )
+                          Compositor.getDefault().quit();
                       }
                   })}
                 />

@@ -4,7 +4,8 @@ import { register } from "ags/gobject";
 import AstalHyprland from "gi://AstalHyprland";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
-import { createScopedConnection, encoder, runtimeConfigDir } from "../../../modules/utils";
+import { uwsmIsActive } from "../../../modules/apps";
+import { encoder, isInstalled, runtimeConfigDir } from "../../../modules/utils";
 import { generalConfig } from "../../../config";
 import { readFile } from "ags/file";
 import Socket from "../../../modules/socket";
@@ -46,7 +47,7 @@ class Hyprland extends Compositor.Compositor {
 
         this.initConfig();
 
-        createScopedConnection(this.#inst, "event", (e, dat) => this.handleEvents(e, dat));
+        this.#inst.connect("event", (_, e, dat) => this.handleEvents(e, dat));
 
         // monitors
         for(const mon of this.#inst.get_monitors()) {
@@ -73,7 +74,7 @@ class Hyprland extends Compositor.Compositor {
             c.address === this.#inst.get_focused_client()?.get_address()
         ) ?? null;
 
-        createScopedConnection(this.#inst, "client-added", (c) => {
+        this.#inst.connect("client-added", (_, c) => {
             if(this._clients.findIndex(cl => cl.address === c.address) > -1)
                 return;
 
@@ -83,7 +84,7 @@ class Hyprland extends Compositor.Compositor {
             this.notify("clients");
             this.emit("client-added", this);
         });
-        createScopedConnection(this.#inst, "client-removed", (addr) => {
+        this.#inst.connect("client-removed", (_, addr) => {
             const i = this._clients.findIndex(cl => cl.address === addr);
             const client = this._clients.splice(i, 1)[0];
 
@@ -92,7 +93,7 @@ class Hyprland extends Compositor.Compositor {
             this.notify("clients");
         });
 
-        createScopedConnection(this.#inst, "workspace-added", (ws) => {
+        this.#inst.connect("workspace-added", (_, ws) => {
             if(this._workspaces.findIndex(w => w.id === ws.id) > -1)
                 return;
 
@@ -102,7 +103,7 @@ class Hyprland extends Compositor.Compositor {
             this.notify("workspaces");
             this.emit("workspace-added", ws);
         });
-        createScopedConnection(this.#inst, "workspace-removed", (id) => {
+        this.#inst.connect("workspace-removed", (_, id) => {
             const i = this._workspaces.findIndex(w => w.id === id);
             const workspace = this._workspaces.splice(i, 1)[0];
 
@@ -110,7 +111,7 @@ class Hyprland extends Compositor.Compositor {
             this.emit("workspace-removed", workspace);
             this.notify("workspaces");
         });
-        createScopedConnection(this.#inst, "notify::focused-workspace", () => {
+        this.#inst.connect("notify::focused-workspace", () => {
             const focused = this.#inst.get_focused_workspace();
 
             if(!focused) {
@@ -125,7 +126,7 @@ class Hyprland extends Compositor.Compositor {
             this.notify("focused-workspace");
         });
 
-        createScopedConnection(this.#inst, "monitor-added", (mon) => {
+        this.#inst.connect("monitor-added", (_, mon) => {
             if(this._monitors.findIndex(m => m.id === mon.id) > -1)
                 return;
 
@@ -135,7 +136,7 @@ class Hyprland extends Compositor.Compositor {
             this.notify("monitors");
             this.emit("monitor-added", monitor);
         });
-        createScopedConnection(this.#inst, "monitor-removed", (id) => {
+        this.#inst.connect("monitor-removed", (_, id) => {
             const i = this._monitors.findIndex(m => m.id === id);
             const monitor = this._monitors.splice(i, 1)[0];
 
@@ -144,7 +145,7 @@ class Hyprland extends Compositor.Compositor {
             this.emit("monitor-removed", monitor);
         });
 
-        createScopedConnection(StyleManager.getDefault(), "colors-updated", () =>
+        StyleManager.getDefault().connect("colors-updated", () =>
             this.applyClientBorderColor()
         );
         this.applyClientBorderColor();
@@ -289,6 +290,30 @@ end`);
 
     public hyprctl(cmd: string, flags?: string): string|null {
         return this.message(`${flags !== undefined ? `${flags}/` : ""}${cmd}`);
+    }
+
+    exec(cmd: string): void {
+        if(this.configProvider === Hyprland.ConfigProvider.LUA) {
+            this.hyprctl(`dispatch hl.dsp.exec_cmd("${cmd}")`);
+            return;
+        }
+
+        AstalHyprland.get_default().dispatch("exec", cmd);
+    }
+
+    quit() {
+        if(uwsmIsActive) {
+            this.exec("uwsm stop");
+            super.quit();
+            return;
+        }
+
+        if(isInstalled("hyprshutdown")) {
+            this.exec("hyprshutdown");
+            return;
+        }
+
+        this.hyprctl("dispatch hl.dsp.exit()");
     }
 
     protected async bell(): Promise<void> {

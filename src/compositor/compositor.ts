@@ -2,6 +2,8 @@ import GObject, { getter, gtype, register, signal } from "ags/gobject";
 import Monitor from "./monitor";
 import Client from "./client";
 import Workspace from "./workspace";
+import System from "system";
+import Adw from "gi://Adw?version=1";
 
 
     
@@ -38,25 +40,33 @@ class Compositor extends GObject.Object {
     get focusedWorkspace() { return this._focusedWorkspace; }
 
     @signal(GObject.Object)
-    clientAdded(_: Client) {}
+    protected clientAdded(_: Client) {}
 
     @signal(GObject.Object)
-    clientRemoved(_: Client) {}
+    protected clientRemoved(_: Client) {}
 
     @signal(GObject.Object)
-    workspaceAdded(_: Workspace) {}
+    protected workspaceAdded(_: Workspace) {}
 
     @signal(GObject.Object)
-    workspaceRemoved(_: Workspace) {}
+    protected workspaceRemoved(_: Workspace) {}
 
     @signal(GObject.Object)
-    monitorAdded(_: Monitor) {}
+    protected monitorAdded(_: Monitor) {}
 
     @signal(GObject.Object)
-    monitorRemoved(_: Monitor) {}
+    protected monitorRemoved(_: Monitor) {}
 
     constructor() {
         super();
+    }
+
+    /** run an application or execute a command in the compositor scope */
+    exec(cmd: string): void {}
+
+    /** quits compositor */
+    quit(): void {
+        Adw.Application.get_default()!.quit();
     }
 }
 
