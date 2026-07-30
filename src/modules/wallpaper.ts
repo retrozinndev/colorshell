@@ -1,5 +1,5 @@
 import { readFile, readFileAsync } from "ags/file";
-import { encoder, expandPath, getPID, killProc, runtimeConfigDir } from "./utils";
+import { encoder, expandPath, getPID, killProc } from "./utils";
 import { generalConfig } from "../config";
 import { execAsync } from "ags/process";
 import GObject, { register, getter, gtype, setter, signal } from "ags/gobject";
@@ -7,6 +7,7 @@ import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
 import Notifications from "./notifications";
 import AstalHyprland from "gi://AstalHyprland?version=0.1";
+import Compositor from "../compositor";
 
 
 // TODO: support different wallpapers for each monitor
@@ -16,10 +17,7 @@ class Wallpaper extends GObject.Object {
     private static instance: Wallpaper;
 
     #wallpaper: Gio.File|null = null;
-    #userHyprpaperFile!: Gio.File;
-    #defaultHyprpaperFile!: Gio.File;
-    #hyprpaperFile!: Gio.File;
-    #proc: Gio.Subprocess|null = null;
+    #hyprpaperFile: Gio.File;
 
     @signal(Gio.File)
     wallpaperChanged(_: Gio.File) {}
@@ -60,13 +58,9 @@ class Wallpaper extends GObject.Object {
     get wallpaper() { return this.#wallpaper; }
     @setter(gtype<Gio.File|null>(Gio.File))
     set wallpaper(file: Gio.File|null) {
-        if(file === undefined || file === null) {
-            this.#hyprpaperFile = this.#defaultHyprpaperFile; // fallback to default if unset
-            this.restartDaemon();
-            return;
-        }
-
-        if(!file.query_exists(null))
+        if(file === undefined || file === null)
+            file = Gio.File.new_for_path("/usr/share/hypr/wall2.jpg");
+        else if(!file.query_exists(null))
             throw new Error("Wallpaper: Couldn't set wallpaper to a file that does not exist");
 
         this.#wallpaper = file;
@@ -82,16 +76,10 @@ class Wallpaper extends GObject.Object {
     constructor(props?: Wallpaper.ConstructorProps) {
         super(props);
 
-        this.#userHyprpaperFile = Gio.File.new_for_path(
-            `${GLib.get_user_config_dir()}/hypr/hyprpaper.conf`
-        );
-        this.#defaultHyprpaperFile = Gio.File.new_for_path(
-            `${runtimeConfigDir.peek_path()!}/hyprpaper.conf`
-        );
-        this.#hyprpaperFile = this.#userHyprpaperFile;
+        this.#hyprpaperFile = Gio.File.new_for_path(`${GLib.get_user_config_dir()}/hypr/hyprpaper.conf`);
 
         if(!this.#hyprpaperFile.query_exists(null))
-            this.#hyprpaperFile = this.#defaultHyprpaperFile;
+            this.wallpaper = null; // so it'll write a default one
 
         try {
             this.#wallpaper = this.read();
@@ -101,12 +89,10 @@ may check the syntax of your hyprpaper.conf for errors");
         }
 
         const pid = getPID("hyprpaper");
-        if(pid != null)
-            killProc(pid);
+        if(pid == null) {
+            return;
+        }
 
-        this.restartDaemon().catch((e: Error) => {
-            console.error(`Wallpaper: Couldn't restart hyprpaper daemon. Stderr: ${e.message}`);
-        });
 
         generalConfig.connect("property-changed", (_, path: string) => {
             switch(path) {
@@ -143,20 +129,25 @@ may check the syntax of your hyprpaper.conf for errors");
                     this.notify("splash");
                     Notifications.getDefault().sendNotification({
                         summary: "Wallpaper configuration",
-                        body: "This change will only take effect after a hyprpaper restart. Click the \"restart\" button to restart the wallpaper daemon",
-                        actions: [{
-                            text: "Restart",
-                            id: "restart-daemon",
-                            onAction: () => {
-                                this.restartDaemon().catch(e => {
-                                    Notifications.getDefault().sendNotification({
-                                        appName: "colorshell",
-                                        summary: "Failed to restart service",
-                                        body: `Couldn't restart the hyprpaper service: ${e}`
-                                    });
-                                });
+                        body: "This change will only take effect after a hyprpaper restart. \
+If you're using the systemd service instead, click the \"Restart hyprpaper.service\" action",
+                        actions: [
+                            {
+                                text: "Restart hyprpaper.service",
+                                id: "restart-service",
+                                onAction() {}
+                            }, {
+                                text: "Restart daemon",
+                                id: "restart-daemon",
+                                onAction() {
+                                    const pid = getPID("hyprpaper");
+                                    if(pid != null)
+                                        killProc(pid);
+
+                                    Compositor.getDefault().exec("hyprpaper");
+                                }
                             }
-                        }]
+                        ]
                     });
 
                     break;
@@ -172,43 +163,7 @@ may check the syntax of your hyprpaper.conf for errors");
         return this.instance;
     }
 
-
-    /** tries to kill the wallpaper daemon.
-      * @returns `true` on success, or else, `false` */
-    public async quitDaemon(): Promise<boolean> {
-        if(!this.#proc)
-            return false;
-
-        return new Promise((resolve, reject) => {
-            // wait for it to close, so we can resolve() the Promise
-            this.#proc!.wait_async(null, (_, res) => {
-                let result!: boolean;
-                try {
-                    result = this.#proc!.wait_finish(res);
-                } catch(e) {
-                    reject(e);
-                    return;
-                }
-
-                resolve(result);
-            });
-
-            this.#proc!.force_exit();
-        });
-    }
-
-    public async restartDaemon(): Promise<void> {
-        if(this.#proc)
-            await this.quitDaemon();
-
-        this.#proc = Gio.Subprocess.new(["hyprpaper", "--config", this.#hyprpaperFile.peek_path()!], Gio.SubprocessFlags.STDOUT_SILENCE);
-    }
-
     private writeChanges(): void {
-        // check if current config is default, so we write to the right path.
-        if(this.#hyprpaperFile.equal(this.#defaultHyprpaperFile))
-            this.#hyprpaperFile = this.#userHyprpaperFile;
-
         const dir = this.#hyprpaperFile.get_parent();
         if(dir && !dir.query_exists(null))
             dir.make_directory_with_parents(null);
