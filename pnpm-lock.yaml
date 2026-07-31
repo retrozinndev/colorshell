@@ -4,19 +4,22 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  gnim: ^1.9.1
+
 importers:
 
   .:
     dependencies:
       ags:
-        specifier: link:/usr/share/ags/js
-        version: link:../../../../../usr/share/ags/js
+        specifier: file:/usr/share/ags/js
+        version: file:../../../../../usr/share/ags/js(gnim@1.9.1)
       fuse.js:
         specifier: ^7.5.0
         version: 7.5.0
       gnim-utils:
-        specifier: github:retrozinndev/gnim-utils
-        version: https://codeload.github.com/retrozinndev/gnim-utils/tar.gz/3c3b9ac6209b47e1efb2ac219acab938e8d97426(gnim@1.9.1)
+        specifier: github:retrozinndev/gnim-utils#1.0.2
+        version: https://codeload.github.com/retrozinndev/gnim-utils/tar.gz/fec7b6ed11a663cca217c861ba78a2e48ea52ac7(gnim@1.9.1)
     devDependencies:
       esbuild:
         specifier: ^0.28.1
@@ -180,6 +183,13 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  ags@file:../../../../../usr/share/ags/js:
+    resolution: {directory: ../../../../../usr/share/ags/js, type: directory}
+    engines: {gjs: '>=1.79.0'}
+    os: [linux]
+    peerDependencies:
+      gnim: ^1.9.1
+
   esbuild@0.28.1:
     resolution: {integrity: sha512-HrJrvZv5ayxBzPfwphOoNzkzOIIlifzk0KJrGK2c8R4+LKpMtpYLQeUdjnwjWv/LZlkH2laZk+4w78pi99D4Vw==}
     engines: {node: '>=18'}
@@ -189,11 +199,11 @@ packages:
     resolution: {integrity: sha512-sQtrEfA+ez/3G0cCZecF70oqpCRttCexYUG4mUrtWL49ULUzUyxokt5kyqwtKzj1270RaKih+hcP3qLcumccow==}
     engines: {node: '>=10'}
 
-  gnim-utils@https://codeload.github.com/retrozinndev/gnim-utils/tar.gz/3c3b9ac6209b47e1efb2ac219acab938e8d97426:
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/retrozinndev/gnim-utils/tar.gz/3c3b9ac6209b47e1efb2ac219acab938e8d97426}
+  gnim-utils@https://codeload.github.com/retrozinndev/gnim-utils/tar.gz/fec7b6ed11a663cca217c861ba78a2e48ea52ac7:
+    resolution: {gitHosted: true, integrity: sha512-SrBNed2AVFhRcURpVfGBBAABcS6k+PWZQ0c38wCgApKMUAaqaQwx6f4p+t54UFVCDgtlsx4+DK3EzkDgfpSufQ==, tarball: https://codeload.github.com/retrozinndev/gnim-utils/tar.gz/fec7b6ed11a663cca217c861ba78a2e48ea52ac7}
     version: 1.0.0
     peerDependencies:
-      gnim: ^1.8.2
+      gnim: ^1.9.1
 
   gnim@1.9.1:
     resolution: {integrity: sha512-WttkzzZg17qrJKGk87HlE1zHKUdYoimSqjmsULt4C6DNq3JfYSPhYNjwUjBMHFpzZMbyUVHgpTTW6IIehme9tQ==}
@@ -279,6 +289,10 @@ snapshots:
   '@esbuild/win32-x64@0.28.1':
     optional: true
 
+  ags@file:../../../../../usr/share/ags/js(gnim@1.9.1):
+    dependencies:
+      gnim: 1.9.1
+
   esbuild@0.28.1:
     optionalDependencies:
       '@esbuild/aix-ppc64': 0.28.1
@@ -310,7 +324,7 @@ snapshots:
 
   fuse.js@7.5.0: {}
 
-  gnim-utils@https://codeload.github.com/retrozinndev/gnim-utils/tar.gz/3c3b9ac6209b47e1efb2ac219acab938e8d97426(gnim@1.9.1):
+  gnim-utils@https://codeload.github.com/retrozinndev/gnim-utils/tar.gz/fec7b6ed11a663cca217c861ba78a2e48ea52ac7(gnim@1.9.1):
     dependencies:
       gnim: 1.9.1
 
