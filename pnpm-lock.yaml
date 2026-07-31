@@ -12,7 +12,7 @@ importers:
   .:
     dependencies:
       ags:
-        specifier: file:/usr/share/ags/js
+        specifier: file:///usr/share/ags/js
         version: file:../../../../../usr/share/ags/js(gnim@1.9.1)
       fuse.js:
         specifier: ^7.5.0
