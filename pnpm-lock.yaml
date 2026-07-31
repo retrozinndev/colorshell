@@ -12,8 +12,8 @@ importers:
   .:
     dependencies:
       ags:
-        specifier: file:///usr/share/ags/js
-        version: file:../../../../../usr/share/ags/js(gnim@1.9.1)
+        specifier: github:Aylur/ags#v3.1.2
+        version: https://codeload.github.com/Aylur/ags/tar.gz/bbee2f18939f1ec7ff720e717cf305e73635628f(gnim@1.9.1)
       fuse.js:
         specifier: ^7.5.0
         version: 7.5.0
@@ -183,8 +183,9 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  ags@file:../../../../../usr/share/ags/js:
-    resolution: {directory: ../../../../../usr/share/ags/js, type: directory}
+  ags@https://codeload.github.com/Aylur/ags/tar.gz/bbee2f18939f1ec7ff720e717cf305e73635628f:
+    resolution: {gitHosted: true, integrity: sha512-tnLVTaSnhNIsBemDNN3s5AQPb1AwB4MRhrvrvExK/5WFb7lXFFn1qMPbjhm8M1lLQapWrQBS9kaiSLVwqWUCAw==, tarball: https://codeload.github.com/Aylur/ags/tar.gz/bbee2f18939f1ec7ff720e717cf305e73635628f}
+    version: 3.1.2
     engines: {gjs: '>=1.79.0'}
     os: [linux]
     peerDependencies:
@@ -289,7 +290,7 @@ snapshots:
   '@esbuild/win32-x64@0.28.1':
     optional: true
 
-  ags@file:../../../../../usr/share/ags/js(gnim@1.9.1):
+  ags@https://codeload.github.com/Aylur/ags/tar.gz/bbee2f18939f1ec7ff720e717cf305e73635628f(gnim@1.9.1):
     dependencies:
       gnim: 1.9.1
 

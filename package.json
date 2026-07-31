@@ -16,7 +16,7 @@
         "esbuild": "^0.28.1"
     },
     "dependencies": {
-        "ags": "file:///usr/share/ags/js",
+        "ags": "github:Aylur/ags#v3.1.2",
         "fuse.js": "^7.5.0",
         "gnim-utils": "github:retrozinndev/gnim-utils#1.0.2"
     }
