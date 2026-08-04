@@ -10,6 +10,7 @@
         "clean": "sh ./scripts/clean.sh",
         "build": "sh ./scripts/build.sh",
         "build:release": "sh ./scripts/build.sh -r",
+        "build:pkg": "sh ./scripts/pkg.sh",
         "check:nix": "sh ./scripts/nixdeps.sh"
     },
     "devDependencies": {

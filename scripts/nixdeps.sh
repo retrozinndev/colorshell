@@ -25,4 +25,7 @@ if [[ ! -z "$hashes" ]]; then
     build_deps --repair && \
         Send_log "Yay! It was only the hash mismatch ;3" || \
         Send_log err "Dependency build is failing, you should check out the errors"
+
+else
+    Send_log "All good!"
 fi
