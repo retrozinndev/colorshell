@@ -4,7 +4,7 @@ import { Pages } from "./pages";
 import { PageSound } from "./pages/Sound";
 import { PageMicrophone } from "./pages/Microphone";
 import { createBinding, With } from "ags";
-import Backlights from "../../../modules/backlight";
+import Backlights from "../../../modules/backlights";
 import { PageBacklight } from "./pages/Backlight";
 
 import AstalWp from "gi://AstalWp";

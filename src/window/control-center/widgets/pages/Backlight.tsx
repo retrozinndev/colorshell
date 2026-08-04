@@ -3,7 +3,7 @@ import { Page, PageButton } from "../Page";
 import { createBinding, For, With } from "ags";
 import { addSliderMarksFromMinMax } from "../../../../modules/utils";
 import { userData } from "../../../../config";
-import Backlights from "../../../../modules/backlight";
+import Backlights from "../../../../modules/backlights";
 
 
 export const PageBacklight = <Page
