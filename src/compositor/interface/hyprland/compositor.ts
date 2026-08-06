@@ -59,6 +59,9 @@ class Hyprland extends Compositor.Compositor {
             const workspace = new Workspace(this, w);
             this._workspaces.push(workspace);
         }
+        this._focusedMonitor = this.monitors.find(mon =>
+            mon.name === this.#inst.get_focused_monitor()?.name
+        ) ?? null;
         this._focusedWorkspace = this.workspaces.find(ws =>
             ws.id === this.#inst.get_focused_workspace().get_id()
         ) ?? null;
@@ -143,6 +146,14 @@ class Hyprland extends Compositor.Compositor {
             (monitor as Monitor).dispose();
             this.notify("monitors");
             this.emit("monitor-removed", monitor);
+        });
+        this.#inst.connect("notify::focused-monitor", () => {
+            const mon = this.#inst.focusedMonitor;
+
+            this._focusedMonitor = this._monitors.find(cMon =>
+                cMon.name === mon?.name
+            ) ?? null;
+            this.notify("focused-monitor");
         });
 
         StyleManager.getDefault().connect("colors-updated", () =>

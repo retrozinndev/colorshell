@@ -166,29 +166,26 @@ class Windows<T extends string = string> extends GObject.Object {
      * @returns a function that when called, returns Array<Astal.Window>
      * @throws Error if there are no monitors connected
      */
-    public static forMonitors(create: (mon: number, scope: Scope) => JSX.Element|Astal.Window): (() => Array<Astal.Window>) {
+    public static forMonitors(create: (mon: Gdk.Monitor, scope: Scope) => JSX.Element|Astal.Window): (() => Array<Astal.Window>) {
         // create a scope for every window generator function and dispose on ::close-request
         return () => {
-            const monitors = Compositor.getDefault().monitors;
+            const monitors = Gdk.Display.get_default()?.get_monitors() as Gio.ListModel<Gdk.Monitor>;
 
-            if(monitors.length < 1) 
+            if(!monitors || monitors.get_n_items() < 1) 
                 throw new Error("Couldn't create window for monitors", {
                     cause: "No monitors connected on Hyprland"
                 });
 
-            return monitors.map(mon => {
-                return createRoot((dispose) => {
+            const instances: Array<Astal.Window> = [];
+            for(let i = 0; i < monitors.get_n_items(); i++) {
+                const mon = monitors.get_item(i)!;
+                instances.push(createRoot((dispose) => {
                     const scope = getScope();
-                    const instance = create(mon.id, scope) as Astal.Window;
+                    const instance = create(mon, scope) as Astal.Window;
                     const app = Adw.Application.get_default();
                     const id = instance.connect("close-request", () => dispose());
 
-                    try {
-                        instance.set_gdkmonitor(mon.getGMonitor()!);
-                    } catch(_) {
-                        instance.set_monitor(mon.id);
-                    }
-
+                    instance.set_gdkmonitor(mon);
                     instance.set_application(app as Adw.Application);
 
                     scope.onCleanup(() => GObject.signal_handler_is_connected(instance, id) &&
@@ -196,8 +193,10 @@ class Windows<T extends string = string> extends GObject.Object {
                     );
 
                     return instance;
-                })
-            })
+                }));
+            }
+
+            return instances;
         }
     }
 
@@ -207,9 +206,9 @@ class Windows<T extends string = string> extends GObject.Object {
      * @returns a function that when called, returns a Astal.Window instance
      * @throws Error if no focused monitor is found
      */
-    public static forFocusedMonitor(create: (mon: number, scope: ReturnType<typeof getScope>) => GObject.Object|Astal.Window): (() => Astal.Window) {
+    public static forFocusedMonitor(create: (mon: Gdk.Monitor, scope: ReturnType<typeof getScope>) => GObject.Object|Astal.Window): (() => Astal.Window) {
         return () => {
-            const focusedMonitor = this.getFocusedMonitorId();
+            const focusedMonitor = Compositor.getDefault().focusedMonitor;
 
             if(focusedMonitor == null) 
                 throw new Error("Couldn't create window for focused monitor", { 
@@ -218,11 +217,11 @@ class Windows<T extends string = string> extends GObject.Object {
 
             return createRoot((dispose) => {
                 const scope = getScope();
-                const instance = create(focusedMonitor, scope) as Astal.Window;
+                const instance = create(focusedMonitor.getGMonitor()!, scope) as Astal.Window;
                 const app = Adw.Application.get_default();
                 const id = instance.connect("close-request", () => dispose());
 
-                instance.set_monitor(focusedMonitor);
+                instance.set_gdkmonitor(focusedMonitor.getGMonitor()!);
                 instance.set_application(app as Adw.Application);
 
                 scope.onCleanup(() => GObject.signal_handler_is_connected(instance, id) &&
@@ -259,16 +258,6 @@ class Windows<T extends string = string> extends GObject.Object {
         return Object.values(this.windows);
     }
     
-    /** get the hyprland focused monitor's id. 
-      * if there's no focused monitor, fallback to `0`.
-      * `null` if no monitors were found 
-      *
-      * @returns the monitor id. if none are found, `null` */
-    public static getFocusedMonitorId(): number|null {
-        const monitors = Compositor.getDefault().monitors;
-        return monitors.find(mon => mon.focused)?.id ?? monitors[0]?.id ?? null;
-    }
-
     public isOpen(name: T): boolean {
         return Boolean(this.#windows[name]?.status === Windows.Status.OPEN);
     }
