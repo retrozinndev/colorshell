@@ -9,12 +9,12 @@ import Windows from "..";
 import Adw from "gi://Adw?version=1";
 
 
-export const ControlCenter = Windows.forFocusedMonitor((mon) => {
+export const ControlCenter = Windows.forFocusedMonitor(() => {
     const width = 380;
     const notifPopupHPos = generalConfig.getProperty("notifications.position_h", "string");
 
     return <PopupWindow namespace={"control-center"} class={"control-center"}
-      marginTop={10} marginRight={10} marginBottom={10} monitor={mon}
+      marginTop={10} marginRight={10} marginBottom={10}
       $={() => {
           if(notifPopupHPos !== "right") 
               return;

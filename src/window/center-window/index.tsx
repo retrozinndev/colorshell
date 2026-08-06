@@ -10,10 +10,10 @@ import Media from "../../modules/media";
 import AstalMpris from "gi://AstalMpris";
 
 
-export const CenterWindow = Windows.forFocusedMonitor((mon) => {
+export const CenterWindow = Windows.forFocusedMonitor(() => {
     const notifPopupHPos = generalConfig.getProperty("notifications.position_h", "string");
 
-    return <PopupWindow namespace={"center-window"} marginTop={10} monitor={mon}
+    return <PopupWindow namespace={"center-window"} marginTop={10}
       class={"center-window"}
       onKeyPressed={(_, keyval) => {
           if(keyval === Gdk.KEY_space) {

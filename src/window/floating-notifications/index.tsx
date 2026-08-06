@@ -12,14 +12,12 @@ import Windows from "..";
 
 const size = 450;
 
-export const FloatingNotifications = Windows.forFocusedMonitor((mon, scope) => {
-
+export const FloatingNotifications = Windows.forFocusedMonitor((_, scope) => {
     const notifs: Array<number> = [];
-    const window = <Astal.Window namespace={"floating-notifications"} monitor={mon} layer={Astal.Layer.OVERLAY}
-      anchor={createComputed([
-          generalConfig.bindProperty("notifications.position_h", "string"),
-          generalConfig.bindProperty("notifications.position_v", "string")
-      ]).as(([posH, posV]) => {
+    const window = <Astal.Window namespace={"floating-notifications"} layer={Astal.Layer.OVERLAY}
+      anchor={createComputed(() => {
+          const posH = generalConfig.bindProperty("notifications.position_h", "string")(),
+            posV = generalConfig.bindProperty("notifications.position_v", "string")();
           const pos: Array<Astal.WindowAnchor> = [];
 
           switch(posH) {
@@ -137,10 +135,9 @@ function buildNotification(notif: AstalNotifd.Notification): Gtk.Revealer {
 
         return Gtk.RevealerTransitionType.SWING_UP;
     })} transitionDuration={420}>
-        <Gtk.Stack transitionType={createComputed([
-              generalConfig.bindProperty("notifications.position_h", "string"),
-              generalConfig.bindProperty("notifications.position_v", "string")
-          ], (hPos, vPos) => {
+        <Gtk.Stack transitionType={createComputed(() => {
+              const hPos = generalConfig.bindProperty("notifications.position_h", "string")(),
+                  vPos = generalConfig.bindProperty("notifications.position_v", "string")();
 
               if(hPos === "left") 
                   return Gtk.StackTransitionType.SLIDE_LEFT;
@@ -173,10 +170,12 @@ function buildNotification(notif: AstalNotifd.Notification): Gtk.Revealer {
                   <Notification valign={Gtk.Align.START} summary={createBinding(notif, "summary")}
                     body={createBinding(notif, "body")} appIcon={createBinding(notif, "appIcon")}
                     appName={createBinding(notif, "appName")} time={createBinding(notif, "time")}
-                    image={createComputed([
-                        createBinding(notif, "image"),
-                        createBinding(notif, "appIcon")
-                    ], () => (Notifications.getDefault().getNotificationImage(notif) ?? null)!)}
+                    image={createComputed(() => {
+                        createBinding(notif, "image")();
+                        createBinding(notif, "appIcon")();
+
+                        return Notifications.getDefault().getNotificationImage(notif) ?? null!;
+                    })}
                     onActionClicked={(_, action) => {
                         notif.invoke(action.id);
                         Notifications.getDefault().removeNotification(notif);

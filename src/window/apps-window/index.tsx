@@ -22,7 +22,7 @@ const ignoredKeys = [
     Gdk.KEY_space
 ];
 
-export const AppsWindow = Windows.forFocusedMonitor((mon) => {
+export const AppsWindow = Windows.forFocusedMonitor(() => {
     const [results, setResults] = createState(getApps().get_list());
 
     const entry = <Gtk.SearchEntry hexpand={false} halign={Gtk.Align.CENTER}
@@ -32,8 +32,7 @@ export const AppsWindow = Windows.forFocusedMonitor((mon) => {
     /> as Gtk.SearchEntry;
 
     return <PopupWindow namespace="apps-window" layer={Astal.Layer.OVERLAY}
-      exclusivity={Astal.Exclusivity.IGNORE} monitor={mon} marginTop={64} 
-      class={"apps-window"}
+      exclusivity={Astal.Exclusivity.IGNORE} marginTop={64} class={"apps-window"}
       backgroundCss="background: rgba(0, 0, 0, .2);" hexpand
       onKeyPressed={(_, key) => {
           for(const ignoredKey of ignoredKeys) 
@@ -51,7 +50,7 @@ export const AppsWindow = Windows.forFocusedMonitor((mon) => {
                  orientation={Gtk.Orientation.HORIZONTAL}
                  $={self => {
                      function refresh(): void {
-                         const apps = results.get();
+                         const apps = results.peek();
 
                          self.remove_all();
                          for(const app of apps) {

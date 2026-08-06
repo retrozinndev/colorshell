@@ -2,23 +2,20 @@ import { Astal, Gdk, Gtk } from "ags/gtk4";
 import { execAsync } from "ags/process";
 import { generalConfig } from "../../config";
 import { AskPopup } from "../../widget/AskPopup";
-import Notifications from "../../modules/notifications";
 import NightLight from "../../modules/nightlight";
 import { time } from "../../modules/utils";
 
 import GObject from "ags/gobject";
-import AstalNotifd from "gi://AstalNotifd";
-import Gio from "gi://Gio?version=2.0";
 import Windows from "..";
 import Compositor from "../../compositor";
 
 
 const { TOP, LEFT, RIGHT, BOTTOM } = Astal.WindowAnchor;
 
-export const LogoutMenu = Windows.forFocusedMonitor((mon) => 
+export const LogoutMenu = Windows.forFocusedMonitor(() => 
     <Astal.Window namespace={"logout-menu"} anchor={TOP | LEFT | RIGHT | BOTTOM}
       layer={Astal.Layer.OVERLAY} exclusivity={Astal.Exclusivity.IGNORE}
-      keymode={Astal.Keymode.EXCLUSIVE} monitor={mon} $={(self) => {
+      keymode={Astal.Keymode.EXCLUSIVE} $={(self) => {
           const conns: Map<GObject.Object, number> = new Map();
           const controllerKey = Gtk.EventControllerKey.new();
 
