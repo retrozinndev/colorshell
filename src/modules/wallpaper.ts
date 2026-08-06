@@ -59,7 +59,7 @@ class Wallpaper extends GObject.Object {
     @setter(gtype<Gio.File|null>(Gio.File))
     set wallpaper(file: Gio.File|null) {
         if(file === undefined || file === null)
-            file = Gio.File.new_for_path("/usr/share/hypr/wall2.jpg");
+            file = Gio.File.new_for_path("/usr/share/hypr/wall2.png");
         else if(!file.query_exists(null))
             throw new Error("Wallpaper: Couldn't set wallpaper to a file that does not exist");
 
