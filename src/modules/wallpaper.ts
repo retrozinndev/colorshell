@@ -89,8 +89,7 @@ class Wallpaper extends GObject.Object {
             }
         }
 
-        const pid = getPID("hyprpaper");
-        if(pid == null) {
+        if(!this.isRunning()) {
             console.warn(`Wallpaper: hyprpaper isn't currently running or it couldn't be spotted.`);
             console.warn(`Wallpaper: Functionality like wallpaper hot-reloading may not work`);
         }
@@ -167,6 +166,10 @@ If you're using the systemd service instead, click the \"Restart hyprpaper.servi
         return this.instance;
     }
 
+    protected isRunning(): boolean {
+        return getPID("hyprpaper") !== null;
+    }
+
     private writeChanges(): void {
         const dir = this.#hyprpaperFile.get_parent();
         if(dir && !dir.query_exists(null))
@@ -221,10 +224,14 @@ wallpaper {
         if(this.#wallpaper?.peek_path()?.trim() === "")
             return;
 
-        for(const mon of AstalHyprland.get_default().get_monitors()) {
-            await execAsync(`hyprctl hyprpaper wallpaper '${mon.get_name()},${
-                this.#wallpaper?.peek_path()!.replace(/,/g, "\\\\,")
-            },${this.positioning}'`);
+        if(this.isRunning()) {
+            for(const mon of AstalHyprland.get_default().get_monitors()) {
+                await execAsync(`hyprctl hyprpaper wallpaper '${mon.get_name()},${
+                    this.#wallpaper?.peek_path()!.replace(/,/g, "\\\\,")
+                },${this.positioning}'`);
+            }
+        } else {
+            console.warn("Wallpaper: hyprpaper not running, hot-reload skipped");
         }
 
         write && this.writeChanges();
