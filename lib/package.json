@@ -1,0 +1,17 @@
+{
+    "$schema": "https://schemastore.org/package.json",
+    "name": "libclsh",
+    "version": "0.0.1",
+    "description": "A library for colorshell and its custom user modules",
+    "scripts": {
+        "types": "bash ../scripts/types.sh"
+    },
+    "keywords": ["lib", "gnomejs", "typescript"],
+    "author": {
+        "name": "retrozinndev",
+        "url": "https://retrozinndev.github.io",
+        "email": "joaovodias@gmail.com"
+    },
+    "license": "MIT",
+    "packageManager": "pnpm@10.12.1"
+}
