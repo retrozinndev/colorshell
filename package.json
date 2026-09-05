@@ -14,11 +14,14 @@
         "check:nix": "sh ./scripts/nixdeps.sh"
     },
     "devDependencies": {
-        "esbuild": "^0.28.1"
+        "esbuild": "^0.28.2"
     },
     "dependencies": {
         "ags": "github:Aylur/ags#v3.1.2",
         "fuse.js": "^7.5.0",
         "gnim-utils": "github:retrozinndev/gnim-utils#1.0.2"
+    },
+    "overrides": {
+        "gnim": "^1.9.1"
     }
 }
