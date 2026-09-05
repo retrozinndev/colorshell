@@ -2,11 +2,12 @@ import GLib from "gi://GLib?version=2.0";
 import Cli from "..";
 import { showWorkspaceNumber } from "../../window/bar/widgets/Workspaces";
 import Windows from "../../window";
-import { Shell } from "../../app";
+import type Shell from "../../app";
 import System from "system";
 import { execApp } from "../../modules/apps";
 import { generalConfig } from "../../config";
 import Runner from "../../runner";
+import Gio from "gi://Gio?version=2.0";
 
 
 const defaultPeekMillis = 2200;
@@ -228,25 +229,11 @@ https://github.com/retrozinndev/colorshell
                     alias: 'a',
                     help: "Run the specified alias' command",
                     hasValue: true
-                },
-                {
-                    name: "rules",
-                    alias: 'r',
-                    help: `Add window rules to the app window(if there's any).
-Format: https://wiki.hypr.land/Configuring/Dispatchers/#executing-with-rules`,
-                    hasValue: true,
-                    onCalled: (remote, v) => {
-                        if(!v || /^\[(.*[;]?)*\]$/.test(v)) {
-                            remote.println("Error: Invalid window rules format provided", true);
-                            remote.exit(1);
-                        }
-                    }
                 }
             ],
             onCalled: (remote, args) => {
                 const alias = args.find(a => a.name === "alias")?.value as string;
                 const cmd = args.find(a => a.name === "command")?.value as string;
-                const rules = args.find(a => a.name === "rules")?.value as string;
                 let command: string|undefined;
 
 
@@ -274,7 +261,7 @@ Format: https://wiki.hypr.land/Configuring/Dispatchers/#executing-with-rules`,
                     return;
                 }
 
-                execApp(command, rules);
+               execApp(command);
             }
         },
         {
@@ -282,11 +269,11 @@ Format: https://wiki.hypr.land/Configuring/Dispatchers/#executing-with-rules`,
             arguments: [{
                 name: "millis",
                 alias: 'm',
-                help: "Set a custom timeout in milliseconds to peek workspace numbers. (default: 2200ms/2.2s)",
+                help: "Set a custom timeout in milliseconds to peek workspace numbers. (default: 2200ms = 2.2s)",
                 hasValue: true,
                 onCalled: (remote, value) => {
                     const millis = value !== undefined ?
-                        Number.parseInt(value.replace(/[a-z]/gi, ""))
+                        Number.parseInt(value.replace(/([0-9]+)[a-z]+/gi, "$1"))
                     : undefined;
 
                     if(Number.isNaN(millis)) {
@@ -315,13 +302,19 @@ Format: https://wiki.hypr.land/Configuring/Dispatchers/#executing-with-rules`,
             name: "reload",
             help: "Quits the currently-open instance and starts another one",
             onCalled: (remote) => {
-                if(System.programPath === null)
+                if(System.programPath == null)
                     remote.println("Error: argv[0](program path) is unset, reloading might not work correctly");
 
                 const path = System.programPath ?? `${GLib.get_user_runtime_dir()}/colorshell/colorshell`;
 
-                Shell.getDefault().quit();
-                GLib.spawn_async(null, [path], null, GLib.SpawnFlags.SEARCH_PATH, null);
+                (Gio.Application.get_default() as Shell).quit();
+                GLib.spawn_async(
+                    null,
+                    [path],
+                    GLib.get_environ().concat(`LD_PRELOAD=${(Gio.Application.get_default() as Shell).preload}`),
+                    GLib.SpawnFlags.SEARCH_PATH,
+                    null
+                );
                 System.exit(0);
             }
         },
@@ -329,7 +322,7 @@ Format: https://wiki.hypr.land/Configuring/Dispatchers/#executing-with-rules`,
             name: "quit",
             help: "exits the current instance of colorshell",
             onCalled: (remote) => {
-                Shell.getDefault().quit();
+                (Gio.Application.get_default() as Shell).quit();
                 remote.println("Quitting...");
                 remote.exit(0);
                 System.exit(0);

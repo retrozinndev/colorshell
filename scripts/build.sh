@@ -103,8 +103,7 @@ mkdir -p \"\$XDG_RUNTIME_DIR/$appname\"
 echo -n '`cat $output/$appname.js | base64`' | base64 --decode > \"\$file\"
 chmod +x "\$file"
 
-`[[ ! $is_devel ]] && echo -n "export LD_PRELOAD=\"/usr/lib/libgtk4-layer-shell.so\""`
-\$file \$@
-`[[ ! $is_devel ]] && echo -n "export LD_PRELOAD="`
+
+`[[ ! $is_devel ]] && echo -n "LD_PRELOAD='/usr/lib/libgtk4-layer-shell.so'"` \$file \$@
 " > $output/$appname
 chmod +x $output/$appname

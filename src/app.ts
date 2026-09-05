@@ -26,9 +26,14 @@ import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import Adw from "gi://Adw?version=1";
 
+
 @register({ GTypeName: "Colorshell" })
-export class Shell extends Adw.Application {
+export default class Shell extends Adw.Application {
     private static instance: Shell;
+
+    /** LD_PRELOAD environment variable. used by the `reload` command,
+      * so the shell behaves as a layer shell instead of common clients */
+    readonly preload: string|null = GLib.getenv("LD_PRELOAD");
 
     #scope!: Scope;
     #pid: number|null = null;
@@ -117,6 +122,9 @@ export class Shell extends Adw.Application {
     private init(): void {
         console.log("Preparing init");
 
+        // remove layer-shell preload, so child processes behave as usual
+        GLib.unsetenv("LD_PRELOAD");
+
         // create shell directories
         [
             runtimeDir,
@@ -197,4 +205,3 @@ export class Shell extends Adw.Application {
 }
 
 Shell.getDefault().runAsync([ programInvocationName, ...programArgs ]);
-GLib.unsetenv("LD_PRELOAD");
