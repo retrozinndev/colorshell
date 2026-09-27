@@ -106,7 +106,6 @@ class Wallpaper extends GObject.Object {
                         generalConfig.setProperty("wallpaper.positioning", "cover");
                         this.notify("positioning");
                         Notifications.getDefault().sendNotification({
-                            appName: "colorshell",
                             summary: "Couldn't update wallpaper position",
                             body: "Invalid position value. Possible values are: \"cover\"(default), \"contain\", \"tile\" or \"fill\""
                         });
@@ -117,7 +116,6 @@ class Wallpaper extends GObject.Object {
                     this.notify("positioning");
                     this.reapply().catch(e => {
                         Notifications.getDefault().sendNotification({
-                            appName: "colorshell",
                             summary: "Couldn't update wallpaper position",
                             body: `An error occurred while updating wallpaper's position: ${e.message}`
                         });
@@ -128,6 +126,7 @@ class Wallpaper extends GObject.Object {
 
                 case "wallpaper.splash": {
                     this.notify("splash");
+                    this.writeChanges();
                     Notifications.getDefault().sendNotification({
                         summary: "Wallpaper configuration",
                         body: "This change will only take effect after a hyprpaper restart. \
