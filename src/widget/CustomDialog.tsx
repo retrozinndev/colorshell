@@ -73,7 +73,7 @@ export function CustomDialog({ options = [{ text: tr("accept") }], ...props}: Cu
             </Gtk.Box> as Gtk.Box
         );
 
-        popup.show();
+        popup.visible = true;
         return popup;
     })();
 }

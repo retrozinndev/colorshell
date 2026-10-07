@@ -10,8 +10,8 @@ import {
     decoder,
     encoder,
     getDBusNamePID,
-    globalScope,
-    runtimeDir
+    runtimeDir,
+    expandPath
 } from "./modules/utils";
 import Clipboard from "./modules/clipboard";
 import NightLight from "./modules/nightlight";
@@ -105,7 +105,6 @@ export default class Shell extends Adw.Application {
 
         createRoot((dispose) => {
             createScopedConnection(this as Adw.Application, "shutdown", () => {
-                globalScope.dispose();
                 dispose();
             });
 
@@ -156,22 +155,7 @@ export default class Shell extends Adw.Application {
 
         // load gresource from build-defined path
         try {
-            const gresourcesPath: string = !/^\//.test(GRESOURCE) ?
-                (GRESOURCE.split('/').filter(s => s !== "").map(path => {
-                    // support environment variables at runtime
-                    if(/^\$/.test(path)) {
-                        const env = GLib.getenv(path.replace(/^\$/, ""));
-                        if(env === null)
-                            throw new Error(`Couldn't get environment variable: ${path}`);
-
-                        return env;
-                    }
-                    return path;
-                }).join('/'))
-            : GRESOURCE;
-
-            const gresource = Gio.Resource.load(gresourcesPath);
-            Gio.resources_register(gresource);
+            Gio.resources_register(Gio.Resource.load(expandPath(GRESOURCE)));
         } catch(_e) {
             const e = _e as Error;
             console.error(`Error: couldn't load gresource! Stderr: ${e.message}\n${e.stack}`);

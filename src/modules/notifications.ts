@@ -1,23 +1,17 @@
-import { execAsync } from "ags/process";
 import { generalConfig } from "../config";
 import { pathToURI } from "./utils";
 import GObject, { getter, ParamSpec, property, register, signal } from "ags/gobject";
 import AstalNotifd from "gi://AstalNotifd";
 import GLib from "gi://GLib?version=2.0";
+import Gio from "gi://Gio?version=2.0";
 
+Gio._promisify(AstalNotifd, "send_notification", "send_notification_finish");
 
 @register({ GTypeName: "Notifications" })
 class Notifications extends GObject.Object {
     private static instance: (Notifications|null) = null;
 
-    declare $signals: GObject.Object.SignalSignatures & {
-        "history-added": (notification: Notifications.HistoryNotification) => void;
-        "history-removed": (notificationId: number) => void;
-        "history-cleared": () => void;
-        "notification-added": (notification: AstalNotifd.Notification) => void;
-        "notification-removed": (notificationId: number) => void;
-        "notification-replaced": (notificationId: number) => void;
-    };
+    declare $signals: Notifications.SignalSignatures;
 
     #notifications = new Map<number, [AstalNotifd.Notification, Notifications.Timeout]>();
     #history: Array<Notifications.HistoryNotification> = [];
@@ -90,55 +84,47 @@ class Notifications extends GObject.Object {
 
     public async sendNotification(props: {
         urgency?: AstalNotifd.Urgency;
-        appName?: string;
         image?: string;
         summary: string;
         body?: string;
-        replaceId?: number;
+        replaceId?: string;
+        appIcon?: string;
         actions?: Array<{
-            id?: (string|number);
+            id?: string;
             text: string;
             onAction?: () => void
         }>
-    }): Promise<{
-        id?: (string|number);
-        text: string;
-        onAction?: () => void
-    }|null|void> {
-        let stdout: string|undefined;
-        props.appName ??= "colorshell";
+    }): Promise<void> {
+        const notif = AstalNotifd.Notification.new();
+
+        notif.state = AstalNotifd.State.DRAFT;
+        notif.summary = props.summary;
+        if(props.body != null)
+            notif.body = props.body;
+        if(props.urgency != null)
+            notif.urgency = props.urgency;
+        if(props.actions != null && props.actions.length > 0) {
+            for(let i = 0; i < props.actions.length; i++) {
+                const action = props.actions[i];
+                const astalAction = AstalNotifd.Action.new(action.id ?? `action${i}`, action.text);
+
+                notif.add_action(astalAction);
+                const id = astalAction.connect("invoked", () => {
+                    astalAction.disconnect(id);
+                    action.onAction?.();
+                });
+            }
+        }
+        if(props.image != null)
+            notif.image = props.image;
+        if(props.appIcon != null)
+            notif.appIcon = props.appIcon;
 
         try {
-            stdout = (await execAsync([
-                "notify-send", 
-                         ...(props.urgency ? [
-                    "-u", this.getUrgencyString(props.urgency)
-                ] : []), ...(props.appName ? [
-                    "-a", props.appName
-                ] : []), ...(props.image ? [
-                    "-i", props.image
-                ] : []), ...(props.actions ? props.actions.map((action) =>
-                    [ "-A", action.text ]
-                ).flat(2) : []), ...(props.replaceId ? [
-                    "-r", props.replaceId.toString()
-                ] : []), props.summary, props.body ? props.body : ""
-            ])).trim();
+            await AstalNotifd.send_notification(notif);
         } catch(err) {
-            console.error("Notifications: Couldn't send notification! Is the daemon running?", err);
-        }
-
-        if(!stdout) {
-            if(props.actions && props.actions.length > 0)
-                return null;
-
-            return;
-        }
-
-        if(props.actions && props.actions.length > 0) {
-            const action = props.actions[Number.parseInt(stdout)];
-            action?.onAction?.();
-
-            return action ?? undefined;
+            throw new Error(`Couldn't send notification! Is the daemon running?\n${
+                (err as Error).message}\n${(err as Error).stack}`);
         }
     }
 
@@ -277,29 +263,24 @@ class Notifications extends GObject.Object {
         this.notify("notifications-on-hold");
     }
 
-    public getNotificationImage(notif: AstalNotifd.Notification|Notifications.HistoryNotification): string|undefined {
+    public static getMainAction(actions: Array<AstalNotifd.Action>|AstalNotifd.Notification): AstalNotifd.Action|undefined {
+        if(actions instanceof AstalNotifd.Notification)
+            actions = actions.actions;
+
+        return actions.find(a => a.id?.toLowerCase() === "view" || 
+            a.label?.toLowerCase() === "view"
+        ) ?? actions.find(a => a.id?.trim() === "" || 
+            a.label?.trim() === ""
+        );
+    }
+
+    public static getNotificationImage(notif: AstalNotifd.Notification|Notifications.HistoryNotification): string|undefined {
         const img = notif.image || notif.appIcon;
 
         if(!img || !img.includes('/')) 
             return undefined;
 
         return pathToURI(img).replace("file://", "");
-    }
-
-    public removeDuplicateActions(actions: Array<AstalNotifd.Action>): Array<AstalNotifd.Action> {
-        const finalActions: Array<AstalNotifd.Action> = [...actions];
-
-        for(let i = 0; i < actions.length; i++) {
-            const action = actions[i];
-            const lastIndex = finalActions.findLastIndex(a => a.id === action.id);
-            
-            if(lastIndex !== i) {
-                finalActions.splice(lastIndex, 1);
-                continue;
-            }
-        }
-
-        return finalActions;
     }
 
     public toggleDoNotDisturb(value?: boolean): boolean {
@@ -375,6 +356,15 @@ namespace Notifications {
 
             return this.#source;
         }
+    }
+
+    export interface SignalSignatures extends GObject.Object.SignalSignatures {
+        "history-added"(notification: Notifications.HistoryNotification): void;
+        "history-removed"(notificationId: number): void;
+        "history-cleared"(): void;
+        "notification-added"(notification: AstalNotifd.Notification): void;
+        "notification-removed"(notificationId: number): void;
+        "notification-replaced"(notificationId: number): void;
     }
 }
 

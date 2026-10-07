@@ -274,12 +274,12 @@ class Windows<T extends string = string> extends GObject.Object {
 
         if(Array.isArray(instance)) {
             window.data! = instance.map(win => {
-                win.show();
+                win.visible = true;
                 return { instance: win, connections: [] };
             });
         } else {
             window.data = { instance: instance, connections: [] };
-            instance.show();
+            instance.visible = true;
         }
 
         this.#windows[name].status = Windows.Status.OPEN;

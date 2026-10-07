@@ -2,7 +2,7 @@ import { Gtk } from "ags/gtk4";
 import { Separator } from "./Separator";
 import { getIconByAppName, getSymbolicIcon, lookupIcon } from "../modules/apps";
 import { omitObjectKeys } from "../modules/utils";
-import { Accessor, createBinding, createComputed, For } from "ags";
+import { Accessor, createBinding, createComputed, For, This } from "ags";
 import { getter, gtype, property, register, signal } from "ags/gobject";
 
 import AstalNotifd from "gi://AstalNotifd";
@@ -15,7 +15,7 @@ import Cache from "../modules/cache";
 
 
 @register({ GTypeName: "ClshNotification" })
-export class Notification extends Gtk.Box {
+class Notification extends Gtk.Box {
     declare $signals: Notification.SignalSignatures;
 
     #id: number;
@@ -102,84 +102,86 @@ export class Notification extends Gtk.Box {
             });
         }
 
-        this.prepend(
-            <Gtk.CenterBox class={"top"} hexpand>
-                <Gtk.Box $type="start">
-                    <Gtk.Image class={"app-icon"} iconName={createComputed([
-                        createBinding(this, "appName"),
-                        createBinding(this, "appIcon")
-                    ], (name, icon) => {
-                        if(icon && lookupIcon(icon))
-                            return icon;
+        void (
+            <This this={this as Notification}>
+                <Gtk.CenterBox class={"top"}>
+                    <Gtk.Box $type="start" spacing={6}>
+                        <Gtk.Image class={"app-icon"} iconName={createComputed(() => {
+                            const name = createBinding(this, "appName")(),
+                                icon = createBinding(this, "appIcon")();
 
-                        if(name === null)
-                            return "application-x-executable-symbolic";
+                            if(icon && lookupIcon(icon))
+                                return icon;
 
-                        return getSymbolicIcon(name) ?? getIconByAppName(name) ??
-                            "application-x-executable-symbolic";
-                    })} />
-                    <Gtk.Label xalign={0} class={"app-name"} label={
-                        createBinding(this, "appName").as(s => s ?? "unknown-app")
-                    } />
+                            if(name == null)
+                                return "application-x-executable-symbolic";
+
+                            return getSymbolicIcon(name) ?? getIconByAppName(name) ??
+                                "application-x-executable-symbolic";
+                        })} />
+                        <Gtk.Label xalign={0} class={"app-name"} label={
+                            createBinding(this, "appName").as(s => s ?? "unknown-app")
+                        } />
+                    </Gtk.Box>
+                    <Gtk.Box $type="end" spacing={6}>
+                        <Gtk.Label class={"time"} visible={createBinding(this, "time").as(t => Boolean(t ?? true))}
+                          label={createBinding(this, "time").as(t => t !== null ?
+                              GLib.DateTime.new_from_unix_local(t).format("%H:%M")!
+                          : "")}
+                          xalign={1}
+                        />
+                        <Gtk.Button iconName={"window-close-symbolic"} class={"close"}
+                          onClicked={() => this.emit("dismissed")}
+                        />
+                    </Gtk.Box>
+                </Gtk.CenterBox>
+                <Separator alpha={.1} orientation={Gtk.Orientation.VERTICAL} />
+                <Gtk.Box class={"content"}>
+                    <Adw.Clamp maximumSize={80}>
+                        <Image cache={["notifications", this.id.toString()]} hideIfEmpty
+                          valign={Gtk.Align.START}
+                          path={createBinding(this, "image")(img => {
+                              if(!img?.startsWith('/'))
+                                  return null;
+
+                              return img;
+                          }) as Accessor<string>}
+                          $={self => {
+                              self.picture.set_content_fit(Gtk.ContentFit.COVER);
+                              self.picture.set_keep_aspect_ratio(false);
+                          }}
+                        />
+                    </Adw.Clamp>
+                    <Gtk.Box class={"text"} orientation={Gtk.Orientation.VERTICAL}>
+                        <Gtk.Label xalign={0} class={"summary"} valign={Gtk.Align.START}
+                          halign={Gtk.Align.START} ellipsize={Pango.EllipsizeMode.MIDDLE}
+                          label={createBinding(this, "summary")}
+                        />
+                        <Gtk.Label xalign={0} class={"body"} visible={createBinding(this, "body").as(s => s !== null)}
+                          label={createBinding(this, "body").as(s => s ?? "")} useMarkup
+                          valign={Gtk.Align.START} wrapMode={Pango.WrapMode.WORD_CHAR} wrap
+                          halign={Gtk.Align.START}
+                        />
+                    </Gtk.Box>
                 </Gtk.Box>
-                <Gtk.Box $type="end">
-                    <Gtk.Label class={"time"} visible={createBinding(this, "time").as(t => Boolean(t ?? true))}
-                      label={createBinding(this, "time").as(t => t !== null ?
-                          GLib.DateTime.new_from_unix_local(t).format("%H:%M")!
-                      : "")}
-                      xalign={1}
-                    />
-                    <Gtk.Button iconName={"window-close-symbolic"} class={"close"}
-                      onClicked={() => this.emit("dismissed")}
-                    />
+                <Gtk.Box class={"actions"} orientation={Gtk.Orientation.VERTICAL}
+                  spacing={1}>
+
+                    <For each={createBinding(this, "actions")(as => {
+                          const main = Notifications.getMainAction(as);
+                          if(!main)
+                              return as;
+
+                          return as.filter(a => a.id === main.id);
+                      })} >
+                        {(action: AstalNotifd.Action) => {
+                            return <Gtk.Button class={"action"} label={action.label}
+                              onClicked={() => this.emit("action-clicked", action)}
+                            />;
+                        }}
+                    </For>
                 </Gtk.Box>
-            </Gtk.CenterBox> as Gtk.CenterBox
-        );
-
-        this.append(
-            <Separator alpha={.1} orientation={Gtk.Orientation.VERTICAL} /> as Gtk.Widget
-        );
-
-        this.append(
-            <Gtk.Box class={"content"}>
-                <Adw.Clamp maximumSize={80}>
-                    <Image cache={["notifications", this.id.toString()]} hideIfEmpty
-                      valign={Gtk.Align.START}
-                      path={createBinding(this, "image")(img => {
-                          if(!img?.startsWith('/'))
-                              return null;
-
-                          return img;
-                      }) as Accessor<string>}
-                      $={self => {
-                          self.picture.set_content_fit(Gtk.ContentFit.COVER);
-                          self.picture.set_keep_aspect_ratio(false);
-                      }}
-                    />
-                </Adw.Clamp>
-                <Gtk.Box class={"text"} orientation={Gtk.Orientation.VERTICAL} vexpand>
-                    <Gtk.Label xalign={0} class={"summary"} hexpand vexpand={false}
-                      ellipsize={Pango.EllipsizeMode.END} label={createBinding(this, "summary")}
-                      valign={Gtk.Align.START}
-                    />
-                    <Gtk.Label xalign={0} class={"body"} visible={createBinding(this, "body").as(s => s !== null)}
-                      label={createBinding(this, "body").as(s => s ?? "")} useMarkup
-                      valign={Gtk.Align.START} wrapMode={Pango.WrapMode.WORD_CHAR} wrap
-                    />
-                </Gtk.Box>
-            </Gtk.Box> as Gtk.Box
-        );
-
-        this.append(
-            <Gtk.Box class={"actions"} orientation={Gtk.Orientation.VERTICAL}>
-                <For each={createBinding(this, "actions")} >
-                    {(action: AstalNotifd.Action) => {
-                        return <Gtk.Button class={"action"} label={action.label} hexpand
-                          onClicked={() => this.emit("action-clicked", action)}
-                        />;
-                    }}
-                </For>
-            </Gtk.Box> as Gtk.Box
+            </This>
         );
     }
 
@@ -215,3 +217,5 @@ export namespace Notification {
         image?: string;
     }
 }
+
+export default Notification;

@@ -13,7 +13,7 @@ import Gio from "gi://Gio?version=2.0";
 
 // TODO: support monitoring an already-running instance of wf-recorder on startup
 /** screen-recording module for colorshell */
-@register({ GTypeName: "Recording" })
+@register({ GTypeName: "ClshRecordingTool" })
 class Recording extends GObject.Object {
     private static instance: Recording;
 
@@ -71,7 +71,7 @@ class Recording extends GObject.Object {
         if(!this.#recording || !this.#startedAt)
             return "not recording";
             
-        const startedAtSeconds = time.get().to_unix() - Recording.getDefault().startedAt!;
+        const startedAtSeconds = time.peek().to_unix() - Recording.getDefault().startedAt!;
         if(startedAtSeconds <= 0) return "00:00";
 
         const seconds = Math.floor(startedAtSeconds % 60);
@@ -93,7 +93,7 @@ class Recording extends GObject.Object {
         const pid = getPID("wf-recorder");
         if(pid !== undefined) {
             this.#pid = pid;
-            this.#startedAt = time.get().to_unix();
+            this.#startedAt = time.peek().to_unix();
             this.notify("started-at");
             this.#recording = true;
             this.notify("recording");
@@ -132,7 +132,7 @@ class Recording extends GObject.Object {
         if(this.#recording) 
             throw new Error("Screen Recording is already running!");
 
-        this.#output = `${time.get().format("%Y-%m-%d-%H%M%S")}_rec.${this.extension || "mp4"}`;
+        this.#output = `${time.peek().format("%Y-%m-%d-%H%M%S")}_rec.${this.extension ?? "mp4"}`;
         makeDirectory(this.path);
 
         const areaString = `${area?.x ?? 0},${area?.y ?? 0} ${area?.width ?? 1}x${area?.height ?? 1}`;
@@ -173,7 +173,7 @@ class Recording extends GObject.Object {
             this.stopRecording();
         });
 
-        this.#startedAt = time.get().to_unix();
+        this.#startedAt = time.peek().to_unix();
         this.#recording = true;
         this.notify("started-at");
         this.notify("recording");
@@ -215,7 +215,6 @@ class Recording extends GObject.Object {
                     onAction: () => execAsync(`xdg-open '${this.#path}'`)
                 }
             ] : undefined,
-            appName: "colorshell",
             summary: "Screen Recording",
             body: output != null ?
                 `Saved recording as "${this.#path}/${output}"`

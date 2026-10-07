@@ -5,6 +5,12 @@
     flake-parts.url = "github:hercules-ci/flake-parts";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
+    corncheese-nix-lib = {
+      url = "github:conroy-cheers/corncheese-nix-lib";
+      inputs.flake-parts.follows = "flake-parts";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -36,7 +42,9 @@
             ...
           }:
           let
-            colorshell = pkgs.callPackage ./nix/colorshell.nix { };
+            colorshell = pkgs.callPackage ./nix/colorshell.nix {
+              fetchBunDeps = inputs.corncheese-nix-lib.lib.fetchBunDeps pkgs;
+            };
           in
           {
             checks.home-manager-module = import ./nix/tests/home-manager.nix {

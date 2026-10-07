@@ -1,7 +1,7 @@
 -- colorshell configuration, please don't modify unless you know what you're doing!
 
 hl.layer_rule({
-    match = { namespace = "apps-window" };
+    match = { namespace = "apps-drawer" };
     animation = "slide bottom";
 });
 hl.window_rule({
@@ -34,8 +34,8 @@ hl.layer_rule({
 });
 
 hl.layer_rule({ match = { namespace = "osd" }, blur = true });
-hl.layer_rule({ match = { namespace = "apps-window" }, blur = true });
+hl.layer_rule({ match = { namespace = "apps-drawer" }, blur = true });
 hl.layer_rule({ match = { namespace = "logout-menu" }, blur = true });
 hl.layer_rule({ match = { namespace = "osd" }, ignore_alpha = 0.4 });
-hl.layer_rule({ match = { namespace = "apps-window" }, ignore_alpha = 0.5 });
+hl.layer_rule({ match = { namespace = "apps-drawer" }, ignore_alpha = 0.5 });
 hl.layer_rule({ match = { namespace = "logout-menu" }, ignore_alpha = 0 });

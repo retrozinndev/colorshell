@@ -2,15 +2,25 @@ import { Gtk } from "ags/gtk4";
 import Windows from "../../../window";
 import Wallpaper from "../../../modules/wallpaper";
 import { execApp } from "../../../modules/apps";
-import { Accessor } from "ags";
-import { createPoll } from "ags/time";
 import Screenshot from "../../../modules/screenshot";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
+import { time } from "../../../modules/utils";
 
 
-const userFace: Gio.File = Gio.File.new_for_path(`${GLib.get_home_dir()}/.face`);
-const uptime: Accessor<string> = createPoll("Just turned on", 1000, "uptime -p"); 
+const userFace = Gio.File.new_for_path(`${GLib.get_home_dir()}/.face`);
+let bootTime: GLib.DateTime = GLib.DateTime.new_now_local();
+
+try {
+    const info = Gio.File.new_for_path("/dev").query_info("time::created", Gio.FileQueryInfoFlags.NONE, null);
+    const time = info.get_creation_date_time();
+    if(!time)
+        throw new Error("Couldn't get creation date of /dev");
+
+    bootTime = time;
+} catch(e) {
+    console.warn("Failed to retrieve uptime:\n", e);
+}
 
 function LockButton(): Gtk.Button {
     return <Gtk.Button iconName={"system-lock-screen-symbolic"} 
@@ -76,7 +86,16 @@ export const QuickActions = () =>
                 <Gtk.Box>
                     <Gtk.Image iconName={"hourglass-symbolic"} />
                     <Gtk.Label class={"uptime"} xalign={0} tooltipText={"Up time"}
-                      label={uptime.as(str => str.replace(/^up /, ""))} />
+                      label={time(t => {
+                          const date = GLib.DateTime.new_from_unix_utc_usec(t.difference(bootTime));
+                          return `${date.get_hour() > 0 ?
+                                  `${date.get_hour()}hr${date.get_hour() > 1 ? "s" : ""}, `
+                              : ""}${
+                              date.get_minute() > 0 ?
+                                  `${date.get_minute()}min${date.get_minute() > 1 ? "s" : ""}`
+                              : ""
+                          }`;
+                      })} />
                 </Gtk.Box>
             </Gtk.Box>
         </Gtk.Box>

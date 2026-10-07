@@ -51,6 +51,11 @@ label.number {
     font-weight: 500;
 }
 
+/* space icon and label in adw buttoncontent */
+button buttoncontent box image {
+    margin-right: 6px;
+}
+
 customdialog .container {
   background: var(--bg-translucent-primary);
   padding: 18px;
@@ -88,13 +93,7 @@ customdialog .container.entry-popup-box entry.password {
 notification {
   background: var(--bg-translucent-secondary);
   border-radius: 16px;
-}
-notification > .top {
-  padding: 8px;
-  padding-bottom: 0;
-}
-notification > .top .app-icon {
-  margin-right: 6px;
+  padding: 10px;
 }
 notification > .top .app-name {
   font-size: 12px;
@@ -103,7 +102,6 @@ notification > .top label.time {
   font-size: 11px;
   font-weight: 500;
   color: var(--fg-disabled);
-  margin-right: 6px;
 }
 notification > .top button.close {
   padding: 2px;
@@ -116,11 +114,11 @@ notification > .top icon.close {
   font-size: 16px;
 }
 notification .content {
-  padding: 6px;
-  padding-top: 0;
+    margin-bottom: 6px;
 }
 notification .content stack {
-  margin: 6px;
+  margin-right: 6px;
+  margin-bottom: 6px;
 }
 notification .content stack image.notif-image {
   border-radius: 12px;
@@ -134,16 +132,10 @@ notification .content .body {
   font-size: 14.5px;
   font-weight: 400;
 }
-notification .actions {
-  padding: 6px;
-  padding-bottom: 10px;
-}
 notification .actions button.action {
   border-radius: 4px;
   background: var(--bg-secondary);
   padding: 6px;
-  margin-top: 1px;
-  margin-bottom: 1px;
 }
 notification .actions button.action label {
   font-size: 14px;
@@ -152,12 +144,10 @@ notification .actions button.action label {
 notification .actions button:first-child {
   border-top-left-radius: 10px;
   border-top-right-radius: 10px;
-  margin-top: 0;
 }
 notification .actions button:last-child {
   border-bottom-right-radius: 10px;
   border-bottom-left-radius: 10px;
-  margin-bottom: 0;
 }
 notification .actions button.action:hover {
   background: var(--bg-tertiary);

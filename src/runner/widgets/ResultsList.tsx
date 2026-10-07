@@ -66,7 +66,7 @@ class ResultsList extends Adw.Bin {
                     return;
                 }
 
-                this.show();
+                this.visible = true;
                 // autofocus first result if none are selected
                 if(!this.getSelected())
                     this.select(0);

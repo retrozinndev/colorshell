@@ -14,7 +14,6 @@ import { createPoll } from "ags/time";
 import { exec, execAsync } from "ags/process";
 import { Astal, Gtk } from "ags/gtk4";
 import { getSymbolicIcon } from "./apps";
-import { createRoot, getScope, Scope } from "ags";
 import Notifications from "./notifications";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
@@ -41,8 +40,6 @@ export async function writeTextFile(file: Gio.File, contents: string): Promise<v
 
 export const time = createPoll(GLib.DateTime.new_now_local(), 500, () => 
     GLib.DateTime.new_now_local());
-
-export const globalScope: Scope = createRoot(() => getScope());
 
 export const runtimeDir: Gio.File = Gio.File.new_for_path(`${
     GLib.get_user_runtime_dir() ?? `/run/user/${exec("id -u").trim()}`}/colorshell`);

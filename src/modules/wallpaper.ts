@@ -1,5 +1,5 @@
 import { readFile, readFileAsync } from "ags/file";
-import { expandPath, getPID, killProc, writeTextFile } from "./utils";
+import { cacheDir, expandPath, getPID, killProc, writeTextFile } from "./utils";
 import { generalConfig } from "../config";
 import { execAsync } from "ags/process";
 import GObject, { register, getter, gtype, setter, signal } from "ags/gobject";
@@ -9,6 +9,9 @@ import Notifications from "./notifications";
 import AstalHyprland from "gi://AstalHyprland?version=0.1";
 import Compositor from "../compositor";
 
+Gio._promisify(Gio.File.prototype, "make_symbolic_link_async", "make_symbolic_link_finish");
+Gio._promisify(Gio.File.prototype, "delete_async", "delete_finish");
+
 
 // TODO: support different wallpapers for each monitor
 @register({ GTypeName: "Wallpaper" })
@@ -16,6 +19,7 @@ class Wallpaper extends GObject.Object {
     declare $signals: Wallpaper.SignalSignatures;
     private static instance: Wallpaper;
 
+    #link: Gio.File;
     #wallpaper: Gio.File|null = null;
     #hyprpaperFile: Gio.File;
 
@@ -76,7 +80,12 @@ class Wallpaper extends GObject.Object {
     constructor(props?: Wallpaper.ConstructorProps) {
         super(props);
 
+        this.#link = Gio.File.new_for_path(`${cacheDir.peek_path()!}/wallpapers/MAIN`);
         this.#hyprpaperFile = Gio.File.new_for_path(`${GLib.get_user_config_dir()}/hypr/hyprpaper.conf`);
+
+        const linkParent = this.#link.get_parent()!;
+        if(!linkParent.query_exists(null))
+            linkParent.make_directory_with_parents(null);
 
         if(!this.#hyprpaperFile.query_exists(null))
             this.wallpaper = null; // so it'll write a default one
@@ -106,7 +115,6 @@ class Wallpaper extends GObject.Object {
                         generalConfig.setProperty("wallpaper.positioning", "cover");
                         this.notify("positioning");
                         Notifications.getDefault().sendNotification({
-                            appName: "colorshell",
                             summary: "Couldn't update wallpaper position",
                             body: "Invalid position value. Possible values are: \"cover\"(default), \"contain\", \"tile\" or \"fill\""
                         });
@@ -117,7 +125,6 @@ class Wallpaper extends GObject.Object {
                     this.notify("positioning");
                     this.reapply().catch(e => {
                         Notifications.getDefault().sendNotification({
-                            appName: "colorshell",
                             summary: "Couldn't update wallpaper position",
                             body: `An error occurred while updating wallpaper's position: ${e.message}`
                         });
@@ -128,6 +135,7 @@ class Wallpaper extends GObject.Object {
 
                 case "wallpaper.splash": {
                     this.notify("splash");
+                    this.writeChanges();
                     Notifications.getDefault().sendNotification({
                         summary: "Wallpaper configuration",
                         body: "This change will only take effect after a hyprpaper restart. \
@@ -211,14 +219,21 @@ wallpaper {
     }
 
     public async reapply(write: boolean = true): Promise<void> {
-        if(this.#wallpaper?.peek_path()?.trim() === "")
+        if(!this.#wallpaper || !this.#wallpaper.query_exists(null))
             return;
+
+        this.#link.delete_async(GLib.PRIORITY_DEFAULT, null, null);
+        await this.#link.make_symbolic_link_async(
+            this.#wallpaper!.peek_path()!,
+            GLib.PRIORITY_DEFAULT,
+            null
+        );
 
         if(this.isRunning()) {
             for(const mon of AstalHyprland.get_default().get_monitors()) {
-                await execAsync(`hyprctl hyprpaper wallpaper '${mon.get_name()},${
-                    this.#wallpaper?.peek_path()!.replace(/,/g, "\\\\,")
-                },${this.positioning}'`);
+                await execAsync(`hyprctl hyprpaper wallpaper ${mon.get_name()},${
+                    this.#link?.peek_path()!.replace(/[ '"]/g, "\\$&")
+                },${this.positioning}`);
             }
         } else {
             console.warn("Wallpaper: hyprpaper not running, hot-reload skipped");

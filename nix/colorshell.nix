@@ -1,13 +1,13 @@
 {
   astal,
+  bun,
+  fetchBunDeps,
+  fetchFromGitHub,
   lib,
+  runCommand,
   stdenv,
   stdenvNoCC,
   moreutils,
-  pnpmConfigHook,
-  fetchPnpmDeps,
-  pnpm_10,
-  buildNpmPackage,
   wrapGAppsHook4,
   bash,
   bluez,
@@ -48,6 +48,13 @@ let
   appid = "io.github.retrozinndev.Colorshell";
   pname = packageJSON.name;
   version = packageJSON.version;
+
+  # Let Node-shebang build tools run through Bun, including direct CLI calls.
+  bunNode = runCommand "bun-node-${bun.version}" { } ''
+    mkdir -p "$out/bin"
+    ln -s ${lib.getExe bun} "$out/bin/node"
+  '';
+
   # Cleaned sources from this repository
   src = lib.fileset.toSource {
     root = ../.;
@@ -105,8 +112,8 @@ let
         --replace-fail '#!/usr/bin/env bash' '#!${lib.getExe bash}' \
         --replace-fail '#!/usr/bin/env -S gjs -m' '#!${lib.getExe gjs} -m' \
         --replace-fail \
-          'export LD_PRELOAD=\"/usr/lib/libgtk4-layer-shell.so\"' \
-          'export LD_PRELOAD=\"${gtk4-layer-shell}/lib/libgtk4-layer-shell.so\"'
+          "LD_PRELOAD='/usr/lib/libgtk4-layer-shell.so'" \
+          "LD_PRELOAD='${gtk4-layer-shell}/lib/libgtk4-layer-shell.so'"
       substituteInPlace src/modules/wallpaper.ts \
         --replace-fail '/usr/share/hypr/wall2.png' '${hyprland}/share/hypr/wall2.png'
     '';
@@ -116,38 +123,36 @@ let
       cp -rp * $out
     '';
   };
+
+  bunDeps = fetchBunDeps {
+    lockFile = ../bun.lock;
+    name = "${pname}-bun-cache";
+
+    sourceOverrides = {
+      "@GH@Aylur-ags-bbee2f1@@@1" = fetchFromGitHub {
+        owner = "Aylur";
+        repo = "ags";
+        rev = "bbee2f18939f1ec7ff720e717cf305e73635628f";
+        hash = "sha256-tM3s7CX+tgxlYW0Sk3nzVThg2MHn08foIuMxABupxIs=";
+      };
+      "@GH@retrozinndev-gnim-utils-fec7b6e@@@1" = fetchFromGitHub {
+        owner = "retrozinndev";
+        repo = "gnim-utils";
+        rev = "fec7b6ed11a663cca217c861ba78a2e48ea52ac7";
+        hash = "sha256-tP7pA6FfffPLl24HxomwoF9RSkxC4Ob27u7SKiaKeDs=";
+      };
+    };
+  };
 in
-buildNpmPackage (finalAttrs: {
+stdenv.mkDerivation (finalAttrs: {
   inherit pname version;
 
   src = colorshellSrc;
   sourceRoot = "${finalAttrs.src.name}";
 
-  npmConfigHook = pnpmConfigHook;
-  npmDeps = finalAttrs.pnpmDeps;
-  pnpmDeps = fetchPnpmDeps {
-    inherit (finalAttrs)
-      pname
-      version
-      src
-      sourceRoot
-      ;
-
-    nativeBuildInputs = [ pnpm_10 ];
-    pnpm = pnpm_10;
-
-    fetcherVersion = 3;
-    hash = "sha256-o2ZYl2FTQCnq9haPFMSx9VXIjA8E0Sc45CUfIIw3GwM=";
-
-    # The pnpm store has no executable entries, but the fetcher still expects at
-    # least one *-exec file while normalizing permissions.
-    preFixup = ''
-      touch "$storePath/.dummy-exec"
-    '';
-  };
-
   nativeBuildInputs = [
-    pnpm_10
+    bun
+    bunNode
     wrapGAppsHook4
     gobject-introspection
     moreutils
@@ -175,12 +180,33 @@ buildNpmPackage (finalAttrs: {
     astal.wireplumber
   ];
 
+  configurePhase = ''
+    runHook preConfigure
+
+    mkdir -p "$TMPDIR/bun-cache"
+    cp -R "${bunDeps}/." "$TMPDIR/bun-cache/"
+    chmod -R u+w "$TMPDIR/bun-cache"
+
+    export BUN_INSTALL_CACHE_DIR="$TMPDIR/bun-cache"
+    export BUN_INSTALL_GLOBAL_STORE=0
+
+    bun install \
+      --config="${bunDeps.bunfig}" \
+      --offline \
+      --frozen-lockfile \
+      --ignore-scripts \
+      --backend=copyfile \
+      --no-progress
+
+    runHook postConfigure
+  '';
+
   buildPhase = ''
     runHook preBuild
 
     mkdir build
     outPath=./build/${packageJSON.name}
-    pnpm build -rjg \$COLORSHELL_GRESOURCE -o ./build
+    bun run build -- -rjg \$COLORSHELL_GRESOURCE -o ./build
 
     runHook postBuild
   '';
@@ -237,6 +263,7 @@ buildNpmPackage (finalAttrs: {
   meta.mainProgram = "colorshell";
 
   passthru = {
+    inherit bunDeps bunNode;
     resources = colorshellResources;
   };
 })
