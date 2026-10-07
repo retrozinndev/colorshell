@@ -4,7 +4,7 @@
 source ./scripts/utils.sh
 
 function build_deps() {
-    nix build .\#colorshell.pnpmDeps --rebuild $@
+    nix build .\#colorshell.bunDeps --rebuild $@
 }
 
 Send_log "Checking dependencies..."

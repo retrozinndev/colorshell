@@ -50,6 +50,7 @@ retrozinndev/colorshell/refs/heads/$target_branch/scripts/utils.sh"
 }
 
 function Post_install() {
+    :
 }
 
 # check if the script is running in standalone mode(without having cloned the repo)
@@ -154,10 +155,10 @@ if [[ "$answer" == y ]] || [[ "$skip_prompts" ]]; then
 
     Send_log "Starting build process..."
     Send_log "Installing project modules"
-    pnpm -C "$repo_directory" i > /dev/null 2>&1
+    bun install --cwd "$repo_directory" --frozen-lockfile > /dev/null 2>&1
 
     Send_log "Building colorshell"
-    pnpm -C "$repo_directory" build -rg $gresource_path
+    bun run --cwd "$repo_directory" build -- -rg $gresource_path
 
     action_prefix=${mode/e/}
     Send_log "${action_prefix^}ing colorshell" # hell yeah
