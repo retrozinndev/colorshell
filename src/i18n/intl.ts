@@ -11,7 +11,7 @@ const i18nKeys = {
     pt_BR: (await import("./lang/pt_BR")).default,
     ru_RU: (await import("./lang/ru_RU")).default,
     tr_TR: (await import("./lang/tr_TR")).default,
-    jp_JP: (await import("./lang/jp_JP")).default,
+    ja_JP: (await import("./lang/ja_JP")).default,
 };
 
 
