@@ -12,11 +12,9 @@ const media = {
         hasValue: true,
         help: "select a new active player by its bus name",
         onCalled: (remote, name) => {
-            const player = AstalMpris.get_default().players.find(p => 
-                p.available && p.busName === name
-            );
+            const player = AstalMpris.get_default().players.find(p => p.busName === name);
 
-            if(!player || player.available) {
+            if(!player) {
                 remote.println(
                     `Error: no such available player with bus name "${name}" was found`,
                     true

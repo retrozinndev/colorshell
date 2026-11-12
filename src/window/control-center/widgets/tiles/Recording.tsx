@@ -6,10 +6,10 @@ import { createBinding, createComputed } from "ags";
 
 export const TileRecording = () => 
     <Tile title={tr("control_center.tiles.recording.title")}
-      description={createComputed([
-          createBinding(Recording.getDefault(), "recording"),
-          createBinding(Recording.getDefault(), "recordingTime")
-      ], (recording, time) => {
+      description={createComputed(() => {
+          const recording = createBinding(Recording.getDefault(), "recording")(),
+              time = createBinding(Recording.getDefault(), "recordingTime")();
+
           if(!recording || !Recording.getDefault().startedAt) 
               return tr("control_center.tiles.recording.disabled_desc") || "Start recording";
 

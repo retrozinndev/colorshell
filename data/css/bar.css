@@ -62,7 +62,7 @@
 }
 .bar-container .workspaces-row .workspace.focus label.id {
   opacity: 0;
-  color: var(--fg-light);
+  color: var(--bg-primary);
   margin-right: 0;
 }
 .bar-container .workspaces-row .workspace icon {

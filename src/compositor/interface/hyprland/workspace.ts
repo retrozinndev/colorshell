@@ -53,7 +53,7 @@ class Workspace extends Compositor.Workspace {
         this.notify("last-focused-client");
     }
 
-    dispose() {
+    run_dispose() {
         this.#subs.forEach(unsub => unsub());
     }
 

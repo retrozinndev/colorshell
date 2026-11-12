@@ -1,20 +1,14 @@
 import { Astal, Gtk } from "ags/gtk4";
 import Wireplumber from "../../../modules/volume";
-import { Pages } from "./pages";
-import { PageSound } from "./pages/Sound";
-import { PageMicrophone } from "./pages/Microphone";
 import { createBinding, With } from "ags";
-import Backlights from "../../../modules/backlight";
-import { PageBacklight } from "./pages/Backlight";
-
+import Backlights from "../../../modules/backlights";
 import AstalWp from "gi://AstalWp";
+import ControlCenterWindow from "..";
 
 
-export let slidersPages: Pages|undefined;
-
-export function Sliders() {
+export function Sliders({ccWindow}: { ccWindow: ControlCenterWindow }) {
     return <Gtk.Box class={"sliders"} orientation={Gtk.Orientation.VERTICAL} 
-      hexpand spacing={10} onUnmap={() => slidersPages = undefined}>
+      hexpand spacing={10}>
 
         <With value={createBinding(Wireplumber.getWireplumber(), "defaultSpeaker")}>
             {(sink: AstalWp.Endpoint) => <Gtk.Box class={"sink speaker"} spacing={3}>
@@ -30,7 +24,7 @@ export function Sliders() {
                   onChangeValue={(_, __, value) => sink.set_volume(value)} />
 
                 <Gtk.Button class={"more"} iconName={"go-next-symbolic"} onClicked={() => 
-                    slidersPages?.toggle(PageSound)} />
+                    ccWindow.pages.toggle("sound")} />
             </Gtk.Box>}
         </With>
         <With value={createBinding(Wireplumber.getWireplumber(), "defaultMicrophone")}>
@@ -47,7 +41,7 @@ export function Sliders() {
                   onChangeValue={(_, __, value) => source.set_volume(value)} />
 
                 <Gtk.Button class={"more"} iconName={"go-next-symbolic"} onClicked={() => 
-                    slidersPages?.toggle(PageMicrophone)} />
+                    ccWindow.pages.toggle("microphone")} />
             </Gtk.Box>}
         </With>
         <Gtk.Box visible={createBinding(Backlights.getDefault(), "available")}>
@@ -66,11 +60,10 @@ export function Sliders() {
                           }}
                         />
                         <Gtk.Button class={"more"} iconName={"go-next-symbolic"} onClicked={() => 
-                            slidersPages?.toggle(PageBacklight)} />
+                            ccWindow.pages.toggle("backlight")} />
                     </Gtk.Box>
                 }
             </With>
         </Gtk.Box>
-        <Pages $={(self) => slidersPages = self} />
     </Gtk.Box>
 }

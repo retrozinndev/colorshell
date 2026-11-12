@@ -15,6 +15,8 @@ class CObject extends GObject.Object {
 
         this.#compositor = compositor;
     }
+
+    run_dispose(): void {}
 }
 
 namespace CObject {}

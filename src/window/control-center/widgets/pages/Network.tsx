@@ -1,36 +1,33 @@
 import { Gtk } from "ags/gtk4";
-import { Page, PageButton } from "../Page";
+import Page from "../Page";
 import Windows from "../../../../window";
 import { execApp } from "../../../../modules/apps";
 import Notifications from "../../../../modules/notifications";
 import { AskPopup, AskPopupProps } from "../../../../widget/AskPopup";
 import { encoder, variableToBoolean } from "../../../../modules/utils";
-import { createBinding, createRoot, For, With } from "ags";
+import { createBinding, For, With } from "ags";
 
 import GLib from "gi://GLib?version=2.0";
 import NM from "gi://NM";
 import AstalNetwork from "gi://AstalNetwork";
 
 
-export const PageNetwork = createRoot((dispose) => <Page
-    id={"network"}
-    title={tr("control_center.pages.network.title")}
-    headerButtons={createBinding(AstalNetwork.get_default(), "primary").as(primary =>
-        primary === AstalNetwork.Primary.WIFI ? [{
-            icon: "arrow-circular-top-right-symbolic",
-            tooltipText: "Re-scan networks",
-            actionClicked: () => AstalNetwork.get_default().wifi?.scan()
-        }] : []
-    )}
-    bottomButtons={[{
-        title: tr("control_center.pages.more_settings"),
-        actionClicked: () => {
-            Windows.getDefault().close("control-center");
-            execApp("nm-connection-editor", "[animationstyle gnomed]");
-        }
-    }]}
-    actionClosed={() => dispose()}
-    content={() => [
+export const PageNetwork = () => {
+    return <Page id={"network"} title={tr("control_center.pages.network.title")}
+      headerButtons={createBinding(AstalNetwork.get_default(), "primary").as(primary =>
+          primary === AstalNetwork.Primary.WIFI ? [{
+              iconName: "arrow-circular-top-right-symbolic",
+              tooltipText: "Re-scan networks",
+              actionClicked: () => AstalNetwork.get_default().wifi?.scan()
+          }] : []
+      )}
+      bottomButtons={[{
+          label: tr("control_center.pages.more_settings"),
+          actionClicked: () => {
+              Windows.getDefault().close("control-center");
+              execApp("nm-connection-editor");
+          }
+      }]}>
         <Gtk.Box class={"devices"} hexpand orientation={Gtk.Orientation.VERTICAL}
           visible={variableToBoolean(createBinding(AstalNetwork.get_default().client, "devices"))}
           spacing={4}>
@@ -39,22 +36,18 @@ export const PageNetwork = createRoot((dispose) => <Page
             <For each={createBinding(AstalNetwork.get_default().client, "devices").as(devs => 
               devs.filter(dev => dev.interface !== "lo" && dev.real /* filter local device */))}>
 
-                {(device: NM.Device) => <PageButton title={createBinding(device, "interface").as(iface =>
+                {(device: NM.Device) => <Page.DecoratedButton title={createBinding(device, "interface").as(iface =>
                     iface ?? tr("control_center.pages.network.interface"))} class={"device"}
                   icon={createBinding(device, "deviceType").as(type => type === NM.DeviceType.WIFI ?
-                    "network-wireless-symbolic" : "network-wired-symbolic")} extraButtons={[
-
+                    "network-wireless-symbolic" : "network-wired-symbolic")} extraButtons={
                       <Gtk.Button iconName={"view-more-symbolic"} onClicked={() => {
                           Windows.getDefault().close("control-center");
-                          execApp(
-                              `nm-connection-editor --edit ${device.activeConnection?.connection.get_uuid()}`,
-                              "[animationstyle gnomed; float]"
-                          );
+                          execApp(`nm-connection-editor --edit ${device.activeConnection?.connection.get_uuid()}`);
                       }} />
-                  ]}
+                  }
                 />}
             </For>
-        </Gtk.Box>,
+        </Gtk.Box>
         <With value={createBinding(AstalNetwork.get_default(), "primary").as(primary => 
           primary === AstalNetwork.Primary.WIFI)}>
 
@@ -63,7 +56,7 @@ export const PageNetwork = createRoot((dispose) => <Page
 
                 <Gtk.Label class={"sub-header"} label={"Wi-Fi"} />
                 <For each={createBinding(AstalNetwork.get_default().wifi!, "accessPoints")}>
-                    {(ap: AstalNetwork.AccessPoint) => <PageButton class={
+                    {(ap: AstalNetwork.AccessPoint) => <Page.DecoratedButton class={
                         createBinding(AstalNetwork.get_default().wifi!, "activeAccessPoint").as(activeAP =>
                             activeAP.ssid === ap.ssid ? "active" : "")
                       } title={createBinding(ap, "ssid").as(ssid => ssid ?? "No SSID")}
@@ -74,7 +67,7 @@ export const PageNetwork = createRoot((dispose) => <Page
                                 "channel-secure-symbolic"
                             : "channel-insecure-symbolic")}
                           css={"font-size: 18px;"}
-                      />} extraButtons={[
+                      />} extraButtons={
                           <Gtk.Button iconName={"window-close-symbolic"} visible={
                               createBinding(AstalNetwork.get_default().wifi!, "activeAccessPoint").as(activeAp =>
                                   activeAp.ssid === ap.ssid)
@@ -95,8 +88,8 @@ export const PageNetwork = createRoot((dispose) => <Page
                                         }
                                     })
                                 }
-                            }}/>
-                      ]} actionClicked={() => {
+                            }} />
+                      } actionClicked={() => {
                           const uuid = NM.utils_uuid_generate();
                           const ssidBytes = GLib.Bytes.new(encoder.encode(ap.ssid!));
 
@@ -130,8 +123,8 @@ export const PageNetwork = createRoot((dispose) => <Page
                 </For>
             </Gtk.Box>}
         </With>
-    ]}
-/> as Page);
+    </Page>;
+}
 
 function activateWirelessConnection(connection: NM.RemoteConnection, ssid: string): void {
     AstalNetwork.get_default().get_client().activate_connection_async(

@@ -9,13 +9,12 @@ import { Media } from "./widgets/Media";
 import Windows from "..";
 
 
-export const Bar = Windows.forMonitors((mon) => {
+export const Bar = Windows.forMonitors(() => {
     const widgetSpacing = 4;
 
     return <Astal.Window namespace={"top-bar"} layer={Astal.Layer.TOP}
       anchor={Astal.WindowAnchor.TOP | Astal.WindowAnchor.LEFT | Astal.WindowAnchor.RIGHT}
-      exclusivity={Astal.Exclusivity.EXCLUSIVE} heightRequest={46} monitor={mon} 
-      canFocus={false}>
+      exclusivity={Astal.Exclusivity.EXCLUSIVE} heightRequest={46} canFocus={false}>
 
         <Gtk.Box class={"bar-container"}>
             <Gtk.CenterBox class={"bar-centerbox"} hexpand>

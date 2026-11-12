@@ -1,4 +1,4 @@
-import { Page, PageButton } from "../Page";
+import Page from "../Page";
 import { Gtk } from "ags/gtk4";
 import { lookupIcon } from "../../../../modules/apps";
 import { Accessor, createBinding, For } from "ags";
@@ -8,16 +8,15 @@ import AstalWp from "gi://AstalWp";
 import AppStreamSlider from "../AppStreamSlider";
 
 
-export const PageSound = <Page
-    id={"sound"}
-    title={tr("control_center.pages.sound.title")}
-    description={tr("control_center.pages.sound.description")}
-    content={() => [
-        <Gtk.Label class={"sub-header"} label={tr("devices")} xalign={0} />,
+export const PageSound = () =>
+    <Page id={"sound"} title={tr("control_center.pages.sound.title")}
+      description={tr("control_center.pages.sound.description")}>
+
+        <Gtk.Label class={"sub-header"} label={tr("devices")} xalign={0} />
         <Gtk.Box orientation={Gtk.Orientation.VERTICAL} spacing={4}>
             <For each={createBinding(Wireplumber.getWireplumber().get_audio(), "speakers") as Accessor<Array<AstalWp.Endpoint>>}>
                 {(sink: AstalWp.Endpoint) => 
-                    <PageButton class={createBinding(sink, "isDefault").as(isDefault =>
+                    <Page.DecoratedButton class={createBinding(sink, "isDefault").as(isDefault =>
                           isDefault ? "selected" : "")} 
                       icon={createBinding(sink, "icon").as(ico =>
                           lookupIcon(ico) ? ico : "audio-card-symbolic")}
@@ -32,7 +31,7 @@ export const PageSound = <Page
                       }
                 />}
             </For>
-        </Gtk.Box>,
+        </Gtk.Box>
         <Gtk.Box orientation={Gtk.Orientation.VERTICAL} spacing={8}>
             <Gtk.Label class={"sub-header"} label={tr("apps")} xalign={0} 
               visible={variableToBoolean(
@@ -43,5 +42,4 @@ export const PageSound = <Page
                 {(st: AstalWp.Stream) => <AppStreamSlider stream={st} />}
             </For>
         </Gtk.Box>
-    ]}
-/> as Page;
+    </Page>;

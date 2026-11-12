@@ -40,7 +40,7 @@ function CustomDialogOption({closeOnClick = true, ...props}: CustomDialogOption 
 }
 
 export function CustomDialog({ options = [{ text: tr("accept") }], ...props}: CustomDialogProps) {
-    return Windows.forFocusedMonitor((mon) => {
+    return Windows.forFocusedMonitor(() => {
         const container = <Gtk.Box halign={Gtk.Align.CENTER} valign={Gtk.Align.CENTER} 
           widthRequest={props.widthRequest ?? 400} heightRequest={props.heightRequest ?? 220}
           orientation={Gtk.Orientation.VERTICAL} class={"container"}>
@@ -57,8 +57,8 @@ export function CustomDialog({ options = [{ text: tr("accept") }], ...props}: Cu
             />
         </Gtk.Box> as Gtk.Box;
 
-        const popup = <PopupWindow namespace={props.namespace ?? "custom-dialog"} monitor={mon}
-          cssName={"customdialog"} backgroundCss={props.cssBackground ?? "background: rgba(0, 0, 0, .3);"}
+        const popup = <PopupWindow namespace={props.namespace ?? "custom-dialog"}
+          cssName={"customdialog"} css={props.cssBackground ?? "background: rgba(0, 0, 0, .2);"}
           exclusivity={Astal.Exclusivity.IGNORE} layer={Astal.Layer.OVERLAY}
           onClosed={() => props.onFinish?.()}>
 
@@ -73,8 +73,7 @@ export function CustomDialog({ options = [{ text: tr("accept") }], ...props}: Cu
             </Gtk.Box> as Gtk.Box
         );
 
-        popup.show();
-
+        popup.visible = true;
         return popup;
     })();
 }

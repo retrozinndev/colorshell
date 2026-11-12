@@ -56,7 +56,7 @@ class Pywal16 extends GObject.Object implements ColorEngine {
         if(!isInstalled("wal"))
             throw new Error("Pywal16 not found in PATH, ensure that the \"wal\" binary is executable and in PATH");
 
-        exec(`/bin/env wal --out-dir "${
+        exec(`/usr/bin/env wal --out-dir "${
             this.#path.peek_path()!
         }" -t --cols16 ${this.scheme === ColorEngine.Scheme.LIGHT ?
             "-l" : ""
@@ -75,7 +75,7 @@ class Pywal16 extends GObject.Object implements ColorEngine {
         if(!isInstalled("wal"))
             throw new Error("Pywal16 not found in PATH, ensure that the \"wal\" binary is executable and in PATH");
 
-        await execAsync(`/bin/env wal --out-dir "${
+        await execAsync(`/usr/bin/env wal --out-dir "${
             this.#path.peek_path()!
         }" -t --cols16 ${this.scheme === ColorEngine.Scheme.LIGHT ?
             "-l" : ""

@@ -13,27 +13,34 @@ import Cache from "../../../modules/cache";
 
 
 export const BigMedia = () => {
-    const availablePlayers = createBinding(AstalMpris.get_default(), "players").as(pls => 
-        pls.filter(p => p.available));
+    const mpris = AstalMpris.get_default();
+    const players = createBinding(mpris, "players");
 
-    const carousel = <Adw.Carousel orientation={Gtk.Orientation.HORIZONTAL} spacing={6} 
-      onPageChanged={(self, num) => {
-          const page = self.get_nth_page(num);
-          if(page instanceof PlayerWidget && Media.getDefault().player?.busName !== page.player.busName) 
-              Media.getDefault().player = page.player;
-    }}>
-        <For each={availablePlayers.as(players => players.sort(pl => 
-            pl.busName === Media.getDefault().player?.busName ? -1 : 1))}>
+    const carousel = <Adw.Carousel orientation={Gtk.Orientation.HORIZONTAL} spacing={6}>
+        <For each={players}>
 
             {(player: AstalMpris.Player) => <PlayerWidget player={player} />}
         </For>
     </Adw.Carousel> as Adw.Carousel;
 
+    const selectedIndex = mpris.players.findIndex(player =>
+        player.busName === Media.getDefault().player?.busName
+    );
+    if(selectedIndex > 0)
+        carousel.scroll_to(carousel.get_nth_page(selectedIndex), false);
+
+    // Connect after the initial scroll so opening the window does not change the selection.
+    carousel.connect("page-changed", (self, num) => {
+        const page = self.get_nth_page(num);
+        if(page instanceof PlayerWidget && Media.getDefault().player?.busName !== page.player.busName)
+            Media.getDefault().player = page.player;
+    });
+
     return <Gtk.Box class={"big-media"} orientation={Gtk.Orientation.VERTICAL} widthRequest={270}
-      visible={variableToBoolean(availablePlayers)}>
+      visible={variableToBoolean(players)}>
 
         {carousel}
-        <Gtk.Revealer revealChild={availablePlayers.as(pls => pls.length > 1)} transitionDuration={300}
+        <Gtk.Revealer revealChild={players.as(pls => pls.length > 1)} transitionDuration={300}
           transitionType={Gtk.RevealerTransitionType.SLIDE_UP}>
 
             <Adw.CarouselIndicatorDots orientation={Gtk.Orientation.HORIZONTAL} carousel={carousel} />

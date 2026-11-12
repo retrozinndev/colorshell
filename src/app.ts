@@ -3,7 +3,16 @@ import { Gdk, Gtk } from "ags/gtk4";
 import { createRoot, getScope, Scope } from "ags";
 import { programArgs, programInvocationName } from "system";
 import { setConsoleLogDomain } from "console";
-import { cacheDir, createScopedConnection, dataDir, encoder, getDBusNamePID, globalScope, runtimeConfigDir, runtimeDir } from "./modules/utils";
+import {
+    cacheDir,
+    createScopedConnection,
+    dataDir,
+    decoder,
+    encoder,
+    getDBusNamePID,
+    runtimeDir,
+    expandPath
+} from "./modules/utils";
 import Clipboard from "./modules/clipboard";
 import NightLight from "./modules/nightlight";
 import { initCompositor } from "./compositors";
@@ -19,8 +28,12 @@ import Adw from "gi://Adw?version=1";
 
 
 @register({ GTypeName: "Colorshell" })
-export class Shell extends Adw.Application {
+export default class Shell extends Adw.Application {
     private static instance: Shell;
+
+    /** LD_PRELOAD environment variable. used by the `reload` command,
+      * so the shell behaves as a layer shell instead of common clients */
+    readonly preload: string|null = GLib.getenv("LD_PRELOAD");
 
     #scope!: Scope;
     #pid: number|null = null;
@@ -48,12 +61,50 @@ export class Shell extends Adw.Application {
         return this.instance;
     }
 
+    private initHyprlockConfig(): void {
+        if([
+            GLib.get_user_config_dir(),
+            `${GLib.get_home_dir()}/.config`,
+            ...GLib.get_system_config_dirs()
+        ].some(dir => Gio.File.new_for_path(
+            `${dir}/hypr/hyprlock.conf`
+        ).query_exists(null)))
+            return;
+
+        const file = Gio.File.new_for_path(
+            `${GLib.get_user_config_dir()}/hypr/hyprlock.conf`
+        );
+
+        try {
+            const parent = file.get_parent();
+            if(parent && !parent.query_exists(null))
+                parent.make_directory_with_parents(null);
+
+            const template = decoder.decode(Gio.resources_lookup_data(
+                "/io/github/retrozinndev/Colorshell/config/hyprlock.conf",
+                Gio.ResourceLookupFlags.NONE
+            ).toArray());
+            const data = encoder.encode(template.replace(
+                "@colorshellPalette@",
+                `${cacheDir.peek_path()!}/colorends/pywal16/colors-hyprland.conf`
+            ));
+
+            const stream = file.create(Gio.FileCreateFlags.NONE, null);
+            const [success, written] = stream.write_all(data, null);
+            stream.close(null);
+
+            if(!success || written !== data.length)
+                console.error("Couldn't write the complete default Hyprlock config");
+        } catch(error) {
+            console.error("Couldn't create the default Hyprlock config", error);
+        }
+    }
+
     vfunc_activate(): void {
         this.hold();
 
         createRoot((dispose) => {
             createScopedConnection(this as Adw.Application, "shutdown", () => {
-                globalScope.dispose();
                 dispose();
             });
 
@@ -70,12 +121,14 @@ export class Shell extends Adw.Application {
     private init(): void {
         console.log("Preparing init");
 
+        // remove layer-shell preload, so child processes behave as usual
+        GLib.unsetenv("LD_PRELOAD");
+
         // create shell directories
         [
             runtimeDir,
             cacheDir,
-            dataDir,
-            runtimeConfigDir
+            dataDir
         ].forEach(dir => {
             if(dir.query_exists(null))
                 return;
@@ -102,22 +155,7 @@ export class Shell extends Adw.Application {
 
         // load gresource from build-defined path
         try {
-            const gresourcesPath: string = !/^\//.test(GRESOURCE) ?
-                (GRESOURCE.split('/').filter(s => s !== "").map(path => {
-                    // support environment variables at runtime
-                    if(/^\$/.test(path)) {
-                        const env = GLib.getenv(path.replace(/^\$/, ""));
-                        if(env === null)
-                            throw new Error(`Couldn't get environment variable: ${path}`);
-
-                        return env;
-                    }
-                    return path;
-                }).join('/'))
-            : GRESOURCE;
-
-            const gresource = Gio.Resource.load(gresourcesPath);
-            Gio.resources_register(gresource);
+            Gio.resources_register(Gio.Resource.load(expandPath(GRESOURCE)));
         } catch(_e) {
             const e = _e as Error;
             console.error(`Error: couldn't load gresource! Stderr: ${e.message}\n${e.stack}`);
@@ -127,22 +165,7 @@ export class Shell extends Adw.Application {
         Gtk.IconTheme.get_for_display(Gdk.Display.get_default()!)
             .add_resource_path("/io/github/retrozinndev/Colorshell/icons")
 
-        Gio.resources_enumerate_children(
-            "/io/github/retrozinndev/Colorshell/config",
-            Gio.ResourceLookupFlags.NONE
-        ).forEach(name => {
-            if(!/\..*$/.test(name))
-                return;
-
-            const file = Gio.File.new_for_path(`${runtimeConfigDir.peek_path()!}/${name}`);
-            
-            if(file.query_exists(null))
-                return;
-            
-            file.replace_contents_bytes_async(Gio.resources_lookup_data(
-                `/io/github/retrozinndev/Colorshell/config/${name}`, Gio.ResourceLookupFlags.NONE
-            ), null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null, null);
-        });
+        this.initHyprlockConfig();
     }
 
     private main(): void {
@@ -166,4 +189,3 @@ export class Shell extends Adw.Application {
 }
 
 Shell.getDefault().runAsync([ programInvocationName, ...programArgs ]);
-GLib.unsetenv("LD_PRELOAD");

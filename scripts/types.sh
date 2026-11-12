@@ -5,4 +5,4 @@ fi
 
 
 echo "Building types, this can take long..."
-pnpx @ts-for-gir/cli generate --ignoreVersionConflicts
+bunx @ts-for-gir/cli generate --ignoreVersionConflicts

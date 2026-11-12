@@ -13,7 +13,7 @@ class Media extends GObject.Object {
     private static instance: Media;
 
     /** player connections */
-    #players: Map<string, Array<number>> = new Map();
+    #players: Map<string, number> = new Map();
 
     @property(gtype<AstalMpris.Player|null>(AstalMpris.Player))
     player: AstalMpris.Player|null = null;
@@ -21,74 +21,71 @@ class Media extends GObject.Object {
     constructor() {
         super();
 
-        const firstPlayer = AstalMpris.get_default().players[0];
-        if(firstPlayer) 
-            this.player = firstPlayer;
+        const mpris = AstalMpris.get_default();
+        mpris.players.forEach(player => this.addConnections(player));
+        this.selectBestPlayer();
 
         createScopedConnection(
-            AstalMpris.get_default(), 
+            mpris,
             "player-added", 
             (player) => {
-                if(player.available) 
-                    this.player = player;
-
                 this.addConnections(player);
+                this.selectBestPlayer();
             }
         );
 
         createScopedConnection(
-            AstalMpris.get_default(),
+            mpris,
             "player-closed", (closedPlayer) => {
-                // we need this, because AstalMpris removes the closed player from the `:players` array.
-                const closedPlayerIndex = [...this.#players.keys()]
-                    .findIndex(s => s === closedPlayer.busName);
-                const players = [...AstalMpris.get_default().get_players()];
-
-                if(closedPlayerIndex < 0) {
-                    this.player = players[0] ?? null;
-                    this.removeConnections(closedPlayer);
-                    return;
-                }
-
-                players.splice(closedPlayerIndex, 0, closedPlayer); // add closed player back to the list
-                const nextPlayer = this.getNextPlayer(closedPlayer, true, players);
-                this.player = nextPlayer ?? players[0] ?? null;
-
                 this.removeConnections(closedPlayer);
+                this.selectBestPlayer();
             }
         );
     }
 
     public addConnections(player: AstalMpris.Player): void {
-        const conns = this.#players.get(player.busName);
-        if(conns && conns.length > 1)
-            conns.forEach(id => player.disconnect(id));
+        const connection = this.#players.get(player.busName);
+        if(connection !== undefined)
+            player.disconnect(connection);
 
-        this.#players.set(player.busName, [
+        this.#players.set(player.busName,
             player.connect("notify::playback-status", () => {
                 const status = player.get_playback_status();
 
-                if(status !== AstalMpris.PlaybackStatus.PLAYING) {
-                    const activePlayer = this.findLastActivePlayer();
-                    if(activePlayer)
-                        this.player = activePlayer;
-
+                if(status === AstalMpris.PlaybackStatus.PLAYING) {
+                    this.player = player;
                     return;
                 }
 
-                this.player = player;
+                this.selectBestPlayer();
             })
-        ]);
+        );
     }
 
     public removeConnections(player: AstalMpris.Player): void {
-        const conns = this.#players.get(player.busName);
+        const connection = this.#players.get(player.busName);
 
-        if(!conns || conns.length < 1)
+        if(connection === undefined)
             return;
 
-        conns.forEach(id => player.disconnect(id));
+        player.disconnect(connection);
         this.#players.delete(player.busName);
+    }
+
+    private selectBestPlayer(): void {
+        const players = AstalMpris.get_default().players;
+        const current = players.find(player => player.busName === this.player?.busName);
+        const preferCurrent = (predicate: (player: AstalMpris.Player) => boolean) =>
+            current && predicate(current) ? current : players.find(predicate);
+
+        this.player = preferCurrent(player =>
+            player.playbackStatus === AstalMpris.PlaybackStatus.PLAYING
+        ) ?? preferCurrent(player =>
+            player.playbackStatus !== AstalMpris.PlaybackStatus.STOPPED
+        ) ??
+            current ??
+            players[0] ??
+            null;
     }
 
     /** get the player that comes after the provided `player`. if there's no such player,
@@ -107,7 +104,7 @@ class Media extends GObject.Object {
         if(i < 0)
             return undefined;
 
-        if(i === players.length) {
+        if(i === players.length - 1) {
             const firstPlayer = players[0];
             if(firstPlayer && allowLoop && firstPlayer.busName !== player.busName)
                 return firstPlayer;
@@ -144,22 +141,6 @@ class Media extends GObject.Object {
 
         const prevPlayer: AstalMpris.Player|undefined = players[i-1];
         return prevPlayer;
-    }
-
-    /** gets the last active player(a player is "active" if it's playing something)
-     * @param list the player list to lookup from(by default we get it from `Mpris`)
-     * @returns the last active `AstalMpris.Player` if found; or else, `undefined` */
-    public findLastActivePlayer(list?: Array<AstalMpris.Player>): AstalMpris.Player|undefined {
-        return (list ?? AstalMpris.get_default().get_players())
-            .findLast(p => p.playbackStatus === AstalMpris.PlaybackStatus.PLAYING);
-    }
-
-    /** gets the first active player(a player is "active" if it's playing something)
-     * @param list the player list to lookup from(by default we get it from `Mpris`)
-     * @returns the first active `AstalMpris.Player` if found; or else, `undefined` */
-    public findActivePlayer(list?: Array<AstalMpris.Player>): AstalMpris.Player|undefined {
-        return (list ?? AstalMpris.get_default().get_players())
-            .find(p => p.playbackStatus === AstalMpris.PlaybackStatus.PLAYING);
     }
 
     public static getDefault(): Media {

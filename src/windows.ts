@@ -1,5 +1,5 @@
 import { createScopedConnection } from "./modules/utils";
-import { AppsWindow } from "./window/apps-window";
+import { AppsDrawer } from "./window/apps-drawer";
 import { Bar } from "./window/bar";
 import { CenterWindow } from "./window/center-window";
 import { ControlCenter } from "./window/control-center";
@@ -20,7 +20,7 @@ export const shellWindows = {
     "center-window": CenterWindow,
     "logout-menu": LogoutMenu,
     "floating-notifications": FloatingNotifications,
-    "apps-window": AppsWindow
+    "apps-drawer": AppsDrawer
 };
 
 let initialized: boolean = false;

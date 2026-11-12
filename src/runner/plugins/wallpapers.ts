@@ -3,9 +3,8 @@ import Wallpaper from "../../modules/wallpaper";
 import Runner from "..";
 import { createRoot, jsx } from "ags";
 import ResultItem from "../widgets/ResultItem";
-import Fuse, { IFuseOptions } from "fuse.js";
+import Fuse from "fuse.js";
 import Gio from "gi://Gio?version=2.0";
-import GLib from "gi://GLib?version=2.0";
 import Image from "../../widget/Image";
 
 
@@ -14,35 +13,86 @@ export class PluginWallpapers implements Runner.Plugin {
     name = "Wallpapers";
     prioritize = true;
     previewSize: number = 156;
-    #fuse!: Fuse<string>;
-    #files: Array<Gio.FileInfo> = [];
-    #dir: string = Wallpaper.getDefault().wallpapersDir.peek_path()!;
-    #subdir: string|undefined = undefined;
-    readonly #options = {
+    rootSeparator: string = ':'; // please do not create cursed dirs with colons :pray:
+    #isSubdir: boolean = false;
+    #rootEntries: Array<PluginWallpapers.Wallpaper|PluginWallpapers.Subdirectory> = [];
+    #fuse = new Fuse<PluginWallpapers.Wallpaper|PluginWallpapers.Subdirectory>([], {
+        keys: ["name"],
         useExtendedSearch: false,
         shouldSort: true,
         isCaseSensitive: false
-    } satisfies IFuseOptions<string>;
+    });
 
-    init() {
-        const dir = Gio.File.new_for_path(this.#dir);
-        if(dir.query_file_type(Gio.FileQueryInfoFlags.NONE, null) === Gio.FileType.DIRECTORY) {
-            for(const file of dir.enumerate_children(
-                "standard::*",
-                Gio.FileQueryInfoFlags.NONE,
-                null
-            )) {
-                this.#files.push(file);
-            }
-        }
-
-        this.#fuse = new Fuse<string>(
-            this.#files.map(inf => inf.get_name()) as ReadonlyArray<string>,
-            this.#options
-        );
+    constructor() {
     }
 
-    private loadPreview(path: string, revealer: Gtk.Revealer): void {
+    init() {
+        if(Object.keys(Wallpaper.getDefault().dirs).length < 1) {
+            console.error("Wallpaper: no directories provided to search");
+            return;
+        }
+
+        for(const dir of Object.values(Wallpaper.getDefault().dirs)) {
+            if(dir.query_file_type(Gio.FileQueryInfoFlags.NONE, null) !== Gio.FileType.DIRECTORY) {
+                console.error(`Wallpaper: "${dir.peek_path()}" isn't a directory`);
+                continue;
+            }
+
+            if(!dir.query_exists(null)) {
+                console.warn(`Wallpaper: "${dir.peek_path()}" does not exist`);
+                continue;
+            }
+
+            for(const info of this.getDirChildren(dir))
+                this.#rootEntries.push(this.fileInfoToEntry(dir, info));
+
+        }
+
+        this.#fuse.setCollection(this.#rootEntries);
+    }
+
+    private scan(dir: Gio.File): Array<PluginWallpapers.Wallpaper|PluginWallpapers.Subdirectory> {
+        const list = [];
+        for(const info of this.getDirChildren(dir))
+            list.push(this.fileInfoToEntry(dir, info));
+        
+        return list;
+    }
+
+    private getDirChildren(dir: Gio.File): Array<Gio.FileInfo> {
+        const list: Array<Gio.FileInfo> = [];
+
+        for(const info of dir.enumerate_children("standard::*", Gio.FileQueryInfoFlags.NONE, null))
+            list.push(info);
+
+        return list;
+    }
+
+    private fileInfoToEntry(dir: Gio.File, info: Gio.FileInfo): PluginWallpapers.Subdirectory|PluginWallpapers.Wallpaper {
+        const isDir = info.get_file_type() === Gio.FileType.DIRECTORY;
+        const path = `${dir.peek_path()}/${info.get_name()}`;
+
+        if(isDir) {
+            const duplicate = this.#fuse._docs.find(o => o.name === info.get_name()) as PluginWallpapers.Subdirectory|undefined;
+            if(duplicate)
+                duplicate.name = `${duplicate.rootDir.get_basename()}:${duplicate.name}`;
+
+            return {
+                name: `${duplicate ? dir.get_basename()!+":": ""}${info.get_name()}`,
+                dir: Gio.File.new_for_path(path),
+                rootDir: dir,
+                info
+            } satisfies PluginWallpapers.Subdirectory;
+        }
+
+        return {
+            name: info.get_name(),
+            file: Gio.File.new_for_path(path),
+            info
+        } satisfies PluginWallpapers.Wallpaper;
+    }
+
+    private loadPreview(entry: PluginWallpapers.Wallpaper, revealer: Gtk.Revealer): void {
         const image = revealer.get_child() as Image ?? jsx(Image, {
             css: "margin-bottom: 6px; border-radius: 14px;",
             hexpand: true,
@@ -52,7 +102,7 @@ export class PluginWallpapers implements Runner.Plugin {
         });
 
         if(image.texture === null)
-            image.path = path;
+            image.file = entry.file;
 
         image.picture.set_content_fit(Gtk.ContentFit.COVER);
         image.picture.set_can_shrink(true);
@@ -63,29 +113,21 @@ export class PluginWallpapers implements Runner.Plugin {
         revealer.set_reveal_child(true);
     }
 
-    private getWallpaperPath(fileInfo: Gio.FileInfo): string {
-        return `${Wallpaper.getDefault().wallpapersDir.peek_path()!}/${
-            this.#subdir ? `${this.#subdir}/` : ""
-        }${fileInfo.get_name()}`;
-    }
-
-    private result(info: Gio.FileInfo): Runner.Result {
-        const isDir: boolean = info.get_file_type() === Gio.FileType.DIRECTORY;
-        const path: string = this.getWallpaperPath(info);
-
+    private result(entry: PluginWallpapers.Wallpaper|PluginWallpapers.Subdirectory): Runner.Result {
+        const isSubdir = this.isSubdirectory(entry);
         const onSelected = (widget: ResultItem, scroll: boolean = true) => {
-            if(info.get_file_type() === Gio.FileType.DIRECTORY)
+            if(isSubdir)
                 return;
 
             if(scroll)
                 Runner.open().requestScroll(widget.get_allocation().y - this.previewSize);
 
-            this.loadPreview(path, (widget.get_child() as Gtk.Box).get_first_child() as Gtk.Revealer);
+            this.loadPreview(entry, (widget.get_child() as Gtk.Box).get_first_child() as Gtk.Revealer);
         };
 
         const onUnselected = (widget: ResultItem, isMouse: boolean = false) => {
             // this is also called on ResultItem::unhover, so we need to check if it's selected
-            if(info.get_file_type() === Gio.FileType.DIRECTORY || (widget.is_selected() && isMouse))
+            if(isSubdir || (widget.is_selected() && isMouse))
                 return;
 
             const revealer = (widget.get_child() as Gtk.Box).get_first_child() as Gtk.Revealer;
@@ -100,11 +142,11 @@ export class PluginWallpapers implements Runner.Plugin {
         };
 
         return {
-            title: `${info.get_display_name()}${isDir ? "/" : ""}`,
-            icon: isDir ? "inode-directory-symbolic" : undefined,
-            closeOnClick: !isDir,
+            title: `${entry.name}${isSubdir ? "/" : ""}`,
+            icon: isSubdir ? "inode-directory-symbolic" : undefined,
+            closeOnClick: !isSubdir,
             $: (self) => {
-                if(isDir || !GLib.file_test(path, GLib.FileTest.EXISTS))
+                if(isSubdir || !entry.file.query_exists(null))
                     return;
 
                 const revealer = new Gtk.Revealer({
@@ -133,85 +175,52 @@ export class PluginWallpapers implements Runner.Plugin {
                 img.texture = null;
             },
             onClicked: () => {
-                if(isDir) {
-                    Runner.setSearch(
-                        this.#subdir !== undefined ?
-                            `${this.prefix}${this.#subdir.startsWith('/') ? 
-                                this.#subdir
-                            : `/${this.#subdir}`}/${info.get_name()}/`
-                        : `${this.prefix}/${info.get_name()}/`
-                    );
+                if(isSubdir) {
+                    Runner.setSearch(`${this.prefix}${this.subdirToString(entry)}`);
                     return;
                 }
 
-
-                if(!GLib.file_test(path, GLib.FileTest.EXISTS))
+                if(!entry.file.query_exists(null))
                     return;
 
-                Wallpaper.getDefault().setWallpaper(path);
+                Wallpaper.getDefault().wallpaper = entry.file;
             }
         };
     }
 
-    async handle(search: string, limit?: number) {
-        if(!GLib.file_test(this.#dir, GLib.FileTest.IS_DIR)) 
+    async handle(search: string, limit: number = 0) {
+        if(this.#fuse._docs.length < 1) 
             return {
                 title: "No wallpapers found!",
                 description: "Define the WALLPAPERS env variable or create ~/wallpapers",
                 icon: "image-missing-symbolic"
-            };
+            } satisfies Runner.Result;
 
-        this.#subdir = undefined;
+        let subdir: PluginWallpapers.Subdirectory|undefined;
         
         if(search.length < 1)
-            return this.#files.sort(s => 
-                s.get_file_type() === Gio.FileType.DIRECTORY ? 1 : -1
-            ).map(info => this.result(info));
+            return this.#fuse._docs.slice(0, limit-1).map(entry => this.result(entry));
 
-        if(search.startsWith('/')) {   
-            let split = search.split('/').filter(s => s.trim() !== "");
+        if(this.isSubdirectoryString(search)) {
+            const split = search.split('/').filter(s => s !== "");
+            search = !search.endsWith('/') ? split.splice(split.length-1, 1)![0] ?? "" : "";
+            subdir = this.stringToSubdir(`${split.join('/')}`) ?? undefined;
 
-            search = split.length > 1 && !search.endsWith('/') ?
-                split[split.length - 1]
-            : "";
-            split = split.filter(s => s !== search);
-            this.#subdir = split.join('/');
-
-            if(GLib.file_test(`${this.#dir}/${this.#subdir}`, GLib.FileTest.IS_DIR)) {
-                const dir = Gio.File.new_for_path(`${this.#dir}/${this.#subdir}`);
-                this.#files = [];
-
-                for(const file of dir.enumerate_children(
-                    "standard::*",
-                    Gio.FileQueryInfoFlags.NONE,
-                    null
-                )) {
-                    this.#files.push(file);
-                }
-
-                this.#fuse = new Fuse<string>(
-                    this.#files.map(n => n.get_name()) as ReadonlyArray<string>,
-                    this.#options
-                );
+            if(subdir) {
+                this.#isSubdir = true;
+                this.#fuse.setCollection(this.scan(subdir.dir));
             }
+        } else if(this.#isSubdir) {
+            this.#fuse.setCollection(this.#rootEntries);
         }
 
-        const results: Array<Runner.Result> = [];
-
-        this.#fuse.search(search, {
-            limit: limit || -1
-        }).map(result => {
-            const info = this.#files.filter(inf => 
-                inf.get_name() === result.item
-            )[0];
-
-            results.push(createRoot((dispose) => {
-                const widget = this.result(info);
+        const results = this.#fuse.search(search, { limit: limit || -1 })
+            .map(entry => createRoot((dispose) => {
+                const widget = this.result(entry.item);
                 widget.onDestroy = () => dispose();
 
                 return widget;
             }));
-        });
 
         if(results.length < 1)
             return {
@@ -220,5 +229,62 @@ export class PluginWallpapers implements Runner.Plugin {
             } satisfies Runner.Result;
 
         return results;
+    }
+
+    private subdirToString(subdir: PluginWallpapers.Subdirectory): string {
+        const name = Object.keys(Wallpaper.getDefault().dirs).find(p =>
+            Wallpaper.getDefault().dirs[p as never].equal(subdir.rootDir)
+        );
+
+        return `${name}:${
+            subdir.dir.peek_path()!.replace(subdir.rootDir.peek_path()!+"/", "")
+        }/`;
+    }
+
+    private stringToSubdir(str: string): PluginWallpapers.Subdirectory|null {
+        const [root, sub] = str.split(':', 2);
+        const rootDir = Wallpaper.getDefault().dirs[root];
+
+        if(!rootDir)
+            return null;
+
+        const dir = Gio.File.new_for_path(`${rootDir.peek_path()}/${sub.replace(/\/$/, "")}`);
+        if(!dir.query_exists(null))
+            return null;
+
+        return this.#fuse._docs.find(entry =>
+            this.isSubdirectory(entry) && entry.dir.equal(dir)
+        ) as PluginWallpapers.Subdirectory|undefined ?? null;
+    }
+
+    isSubdirectory(
+        entry: PluginWallpapers.Wallpaper|PluginWallpapers.Subdirectory
+    ): entry is PluginWallpapers.Subdirectory {
+        return "rootDir" in entry && "dir" in entry;
+    }
+
+    isSubdirectoryString(str: string): boolean {
+        return /^.+\:.+\//i.test(str);
+    }
+
+    isWallpaper(
+        entry: PluginWallpapers.Wallpaper|PluginWallpapers.Subdirectory
+    ): entry is PluginWallpapers.Wallpaper {
+        return "file" in entry;
+    }
+}
+
+export namespace PluginWallpapers {
+    export interface Wallpaper {
+        name: string;
+        file: Gio.File;
+        info: Gio.FileInfo;
+    }
+    export interface Subdirectory {
+        name: string;
+        dir: Gio.File;
+        /** from which one of the wallpaper dirs it originates from */
+        rootDir: Gio.File;
+        info: Gio.FileInfo;
     }
 }

@@ -81,7 +81,7 @@ class Monitor extends CObject {
     public static stringToMode(modeString: string): [number, number, number] {
         const regex = /^([0-9]*)x([0-9]*)@([0-9]*)$/;
         if(!regex.test(modeString))
-            throw new Error("Invalid Monitor mode string format. Try: WIDTHxHEIGHT@HZ (e.g.: 1920x1080@60)");
+            throw new Error(`Invalid Monitor mode string format: "${modeString}". Try: WIDTHxHEIGHT@HZ (e.g.: 1920x1080@60)`);
 
         return regex.exec(modeString)!.splice(1, 3) as unknown as [number, number, number];
     }

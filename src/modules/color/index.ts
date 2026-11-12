@@ -1,9 +1,11 @@
 import GObject from "gi://GObject?version=2.0";
 import ColorEngine from "./engine";
-import Pywal16 from "./engine/pywal16";
 import { generalConfig } from "../../config";
 import Notifications from "../notifications";
 import { getter, gtype, register, signal } from "ags/gobject";
+import Pywal16 from "./engine/pywal16";
+import Pywal16Colorful from "./engine/pywal16-colorful";
+import Static from "./engine/static";
 
 
 /** init module, checks which engine it's supposed to use by checking user
@@ -12,7 +14,7 @@ import { getter, gtype, register, signal } from "ags/gobject";
 class Color extends GObject.Object {
     private static instance: Color;
     // engine constructors go here!!
-    private static engines = [Pywal16];
+    private static engines = [Pywal16, Pywal16Colorful, Static];
 
     #engine!: Color.Engine;
     #connection: number;
@@ -38,6 +40,13 @@ class Color extends GObject.Object {
         this.engine = new (Color.getEngineByName(engineName) ?? Pywal16)();
 
         this.#connection = generalConfig.connect("property-changed", (_, path) => {
+            if((path === "color.static" || path.startsWith("color.static.")) &&
+                this.#engine instanceof Static) {
+
+                this.emit("updated");
+                return;
+            }
+
             switch(path) {
                 case "color.engine": {
                     const engine = Color.getEngineByName(generalConfig.getProperty(path, "string"));

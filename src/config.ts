@@ -46,7 +46,7 @@ const generalConfigDefaults = {
         /** color gen engine to be used to generate color schemes.
           * options: `"pywal16"` and i wish there were more...
           * @default `"pywal16"` */
-        //engine: "pywal16",
+        engine: "pywal16",
         /** color scheme type to generate. `"light"` or `"dark"`.
           * @default `"dark"` */
         //scheme: "dark",
@@ -56,6 +56,9 @@ const generalConfigDefaults = {
     },
 
     wallpaper: {
+        /** directories to search for wallpapers.
+          * @default `[ "~/wallpapers" ]` */
+        dirs: ["~/wallpapers"],
         /** wallpaper positioning mode (hyprpaper) */
         positioning: "cover",
         /** whether to enable Hyprland's random splash text on the wallpaper */

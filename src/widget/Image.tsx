@@ -48,10 +48,10 @@ class Image extends Adw.Bin {
 
         this.setPaintable(newTexture);
         if(newTexture) {
-            !this.is_visible() && this.show();
+            this.visible ||= true;
             this.#stack.set_visible_child_name("picture");
         } else if(this.hideIfEmpty)
-            this.hide();
+            this.visible = false;
     }
 
     @getter(gtype<Gio.File|null>(Gio.File))

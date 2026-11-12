@@ -14,19 +14,32 @@ import { createPoll } from "ags/time";
 import { exec, execAsync } from "ags/process";
 import { Astal, Gtk } from "ags/gtk4";
 import { getSymbolicIcon } from "./apps";
-import { createRoot, getScope, Scope } from "ags";
 import Notifications from "./notifications";
 import GLib from "gi://GLib?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 
 Gio._promisify(Gio.DataInputStream.prototype, "read_upto_async", "read_upto_finish");
+Gio._promisify(Gio.File.prototype, "replace_contents_async", "replace_contents_finish");
 
 export const decoder = new TextDecoder("utf-8"),
     encoder = new TextEncoder();
+
+export async function writeTextFile(file: Gio.File, contents: string): Promise<void> {
+    const parent = file.get_parent();
+    if(parent && !parent.query_exists(null))
+        parent.make_directory_with_parents(null);
+
+    await file.replace_contents_async(
+        encoder.encode(contents),
+        null,
+        false,
+        Gio.FileCreateFlags.NONE,
+        null
+    );
+}
+
 export const time = createPoll(GLib.DateTime.new_now_local(), 500, () => 
     GLib.DateTime.new_now_local());
-
-export const globalScope: Scope = createRoot(() => getScope());
 
 export const runtimeDir: Gio.File = Gio.File.new_for_path(`${
     GLib.get_user_runtime_dir() ?? `/run/user/${exec("id -u").trim()}`}/colorshell`);
@@ -96,7 +109,7 @@ export function getPID(search: string): number|undefined {
     let result!: string;
 
     try {
-        result = exec(`pgrep -x "${search}"`).trim().replaceAll('\n', '');
+        result = exec(["pidof", search]).trim().replaceAll('\n', '');
     } catch(e) {
         return undefined;
     }
@@ -163,6 +176,31 @@ export async function getDBusNamePID(name: string, objectPath: string, iface: st
             );
         });
     });
+}
+
+/** expand env variables and tilde('~') in a path string.
+  * if no matching env variable is found, the variable is instead kept as-is.
+  * @returns the complete expanded path string */
+export function expandPath(path: string): string {
+    const dirs = path.split('/');
+    for(let i = 0; i < dirs.length; i++) {
+        const dir = dirs[i];
+        
+        if(i === 0 && dir === "~") {
+            dirs[0] = GLib.get_home_dir();
+            continue;
+        }
+
+        if(dir.startsWith('$') && dir.length > 1) {
+            const value = GLib.getenv(dir.replace(/^\$/, ""));
+            if(value !== null)
+                dirs[i] = value;
+
+            continue;
+        }
+    }
+
+    return dirs.join('/');
 }
 
 /** forces a process to quit with the desired signal. 

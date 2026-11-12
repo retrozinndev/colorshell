@@ -1,8 +1,9 @@
 import Notifications from "../../../../modules/notifications";
+import type Pages from "../pages";
 import Tile from "../Tile";
 import { createBinding } from "ags";
 
-export const TileDND = () => 
+export const TileDND = (_: Pages) => 
     <Tile title={tr("control_center.tiles.dnd.title")}
       description={createBinding(Notifications.getDefault().getNotifd(), "dontDisturb").as(
           (dnd: boolean) => dnd ? tr("control_center.tiles.enabled") : tr("control_center.tiles.disabled"))}

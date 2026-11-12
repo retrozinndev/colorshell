@@ -4,12 +4,12 @@ import { TileBluetooth } from "./Bluetooth";
 import { TileDND } from "./DoNotDisturb";
 import { TileRecording } from "./Recording";
 import { TileNightLight } from "./NightLight";
-import { Pages } from "../pages";
-import { createRoot, getScope } from "ags";
+import { createRoot } from "ags";
+import type Pages from "../pages";
+import ControlCenterWindow from "../..";
 
 
-export let TilesPages: Pages|undefined;
-export const tileList: Array<() => JSX.Element|Gtk.Widget> = [
+export const tileList: Array<(pages: Pages) => JSX.Element|Gtk.Widget> = [
     TileNetwork,
     TileBluetooth,
     TileRecording,
@@ -17,10 +17,8 @@ export const tileList: Array<() => JSX.Element|Gtk.Widget> = [
     TileNightLight
 ] as Array<() => Gtk.Widget>;
 
-export function Tiles(): Gtk.Widget {
+export function Tiles({ccWindow}: { ccWindow: ControlCenterWindow }): Gtk.Widget {
     return createRoot((dispose) => {
-        getScope().onCleanup(() => TilesPages = undefined);
-
         return <Gtk.Box class={"tiles-container"} orientation={Gtk.Orientation.VERTICAL}
           onDestroy={() => dispose()}>
 
@@ -28,10 +26,8 @@ export function Tiles(): Gtk.Widget {
               columnSpacing={6} minChildrenPerLine={2} activateOnSingleClick
               maxChildrenPerLine={2} hexpand homogeneous>
 
-                {tileList.map(t => t())}
+                {tileList.map(t => t(ccWindow.pages))}
             </Gtk.FlowBox>
-
-            <Pages class={"tile-pages"} $={(self) => TilesPages = self} />
         </Gtk.Box> as Gtk.Box;
     });
 }

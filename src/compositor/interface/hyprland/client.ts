@@ -87,7 +87,7 @@ class Client extends Compositor.Client {
         this._allocation.height = this.client.height
     }
 
-    dispose(): void {
+    run_dispose(): void {
         this.subs.forEach(unsub => unsub());
     }
 

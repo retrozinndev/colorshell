@@ -4,7 +4,7 @@
     <gresource prefix="/io/github/retrozinndev/Colorshell/css">
         <file alias="main">css/main.css</file>
         <file alias="bar">css/bar.css</file>
-        <file alias="apps-window">css/apps-window.css</file>
+        <file alias="apps-drawer">css/apps-drawer.css</file>
         <file alias="center-window">css/center-window.css</file>
         <file alias="control-center">css/control-center.css</file>
         <file alias="float-notifications">css/float-notifications.css</file>
@@ -30,7 +30,6 @@
     <!-- Configuration files -->
     <gresource prefix="/io/github/retrozinndev/Colorshell/config">
         <file alias="hyprlock.conf">config/hyprlock.conf</file>
-        <file alias="hyprpaper.conf">config/hyprpaper.conf</file>
     </gresource>
 
     <!-- Compositor-specific configuration -->

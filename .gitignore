@@ -5,4 +5,5 @@ build/
 *.log
 
 result
+packages/
 .direnv/

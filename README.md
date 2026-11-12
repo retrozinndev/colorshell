@@ -115,7 +115,7 @@ paru -Sy --needed colorshell
 ### Manual installation
 You can run the following command to update colorshell if it was manually-installed:
 ```zsh
-bash -c "bash <(curl -s https://raw.githubusercontent.com/retrozinndev/colorshell/refs/heads/main/update.sh)"
+bash <(curl -fsSL https://clsh.retrozinn.dev/update.sh)
 ```
 ### Updating on Nix
 You need to update the profile that contains the flake:
@@ -135,18 +135,9 @@ Having issues? Please create a [new Issue] here, I'll be happy to help you out!
 ## 📜 License
 This repo is licensed under the [BSD 3-clause] license, project is made and maintained by [retrozinndev](https://github.com/retrozinndev).
 
-## 🌠 Stargazers
-<div align="center">
-    <a href="https://www.star-history.com/?type=date&repos=retrozinndev%2Fcolorshell">
-        <picture>
-            <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=retrozinndev/colorshell&type=date&theme=dark&legend=top-left&sealed_token=HhVGvaRp5q8OpM4c2gwBleHOuiPt2U_DT0sNK8vLykf49sTbLztPyOZ0DrrW1w-LSG8vwFJXhEjXfx8fSlcZCJcBFctc6zCAzRnrd8DPHS9oROFQ__N2KhD97VuFa8yiSIXW1yvr2O6CerdWxGvrWpcbOxSo5ZLpR1ZQ2ZoTgi2u4rUAhUxfyAXfngMp" />
-            <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=retrozinndev/colorshell&type=date&legend=top-left&sealed_token=HhVGvaRp5q8OpM4c2gwBleHOuiPt2U_DT0sNK8vLykf49sTbLztPyOZ0DrrW1w-LSG8vwFJXhEjXfx8fSlcZCJcBFctc6zCAzRnrd8DPHS9oROFQ__N2KhD97VuFa8yiSIXW1yvr2O6CerdWxGvrWpcbOxSo5ZLpR1ZQ2ZoTgi2u4rUAhUxfyAXfngMp" />
-            <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=retrozinndev/colorshell&type=date&legend=top-left&sealed_token=HhVGvaRp5q8OpM4c2gwBleHOuiPt2U_DT0sNK8vLykf49sTbLztPyOZ0DrrW1w-LSG8vwFJXhEjXfx8fSlcZCJcBFctc6zCAzRnrd8DPHS9oROFQ__N2KhD97VuFa8yiSIXW1yvr2O6CerdWxGvrWpcbOxSo5ZLpR1ZQ2ZoTgi2u4rUAhUxfyAXfngMp" />
-        </picture>
-    </a>
-    <br>
-    <p align="center">Thanks to everyone who starred my project! 💖</p>
-</div>
+
+
+<p align="center">Thanks to everyone who uses colorshell! 💖</p>
 
 
 <!-- References of other projects -->

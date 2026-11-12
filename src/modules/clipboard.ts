@@ -13,7 +13,6 @@ class Clipboard extends GObject.Object {
 
     #db!: Gio.File;
     #monitor!: [Gio.FileMonitor, number];
-    #procs: Array<Gio.Subprocess> = [];
     #history: Array<Clipboard.Item> = [];
 
     @signal(Object) copied(_: Clipboard.Item) {}
@@ -32,17 +31,6 @@ class Clipboard extends GObject.Object {
             console.warn("Clipboard: cliphist doesn't seem to be installed; clipboard features may not work");
             return;
         }
-
-        this.#procs.push(
-            Gio.Subprocess.new(
-                ["wl-paste", "--type", "text", "--watch", "cliphist store"],
-                Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
-            ),
-            Gio.Subprocess.new(
-                ["wl-paste", "--type", "image", "--watch", "cliphist store"],
-                Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
-            )
-        );
 
         this.#db = this.getCliphistDatabase();
         const monitor = this.#db.monitor_file(Gio.FileMonitorFlags.NONE, null);
@@ -70,9 +58,7 @@ class Clipboard extends GObject.Object {
             return;
 
         this.instance.#monitor?.[0].disconnect(this.instance.#monitor[1]);
-        this.instance.#procs.splice(0, this.instance.#procs.length)
-            .forEach(p => p.force_exit());
-        this.instance.#history.splice(0, this.instance.#history.length);
+        this.instance.wipe(true);
         this.instance = null;
     }
 
@@ -199,19 +185,16 @@ class Clipboard extends GObject.Object {
     /** wipes clipboard history.
       * @param skipDB skips wiping the database (only wipes the internal list) */
     public async wipe(skipDB: boolean = false): Promise<void> {
-        if(skipDB) {
-            this.#history.splice(0, this.#history.length);
-            this.emit("wiped");
+        this.#history.splice(0, this.#history.length);
+        this.emit("wiped");
 
+        if(skipDB)
             return;
-        }
 
         try {
             await execAsync("cliphist wipe");
-            this.#history.splice(0, this.#history.length);
-            this.emit("wiped");
-        } catch(err) {
-            console.error("Clipboard: An error occurred on cliphist database wipe:", err);
+        } catch(e) {
+            console.error("Clipboard: An error occurred on DB wipe:", e);
         }
     }
 

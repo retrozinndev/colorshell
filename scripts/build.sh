@@ -60,7 +60,7 @@ fi
 
 echo "[info] bundling"
 {
-    echo -e "#!/usr/bin/gjs -m\n"
+    echo -e "#!/usr/bin/env -S gjs -m\n"
     esbuild --bundle $entryfile \
       --source-root=$srcroot \
       --sourcemap=inline \
@@ -88,7 +88,7 @@ fi
 
 echo "[info] creating executable"
 echo -en "\
-#!/usr/bin/bash
+#!/usr/bin/env bash
 
 export XDG_CACHE_HOME=\${XDG_CACHE_HOME:-\"\$HOME/.cache\"}
 export XDG_DATA_HOME=\${XDG_DATA_HOME:-\"\$HOME/.local/share\"}
@@ -97,14 +97,13 @@ export XDG_RUNTIME_DIR=\${XDG_RUNTIME_DIR:-\"/run/user/\`id -u\`\"}
 
 runtime_dir=\$XDG_RUNTIME_DIR/$appname
 file=\"\$XDG_RUNTIME_DIR/$appname/$appname\"
-`[[ $socket_support ]] && (cat ./scripts/socket.sh | sed -E '/(^#!.*)|^$/d')`
+`[[ $socket_support ]] && cat ./scripts/socket.sh`
 
 mkdir -p \"\$XDG_RUNTIME_DIR/$appname\"
 echo -n '`cat $output/$appname.js | base64`' | base64 --decode > \"\$file\"
 chmod +x "\$file"
 
-export LD_PRELOAD=\"/usr/lib/libgtk4-layer-shell.so\"
-\$file \$@
-export LD_PRELOAD=
+
+`[[ ! $is_devel ]] && echo -n "LD_PRELOAD='/usr/lib/libgtk4-layer-shell.so'"` \$file \$@
 " > $output/$appname
 chmod +x $output/$appname

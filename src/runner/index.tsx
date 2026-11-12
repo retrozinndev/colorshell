@@ -6,10 +6,10 @@ import { omitObjectKeys } from "../modules/utils";
 import { getter, gtype, property, register } from "ags/gobject";
 import { initRunner } from "./init";
 import GObject from "gi://GObject?version=2.0";
-import AstalHyprland from "gi://AstalHyprland";
 import Windows from "../window";
 import ResultsList from "./widgets/ResultsList";
 import { generalConfig } from "../config";
+import Compositor from "../compositor";
 
 
 export const RunnerWindow = Windows.forFocusedMonitor(() =>
@@ -31,6 +31,7 @@ class Runner extends PopupWindow {
     #entry: Gtk.Entry;
     #list: ResultsList;
     #plugins: Array<Runner.Plugin> = [];
+    #connections: Map<GObject.Object, number|Array<number>> = new Map();
 
     @property(gtype<string|null>(String))
     searchPlaceholder: string|null = "Search anything...";
@@ -136,7 +137,6 @@ class Runner extends PopupWindow {
         if(props.ignoreEmptySearch != null)
             this.ignoreEmptySearch = props.ignoreEmptySearch;
 
-        const connections: Map<GObject.Object, number|Array<number>> = new Map();
         this.#container = new Gtk.Box({
             hexpand: true,
             valign: Gtk.Align.START,
@@ -153,7 +153,7 @@ class Runner extends PopupWindow {
             secondaryIconTooltipText: "Clear"
         });
 
-        connections.set(this.#entry, [
+        this.#connections.set(this.#entry, [
             this.#entry.connect("icon-release", (self, pos) => {
                 if(pos === Gtk.EntryIconPosition.PRIMARY) {
                     self.notify("text"); // emit notify::text, so it will force-search again
@@ -178,47 +178,13 @@ class Runner extends PopupWindow {
             visible: true
         });
 
-        connections.set(this, [
-            this.connect("key-pressed", (_, key) => {
-                switch(key) {
-                    case Gdk.KEY_Up:
-                        this.#list.selectPrevious();
-                        return;
-
-                    case Gdk.KEY_Down:
-                        this.#list.selectNext();
-                        return;
-                }
-            }),
-            this.connect("show", (self) => {
-                self.#entry.select_region(this.#entry.textLength, this.#entry.textLength);
-            }),
-            this.connect("destroy", () => {
-                connections.forEach((id, gobj) => Array.isArray(id) ?
-                    id.forEach(num => gobj.disconnect(num))
-                : gobj.disconnect(id));
-            }),
-            this.connect("notify::search", () => {
-                this.update(this.search, this.maxResults).then(() => {
-                    if(this.#results.length < 1) {
-                        this.#entry.secondaryIconName = "";
-                        this.#list.unselect();
-                        return;
-                    }
-
-                    this.#entry.secondaryIconName = "edit-clear-symbolic";
-                    this.#list.select(0);
-                }).catch(console.error);
-            })
-        ]);
-
         this.bind_property("search", this.#entry, "text", GObject.BindingFlags.BIDIRECTIONAL);
         this.bind_property("search-placeholder", this.#entry, "placeholder-text", GObject.BindingFlags.BIDIRECTIONAL);
 
 	// calculate margin position
-        const monitor = AstalHyprland.get_default().get_focused_monitor();
+        const monitor = Compositor.getDefault().focusedMonitor?.getGMonitor();
         const scale = monitor?.scale ?? 1;
-        const screenHeight = (monitor?.height ?? 640) / scale;
+        const screenHeight = (monitor?.geometry.height ?? 640) / scale;
         const marginTop = (screenHeight / 2) - (this.heightRequest / 2);
 
         // add widgets
@@ -248,7 +214,50 @@ class Runner extends PopupWindow {
             this.notify("search");
     }
 
-    vfunc_close_request(): boolean {
+    
+    on_key_pressed(key: number) {
+        switch(key) {
+            case Gdk.KEY_Up:
+                this.#list.selectPrevious();
+                return;
+
+            case Gdk.KEY_Down:
+                this.#list.selectNext();
+                return;
+        }
+    }
+
+    vfunc_notify(pspec: GObject.ParamSpec): void {
+        switch(pspec.name) {
+            case "visible": {
+                if(this.visible)
+                    this.#entry.select_region(this.#entry.textLength, this.#entry.textLength);
+                break;
+            };
+
+            case "search": {
+                this.update(this.search, this.maxResults).then(() => {
+                    if(this.#results.length < 1) {
+                        this.#entry.secondaryIconName = "";
+                        this.#list.unselect();
+                        return;
+                    }
+
+                    this.#entry.secondaryIconName = "edit-clear-symbolic";
+                    this.#list.select(0);
+                }).catch(console.error);
+                break;
+            };
+        }
+    }
+
+    on_destroy(): void {
+        this.#connections.forEach((id, gobj) => Array.isArray(id) ?
+            id.forEach(num => gobj.disconnect(num))
+        : gobj.disconnect(id));
+    }
+
+    on_close_request(): boolean {
         this.#plugins.forEach(p => p.onClose?.());
         this.#plugins.splice(0, this.#plugins.length);
         Runner.instance = null;

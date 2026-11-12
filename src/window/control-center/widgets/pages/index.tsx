@@ -1,100 +1,170 @@
-import GObject, { getter, gtype, register } from "ags/gobject";
 import { Gtk } from "ags/gtk4";
-import { Page } from "../Page";
+import Page from "../Page";
+import GObject from "gi://GObject?version=2.0";
+import { getter, gtype, register, setter } from "ags/gobject";
 
-import GLib from "gi://GLib?version=2.0";
 
+@register({ GTypeName: "ClshCCPages", Implements: [Gtk.Buildable] })
+class Pages extends Gtk.Overlay {
+    readonly #stack: Gtk.Stack;
+    readonly #revealer: Gtk.Revealer;
 
-@register({ GTypeName: "Pages" })
-export class Pages extends Gtk.Box {
-    #timeouts: Array<[GLib.Source, (() => void)|undefined]> = [];
-    #page: Page|undefined;
-    #transDuration: number;
-    #transType: Gtk.RevealerTransitionType = Gtk.RevealerTransitionType.SLIDE_DOWN;
+    @getter(gtype<Gtk.RevealerTransitionType>(Number))
+    get revealTransitionType(): Gtk.RevealerTransitionType {
+        return this.#revealer.transitionType;
+    }
+    @setter(gtype<Gtk.RevealerTransitionType>(Number))
+    set revealTransitionType(transition: Gtk.RevealerTransitionType) {
+        this.#revealer.transitionType = transition;
+        this.notify("reveal-transition-type");
+    }
+
+    @getter(gtype<Gtk.StackTransitionType>(Number))
+    get pageTransitionType(): Gtk.StackTransitionType {
+        return this.#stack.transitionType;
+    }
+    @setter(gtype<Gtk.StackTransitionType>(Number))
+    set pageTransitionType(transition: Gtk.StackTransitionType) {
+        this.#stack.transitionType = transition;
+        this.notify("page-transition-type");
+    }
 
     @getter(Boolean)
-    get isOpen() { return Boolean(this.#page); }
+    get isOpen() { return this.#revealer.revealChild; }
 
-    @getter(gtype<Page|undefined>(Page))
-    get page() { return this.#page; }
+    @getter(GObject.Object)
+    get currentPage() { return this.#stack.visibleChild as Page; }
 
-    constructor(props?: {
-        initialPage?: Page;
-        transitionDuration?: number;
-    }) {
+    @getter(gtype<string|null>(String))
+    get currentPageId() { return this.#stack.visibleChildName; }
+
+
+    constructor({
+        revealTransitionType, pageTransitionType, ...props
+    }: Partial<Pages.ConstructorProps> = {}) {
         super({
-            orientation: Gtk.Orientation.VERTICAL,
             cssName: "pages",
-            name: "pages"
+            ...props
         });
 
-        this.add_css_class("pages");
-
-        this.#transDuration = props?.transitionDuration ?? 280;
-
-        if(props?.initialPage) 
-            this.open(props.initialPage);
-
-
-        const destroyId = this.connect("destroy", () => {
-            GObject.signal_handler_is_connected(this, destroyId) && 
-                this.disconnect(destroyId);
-
-            this.#timeouts.forEach((tmout) => {
-                tmout[0].destroy();
-                (async () => tmout[1]?.())().catch((err: Error) => {
-                    console.error(`${err.message}\n${err.stack}`);
-                });
-            });
+        this.#stack = new Gtk.Stack({
+            visible: true,
+            transitionType: pageTransitionType ?? 
+                Gtk.StackTransitionType.SLIDE_LEFT_RIGHT
         });
+        this.#revealer = new Gtk.Revealer({
+            visible: true,
+            child: this.#stack,
+            revealChild: false,
+            vexpand: false,
+            hexpand: false,
+            valign: Gtk.Align.CENTER,
+            transitionType: revealTransitionType ?? 
+                Gtk.RevealerTransitionType.SLIDE_DOWN
+        });
+
+        this.add_overlay(this.#revealer);
+        this.set_measure_overlay(this.#revealer, false);
     }
 
-    toggle(newPage?: Page, onToggled?: () => void): void {
-        if(!newPage || (this.#page?.id === newPage.id)) {
-            this.close(onToggled);
+    vfunc_add_child(builder: Gtk.Builder, child: GObject.Object, type: string): void {
+        if(type === "page" && child instanceof Page) {
+            this.add(child);
             return;
         }
 
-        if(!this.isOpen) {
-            newPage && this.open(newPage, onToggled);
+        if(child instanceof Gtk.Widget) {
+            this.child = child;
             return;
         }
 
-        if(this.#page?.id !== newPage.id) {
+        super.vfunc_add_child(builder, child, type);
+    }
+
+    vfunc_notify(pspec: GObject.ParamSpec): void {
+        switch(pspec.name) {
+            case "is-open": {
+                if(this.isOpen) {
+                    !this.has_css_class("overlay-open") &&
+                        this.add_css_class("overlay-open");
+
+                    if(this.child)
+                        this.child.canTarget = false;
+                } else {
+                    this.remove_css_class("overlay-open");
+                    if(this.child)
+                        this.child.canTarget = true;
+                }
+                break;
+            };
+        }
+    }
+
+    add(page: Page, id?: string): boolean {
+        id ??= page.id;
+
+        if(this.#stack.get_child_by_name(id)) {
+            console.error(`Page with ID "${id}" already exists in the Pages Widget`);
+            return false;
+        }
+
+        this.#stack.add_named(page, id);
+        return true;
+    }
+
+    remove(page: Page): void;
+    /** remove a `Page` by its ID */
+    remove(id: string): void;
+    remove(id: Page|string): void {
+        if(typeof id === "string") {
+            const child = this.#stack.get_child_by_name(id);
+            if(id === this.currentPageId)
+                this.close();
+
+            child && this.#stack.remove(child);
+            return;
+        }
+
+        if(id.id === this.currentPageId)
             this.close();
-            this.open(newPage, onToggled);
+
+        this.#stack.remove(id);
+    }
+
+    toggle(id: string): void {
+        if(this.currentPageId === id && this.isOpen) {
+            this.close();
+            return;
         }
+
+        this.open(id);
     }
 
-    open(newPage: Page, onOpen?: () => void) {
-        this.#page = newPage;
+    open(id: string) {
+        if(this.#stack.visibleChildName === id && this.isOpen)
+            return;
 
-        this.prepend(
-            <Gtk.Revealer revealChild={false} transitionType={this.#transType}
-              transitionDuration={this.#transDuration}>
-
-                {newPage.create()}
-            </Gtk.Revealer> as Gtk.Revealer
-        );
-
-        (this.get_first_child() as Gtk.Revealer)?.set_reveal_child(true);
-        onOpen?.();
+        this.#revealer.revealChild ||= true;
+        this.#stack.visibleChildName = id;
+        (this.#stack.get_child_by_name(id) as Page|undefined)?.emit("open");
+        this.notify("is-open");
     }
 
-    close(onClosed?: () => void): void {
-        const page = this.get_first_child() as Gtk.Revealer|null;
-        if(!page) return;
+    close(): void {
+        if(!this.isOpen)
+            return;
 
-        this.#page?.actionClosed?.();
-        this.#page = undefined;
-
-        page.set_reveal_child(false);
-        this.#timeouts.push([
-            setTimeout(() => {
-                this.remove(page);
-                onClosed?.();
-            }, page.transitionDuration),
-            onClosed
-        ]);
+        (this.#stack.visibleChild as Page|undefined)?.emit("closed");
+        this.#revealer.revealChild = false;
+        this.notify("is-open");
     }
 }
+
+namespace Pages {
+    export interface ConstructorProps extends Gtk.Revealer.ConstructorProps {
+        revealTransitionType: Gtk.RevealerTransitionType;
+        pageTransitionType: Gtk.StackTransitionType;
+    }
+}
+
+export default Pages;

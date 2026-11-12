@@ -2,6 +2,7 @@ import GObject, { getter, gtype, register, signal } from "ags/gobject";
 import Monitor from "./monitor";
 import Client from "./client";
 import Workspace from "./workspace";
+import Adw from "gi://Adw?version=1";
 
 
     
@@ -21,6 +22,7 @@ class Compositor extends GObject.Object {
     protected _clients: Array<Client> = []
     protected _focusedClient: Client|null = null;
     protected _focusedWorkspace: Workspace|null = null;
+    protected _focusedMonitor: Monitor|null = null;
 
     @getter(Array)
     get monitors() { return this._monitors; }
@@ -37,26 +39,37 @@ class Compositor extends GObject.Object {
     @getter(gtype<Workspace|null>(GObject.Object))
     get focusedWorkspace() { return this._focusedWorkspace; }
 
-    @signal(GObject.Object)
-    clientAdded(_: Client) {}
+    @getter(gtype<Monitor|null>(GObject.Object))
+    get focusedMonitor() { return this._focusedMonitor; }
 
     @signal(GObject.Object)
-    clientRemoved(_: Client) {}
+    protected clientAdded(_: Client) {}
 
     @signal(GObject.Object)
-    workspaceAdded(_: Workspace) {}
+    protected clientRemoved(_: Client) {}
 
     @signal(GObject.Object)
-    workspaceRemoved(_: Workspace) {}
+    protected workspaceAdded(_: Workspace) {}
 
     @signal(GObject.Object)
-    monitorAdded(_: Monitor) {}
+    protected workspaceRemoved(_: Workspace) {}
 
     @signal(GObject.Object)
-    monitorRemoved(_: Monitor) {}
+    protected monitorAdded(_: Monitor) {}
+
+    @signal(GObject.Object)
+    protected monitorRemoved(_: Monitor) {}
 
     constructor() {
         super();
+    }
+
+    /** run an application or execute a command in the compositor scope */
+    exec(cmd: string): void {}
+
+    /** quits compositor */
+    quit(): void {
+        Adw.Application.get_default()!.quit();
     }
 }
 

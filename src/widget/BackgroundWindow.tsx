@@ -1,90 +1,130 @@
-import { Accessor } from "ags";
-import { Astal, Gdk, Gtk } from "ags/gtk4";
+import { This } from "ags";
+import { getter, gtype, register, signal } from "ags/gobject";
+import { Astal, Gtk } from "ags/gtk4";
 import GObject from "gi://GObject?version=2.0";
 
 
 const { TOP, LEFT, RIGHT, BOTTOM } = Astal.WindowAnchor;
 
-export type BackgroundWindowProps = {
-    /** GtkWindow Layer */
-    layer?: Astal.Layer | Accessor<Astal.Layer>;
-    /** Monitor number where the window should open */
-    monitor: number | Accessor<number>;
-    /** Custom stylesheet used in the window. default: `background: rgba(0, 0, 0, .2)` */
-    css?: string | Accessor<string>;
-    /* Function that is called when the user releases a key in the keyboard on the window 
-    * The `Escape` key is not passed to this function */
-    actionKeyPressed?: (window: Astal.Window, keyval: number, keycode: number) => void;
-    /** Function that is called when the user triggers a mouse-click or escape action on the window */
-    actionFired?: (window: Astal.Window) => void;
-    /** Function that is called when the user clicks on the window with primary mouse button */
-    actionClickPrimary?: (window: Astal.Window) => void;
-    /** Function that is called when the user clicks on the window with secodary mouse button */
-    actionClickSecondary?: (window: Astal.Window) => void;
-    onCloseRequest?: (window: Astal.Window) => void;
-    keymode?: Astal.Keymode;
-    exclusivity?: Astal.Exclusivity;
-
-    /** attach this window as a background for another window
-    * background-window will close when the attached window triggers ::close-request) */
-    attach?: Astal.Window;
-};
-
-/** Creates a fullscreen GtkWindow that is used for making
- * the user focus on the content after this window(e.g.: AskPopup,
- * Authentication Window(futurely) or any PopupWindow)
+/** Creates a fullscreen layer that is can be styled to make
+ * the user focus on the content after this widget(e.g.: CustomDialog,
+ * App Drawer or any other PopupWindow).
  *
- * @param props Properties for background-window
+ * In order to use this widget, you may want to `attach` this to the
+ * main layer, so you can use the background layer(this widget) to
+ * control the main one accordingly(only set_visible requests tbh).
  *
- * @returns The generated background-window
- */
-export function BackgroundWindow(props: BackgroundWindowProps): Astal.Window {
-    const conns: Map<GObject.Object, number> = new Map();
+ * You can also attach a layer by adding the layer with the `"attached"`
+ * builder type.
+ * */
+@register({
+    GTypeName: "ClshBackgroundWindow",
+    Implements: [Gtk.Buildable]
+})
+class BackgroundWindow extends Astal.Window {
+    declare $signals: BackgroundWindow.SignalSignatures;
+    #attachedLayer: [Astal.Window, number]|null = null;
 
-    return <Astal.Window namespace={"background-window"} monitor={props.monitor} visible
-        layer={props.layer ?? Astal.Layer.OVERLAY} keymode={props.keymode ?? Astal.Keymode.EXCLUSIVE}
-        onCloseRequest={props.onCloseRequest} exclusivity={props.exclusivity ?? Astal.Exclusivity.IGNORE} 
-        anchor={TOP | LEFT | BOTTOM | RIGHT} css={props.css ?? "background: rgba(0, 0, 0, .2);"}
-        $={(self) => {
-            const gestureClick = Gtk.GestureClick.new(),
-                eventControllerKey = Gtk.EventControllerKey.new();
+    @signal(Number)
+    keyPressed(keyval: number) {}
 
-            gestureClick.set_button(0);
+    @signal(Number)
+    clicked(button: number) {}
 
-            self.add_controller(gestureClick);
-            self.add_controller(eventControllerKey);
+    @getter(gtype<Astal.Window|null>(Astal.Window))
+    get attachedLayer() { return this.#attachedLayer?.[0] ?? null; }
 
-            conns.set(eventControllerKey, eventControllerKey.connect("key-released", 
-                (_, keyval, keycode) => {
-                    if(keyval === Gdk.KEY_Escape) {
-                        props.actionFired?.(self);
-                        return;
-                    }
 
-                    props.actionKeyPressed?.(self, keyval, keycode);
+    constructor({attach, ...props}: Partial<BackgroundWindow.ConstructorProps> = {}) {
+        super({
+            namespace: "background-window",
+            layer: Astal.Layer.OVERLAY,
+            keymode: Astal.Keymode.EXCLUSIVE,
+            exclusivity: Astal.Exclusivity.IGNORE,
+            anchor: TOP | LEFT | BOTTOM | RIGHT,
+            ...props
+        });
+
+        if(attach != null)
+            this.attach(attach);
+
+        void (
+            <This this={this as BackgroundWindow}>
+                <Gtk.GestureClick button={0}
+                  onReleased={(gesture) => {
+                      (this as BackgroundWindow).emit("clicked", gesture.get_current_button());
+                  }}
+                />
+                <Gtk.EventControllerKey
+                  onKeyReleased={(_, kv) => {
+                      (this as BackgroundWindow).emit("key-pressed", kv);
+                  }}
+                />
+            </This>
+        );
+    }
+
+    vfunc_add_child(builder: Gtk.Builder, child: Gtk.Widget, type: string|null): void {
+        if(type === "attached" && child instanceof Astal.Window) {
+            this.attach(child);
+            return;
+        }
+
+        super.vfunc_add_child(builder, child, type);
+    }
+
+    vfunc_notify(pspec: GObject.ParamSpec): void {
+        switch(pspec.name) {
+            case "visible": {
+                if(this.attachedLayer && this.attachedLayer.visible)
+                    this.attachedLayer.visible = false;
+
+                if(this.visible) {
+                    setTimeout(() => { // just in case (gtk can freeze when doing this too fast)
+                        if(this.attachedLayer)
+                            this.attachedLayer.visible = true;
+                    }, 50);
                 }
-            ));
+                break;
+            }
+        }
+    }
 
-            conns.set(gestureClick, gestureClick.connect("released", (gesture) => {
-                if(gesture.get_current_button() === Gdk.BUTTON_PRIMARY) {
-                    props.actionClickPrimary?.(self);
-                    return;
-                }
+    /** attach a main window to this background layer */
+    attach(layer: Astal.Window): void {
+        this.#attachedLayer = [layer, layer.connect("close-request", () => {
+            this.deattach();
+            this.close();
+        })];
+        this.gdkmonitor = layer.gdkmonitor;
+        this.notify("attached-layer");
+    }
 
-                if(gesture.get_current_button() === Gdk.BUTTON_SECONDARY) {
-                    props.actionClickSecondary?.(self);
-                    return;
-                }
+    /** deattach a window from this background layer(if any) */
+    deattach(): void {
+        if(this.#attachedLayer == null)
+            return;
 
-                props.actionFired?.(self);
-            }));
+        const [layer, conn] = this.#attachedLayer;
+        this.#attachedLayer = null;
+        this.notify("attached-layer");
 
-            props.attach &&
-                conns.set(props.attach, (props.attach as Gtk.Widget).connect("close-request", () => 
-                    self.close()
-                ));
-
-            conns.set(self, self.connect("destroy", () => conns.forEach((id, obj) => 
-                obj.disconnect(id))));
-        }} /> as Astal.Window;
+        GObject.signal_handler_is_connected(layer, conn) &&
+            layer.disconnect(conn);
+    }
 }
+
+namespace BackgroundWindow {
+    export interface ConstructorProps extends Astal.Window.ConstructorProps {
+        attach: Astal.Window;
+    }
+
+    export interface SignalSignatures extends Astal.Window.SignalSignatures {
+        "key-pressed"(keyval: number): void;
+        "clicked"(button: number): void;
+
+        "notify::attached-layer"(): void;
+    }
+}
+
+export default BackgroundWindow;

@@ -23,28 +23,28 @@ class Monitor extends Compositor.Monitor {
 
     constructor(compositor: Hyprland, monitor: AstalHyprland.Monitor) {
         super(compositor,
-            monitor.get_id(),
-            monitor.get_name(),
-            monitor.get_available_modes(),
+            monitor.id,
+            monitor.name,
+            monitor.availableModes,
             Monitor.modeToString(
-                monitor.get_width(),
-                monitor.get_height(),
-                monitor.get_refresh_rate()
+                monitor.width,
+                monitor.height,
+                monitor.refreshRate
             ),
-            monitor.get_scale()
+            monitor.scale ?? 1
         );
 
         this.#monitor = monitor;
         this.#subs.push(
-            createComputed([
-                createBinding(this.monitor, "width"),
-                createBinding(this.monitor, "height"),
-                createBinding(this.monitor, "refreshRate")
-            ]).subscribe(() => {
+            createComputed(() => {
+                createBinding(this.monitor, "width")();
+                createBinding(this.monitor, "height")();
+                createBinding(this.monitor, "refreshRate")();
+            }).subscribe(() => {
                 super.mode = Monitor.modeToString(
-                    monitor.get_width(),
-                    monitor.get_height(),
-                    monitor.get_refresh_rate()
+                    monitor.width,
+                    monitor.height,
+                    monitor.refreshRate
                 );
             }),
             createBinding(this.monitor, "availableModes").subscribe(() => {
@@ -52,15 +52,14 @@ class Monitor extends Compositor.Monitor {
                 this.notify("modes");
             }),
             createBinding(this.monitor, "scale").subscribe(() => {
-                super.scaling = this.monitor.get_scale();
+                super.scaling = this.monitor.scale ?? 1;
             })
         );
     }
 
-    dispose(): void {
+    run_dispose(): void {
         this.#subs.forEach(unsub => unsub());
     }
-
 }
 
 namespace Monitor {

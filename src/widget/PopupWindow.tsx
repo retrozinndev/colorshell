@@ -1,8 +1,7 @@
 import { Astal, Gdk, Gtk } from "ags/gtk4";
-import { BackgroundWindow } from "./BackgroundWindow";
-import { createBinding } from "ags";
 import { omitObjectKeys } from "../modules/utils";
-import GObject, { gtype, property, register, signal } from "ags/gobject";
+import { property, register, signal } from "ags/gobject";
+import GObject from "gi://GObject?version=2.0";
 
 
 @register({ GTypeName: "ClshPopupWindow" })
@@ -10,7 +9,6 @@ export class PopupWindow extends Astal.Window {
     declare $signals: PopupWindow.SignalSignatures;
 
     #conns: Map<GObject.Object, number> = new Map();
-    #bg: Astal.Window;
 
     @signal()
     closed() {}
@@ -23,14 +21,22 @@ export class PopupWindow extends Astal.Window {
         this.close();
     }
 
+    @signal()
+    escape() {
+        if(!this.closeOnEscape)
+            return;
+
+        this.close();
+    }
+
     @signal(Number, Number)
     keyPressed(_: number, __: number) {}
 
     @property(Boolean)
     closeOnClickOutside: boolean = true;
 
-    @property(gtype<string|null>(String))
-    backgroundCss: string|null = null;
+    @property(Boolean)
+    closeOnEscape: boolean = true;
 
     /** whether to continue propagating the event to children after handling in ::key-pressed.
       * @default false */
@@ -47,7 +53,6 @@ export class PopupWindow extends Astal.Window {
             exclusivity: Astal.Exclusivity.NORMAL,
             ...omitObjectKeys(props, [
                 "propagateKeyEvent",
-                "backgroundCss",
                 "closeOnClickOutside"
             ]),
             anchor: Astal.WindowAnchor.TOP | Astal.WindowAnchor.BOTTOM 
@@ -57,21 +62,11 @@ export class PopupWindow extends Astal.Window {
         if(props.propagateKeyEvent !== undefined)
             this.propagateKeyEvent = props.propagateKeyEvent;
 
-        if(props.backgroundCss !== undefined)
-            this.backgroundCss = props.backgroundCss;
+        if(props.closeOnEscape != null)
+            this.closeOnEscape = props.closeOnEscape;
 
         if(props.closeOnClickOutside !== undefined)
             this.closeOnClickOutside = props.closeOnClickOutside;
-
-        this.#bg = BackgroundWindow({
-            css: createBinding(this, "backgroundCss")(css => css ?? ""),
-            monitor: createBinding(this, "monitor"),
-            layer: createBinding(this, "layer"),
-            keymode: Astal.Keymode.NONE,
-            attach: this,
-            exclusivity: Astal.Exclusivity.IGNORE
-        });
-        this.#bg.hide();
 
         const gestureClick = Gtk.GestureClick.new();
         const keyController = Gtk.EventControllerKey.new();
@@ -91,7 +86,7 @@ export class PopupWindow extends Astal.Window {
 
         this.#conns.set(keyController, keyController.connect("key-pressed", (_, keyval, keycode) => {
             if(keyval === Gdk.KEY_Escape) {
-                this.emit("clicked-outside");
+                this.emit("escape");
                 return true;
             }
 
@@ -99,25 +94,12 @@ export class PopupWindow extends Astal.Window {
             return !this.propagateKeyEvent;
         }));
 
-        this.#conns.set(this, this.connect("close-request", () => {
-            this.#conns.forEach((id, obj) => obj.disconnect(id));
-        }));
-
         this.add_controller(gestureClick);
         this.add_controller(keyController);
     }
 
-    hide(): void {
-        this.#bg.hide();
-        super.hide();
-    }
-
-    show(): void {
-        if(this.#bg.is_visible())
-            this.#bg.hide();
-
-        this.#bg.show();
-        super.show();
+    on_close_request(): void {
+        this.#conns.forEach((id, obj) => obj.disconnect(id));
     }
 
     close(): void {
@@ -136,14 +118,15 @@ export namespace PopupWindow {
         | "margin_left"
         | "margin_right"
     > {
-        backgroundCss: string;
         propagateKeyEvent: boolean;
         closeOnClickOutside: boolean;
+        closeOnEscape: boolean;
     };
 
     export interface SignalSignatures extends Astal.Window.SignalSignatures {
-        "closed": () => void;
-        "clicked-outside": () => void;
-        "key-pressed": (keyval: number, keycode: number) => void;
+        "closed"(): void;
+        "clicked-outside"(): void;
+        "escape"(): void;
+        "key-pressed"(keyval: number, keycode: number): void;
     }
 }

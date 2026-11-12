@@ -2,7 +2,7 @@ import { Astal, Gtk } from "ags/gtk4";
 import { createBinding, createComputed, createState, With } from "ags";
 import Wireplumber from "../../modules/volume";
 import Windows from "../../window";
-import Backlights from "../../modules/backlight";
+import Backlights from "../../modules/backlights";
 import { createSubscription, secureBaseBinding, variableToBoolean } from "../../modules/utils";
 
 import Pango from "gi://Pango?version=1.0";
@@ -57,9 +57,9 @@ const [osdMode, setOSDMode] = createState(OSDModes.sink);
 let osdTimer: (GLib.Source|undefined), osdTimeout = 3500;
 
 export function OSD(): Astal.Window { 
-    return Windows.forFocusedMonitor(mon =>
+    return Windows.forFocusedMonitor(() =>
         <Astal.Window namespace={"osd"} class={"osd-window"} layer={Astal.Layer.OVERLAY}
-          anchor={Astal.WindowAnchor.BOTTOM} focusable={false} marginBottom={80} monitor={mon}>
+          anchor={Astal.WindowAnchor.BOTTOM} focusable={false} marginBottom={80}>
 
             <Gtk.Box class={"osd"}>
                 <With value={osdMode}>
@@ -90,17 +90,17 @@ export function OSD(): Astal.Window {
 
 export namespace OSD {
     export function init(): void {
-        createSubscription(
-            createComputed([
+        createSubscription(createComputed(() => {
                 secureBaseBinding<AstalWp.Endpoint>(createBinding(
                     AstalWp.get_default(), "defaultSpeaker"
-                ), "volume", null),
+                ), "volume", null)();
                 secureBaseBinding<AstalWp.Endpoint>(createBinding(
                     AstalWp.get_default(), "defaultSpeaker"
-                ), "mute", null)
-            ]),
-            () => !Windows.getDefault().isOpen("control-center") &&
-                trigger(OSDModes.sink)
+                ), "mute", null)();
+            }), () => {
+                if(!Windows.getDefault().isOpen("control-center"))
+                    trigger(OSDModes.sink)
+            }
         );
 
         createSubscription(
