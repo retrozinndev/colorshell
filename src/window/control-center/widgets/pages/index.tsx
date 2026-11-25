@@ -60,6 +60,8 @@ class Pages extends Gtk.Overlay {
             vexpand: true,
             hexpand: false,
             valign: Gtk.Align.FILL,
+            // FILL + vexpand covers the whole overlay; pass clicks through while closed.
+            canTarget: false,
             transitionType: revealTransitionType ?? 
                 Gtk.RevealerTransitionType.SLIDE_DOWN
         });
@@ -89,10 +91,12 @@ class Pages extends Gtk.Overlay {
                     !this.has_css_class("overlay-open") &&
                         this.add_css_class("overlay-open");
 
+                    this.#revealer.canTarget = true;
                     if(this.child)
                         this.child.canTarget = false;
                 } else {
                     this.remove_css_class("overlay-open");
+                    this.#revealer.canTarget = false;
                     if(this.child)
                         this.child.canTarget = true;
                 }
