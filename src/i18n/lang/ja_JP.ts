@@ -43,7 +43,7 @@ export default {
         tiles: {
             enabled: "有効",
             disabled: "無効",
-            more: "更多",
+            more: "その他",
 
             network: {
                 network: "ネットワーク",
@@ -64,7 +64,7 @@ export default {
             }
         },
         pages: {
-            more_settings: "更多设置",
+            more_settings: "詳細設定",
             sound: {
                 title: "サウンド",
                 description: "音声出力を構成"

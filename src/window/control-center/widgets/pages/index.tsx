@@ -49,6 +49,7 @@ class Pages extends Gtk.Overlay {
 
         this.#stack = new Gtk.Stack({
             visible: true,
+            vhomogeneous: false,
             transitionType: pageTransitionType ?? 
                 Gtk.StackTransitionType.SLIDE_LEFT_RIGHT
         });
@@ -56,9 +57,9 @@ class Pages extends Gtk.Overlay {
             visible: true,
             child: this.#stack,
             revealChild: false,
-            vexpand: false,
+            vexpand: true,
             hexpand: false,
-            valign: Gtk.Align.CENTER,
+            valign: Gtk.Align.FILL,
             transitionType: revealTransitionType ?? 
                 Gtk.RevealerTransitionType.SLIDE_DOWN
         });
