@@ -27,6 +27,9 @@ export type i18nStruct = {
     /** context: close an application, a popup or window */
     close: string,
 
+    /** context: a password entry placeholder or just a password prompt */
+    password: string,
+
     media: {
         loop: string,
         song_loop: string,
@@ -77,7 +80,11 @@ export type i18nStruct = {
             },
             network: {
                 title: string,
-                interface: string
+                interface: string,
+                /** context: enter password for network "WiFi AP" */
+                enter_password_for: string,
+                /** context: a connection(e.g.: wifi) error occurred */
+                connection_error: string
             },
             backlight: {
                 title: string,

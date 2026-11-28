@@ -131,6 +131,19 @@ controlcenter .top-container page .extra-buttons button {
 controlcenter .top-container page .extra-buttons button:active {
   border-radius: 8px;
 }
+controlcenter .top-container page.network .wifi-header .sub-header {
+  margin-bottom: 0;
+}
+controlcenter .top-container page.network .net-lock-icon {
+  -gtk-icon-size: 14px;
+  color: var(--fg-disabled);
+  margin-left: 6px;
+}
+controlcenter .top-container page.network .net-empty {
+  font-size: 12px;
+  color: var(--fg-disabled);
+  padding: 6px 4px;
+}
 
 controlcenter .top-container page.sound .content label.name,
 controlcenter .top-container page.microphone .content label.name {

@@ -28,11 +28,13 @@ export function EntryPopup(props: EntryPopupProps): Astal.Window {
     }
 
     const entry = props.isPassword ? 
-        <Gtk.PasswordEntry class={"password"} xalign={.5} 
+        <Gtk.PasswordEntry class={"password"} showPeekIcon
           placeholderText={props.entryPlaceholder} 
+          onMap={(self) => self.grab_focus()}
           onActivate={onActivate}
         /> as Gtk.PasswordEntry
     : <Gtk.Entry xalign={.5} placeholderText={props.entryPlaceholder}
+        onMap={(self) => self.grab_focus()}
         onActivate={onActivate} /> as Gtk.Entry;
 
     const window = <CustomDialog namespace={"entry-popup"} widthRequest={420} 
@@ -55,7 +57,9 @@ export function EntryPopup(props: EntryPopupProps): Astal.Window {
           !entered && props.onCancel?.()
           props.onFinish?.();
       }} 
-    /> as Astal.Window;
+    >
+        {entry}
+    </CustomDialog> as Astal.Window;
 
     return window;
 } 
