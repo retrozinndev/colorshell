@@ -126,10 +126,10 @@ function dedupeAndSortAps(
     });
 }
 
-function notifyConnectionError(ssid: string, detail?: string): void {
+function notifyWifiError(ssid: string, detail?: string): void {
     Notifications.getDefault().sendNotification({
-        appName: "network",
-        summary: "Couldn't connect Wi-Fi",
+        summary: tr("control_center.pages.network.connection_error"),
+        appIcon: "network-wireless",
         body: detail
             ? `An error occurred while trying to connect to "${ssid}":\n${detail}`
             : `An error occurred while trying to connect to "${ssid}".`
@@ -143,17 +143,138 @@ export const PageNetwork = () => {
     const devicesBinding = createBinding(net.client, "devices").as(filterRelevantDevices);
     const wifiBinding = createBinding(net, "wifi");
 
-    const connectWithNmcli = async (ssid: string, args: string[]) => {
+    const nmcliConnect = async (ssid: string, args: string[]) => {
         setBusySsid(ssid);
         try {
-            await execAsync(args);
+            await execAsync(["nmcli", ...args]);
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : String(e);
-            notifyConnectionError(ssid, msg);
+            notifyWifiError(ssid, msg);
         } finally {
             setBusySsid((cur) => (cur === ssid ? null : cur));
         }
     };
+
+    
+    const APButton = ({ap}: {
+        ap: AstalNetwork.AccessPoint
+    }): JSX.Element => {
+        const ssid = ap.ssid ?? "";
+        const secured = isApSecured(ap);
+        const enterprise = isApEnterprise(ap);
+
+        const isActive = createBinding(AstalNetwork.get_default(), "wifi", "activeAccessPoint")(
+            (active) => Boolean(active?.ssid && active.ssid === ssid)
+        );
+
+        const apDesc = createComputed(() => {
+            const active = isActive(),
+                busy = busySsid(),
+                strength = createBinding(ap, "strength")();
+
+            const parts: string[] = [];
+            if (busy === ssid) {
+                parts.push(`${tr("connecting")}...`);
+            } else if (active) {
+                parts.push(tr("connected"));
+            }
+            parts.push(`${strength}%`);
+            const band = formatBand(ap.frequency);
+            if (band) parts.push(band);
+            if (enterprise) parts.push("EAP");
+            return parts.join(" · ");
+        });
+        return <Page.DecoratedButton
+          class={isActive.as((active) =>
+              active ? "selected" : ""
+          )}
+          title={ssid}
+          description={apDesc}
+          icon={createBinding(ap, "iconName")}
+          endWidget={
+              secured ? (
+                  <Gtk.Image
+                      iconName={"network-wireless-encrypted-symbolic"}
+                      class={"net-lock-icon"}
+                  />
+              ) : undefined
+          }
+          extraButtons={
+              <Gtk.Button
+                  iconName={"window-close-symbolic"}
+                  tooltipText={tr("disconnect")}
+                  visible={isActive}
+                  onClicked={() => {
+                      const wifi = AstalNetwork.get_default().wifi!;
+                      const active = wifi.activeAccessPoint;
+                      if (active?.ssid === ssid) {
+                          wifi.deactivate_connection((_, res) => {
+                              try {
+                                  wifi.deactivate_connection_finish(res);
+                              } catch (e: unknown) {
+                                  const err = e as Error;
+                                  console.error(
+                                      `Network: couldn't deactivate connection with access point (SSID: ${ssid}). Error:\n${err.message}\n${err.stack}`
+                                  );
+                              }
+                          });
+                      }
+                  }}
+              />
+          }
+          actionClicked={() => {
+              const wifi = AstalNetwork.get_default().wifi!;
+              if (!ssid) return;
+              if (wifi.activeAccessPoint?.ssid === ssid) return;
+
+              const savedMap = getSavedWifiMap(net.client);
+              const savedName = savedMap.get(ssid);
+              if (savedName) {
+                  void nmcliConnect(ssid, [
+                      "connection",
+                      "up",
+                      savedName,
+                  ]);
+                  return;
+              }
+
+              if (!secured) {
+                  void nmcliConnect(ssid, [
+                      "device",
+                      "wifi",
+                      "connect",
+                      ssid,
+                  ]);
+                  return;
+              }
+
+              if (enterprise) {
+                  Windows.getDefault().close("control-center");
+                  execApp("nm-connection-editor");
+                  return;
+              }
+
+              EntryPopup({
+                  title: "Wi-Fi",
+                  text: `${tr("control_center.pages.network.enter_password_for")} "${ssid}"`,
+                  entryPlaceholder: tr("password"),
+                  acceptText: tr("connect"),
+                  isPassword: true,
+                  onAccept: (password) => {
+                      if(password == null) return;
+                      void nmcliConnect(ssid, [
+                          "device",
+                          "wifi",
+                          "connect",
+                          ssid,
+                          "password",
+                          password,
+                      ]);
+                  },
+              });
+          }}
+        />;
+    }
 
     return (
         <Page
@@ -223,16 +344,13 @@ export const PageNetwork = () => {
 
                     const wifiEnabled = createBinding(wifi, "enabled");
                     const activeApBinding = createBinding(wifi, "activeAccessPoint");
-                    const apsBinding = createComputed(
-                        [
-                            createBinding(wifi, "accessPoints"),
-                            activeApBinding,
-                        ],
-                        (aps, activeAp) => {
-                            const savedMap = getSavedWifiMap(net.client);
-                            return dedupeAndSortAps(aps, activeAp?.ssid ?? null, savedMap);
-                        }
-                    );
+                    const apsBinding = createComputed(() => {
+                        const aps = createBinding(wifi, "accessPoints")(),
+                            activeAp = activeApBinding();
+
+                        const savedMap = getSavedWifiMap(net.client);
+                        return dedupeAndSortAps(aps, activeAp?.ssid ?? null, savedMap);
+                    });
 
                     return (
                         <Gtk.Box
@@ -275,130 +393,9 @@ export const PageNetwork = () => {
                                 hexpand
                             >
                                 <For each={apsBinding}>
-                                    {(ap: AstalNetwork.AccessPoint) => {
-                                        const ssid = ap.ssid ?? "";
-                                        const secured = isApSecured(ap);
-                                        const enterprise = isApEnterprise(ap);
-
-                                        const isActive = activeApBinding.as(
-                                            (active) => Boolean(active?.ssid && active.ssid === ssid)
-                                        );
-
-                                        const apDesc = createComputed(
-                                            [
-                                                isActive,
-                                                busySsid,
-                                                createBinding(ap, "strength"),
-                                            ],
-                                            (active, busy, strength) => {
-                                                const parts: string[] = [];
-                                                if (busy === ssid) {
-                                                    parts.push(`${tr("connecting")}...`);
-                                                } else if (active) {
-                                                    parts.push(tr("connected"));
-                                                }
-                                                parts.push(`${strength}%`);
-                                                const band = formatBand(ap.frequency);
-                                                if (band) parts.push(band);
-                                                if (enterprise) parts.push("EAP");
-                                                return parts.join(" · ");
-                                            }
-                                        );
-
-                                        return (
-                                            <Page.DecoratedButton
-                                                class={isActive.as((active) =>
-                                                    active ? "selected" : ""
-                                                )}
-                                                title={ssid}
-                                                description={apDesc}
-                                                icon={createBinding(ap, "iconName")}
-                                                endWidget={
-                                                    secured ? (
-                                                        <Gtk.Image
-                                                            iconName={"network-wireless-encrypted-symbolic"}
-                                                            class={"net-lock-icon"}
-                                                        />
-                                                    ) : undefined
-                                                }
-                                                extraButtons={
-                                                    <Gtk.Button
-                                                        iconName={"window-close-symbolic"}
-                                                        tooltipText={tr("disconnect")}
-                                                        visible={isActive}
-                                                        onClicked={() => {
-                                                            const active = wifi.activeAccessPoint;
-                                                            if (active?.ssid === ssid) {
-                                                                wifi.deactivate_connection((_, res) => {
-                                                                    try {
-                                                                        wifi.deactivate_connection_finish(res);
-                                                                    } catch (e: unknown) {
-                                                                        const err = e as Error;
-                                                                        console.error(
-                                                                            `Network: couldn't deactivate connection with access point (SSID: ${ssid}). Error:\n${err.message}\n${err.stack}`
-                                                                        );
-                                                                    }
-                                                                });
-                                                            }
-                                                        }}
-                                                    />
-                                                }
-                                                actionClicked={() => {
-                                                    if (!ssid) return;
-                                                    if (wifi.activeAccessPoint?.ssid === ssid) return;
-
-                                                    const savedMap = getSavedWifiMap(net.client);
-                                                    const savedName = savedMap.get(ssid);
-                                                    if (savedName) {
-                                                        void connectWithNmcli(ssid, [
-                                                            "nmcli",
-                                                            "connection",
-                                                            "up",
-                                                            savedName,
-                                                        ]);
-                                                        return;
-                                                    }
-
-                                                    if (!secured) {
-                                                        void connectWithNmcli(ssid, [
-                                                            "nmcli",
-                                                            "device",
-                                                            "wifi",
-                                                            "connect",
-                                                            ssid,
-                                                        ]);
-                                                        return;
-                                                    }
-
-                                                    if (enterprise) {
-                                                        Windows.getDefault().close("control-center");
-                                                        execApp("nm-connection-editor");
-                                                        return;
-                                                    }
-
-                                                    EntryPopup({
-                                                        title: ssid,
-                                                        text: `Enter the password for "${ssid}"`,
-                                                        entryPlaceholder: "Password",
-                                                        acceptText: tr("connect"),
-                                                        isPassword: true,
-                                                        onAccept: (password) => {
-                                                            if (!password) return;
-                                                            void connectWithNmcli(ssid, [
-                                                                "nmcli",
-                                                                "device",
-                                                                "wifi",
-                                                                "connect",
-                                                                ssid,
-                                                                "password",
-                                                                password,
-                                                            ]);
-                                                        },
-                                                    });
-                                                }}
-                                            />
-                                        );
-                                    }}
+                                    {(ap: AstalNetwork.AccessPoint) =>
+                                        <APButton ap={ap} />
+                                    }
                                 </For>
                             </Gtk.Box>
                         </Gtk.Box>
