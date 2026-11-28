@@ -3,6 +3,7 @@ import Page from "../Page";
 import Windows from "../../../../window";
 import { execApp } from "../../../../modules/apps";
 import Notifications from "../../../../modules/notifications";
+import { EntryPopup } from "../../../../widget/EntryPopup";
 import { variableToBoolean } from "../../../../modules/utils";
 import { createBinding, createComputed, createState, For, With } from "ags";
 import { execAsync } from "ags/process";
@@ -137,7 +138,6 @@ function notifyConnectionError(ssid: string, detail?: string): void {
 
 export const PageNetwork = () => {
     const net = AstalNetwork.get_default();
-    const [promptSsid, setPromptSsid] = createState<string | null>(null);
     const [busySsid, setBusySsid] = createState<string | null>(null);
 
     const devicesBinding = createBinding(net.client, "devices").as(filterRelevantDevices);
@@ -147,7 +147,6 @@ export const PageNetwork = () => {
         setBusySsid(ssid);
         try {
             await execAsync(args);
-            setPromptSsid(null);
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : String(e);
             notifyConnectionError(ssid, msg);
@@ -177,7 +176,6 @@ export const PageNetwork = () => {
                     execApp("nm-connection-editor");
                 }
             }]}
-            onClosed={() => setPromptSsid(null)}
         >
             <Gtk.Box
                 class={"devices"}
@@ -262,65 +260,6 @@ export const PageNetwork = () => {
                                     }}
                                 />
                             </Gtk.Box>
-
-                            <With value={promptSsid}>
-                                {(targetSsid: string | null) => {
-                                    if (!targetSsid) return <Gtk.Box visible={false} />;
-
-                                    let entryRef: Gtk.PasswordEntry | null = null;
-                                    const submit = () => {
-                                        const pw = entryRef?.get_text() ?? "";
-                                        if (!pw) return;
-                                        void connectWithNmcli(targetSsid, [
-                                            "nmcli",
-                                            "device",
-                                            "wifi",
-                                            "connect",
-                                            targetSsid,
-                                            "password",
-                                            pw,
-                                        ]);
-                                    };
-
-                                    return (
-                                        <Gtk.Box
-                                            class={"net-pass-box"}
-                                            orientation={Gtk.Orientation.VERTICAL}
-                                            spacing={6}
-                                            hexpand
-                                        >
-                                            <Gtk.Label
-                                                class={"net-pass-title"}
-                                                label={`${tr("connect")}: ${targetSsid}`}
-                                                xalign={0}
-                                            />
-                                            <Gtk.PasswordEntry
-                                                class={"net-pass-entry"}
-                                                showPeekIcon
-                                                placeholderText={"Password"}
-                                                hexpand
-                                                $={(self) => {
-                                                    entryRef = self;
-                                                    self.grab_focus();
-                                                }}
-                                                onActivate={submit}
-                                            />
-                                            <Gtk.Box spacing={6} hexpand homogeneous>
-                                                <Gtk.Button
-                                                    class={"net-pass-btn primary"}
-                                                    label={tr("connect")}
-                                                    onClicked={submit}
-                                                />
-                                                <Gtk.Button
-                                                    class={"net-pass-btn"}
-                                                    label={tr("cancel")}
-                                                    onClicked={() => setPromptSsid(null)}
-                                                />
-                                            </Gtk.Box>
-                                        </Gtk.Box>
-                                    );
-                                }}
-                            </With>
 
                             <Gtk.Label
                                 class={"net-empty"}
@@ -437,7 +376,25 @@ export const PageNetwork = () => {
                                                         return;
                                                     }
 
-                                                    setPromptSsid(ssid);
+                                                    EntryPopup({
+                                                        title: ssid,
+                                                        text: `Enter the password for "${ssid}"`,
+                                                        entryPlaceholder: "Password",
+                                                        acceptText: tr("connect"),
+                                                        isPassword: true,
+                                                        onAccept: (password) => {
+                                                            if (!password) return;
+                                                            void connectWithNmcli(ssid, [
+                                                                "nmcli",
+                                                                "device",
+                                                                "wifi",
+                                                                "connect",
+                                                                ssid,
+                                                                "password",
+                                                                password,
+                                                            ]);
+                                                        },
+                                                    });
                                                 }}
                                             />
                                         );

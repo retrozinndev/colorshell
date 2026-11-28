@@ -131,9 +131,6 @@ controlcenter .top-container page .extra-buttons button {
 controlcenter .top-container page .extra-buttons button:active {
   border-radius: 8px;
 }
-controlcenter .top-container page .content {
-  padding-right: 6px;
-}
 controlcenter .top-container page.network .wifi-header .sub-header {
   margin-bottom: 0;
 }
@@ -146,34 +143,6 @@ controlcenter .top-container page.network .net-empty {
   font-size: 12px;
   color: var(--fg-disabled);
   padding: 6px 4px;
-}
-controlcenter .top-container page.network .net-pass-box {
-  background: var(--bg-primary);
-  border-radius: 12px;
-  padding: 10px 12px;
-}
-controlcenter .top-container page.network .net-pass-title {
-  font-size: 12px;
-  font-weight: 600;
-}
-controlcenter .top-container page.network .net-pass-entry {
-  background: var(--bg-secondary);
-  border-radius: 8px;
-  padding: 4px 8px;
-  font-size: 12.5px;
-}
-controlcenter .top-container page.network .net-pass-btn {
-  background: var(--bg-secondary);
-  border-radius: 8px;
-  padding: 5px 10px;
-  font-size: 11.5px;
-  font-weight: 600;
-}
-controlcenter .top-container page.network .net-pass-btn:hover {
-  background: var(--bg-tertiary);
-}
-controlcenter .top-container page.network .net-pass-btn.primary {
-  background: var(--bg-tertiary);
 }
 
 controlcenter .top-container page.sound .content label.name,
