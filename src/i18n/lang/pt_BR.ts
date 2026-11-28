@@ -26,6 +26,8 @@ export default {
     kill: "Matar",
     close: "Fechar",
 
+    password: "Senha",
+
     media: {
         next: "Próxima faixa",
         pause: "Pausar",
@@ -99,7 +101,9 @@ export default {
             },
             network: {
                 title: "Rede",
-                interface: "Interface"
+                interface: "Interface",
+                enter_password_for: "Insira a senha para conectar a",
+                connection_error: "Erro de conexão de rede"
             }
         }
     },

@@ -26,6 +26,8 @@ export default {
     close: "Close",
     kill: "Kill",
 
+    password: "Password",
+
     media: {
         play: "Play",
         pause: "Pause",
@@ -99,7 +101,9 @@ export default {
             },
             network: {
                 title: "Network",
-                interface: "Interface"
+                interface: "Interface",
+                enter_password_for: "Enter the password for network",
+                connection_error: "Network connection error"
             }
         }
     },
